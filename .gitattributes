@@ -1,0 +1,22 @@
+* text=auto
+
+*.cs text
+*.csproj text
+*.md text
+*.ps1 text
+*.iss text
+*.json text
+*.html text
+*.css text
+
+*.exe binary
+*.dll binary
+*.ico binary
+*.png binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.bmp binary
+*.webp binary
+*.pdf binary
+*.onnx binary

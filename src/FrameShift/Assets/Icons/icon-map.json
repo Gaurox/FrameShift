@@ -1,0 +1,234 @@
+{
+  "generatedAt": "2026-05-11T18:41:17+02:00",
+  "base": "src/FrameShift/Assets/Icons",
+  "rules": [
+    "lowercase",
+    "kebab-case",
+    "dot/space/underscore-to-hyphen",
+    "filp-to-flip",
+    "duplicate-safe-suffix"
+  ],
+  "renamedCount": 55,
+  "entries": [
+    {
+      "old": "menus\\context\\ico\\change.pitch_audio_icon.ico",
+      "new": "menus\\context\\ico\\change-pitch-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\change.speed_audio_icon.ico",
+      "new": "menus\\context\\ico\\change-speed-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\compress_video_image_audio_icon.ico",
+      "new": "menus\\context\\ico\\compress-video-image-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\convert_audio_video_image_icon.ico",
+      "new": "menus\\context\\ico\\convert-audio-video-image-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\convert.icon_image_icon.ico",
+      "new": "menus\\context\\ico\\convert-icon-image-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\create.gif_video_icon.ico",
+      "new": "menus\\context\\ico\\create-gif-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\crop_video_image_icon.ico",
+      "new": "menus\\context\\ico\\crop-video-image-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\cut_video_audio_icon.ico",
+      "new": "menus\\context\\ico\\cut-video-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\extract.audio_video_icon.ico",
+      "new": "menus\\context\\ico\\extract-audio-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\extract.frames_video_icon.ico",
+      "new": "menus\\context\\ico\\extract-frames-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\image.to.pdf_image_icon.ico",
+      "new": "menus\\context\\ico\\image-to-pdf-image-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\interpolate_video_icon.ico",
+      "new": "menus\\context\\ico\\interpolate-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\media.info_video_image_audio_icon.ico",
+      "new": "menus\\context\\ico\\media-info-video-image-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\remove.audio_video_icon.ico",
+      "new": "menus\\context\\ico\\remove-audio-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\resize_image_video_icon.ico",
+      "new": "menus\\context\\ico\\resize-image-video-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\reverse.audio_audio_icon.ico",
+      "new": "menus\\context\\ico\\reverse-audio-audio-icon.ico"
+    },
+    {
+      "old": "menus\\context\\ico\\rotate_video_image_icon.ico",
+      "new": "menus\\context\\ico\\rotate-video-image-icon.ico"
+    },
+    {
+      "old": "menus\\context\\png\\change.pitch_audio.png",
+      "new": "menus\\context\\png\\change-pitch-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\change.speed_audio.png",
+      "new": "menus\\context\\png\\change-speed-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\compress_video_image_audio.png",
+      "new": "menus\\context\\png\\compress-video-image-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\convert_audio_video_image.png",
+      "new": "menus\\context\\png\\convert-audio-video-image.png"
+    },
+    {
+      "old": "menus\\context\\png\\convert.icon_image.png",
+      "new": "menus\\context\\png\\convert-icon-image.png"
+    },
+    {
+      "old": "menus\\context\\png\\create.gif_video.png",
+      "new": "menus\\context\\png\\create-gif-video.png"
+    },
+    {
+      "old": "menus\\context\\png\\crop_video_image.png",
+      "new": "menus\\context\\png\\crop-video-image.png"
+    },
+    {
+      "old": "menus\\context\\png\\cut_video_audio.png",
+      "new": "menus\\context\\png\\cut-video-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\extract.audio_video.png",
+      "new": "menus\\context\\png\\extract-audio-video.png"
+    },
+    {
+      "old": "menus\\context\\png\\image.to.pdf_image.png",
+      "new": "menus\\context\\png\\image-to-pdf-image.png"
+    },
+    {
+      "old": "menus\\context\\png\\interpolate_video.png",
+      "new": "menus\\context\\png\\interpolate-video.png"
+    },
+    {
+      "old": "menus\\context\\png\\media.info_video_image_audio.png",
+      "new": "menus\\context\\png\\media-info-video-image-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\remove.audio_video.png",
+      "new": "menus\\context\\png\\remove-audio-video.png"
+    },
+    {
+      "old": "menus\\context\\png\\resize_image_video.png",
+      "new": "menus\\context\\png\\resize-image-video.png"
+    },
+    {
+      "old": "menus\\context\\png\\reverse.audio_audio.png",
+      "new": "menus\\context\\png\\reverse-audio-audio.png"
+    },
+    {
+      "old": "menus\\context\\png\\rotate_video_image.png",
+      "new": "menus\\context\\png\\rotate-video-image.png"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\add.image_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\add-image-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\bring.forward_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\bring-forward-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\Bring.to.front_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\bring-to-front-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\center_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\center-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\Crop_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\crop-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\export_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\export-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\fit.to.page_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\fit-to-page-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\print_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\print-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\send.backward_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\send-backward-icon.ico"
+    },
+    {
+      "old": "ui\\image-to-pdf\\ico\\send.to.back_icon.ico",
+      "new": "ui\\image-to-pdf\\ico\\send-to-back-icon.ico"
+    },
+    {
+      "old": "ui\\rotate-flip\\ico\\flip.horizontal_icon.ico",
+      "new": "ui\\rotate-flip\\ico\\flip-horizontal-icon.ico"
+    },
+    {
+      "old": "ui\\rotate-flip\\ico\\flip.vertical_icon.ico",
+      "new": "ui\\rotate-flip\\ico\\flip-vertical-icon.ico"
+    },
+    {
+      "old": "ui\\rotate-flip\\ico\\Rotate.left_icon.ico",
+      "new": "ui\\rotate-flip\\ico\\rotate-left-icon.ico"
+    },
+    {
+      "old": "ui\\rotate-flip\\ico\\Rotate.right_icon.ico",
+      "new": "ui\\rotate-flip\\ico\\rotate-right-icon.ico"
+    },
+    {
+      "old": "ui\\rotate-flip\\png\\filp.vertical.png",
+      "new": "ui\\rotate-flip\\png\\flip-vertical.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\png\\flip.horizontal.png",
+      "new": "ui\\rotate-flip\\png\\flip-horizontal.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\png\\Rotate.left.png",
+      "new": "ui\\rotate-flip\\png\\rotate-left.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\png\\Rotate.right.png",
+      "new": "ui\\rotate-flip\\png\\rotate-right.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\preview\\png\\filp.vertical_icon.png",
+      "new": "ui\\rotate-flip\\preview\\png\\flip-vertical-icon.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\preview\\png\\flip.horizontal_icon.png",
+      "new": "ui\\rotate-flip\\preview\\png\\flip-horizontal-icon.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\preview\\png\\Rotate.left_icon.png",
+      "new": "ui\\rotate-flip\\preview\\png\\rotate-left-icon.png"
+    },
+    {
+      "old": "ui\\rotate-flip\\preview\\png\\Rotate.right_icon.png",
+      "new": "ui\\rotate-flip\\preview\\png\\rotate-right-icon.png"
+    }
+  ]
+}

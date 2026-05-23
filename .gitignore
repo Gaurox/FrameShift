@@ -1,0 +1,26 @@
+# Build outputs
+**/bin/
+**/obj/
+publish/
+builds/
+.buildcheck/
+
+# Installer artifacts
+installer/*.exe
+
+# Local tooling state
+.claude/
+.vs/
+*.user
+*.suo
+AGENTS.md
+
+# Legacy/reference material kept locally only
+references/
+
+# Large local test media not needed for unit tests
+tests/input/
+
+# OS noise
+Thumbs.db
+Desktop.ini
