@@ -12,15 +12,22 @@
   <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="FrameShift context menu workflow demo" width="900" />
 </p>
 
-<p align="center">
-  <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="440" />
-  <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="FrameShift image to PDF demo" width="440" />
-</p>
-
 ## Overview
 
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
+
+Remove backgrounds locally with a focused AI workflow directly launched from Explorer.
+
+<p align="center">
+  <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
+</p>
+
+Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
+
+<p align="center">
+  <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="FrameShift image to PDF demo" width="900" />
+</p>
 
 ## Why FrameShift
 
