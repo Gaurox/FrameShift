@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gaurox.github.io/FrameShift/sitemap.xml
