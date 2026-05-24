@@ -33,4 +33,6 @@ public static class ActionOptionKeys
     public const string FlipHorizontal = "flip-h";
     public const string FlipVertical = "flip-v";
     public const string InterpolateFps = "interpolate-fps";
+    public const string Stems = "stems";
+    public const string SeparateEngine = "separate-engine";
 }

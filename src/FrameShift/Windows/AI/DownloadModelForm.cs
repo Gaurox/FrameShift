@@ -2,8 +2,8 @@ using System;
 using System.Drawing;
 using System.Net.Http;
 using System.Threading;
-using System.Windows.Forms;
-using FrameShift.Core.AI.RemoveBackground;
+using System.Threading.Tasks;
+using FrameShift.Core.AI;
 using FrameShift.Core.Logging;
 using FrameShift.Windows.Helpers;
 
@@ -11,6 +11,7 @@ namespace FrameShift.Windows.AI;
 
 public sealed class DownloadModelForm : Form
 {
+    private readonly Func<IProgress<AiModelDownloadProgress>, CancellationToken, Task> _downloadAction;
     private readonly Label _statusLabel;
     private readonly ProgressBar _progressBar;
     private readonly Label _progressTextLabel;
@@ -19,8 +20,16 @@ public sealed class DownloadModelForm : Form
     private CancellationTokenSource? _cancellationSource;
     private bool _downloadInProgress;
 
-    public DownloadModelForm()
+    public DownloadModelForm(
+        string featureTitle,
+        string featureSubtitle,
+        string modelDisplayName,
+        string modelLicense,
+        long modelSizeBytes,
+        Func<IProgress<AiModelDownloadProgress>, CancellationToken, Task> downloadAction)
     {
+        _downloadAction = downloadAction;
+
         FrameShiftWindowChrome.Apply(this, "FrameShift AI - Download model");
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -32,8 +41,8 @@ public sealed class DownloadModelForm : Form
         Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
 
         var header = FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift AI - Remove Background",
-            "Download the AI model to enable background removal",
+            featureTitle,
+            featureSubtitle,
             string.Empty,
             IconPaths.AppIcon,
             "AI");
@@ -46,14 +55,14 @@ public sealed class DownloadModelForm : Form
         {
             Location = new Point(10, 8),
             Size = new Size(516, 18),
-            Text = $"Model: {ModelDownloader.ModelDisplayName}",
+            Text = $"Model: {modelDisplayName}  —  {modelSizeBytes / (1024L * 1024L)} MB",
             ForeColor = FrameShiftTheme.TextSecondary
         });
         infoCard.Controls.Add(new Label
         {
             Location = new Point(10, 26),
             Size = new Size(516, 18),
-            Text = $"License: {ModelDownloader.ModelLicense}",
+            Text = $"License: {modelLicense}",
             ForeColor = FrameShiftTheme.TextMuted
         });
         Controls.Add(infoCard);
@@ -62,7 +71,7 @@ public sealed class DownloadModelForm : Form
         {
             Location = new Point(12, 150),
             Size = new Size(536, 20),
-            Text = $"Ready to download — approximately {ModelDownloader.ExpectedSizeBytes / (1024L * 1024L)} MB",
+            Text = $"Ready to download — approximately {modelSizeBytes / (1024L * 1024L)} MB",
             ForeColor = FrameShiftTheme.TextSecondary
         };
         Controls.Add(_statusLabel);
@@ -114,18 +123,11 @@ public sealed class DownloadModelForm : Form
 
         try
         {
-            ModelLocator.EnsureDirectoryExists();
-
-            var progress = new Progress<ModelDownloadProgress>(OnProgressReport);
-            await ModelDownloader.DownloadAsync(
-                ModelLocator.ModelPath,
-                progress,
-                _cancellationSource.Token);
+            var progress = new Progress<AiModelDownloadProgress>(OnProgressReport);
+            await _downloadAction(progress, _cancellationSource.Token);
 
             if (IsDisposed || Disposing)
-            {
                 return;
-            }
 
             _progressBar.Value = 100;
             _statusLabel.Text = "Download complete.";
@@ -142,6 +144,15 @@ public sealed class DownloadModelForm : Form
                 _downloadButton.Enabled = true;
                 _cancelButton.Enabled = true;
                 _cancelButton.Text = "Close";
+            }
+        }
+        catch (InvalidDataException ex)
+        {
+            if (!IsDisposed && !Disposing)
+            {
+                _statusLabel.Text = ex.Message;
+                _downloadButton.Enabled = true;
+                AppLogger.LogStatic("DownloadModelForm: integrity error. " + ex);
             }
         }
         catch (HttpRequestException ex)
@@ -189,19 +200,15 @@ public sealed class DownloadModelForm : Form
         _cancellationSource?.Cancel();
     }
 
-    private void OnProgressReport(ModelDownloadProgress p)
+    private void OnProgressReport(AiModelDownloadProgress p)
     {
         if (IsDisposed || Disposing)
-        {
             return;
-        }
 
         _progressBar.Value = Math.Clamp(p.Percent, 0, 100);
         _progressTextLabel.Text = p.Status;
 
         if (p.Percent > 0)
-        {
             _statusLabel.Text = $"Downloading... {p.Percent}%";
-        }
     }
 }

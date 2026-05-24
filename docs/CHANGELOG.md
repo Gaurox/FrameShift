@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.0.1
+
+- Added `Audio Separation` as a local AI action with CPU and DirectML GPU paths, multi-stem export, and adjacent unique output naming.
+- Added the `Audio Separation` picker UI and Explorer context-menu integration with a dedicated icon.
+- Fixed CLI option routing for `--stems` and `--separate-engine` through the shared batch flow.
+- Fixed `Audio Separation` progress reporting, model preflight selection, and installer packaging for the new action.
+
 ## 1.0.0
 
 - Remove Background now uses the shared `ProgressForm`.

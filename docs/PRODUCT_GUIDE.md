@@ -41,6 +41,7 @@ Actions audio :
 - `reverse-audio`
 - `change-pitch`
 - `change-audio-speed`
+- `separate-audio`
 - `media-info`
 
 Actions image :
@@ -56,6 +57,7 @@ Actions image :
 
 Action IA locale :
 - `remove-background` utilise la progression commune, avec préflight du modèle si nécessaire, file visible et continuation du batch sur erreur.
+- `separate-audio` utilise la progression commune, un picker de stems/moteur si nécessaire, un préflight du bon modèle, puis un export adjacent des stems demandés.
 
 ## Modes d’usage réels
 
@@ -102,6 +104,7 @@ En pratique :
 - `media-info` reste dépendant d’une fenêtre WinForms ;
 - `image-to-pdf` reste un éditeur interactif, même si l’action finale est exécutée côté core ;
 - `remove-background` passe par la progression commune WinForms : une seule fenêtre, file visible, erreurs dans la queue et préflight modèle si le modèle manque ;
+- `separate-audio` suit le même modèle avec fallback picker si `--stems` ou `--separate-engine` ne sont pas fournis ;
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies
@@ -112,6 +115,7 @@ En pratique :
 - pas d’écrasement de fichier ;
 - UI WinForms légère ;
 - progression commune partagée pour les actions de lot, y compris `remove-background` ;
+- progression commune partagée aussi pour `separate-audio` ;
 - bandeau donation discret dans la fenêtre de progression commune ;
 - annulation et nettoyage propres ;
 - synchronisation obligatoire entre code, publish, installateur et menus contextuels.

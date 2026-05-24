@@ -121,11 +121,20 @@ Media Info :
 
 ## Core/AI
 
+- `src/FrameShift/Core/AI/AiModelDownloadProgress.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/IBackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/ModelDownloader.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/ModelLocator.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/RemoveBackgroundAction.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/AudioChunkReader.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/AudioSeparationEngine.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/AudioStemWriter.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/HostSpectro.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/ModelDownloader.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/ModelLocator.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/OverlapAddRing.cs`
+- `src/FrameShift/Core/AI/SeparateAudio/SeparateAudioAction.cs`
 
 ## Windows/UI
 
@@ -135,6 +144,7 @@ Batch et progression :
 
 IA :
 - `src/FrameShift/Windows/AI/DownloadModelForm.cs`
+- `src/FrameShift/Windows/AI/SeparateAudioPickerForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
@@ -196,4 +206,5 @@ Assets de test utiles :
 
 - `Image to PDF` est un module interactif lancé via `Program.cs`, pas un exécutable séparé.
 - `Media Info` passe par `FfprobeRunner.TryProbeMediaInfoAsync(...)` puis `MediaInfoFormatter`.
+- `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
