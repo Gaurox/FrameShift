@@ -23,6 +23,12 @@ Remove backgrounds locally with a focused AI workflow directly launched from Exp
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
 </p>
 
+Split music locally into vocals, drums, bass, other, and instrumental with the new audio separation workflow.
+
+<p align="center">
+  <img src="screenshots/AI_actions/Audio_separation.png" alt="FrameShift audio separation workflow" width="900" />
+</p>
+
 Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
 
 <p align="center">
@@ -88,11 +94,12 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Rotate / Flip Image | Correct image orientation or mirror an image in a few clicks. | <img src="screenshots/Image_actions/Rotate_image.png" alt="Rotate or Flip Image" width="320" /> |
 | Image to PDF | Assemble one or more images into a PDF document. | <img src="screenshots/Image_actions/Image_to_pdf.png" alt="Image to PDF" width="320" /> |
 
-### AI Action
+### AI Actions
 
 | Action | Short Description | Screenshot |
 | --- | --- | --- |
 | Remove Background | Remove the background from an image with the local AI workflow. | <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove Background" width="320" /> |
+| Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |
 
 ## Built For
 

@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -74,11 +74,12 @@ Name: "tools"; Description: "Outils"; Types: complete custom
 Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
 Name: "ai"; Description: "FrameShift AI"; Types: complete custom
 Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
+Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
 Source: "{#ToolsDir}\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image
-Source: "{#ToolsDir}\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed tools\media_info
+Source: "{#ToolsDir}\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio tools\media_info
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
@@ -88,7 +89,7 @@ procedure ExitProcess(uExitCode: Integer); external 'ExitProcess@kernel32.dll st
 
 const
   VideoExtensions = '.mp4,.mkv,.avi,.mov,.webm,.m4v';
-  AudioExtensions = '.mp3,.wav,.wave,.flac,.m4a,.ogg';
+  AudioExtensions = '.mp3,.wav,.wave,.flac,.m4a,.ogg,.aac,.wma';
   ImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   PdfImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   UninstallSubkey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppId}_is1';
@@ -329,12 +330,25 @@ procedure ConfigureAIActionMenuForHive(
 var
   KeyPath: string;
   CommandValue: string;
+  IconPath: string;
 begin
   EnsureFrameShiftAIRootForHive(Hive, Ext);
   KeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShiftAI\shell\' + MenuKey;
   RegDeleteKeyIncludingSubkeys(Hive, KeyPath);
   RegWriteStringValue(Hive, KeyPath, 'MUIVerb', LabelText);
-  RegWriteStringValue(Hive, KeyPath, 'Icon', ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico'));
+  if MenuKey = 'remove_background' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico');
+  end
+  else if MenuKey = 'separate_audio' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\separate_audio_icon.ico');
+  end
+  else
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\frameshift_ai.ico');
+  end;
+  RegWriteStringValue(Hive, KeyPath, 'Icon', IconPath);
   CommandValue :=
     '"' + ExpandConstant('{app}\{#MyAppExeName}') + '"' +
     ' --action ' + ActionId + ' "%1"';
@@ -811,6 +825,15 @@ begin
       'remove_background',
       'Remove background',
       'remove-background');
+  end;
+
+  if WizardIsComponentSelected('ai\separate_audio') then
+  begin
+    ApplyAIActionMenuList(
+      AudioExtensions,
+      'separate_audio',
+      'Audio separation',
+      'separate-audio');
   end;
 end;
 

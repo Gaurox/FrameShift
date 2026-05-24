@@ -55,7 +55,7 @@ Ordre de priorité :
 - packaging : self-contained `win-x64`
 - installateur : Inno Setup
 - moteur média : FFmpeg / FFprobe
-- IA future : ONNX Runtime DirectML
+- IA locale : ONNX Runtime DirectML
 
 ## Forbidden Decisions
 

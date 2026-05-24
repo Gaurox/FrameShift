@@ -239,6 +239,30 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Process");
 
+    public static BatchDefinition CreateSeparateAudioDefinition() => new(
+        ActionId: "separate-audio",
+        DisplayName: "Audio Separation",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: FrameShift.Core.AI.SeparateAudio.SeparateAudioAction.GetSupportedExtensionsText(),
+        MutexName: @"Local\FrameShift_SeparateAudioBatch",
+        PipeName: "FrameShift_SeparateAudioBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: static extension =>
+            extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".flac", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".m4a", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".aac", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".wma", StringComparison.OrdinalIgnoreCase),
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Separate");
+
     private async Task ProcessLoopAsync(CancellationToken cancellationToken)
     {
         _logger.Log("ConversionBatchSession: queue loop entered.");

@@ -10,7 +10,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - installateur : Inno Setup
 - backend média : FFmpeg / FFprobe
 - packaging : self-contained `win-x64`
-- IA future : ONNX Runtime DirectML
+- IA locale : ONNX Runtime DirectML
 
 ## Frontière Core / Windows
 

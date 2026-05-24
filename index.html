@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FrameShift — Two-click media actions, 100% local</title>
-<meta name="description" content="FrameShift is a Windows desktop utility for local media actions from the Explorer right-click menu: convert, compress, crop, cut, remove background, and more." />
+<meta name="description" content="FrameShift is a Windows desktop utility for local media actions from the Explorer right-click menu: convert, compress, crop, cut, remove background, audio separation, and more." />
 <meta name="author" content="Gaurox" />
 <meta name="google-site-verification" content="JGO4WajI-jMV60-eYiXCpWxHMAfuzLIYzUYMraR2pIs" />
 <meta name="robots" content="index,follow,max-image-preview:large" />
@@ -14,13 +14,13 @@
 <meta property="og:locale" content="en_US" />
 <meta property="og:site_name" content="FrameShift" />
 <meta property="og:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta property="og:description" content="Windows desktop utility for local media actions from the Explorer right-click menu. Powered by FFmpeg and local AI." />
+<meta property="og:description" content="Windows desktop utility for local media actions from the Explorer right-click menu. Powered by FFmpeg and local AI, including remove background and audio separation." />
 <meta property="og:url" content="https://gaurox.github.io/FrameShift/" />
 <meta property="og:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
 <meta property="og:image:alt" content="FrameShift Explorer right-click menu demo" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta name="twitter:description" content="Windows desktop utility for local media actions from the Explorer right-click menu." />
+<meta name="twitter:description" content="Windows desktop utility for local media actions from the Explorer right-click menu, including remove background and audio separation." />
 <meta name="twitter:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
 <script type="application/ld+json">
 {
@@ -29,7 +29,7 @@
   "name": "FrameShift",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "1.0.1",
   "description": "Windows desktop utility for local media actions from the Explorer right-click menu.",
   "url": "https://gaurox.github.io/FrameShift/",
   "downloadUrl": "https://github.com/gaurox/FrameShift/releases",
@@ -45,6 +45,7 @@
     "Crop and resize",
     "Cut and extract",
     "Remove background locally",
+    "Separate audio into stems locally",
     "Image to PDF"
   ]
 }
@@ -76,7 +77,7 @@
     <div class="hero-inner">
       <h1 class="hero-title">Transform your media in two clicks.</h1>
       <p class="hero-sub">
-        Convert, compress, crop, cut, extract audio, remove backgrounds and more —
+        Convert, compress, crop, cut, extract audio, remove backgrounds, split audio stems and more —
         straight from the Windows right-click menu.
         <strong>100% local. 100% offline. No upload, ever.</strong>
       </p>
@@ -134,6 +135,17 @@
 
       <article class="demo-row reverse">
         <div class="demo-media">
+          <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio separation demo" loading="lazy" />
+        </div>
+        <div class="demo-text">
+          <span class="demo-tag">AI · vocals, drums, bass, other</span>
+          <h3>Audio Separation</h3>
+          <p>Split a song into vocals, drums, bass, other, or instrumental with a clean local workflow. Choose CPU or DirectML GPU and keep every export next to the original file.</p>
+        </div>
+      </article>
+
+      <article class="demo-row reverse">
+        <div class="demo-media">
           <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="Image to PDF demo" loading="lazy" />
         </div>
         <div class="demo-text">
@@ -158,11 +170,13 @@
   <section class="ai-banner">
     <div class="container">
       <div class="ai-card">
-        <h2>AI is coming to FrameShift.</h2>
+        <h2>Local AI is now part of FrameShift.</h2>
         <p>
-          Remove Background is the first action powered by a local AI model
-          (<a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>, MIT, running through ONNX Runtime DirectML).
-          More models are on the way in future versions — super-resolution, denoising, and beyond —
+          Remove Background and Audio Separation now run locally inside FrameShift through ONNX Runtime.
+          Remove Background uses
+          <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>,
+          while Audio Separation is powered by HTDemucs exports with CPU and DirectML GPU support.
+          More local AI modules are still planned for future versions, and they will follow the same rule:
           <strong>always local, never in the cloud.</strong>
         </p>
       </div>
@@ -188,28 +202,33 @@
           </ul>
         </article>
         <article class="actions-col">
-          <h3>Video <span class="count">10</span></h3>
+          <h3>Video <span class="count">13</span></h3>
           <ul>
             <li>Compress</li>
             <li>Convert</li>
             <li>Crop</li>
             <li>Cut</li>
+            <li>Remove audio</li>
             <li>Resize</li>
             <li>Change speed</li>
             <li>Extract audio</li>
+            <li>Extract frames</li>
             <li>Create GIF</li>
+            <li>Rotate / Flip</li>
             <li>Interpolate</li>
             <li>Media info</li>
           </ul>
         </article>
         <article class="actions-col">
-          <h3>Audio <span class="count">5</span></h3>
+          <h3>Audio <span class="count">7</span></h3>
           <ul>
             <li>Compress</li>
             <li>Convert</li>
             <li>Cut</li>
+            <li>Reverse</li>
             <li>Change speed</li>
             <li>Change pitch</li>
+            <li>Audio Separation <span class="ai-pill">AI</span></li>
           </ul>
         </article>
       </div>
@@ -252,8 +271,10 @@
         <figure><img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress audio" loading="lazy" /><figcaption>Compress</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/convert_audio.png" alt="Convert audio" loading="lazy" /><figcaption>Convert</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/Cut_audio.png" alt="Cut audio" loading="lazy" /><figcaption>Cut</figcaption></figure>
+        <figure><img src="screenshots/Audio_actions/Cut_audio.png" alt="Reverse audio" loading="lazy" /><figcaption>Reverse</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change audio speed" loading="lazy" /><figcaption>Change speed</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/Change_pitch.png" alt="Change pitch" loading="lazy" /><figcaption>Change pitch</figcaption></figure>
+        <figure><img src="screenshots/AI_actions/Audio_separation.png" alt="Audio separation" loading="lazy" /><figcaption>Audio Separation</figcaption></figure>
       </div>
     </div>
   </section>

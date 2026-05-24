@@ -20,6 +20,7 @@ Base active validée :
 - `FfmpegRunner.cs` pour tous les appels FFmpeg ;
 - `FfprobeRunner.cs` pour tous les appels FFprobe, y compris Media Info ;
 - `ProgressForm.cs` pour la progression partagée des actions classiques et de `remove-background` ;
+- `DownloadModelForm.cs` comme downloader IA partagé ;
 - `installer/FrameShift.iss` pour le packaging et l’intégration Explorer.
 
 UI partagée active :
@@ -70,6 +71,12 @@ Les autres actions restent principalement mono-fichier, soit par dépendance UI,
 - erreurs reportées dans la queue ;
 - préflight du modèle avant lancement si nécessaire ;
 - continuation du batch sur fichier corrompu.
+
+`separate-audio` suit aussi ce schéma :
+- picker si les stems ou le moteur ne sont pas déjà fournis ;
+- préflight du modèle CPU ou GPU selon le routage demandé ;
+- progression commune ;
+- continuation du batch sur erreur fichier.
 
 ## Exceptions assumées
 

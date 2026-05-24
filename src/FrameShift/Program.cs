@@ -8,7 +8,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using FrameShift.Core.AI.RemoveBackground;
+using RemoveBackground = FrameShift.Core.AI.RemoveBackground;
+using SeparateAudio = FrameShift.Core.AI.SeparateAudio;
 using FrameShift.Core.Actions;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
@@ -65,7 +66,12 @@ internal static class Program
 
         if (actionId.Equals("remove-background", StringComparison.OrdinalIgnoreCase))
         {
-            return RunRemoveBackground(registry, actionId, logger, inputPaths);
+            return RunRemoveBackground(registry, actionId, logger, inputPaths, options);
+        }
+
+        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunSeparateAudio(registry, actionId, logger, inputPaths, options);
         }
 
         if (ShouldRunConversionBatch(actionId, options))
@@ -258,9 +264,20 @@ internal static class Program
         ActionRegistry registry,
         string actionId,
         AppLogger logger,
-        IReadOnlyList<string> inputPaths)
+        IReadOnlyList<string> inputPaths,
+        IReadOnlyDictionary<string, string> options)
     {
-        return RunConversionBatch(registry, actionId, logger, inputPaths);
+        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
+    }
+
+    private static int RunSeparateAudio(
+        ActionRegistry registry,
+        string actionId,
+        AppLogger logger,
+        IReadOnlyList<string> inputPaths,
+        IReadOnlyDictionary<string, string> options)
+    {
+        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
     }
 
     private const string ImageToPdfMutexName = @"Local\FrameShift_ImageToPdf";
@@ -399,18 +416,101 @@ internal static class Program
 
     private static bool EnsureRemoveBackgroundModelReady(AppLogger logger)
     {
-        if (ModelLocator.ModelExists())
+        if (RemoveBackground.ModelLocator.ModelExists())
         {
             logger.Log("Program: Remove Background model already present.");
             return true;
         }
 
         logger.Log("Program: Remove Background model missing. Opening DownloadModelForm.");
-        using var downloadForm = new DownloadModelForm();
+        using var downloadForm = new DownloadModelForm(
+            "FrameShift AI - Remove Background",
+            "Download the AI model to enable background removal",
+            RemoveBackground.ModelDownloader.ModelDisplayName,
+            RemoveBackground.ModelDownloader.ModelLicense,
+            RemoveBackground.ModelDownloader.ExpectedSizeBytes,
+            async (progress, ct) =>
+            {
+                RemoveBackground.ModelLocator.EnsureDirectoryExists();
+                await RemoveBackground.ModelDownloader.DownloadAsync(
+                    RemoveBackground.ModelLocator.ModelPath,
+                    new Progress<RemoveBackground.ModelDownloadProgress>(p =>
+                        progress.Report(new FrameShift.Core.AI.AiModelDownloadProgress(p.Percent, p.Status))),
+                    ct).ConfigureAwait(false);
+            });
         var dialogResult = downloadForm.ShowDialog();
-        var modelReady = dialogResult == DialogResult.OK && ModelLocator.ModelExists();
+        var modelReady = dialogResult == DialogResult.OK && RemoveBackground.ModelLocator.ModelExists();
         logger.Log($"Program: Remove Background preflight completed. dialogResult={dialogResult}, modelReady={modelReady}.");
         return modelReady;
+    }
+
+    private static bool EnsureSeparateAudioModelReady(
+        AppLogger logger,
+        IReadOnlyDictionary<string, string>? options = null)
+    {
+        var preferGpu = ShouldPreferGpuForSeparateAudio(options);
+        var modelExists = preferGpu
+            ? SeparateAudio.ModelLocator.GpuModelExists()
+            : SeparateAudio.ModelLocator.CpuModelExists();
+
+        if (modelExists)
+        {
+            logger.Log($"Program: Separate Audio model already present. preferGpu={preferGpu}.");
+            return true;
+        }
+
+        var displayName = preferGpu
+            ? SeparateAudio.ModelDownloader.GpuModelDisplayName
+            : SeparateAudio.ModelDownloader.CpuModelDisplayName;
+        var sizeBytes = preferGpu
+            ? SeparateAudio.ModelDownloader.GpuExpectedSizeBytes
+            : SeparateAudio.ModelDownloader.CpuExpectedSizeBytes;
+        var destPath = preferGpu
+            ? SeparateAudio.ModelLocator.GpuModelPath
+            : SeparateAudio.ModelLocator.CpuModelPath;
+
+        logger.Log($"Program: Separate Audio model missing. Opening DownloadModelForm. preferGpu={preferGpu}.");
+        using var downloadForm = new DownloadModelForm(
+            "FrameShift AI - Audio Separation",
+            "Download the AI model to enable audio stem separation",
+            displayName,
+            SeparateAudio.ModelDownloader.ModelLicense,
+            sizeBytes,
+            async (progress, ct) =>
+            {
+                SeparateAudio.ModelLocator.EnsureDirectoryExists();
+                await SeparateAudio.ModelDownloader.DownloadAsync(
+                    preferGpu,
+                    destPath,
+                    new Progress<SeparateAudio.ModelDownloadProgress>(p =>
+                        progress.Report(new FrameShift.Core.AI.AiModelDownloadProgress(p.Percent, p.Status))),
+                    ct).ConfigureAwait(false);
+            });
+        var dialogResult = downloadForm.ShowDialog();
+        var ready = dialogResult == DialogResult.OK &&
+            (preferGpu ? SeparateAudio.ModelLocator.GpuModelExists() : SeparateAudio.ModelLocator.CpuModelExists());
+        logger.Log($"Program: Separate Audio preflight completed. dialogResult={dialogResult}, ready={ready}.");
+        return ready;
+    }
+
+    private static bool ShouldPreferGpuForSeparateAudio(IReadOnlyDictionary<string, string>? options)
+    {
+        if (options is not null &&
+            options.TryGetValue(ActionOptionKeys.SeparateEngine, out var engine) &&
+            !string.IsNullOrWhiteSpace(engine))
+        {
+            if (string.Equals(engine, "cpu", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (string.Equals(engine, "gpu", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return SeparateAudio.ModelLocator.IsDmlAvailable();
     }
 
     private static int RunMediaInfo(string inputPath, AppLogger logger)
@@ -450,9 +550,18 @@ internal static class Program
         return 0;
     }
 
-    private static int RunConversionBatch(ActionRegistry registry, string actionId, AppLogger logger, IReadOnlyList<string> inputPaths)
+    private static int RunConversionBatch(
+        ActionRegistry registry,
+        string actionId,
+        AppLogger logger,
+        IReadOnlyList<string> inputPaths,
+        IReadOnlyDictionary<string, string>? options = null)
     {
         logger.Log($"Program: RunConversionBatch entered. actionId={actionId}, inputPathCount={inputPaths.Count}, logPath={AppLogger.LogPath}, baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}.");
+        var effectiveOptions = options is null
+            ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            : new Dictionary<string, string>(options, StringComparer.OrdinalIgnoreCase);
+
         var definition = GetConversionBatchDefinition(actionId);
         if (definition is null)
         {
@@ -489,6 +598,20 @@ internal static class Program
             return 0;
         }
 
+        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureSeparateAudioOptions(inputPaths, effectiveOptions, logger))
+        {
+            logger.Log("Program: Separate Audio options prompt exited before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureSeparateAudioModelReady(logger, effectiveOptions))
+        {
+            logger.Log("Program: Separate Audio preflight exited before progress window opened.");
+            return 0;
+        }
+
         if (actionId.Equals("convert-video", StringComparison.OrdinalIgnoreCase) ||
             actionId.Equals("convert-audio", StringComparison.OrdinalIgnoreCase) ||
             actionId.Equals("convert-image", StringComparison.OrdinalIgnoreCase) ||
@@ -506,12 +629,87 @@ internal static class Program
         };
 
         var session = new ConversionBatchSession(definition, action, logger, progressForm);
+        if (effectiveOptions.Count > 0)
+        {
+            session.SetSharedOptions(effectiveOptions);
+        }
         progressForm.Shown += (_, _) => session.Start(inputPaths.ToArray(), cancellationSource.Token);
 
         logger.Log("Program: before Application.Run (batch progress form).");
         Application.Run(progressForm);
         logger.Log("Program: after Application.Run returns (batch progress form).");
         return session.ExitCode;
+    }
+
+    private static bool EnsureSeparateAudioOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger)
+    {
+        if (options.ContainsKey(ActionOptionKeys.Stems))
+        {
+            return true;
+        }
+
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var firstInputPath = inputPaths[0];
+        var sourceExtension = Path.GetExtension(firstInputPath).ToLowerInvariant();
+        if (sourceExtension is not (".wav" or ".mp3" or ".flac" or ".m4a" or ".ogg" or ".aac" or ".wma"))
+        {
+            ShowCliError(MediaActionMessages.UnsupportedSourceFormat(
+                sourceExtension,
+                SeparateAudio.SeparateAudioAction.GetSupportedExtensionsText()));
+            return false;
+        }
+
+        var toolLocator = new ToolLocator();
+        var ffprobeRunner = new FfprobeRunner(logger);
+        try
+        {
+            var ffprobePath = toolLocator.ResolveFfprobePath();
+            var probeAttempt = ffprobeRunner.TryProbeMediaAsync(ffprobePath, firstInputPath, CancellationToken.None).GetAwaiter().GetResult();
+
+            if (probeAttempt.Probe is null)
+            {
+                ShowCliError(probeAttempt.ErrorMessage ?? MediaActionMessages.ProbeFailed());
+                return false;
+            }
+
+            var probe = probeAttempt.Probe;
+            if (!probe.HasAudio)
+            {
+                ShowCliError(MediaActionMessages.MissingAudioTrack());
+                return false;
+            }
+
+            using var picker = new SeparateAudioPickerForm(
+                SeparateAudioPickerForm.BuildSourceLabel(inputPaths),
+                SeparateAudioPickerForm.BuildDurationLabel(probe, inputPaths.Count),
+                SeparateAudio.ModelLocator.IsDmlAvailable(),
+                options);
+
+            if (picker.ShowDialog() != DialogResult.OK || picker.SelectionOptions is null)
+            {
+                return false;
+            }
+
+            foreach (var item in picker.SelectionOptions)
+            {
+                options[item.Key] = item.Value;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Audio Separation")));
+            return false;
+        }
     }
 
     private static int RunDeferredProgressConversionBatch(
@@ -719,6 +917,19 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(token, "--stems", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.Stems] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--separate-engine", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--engine", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SeparateEngine] = args[++index];
+                continue;
+            }
+
             if ((string.Equals(token, "--target-size-bytes", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(token, "--size-bytes", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
             {
@@ -897,6 +1108,11 @@ internal static class Program
         if (actionId.Equals("remove-background", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateRemoveBackgroundDefinition();
+        }
+
+        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateSeparateAudioDefinition();
         }
 
         return null;
