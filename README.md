@@ -23,12 +23,6 @@ Remove backgrounds locally with a focused AI workflow directly launched from Exp
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
 </p>
 
-Split music locally into vocals, drums, bass, other, and instrumental with the new audio separation workflow.
-
-<p align="center">
-  <img src="screenshots/AI_actions/Audio_separation.png" alt="FrameShift audio separation workflow" width="900" />
-</p>
-
 Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
 
 <p align="center">
