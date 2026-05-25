@@ -219,27 +219,39 @@ public sealed class CropVideoAction : IFrameShiftAction
             height = sourceHeight - y;
         }
 
+        if (x > 0 && x % 2 != 0 && width > minWidth)
+        {
+            x++;
+            width--;
+        }
+
+        if (y > 0 && y % 2 != 0 && height > minHeight)
+        {
+            y++;
+            height--;
+        }
+
         if (width > 1 && width % 2 != 0)
         {
-            if (x + width < sourceWidth)
-            {
-                width++;
-            }
-            else
+            if (width > minWidth)
             {
                 width--;
+            }
+            else if (x + width < sourceWidth)
+            {
+                width++;
             }
         }
 
         if (height > 1 && height % 2 != 0)
         {
-            if (y + height < sourceHeight)
-            {
-                height++;
-            }
-            else
+            if (height > minHeight)
             {
                 height--;
+            }
+            else if (y + height < sourceHeight)
+            {
+                height++;
             }
         }
 

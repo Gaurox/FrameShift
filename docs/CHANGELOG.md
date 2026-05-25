@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.0.4
+
+- Upgraded `Crop Image` with automatic border-aware crop suggestions, mouse-wheel zoom, fit-to-view, and drag navigation for faster visual adjustments.
+- Brought the same interactive improvements to `Crop Video`, including frame-based auto crop that applies the selected rectangle to the full video.
+- Tightened video crop normalization so even-dimension adjustments prefer trimming inward when needed, helping remove residual border pixels more cleanly.
+- Refreshed the public README, site copy, and updated crop screenshots for the improved crop workflow.
+
 ## 1.0.3
 
 - Added `Remove Noise (Audio)` picker UI with strength selection (Light / Normal / Strong / Maximum), optional stereo processing (two independent L+R passes), and 8-second audio preview.

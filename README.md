@@ -29,6 +29,8 @@ Build image-based PDF documents with a visual layout workflow designed for quick
   <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="FrameShift image to PDF demo" width="900" />
 </p>
 
+Crop images and videos with a dedicated visual editor that now supports automatic border detection, mouse-wheel zoom, and drag navigation for tighter framing with less manual work.
+
 ## Why FrameShift
 
 - Right-click driven workflow for everyday media tasks
@@ -57,7 +59,7 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Create GIF | Turn a video segment into a GIF with preview-oriented controls. | <img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" width="320" /> |
 | Extract Audio | Pull the audio track from a video into a standalone file. | <img src="screenshots/Video_actions/Extract_audio.png" alt="Extract Audio" width="320" /> |
 | Cut Video | Trim a video to the exact segment you want. | <img src="screenshots/Video_actions/Cut_video.png" alt="Cut Video" width="320" /> |
-| Crop Video | Remove unwanted borders or focus on a specific video area. | <img src="screenshots/Video_actions/Crop_video.png" alt="Crop Video" width="320" /> |
+| Crop Video | Remove unwanted borders or focus on a specific video area with visual controls, frame-based auto crop, zoom, and drag navigation. | <img src="screenshots/Video_actions/Crop_video.png" alt="Crop Video" width="320" /> |
 | Rotate / Flip Video | Fix orientation issues or mirror video content quickly. | <img src="screenshots/Video_actions/rotate_video.png" alt="Rotate or Flip Video" width="320" /> |
 | Resize Video | Change video dimensions for sharing, compatibility, or lighter exports. | <img src="screenshots/Video_actions/Resize_video.png" alt="Resize Video" width="320" /> |
 | Compress Video | Reduce file size with practical quality-oriented presets. | <img src="screenshots/Video_actions/compress_video.png" alt="Compress Video" width="320" /> |
@@ -85,7 +87,7 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Convert Image | Convert images between practical everyday formats. | <img src="screenshots/Image_actions/Convert_Image.png" alt="Convert Image" width="320" /> |
 | Compress Image | Reduce image size while keeping the process quick and readable. | <img src="screenshots/Image_actions/Compress_image.png" alt="Compress Image" width="320" /> |
 | Convert to Icon | Build `.ico` files from images with multi-size export support. | <img src="screenshots/Image_actions/ConvertToIcon.png" alt="Convert to Icon" width="320" /> |
-| Crop Image | Crop images visually with direct manipulation controls. | <img src="screenshots/Image_actions/Crop_image.png" alt="Crop Image" width="320" /> |
+| Crop Image | Crop images visually with direct manipulation controls, auto crop, mouse-wheel zoom, and drag navigation. | <img src="screenshots/Image_actions/Crop_image.png" alt="Crop Image" width="320" /> |
 | Resize Image | Resize images for web, sharing, or asset preparation. | <img src="screenshots/Image_actions/resize_image.png" alt="Resize Image" width="320" /> |
 | Rotate / Flip Image | Correct image orientation or mirror an image in a few clicks. | <img src="screenshots/Image_actions/Rotate_image.png" alt="Rotate or Flip Image" width="320" /> |
 | Image to PDF | Assemble one or more images into a PDF document. | <img src="screenshots/Image_actions/Image_to_pdf.png" alt="Image to PDF" width="320" /> |

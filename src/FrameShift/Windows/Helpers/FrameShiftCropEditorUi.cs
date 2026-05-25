@@ -126,7 +126,7 @@ public static class FrameShiftCropEditorUi
         return panel;
     }
 
-    public static Panel CreateToolsSection(Button primaryToolButton, Button secondaryToolButton, out Panel toolsButtonHost)
+    public static Panel CreateToolsSection(out Panel toolsButtonHost, params Button[] toolButtons)
     {
         var section = FrameShiftUiFactory.CreateFillSection("Tools", out var contentHost);
         section.Margin = Padding.Empty;
@@ -138,8 +138,12 @@ public static class FrameShiftCropEditorUi
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
-        toolsButtonHost.Controls.Add(primaryToolButton);
-        toolsButtonHost.Controls.Add(secondaryToolButton);
+
+        foreach (var button in toolButtons)
+        {
+            toolsButtonHost.Controls.Add(button);
+        }
+
         contentHost.Controls.Add(toolsButtonHost);
 
         return section;
@@ -151,9 +155,9 @@ public static class FrameShiftCropEditorUi
         form.Shown += (_, _) => FrameShiftUiLayout.LayoutFooterButtons(footerPanel, cancelButton, okButton, FrameShiftUiMetrics.BlockGap);
     }
 
-    public static void WireDualToolLayout(Form form, Panel toolsButtonHost, Button leftButton, Button rightButton)
+    public static void WireToolLayout(Form form, Panel toolsButtonHost, params Button[] toolButtons)
     {
-        toolsButtonHost.Resize += (_, _) => FrameShiftUiLayout.LayoutEvenButtons(toolsButtonHost, FrameShiftUiMetrics.BlockGap, leftButton, rightButton);
-        form.Shown += (_, _) => FrameShiftUiLayout.LayoutEvenButtons(toolsButtonHost, FrameShiftUiMetrics.BlockGap, leftButton, rightButton);
+        toolsButtonHost.Resize += (_, _) => FrameShiftUiLayout.LayoutEvenButtons(toolsButtonHost, FrameShiftUiMetrics.BlockGap, toolButtons);
+        form.Shown += (_, _) => FrameShiftUiLayout.LayoutEvenButtons(toolsButtonHost, FrameShiftUiMetrics.BlockGap, toolButtons);
     }
 }

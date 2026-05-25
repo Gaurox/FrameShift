@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using FrameShift.Core.Actions;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
+using FrameShift.Core.Helpers;
 using FrameShift.Windows.Controls;
 using FrameShift.Windows.Helpers;
 
@@ -16,6 +17,9 @@ namespace FrameShift.Windows.Forms;
 public sealed class CropVideoForm : Form
 {
     private const int MinSourceCropDimension = 146;
+    private const float PreviewZoomStep = 1.12f;
+    private const float MinimumPreviewZoom = 1f;
+    private const float MaximumPreviewZoom = 12f;
     private readonly string _inputPath;
     private readonly string _ffmpegPath;
     private readonly MediaProbeResult _probe;
@@ -33,11 +37,15 @@ public sealed class CropVideoForm : Form
     private RectangleF _cropRect = new(0, 0, 1, 1);
     private RectangleF _dragRect = new(0, 0, 1, 1);
     private PointF _dragStart;
+    private PointF _panStartCenter;
     private string _dragMode = string.Empty;
     private double _pendingPreviewSeconds;
     private VideoCropSettings? _selection;
     private bool _closing;
     private bool _isLiveResize;
+    private float _previewZoom = 1f;
+    private float _fitImageScale = 1f;
+    private PointF _previewSourceCenter = new(0.5f, 0.5f);
     private CancellationTokenSource? _previewLoadCts;
 
     public CropVideoForm(
@@ -84,7 +92,10 @@ public sealed class CropVideoForm : Form
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;
         _previewPanel.MouseMove += PreviewPanelOnMouseMove;
         _previewPanel.MouseUp += PreviewPanelOnMouseUp;
+        _previewPanel.MouseWheel += PreviewPanelOnMouseWheel;
+        _previewPanel.MouseEnter += (_, _) => _previewPanel.Focus();
         _previewPanel.Resize += (_, _) => SchedulePreviewLayoutRefresh();
+        _previewPanel.TabStop = true;
 
         _timelineBar = new SeekTrackBar
         {
@@ -183,12 +194,15 @@ public sealed class CropVideoForm : Form
         mediaCard.Controls.Add(mediaLayout);
         rightLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, FrameShiftUiFactory.GetInfoCardHeight(3) + mediaCard.Margin.Vertical);
 
-        var centerButton = CreateActionButton("Center", primary: false);
-        centerButton.Click += (_, _) => CenterCropRect();
+        var autoCropButton = CreateActionButton("Auto crop", primary: false);
+        autoCropButton.Click += (_, _) => ApplyAutoCrop();
+
+        var fitButton = CreateActionButton("Fit", primary: false);
+        fitButton.Click += (_, _) => FitPreviewToView();
 
         var resetButton = CreateActionButton("Reset", primary: false);
         resetButton.Click += (_, _) => ResetCropRect();
-        var toolsSection = FrameShiftCropEditorUi.CreateToolsSection(centerButton, resetButton, out var toolsButtonHost);
+        var toolsSection = FrameShiftCropEditorUi.CreateToolsSection(out var toolsButtonHost, autoCropButton, fitButton, resetButton);
 
         var okButton = CreateActionButton("OK", primary: true);
         okButton.Size = new Size(FrameShiftUiMetrics.PrimaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight);
@@ -276,7 +290,7 @@ public sealed class CropVideoForm : Form
         };
 
         FrameShiftCropEditorUi.WireFooterLayout(this, footerPanel, cancelButton, okButton);
-        FrameShiftCropEditorUi.WireDualToolLayout(this, toolsButtonHost, centerButton, resetButton);
+        FrameShiftCropEditorUi.WireToolLayout(this, toolsButtonHost, autoCropButton, fitButton, resetButton);
 
         ResumeLayout(true);
     }
@@ -352,6 +366,11 @@ public sealed class CropVideoForm : Form
 
             DisposePreviewBitmaps();
             _previewBitmap = newBitmap;
+            if (Math.Abs(_previewSourceCenter.X - 0.5f) < 0.0001f &&
+                Math.Abs(_previewSourceCenter.Y - 0.5f) < 0.0001f)
+            {
+                _previewSourceCenter = new PointF(_probe.VideoWidth / 2.0f, _probe.VideoHeight / 2.0f);
+            }
             UpdateImageBounds();
 
             if (oldSourceCrop is not null)
@@ -389,12 +408,27 @@ public sealed class CropVideoForm : Form
 
     private void UpdateImageBounds()
     {
-        if (_previewBitmap is null)
+        if (_previewBitmap is null || _previewPanel.ClientSize.Width <= 1 || _previewPanel.ClientSize.Height <= 1)
         {
             return;
         }
 
-        _imageBounds = PreviewLayoutHelper.GetCenteredImageBounds(_previewPanel.ClientSize, _previewBitmap.Size);
+        var fitBounds = PreviewLayoutHelper.GetCenteredImageBounds(_previewPanel.ClientSize, _previewBitmap.Size);
+        _fitImageScale = fitBounds.Width / Math.Max(1, _previewBitmap.Width);
+        if (_fitImageScale <= 0.0001f)
+        {
+            _fitImageScale = 1f;
+        }
+
+        _previewZoom = Math.Clamp(_previewZoom, MinimumPreviewZoom, MaximumPreviewZoom);
+        var displayScale = _fitImageScale * _previewZoom;
+        var displayWidth = (float)(_previewBitmap.Width * displayScale);
+        var displayHeight = (float)(_previewBitmap.Height * displayScale);
+        var panelCenterX = _previewPanel.ClientSize.Width / 2.0f;
+        var panelCenterY = _previewPanel.ClientSize.Height / 2.0f;
+        var imageX = panelCenterX - (_previewSourceCenter.X * displayScale);
+        var imageY = panelCenterY - (_previewSourceCenter.Y * displayScale);
+        _imageBounds = new RectangleF(imageX, imageY, displayWidth, displayHeight);
     }
 
     private void ResetCropRect()
@@ -423,12 +457,51 @@ public sealed class CropVideoForm : Form
         _previewPanel.Invalidate();
     }
 
+    private void FitPreviewToView()
+    {
+        var sourceCrop = GetSourceCropRect();
+        _previewZoom = 1f;
+        _previewSourceCenter = new PointF(_probe.VideoWidth / 2.0f, _probe.VideoHeight / 2.0f);
+        UpdateImageBounds();
+        SetCropRectFromSource(sourceCrop);
+        _previewPanel.Invalidate();
+    }
+
     private void CenterCropRect()
     {
         _cropRect.X = _imageBounds.X + ((_imageBounds.Width - _cropRect.Width) / 2.0f);
         _cropRect.Y = _imageBounds.Y + ((_imageBounds.Height - _cropRect.Height) / 2.0f);
         _cropRect = ClampCropRect(_cropRect, _imageBounds, GetRatioValue(GetSelectedRatioMode()), GetMinimumPreviewCropSize());
         _previewPanel.Invalidate();
+    }
+
+    private void ApplyAutoCrop()
+    {
+        if (_previewBitmap is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!ImageAutoCropDetector.TryDetectCropBounds(_previewBitmap, out var detectedBounds))
+            {
+                MessageBox.Show(this, "Auto crop could not detect clear borders on this frame.", "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            SelectRatioMode("Free");
+            var normalizedCrop = NormalizeCropRect(detectedBounds.X, detectedBounds.Y, detectedBounds.Width, detectedBounds.Height, _probe.VideoWidth, _probe.VideoHeight);
+            var previousRect = _cropRect;
+            SetCropRectFromSource(normalizedCrop);
+            UpdateSizeLabel();
+            InvalidateCropArea(previousRect, _cropRect);
+        }
+        catch (Exception ex)
+        {
+            var message = ConversionActionHelper.GetFriendlyExceptionMessage(ex, "Auto crop failed.");
+            MessageBox.Show(this, message, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private VideoCropSettings GetSourceCropRect()
@@ -533,6 +606,13 @@ public sealed class CropVideoForm : Form
         _dragMode = GetHitMode(point);
         if (string.IsNullOrWhiteSpace(_dragMode))
         {
+            if (_previewZoom > MinimumPreviewZoom && _imageBounds.Contains(point))
+            {
+                _dragMode = "panview";
+                _dragStart = point;
+                _panStartCenter = _previewSourceCenter;
+                _previewPanel.Cursor = Cursors.Hand;
+            }
             return;
         }
 
@@ -545,7 +625,16 @@ public sealed class CropVideoForm : Form
         var point = new PointF(e.X, e.Y);
         if (string.IsNullOrWhiteSpace(_dragMode))
         {
-            _previewPanel.Cursor = GetCursorForHitMode(GetHitMode(point));
+            var hitMode = GetHitMode(point);
+            _previewPanel.Cursor = string.IsNullOrWhiteSpace(hitMode) && _previewZoom > MinimumPreviewZoom && _imageBounds.Contains(point)
+                ? Cursors.Hand
+                : GetCursorForHitMode(hitMode);
+            return;
+        }
+
+        if (_dragMode == "panview")
+        {
+            PanPreview(point);
             return;
         }
 
@@ -569,6 +658,22 @@ public sealed class CropVideoForm : Form
         }
 
         _dragMode = string.Empty;
+        var point = new PointF(e.X, e.Y);
+        var hitMode = GetHitMode(point);
+        _previewPanel.Cursor = string.IsNullOrWhiteSpace(hitMode) && _previewZoom > MinimumPreviewZoom && _imageBounds.Contains(point)
+            ? Cursors.Hand
+            : GetCursorForHitMode(hitMode);
+    }
+
+    private void PreviewPanelOnMouseWheel(object? sender, MouseEventArgs e)
+    {
+        if (_previewBitmap is null || e.Delta == 0)
+        {
+            return;
+        }
+
+        var zoomFactor = (float)Math.Pow(PreviewZoomStep, e.Delta / 120.0);
+        ZoomPreviewAtPoint(_previewZoom * zoomFactor, e.Location);
     }
 
     private void ApplyRatioToCurrentCrop()
@@ -623,6 +728,7 @@ public sealed class CropVideoForm : Form
     {
         return hitMode switch
         {
+            "panview" => Cursors.Hand,
             "move" => Cursors.SizeAll,
             "tl" or "br" => Cursors.SizeNWSE,
             "tr" or "bl" => Cursors.SizeNESW,
@@ -1003,6 +1109,15 @@ public sealed class CropVideoForm : Form
         return _ratioButtons.FirstOrDefault(button => button.Checked)?.Tag as string ?? "Free";
     }
 
+    private void SelectRatioMode(string mode)
+    {
+        var targetButton = _ratioButtons.FirstOrDefault(button => string.Equals(button.Tag as string, mode, StringComparison.OrdinalIgnoreCase));
+        if (targetButton is not null && !targetButton.Checked)
+        {
+            targetButton.Checked = true;
+        }
+    }
+
     private static string FormatTimeForDisplay(double seconds)
     {
         if (seconds < 0)
@@ -1052,27 +1167,39 @@ public sealed class CropVideoForm : Form
             height = sourceHeight - y;
         }
 
+        if (x > 0 && x % 2 != 0 && width > minWidth)
+        {
+            x++;
+            width--;
+        }
+
+        if (y > 0 && y % 2 != 0 && height > minHeight)
+        {
+            y++;
+            height--;
+        }
+
         if (width > 1 && width % 2 != 0)
         {
-            if (x + width < sourceWidth)
-            {
-                width++;
-            }
-            else
+            if (width > minWidth)
             {
                 width--;
+            }
+            else if (x + width < sourceWidth)
+            {
+                width++;
             }
         }
 
         if (height > 1 && height % 2 != 0)
         {
-            if (y + height < sourceHeight)
-            {
-                height++;
-            }
-            else
+            if (height > minHeight)
             {
                 height--;
+            }
+            else if (y + height < sourceHeight)
+            {
+                height++;
             }
         }
 
@@ -1168,6 +1295,112 @@ public sealed class CropVideoForm : Form
 
         _resizeRefreshTimer.Stop();
         _resizeRefreshTimer.Start();
+    }
+
+    private void ZoomPreviewAtPoint(float zoom, Point clientAnchor)
+    {
+        if (_previewBitmap is null)
+        {
+            return;
+        }
+
+        var nextZoom = Math.Clamp(zoom, MinimumPreviewZoom, MaximumPreviewZoom);
+        if (Math.Abs(nextZoom - _previewZoom) < 0.0001f)
+        {
+            return;
+        }
+
+        var sourceCrop = GetSourceCropRect();
+        var anchorSourcePoint = GetSourcePointForPreviewPoint(clientAnchor);
+        _previewZoom = nextZoom;
+
+        var displayScale = _fitImageScale * _previewZoom;
+        var panelCenterX = _previewPanel.ClientSize.Width / 2.0f;
+        var panelCenterY = _previewPanel.ClientSize.Height / 2.0f;
+        _previewSourceCenter = new PointF(
+            (float)(anchorSourcePoint.X - ((clientAnchor.X - panelCenterX) / displayScale)),
+            (float)(anchorSourcePoint.Y - ((clientAnchor.Y - panelCenterY) / displayScale)));
+        ClampPreviewSourceCenter();
+        UpdateImageBounds();
+        SetCropRectFromSource(sourceCrop);
+        UpdateSizeLabel();
+        _previewPanel.Invalidate();
+    }
+
+    private PointF GetSourcePointForPreviewPoint(Point clientPoint)
+    {
+        if (_previewBitmap is null || _imageBounds.Width <= 0.001f || _imageBounds.Height <= 0.001f)
+        {
+            return new PointF(_probe.VideoWidth / 2.0f, _probe.VideoHeight / 2.0f);
+        }
+
+        var scaleX = _probe.VideoWidth / _imageBounds.Width;
+        var scaleY = _probe.VideoHeight / _imageBounds.Height;
+        var sourceX = (float)Math.Clamp((clientPoint.X - _imageBounds.X) * scaleX, 0, _probe.VideoWidth);
+        var sourceY = (float)Math.Clamp((clientPoint.Y - _imageBounds.Y) * scaleY, 0, _probe.VideoHeight);
+        return new PointF(sourceX, sourceY);
+    }
+
+    private void ClampPreviewSourceCenter()
+    {
+        if (_previewBitmap is null)
+        {
+            return;
+        }
+
+        var displayScale = _fitImageScale * _previewZoom;
+        if (displayScale <= 0.0001f)
+        {
+            _previewSourceCenter = new PointF(_probe.VideoWidth / 2.0f, _probe.VideoHeight / 2.0f);
+            return;
+        }
+
+        var halfVisibleWidth = (_previewPanel.ClientSize.Width / 2.0f) / displayScale;
+        var halfVisibleHeight = (_previewPanel.ClientSize.Height / 2.0f) / displayScale;
+
+        if (_probe.VideoWidth <= halfVisibleWidth * 2.0f)
+        {
+            _previewSourceCenter.X = _probe.VideoWidth / 2.0f;
+        }
+        else
+        {
+            _previewSourceCenter.X = Clamp(_previewSourceCenter.X, (float)halfVisibleWidth, _probe.VideoWidth - (float)halfVisibleWidth);
+        }
+
+        if (_probe.VideoHeight <= halfVisibleHeight * 2.0f)
+        {
+            _previewSourceCenter.Y = _probe.VideoHeight / 2.0f;
+        }
+        else
+        {
+            _previewSourceCenter.Y = Clamp(_previewSourceCenter.Y, (float)halfVisibleHeight, _probe.VideoHeight - (float)halfVisibleHeight);
+        }
+    }
+
+    private void PanPreview(PointF point)
+    {
+        if (_previewBitmap is null)
+        {
+            return;
+        }
+
+        var displayScale = _fitImageScale * _previewZoom;
+        if (displayScale <= 0.0001f)
+        {
+            return;
+        }
+
+        var dx = point.X - _dragStart.X;
+        var dy = point.Y - _dragStart.Y;
+        var sourceCrop = GetSourceCropRect();
+        _previewSourceCenter = new PointF(
+            _panStartCenter.X - (dx / displayScale),
+            _panStartCenter.Y - (dy / displayScale));
+        ClampPreviewSourceCenter();
+        UpdateImageBounds();
+        SetCropRectFromSource(sourceCrop);
+        UpdateSizeLabel();
+        _previewPanel.Invalidate();
     }
 
     private static float Clamp(float value, float min, float max)
