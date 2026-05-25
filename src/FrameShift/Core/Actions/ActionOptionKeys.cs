@@ -35,4 +35,6 @@ public static class ActionOptionKeys
     public const string InterpolateFps = "interpolate-fps";
     public const string Stems = "stems";
     public const string SeparateEngine = "separate-engine";
+    public const string NoiseStrength = "noise-strength";
+    public const string ProcessStereoAudio = "process-stereo-audio";
 }

@@ -40,17 +40,19 @@ internal sealed class RemoveNoiseEngine : IDisposable
     public async Task<string> RemoveNoiseAsync(
         string inputPath,
         IProgress<(int percent, string status)> progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        float minGain = 0f)
     {
         return await Task.Run(
-            () => RemoveNoiseCore(inputPath, progress, cancellationToken),
+            () => RemoveNoiseCore(inputPath, progress, cancellationToken, minGain),
             cancellationToken).ConfigureAwait(false);
     }
 
     private string RemoveNoiseCore(
         string inputPath,
         IProgress<(int percent, string status)> progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        float minGain)
     {
         string? outputPath = null;
 
@@ -214,7 +216,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             var specMaskedIm = new float[SpecBins];
             Array.Copy(specRe, specMaskedRe, SpecBins);
             Array.Copy(specIm, specMaskedIm, SpecBins);
-            ApplyOfficialErbBandGains(specMaskedRe, specMaskedIm, erbGains, erbBandWidths);
+            ApplyOfficialErbBandGains(specMaskedRe, specMaskedIm, erbGains, erbBandWidths, minGain);
 
             var dfOutputRe = new float[SpecBins];
             var dfOutputIm = new float[SpecBins];
@@ -231,6 +233,16 @@ internal sealed class RemoveNoiseEngine : IDisposable
                 NbDf,
                 dfOutputRe,
                 dfOutputIm);
+
+            // apply attenuation floor to DF bins (blend with original)
+            if (minGain > 0f)
+            {
+                for (int k = 0; k < NbDf; k++)
+                {
+                    dfOutputRe[k] += minGain * (specRe[k] - dfOutputRe[k]);
+                    dfOutputIm[k] += minGain * (specIm[k] - dfOutputIm[k]);
+                }
+            }
 
             for (int k = NbDf; k < SpecBins; k++)
             {
@@ -420,12 +432,12 @@ internal sealed class RemoveNoiseEngine : IDisposable
         return result;
     }
 
-    private static void ApplyOfficialErbBandGains(float[] specRe, float[] specIm, float[] erbGains, int[] erbBandWidths)
+    private static void ApplyOfficialErbBandGains(float[] specRe, float[] specIm, float[] erbGains, int[] erbBandWidths, float minGain = 0f)
     {
         int offset = 0;
         for (int b = 0; b < erbBandWidths.Length; b++)
         {
-            float gain = erbGains[b];
+            float gain = MathF.Max(erbGains[b], minGain);
             int bandWidth = erbBandWidths[b];
             for (int j = 0; j < bandWidth; j++)
             {

@@ -135,6 +135,11 @@ Media Info :
 - `src/FrameShift/Core/AI/SeparateAudio/ModelLocator.cs`
 - `src/FrameShift/Core/AI/SeparateAudio/OverlapAddRing.cs`
 - `src/FrameShift/Core/AI/SeparateAudio/SeparateAudioAction.cs`
+- `src/FrameShift/Core/AI/RemoveNoise/DeepFilterNetModelLocator.cs`
+- `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseAction.cs`
+- `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseEngine.cs`
+- `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoAction.cs`
+- `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoSettings.cs`
 
 ## Windows/UI
 
@@ -145,6 +150,7 @@ Batch et progression :
 IA :
 - `src/FrameShift/Windows/AI/DownloadModelForm.cs`
 - `src/FrameShift/Windows/AI/SeparateAudioPickerForm.cs`
+- `src/FrameShift/Windows/AI/RemoveNoiseVideoPickerForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`

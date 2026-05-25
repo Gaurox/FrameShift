@@ -17,9 +17,7 @@
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-Remove backgrounds locally with a focused AI workflow directly launched from Explorer.
-Remove noise from audio files locally with the same right-click flow, keeping the output next to the source.
-Remove noise from audio files locally with the same right-click flow, without leaving a trace on your machine.
+Remove backgrounds, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
@@ -60,11 +58,12 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Extract Audio | Pull the audio track from a video into a standalone file. | <img src="screenshots/Video_actions/Extract_audio.png" alt="Extract Audio" width="320" /> |
 | Cut Video | Trim a video to the exact segment you want. | <img src="screenshots/Video_actions/Cut_video.png" alt="Cut Video" width="320" /> |
 | Crop Video | Remove unwanted borders or focus on a specific video area. | <img src="screenshots/Video_actions/Crop_video.png" alt="Crop Video" width="320" /> |
-| Rotate / Flip Video | Fix orientation issues or mirror video content quickly. | <img src="screenshots/Video_actions/Resize_video.png" alt="Rotate or Flip Video" width="320" /> |
+| Rotate / Flip Video | Fix orientation issues or mirror video content quickly. | <img src="screenshots/Video_actions/rotate_video.png" alt="Rotate or Flip Video" width="320" /> |
 | Resize Video | Change video dimensions for sharing, compatibility, or lighter exports. | <img src="screenshots/Video_actions/Resize_video.png" alt="Resize Video" width="320" /> |
 | Compress Video | Reduce file size with practical quality-oriented presets. | <img src="screenshots/Video_actions/compress_video.png" alt="Compress Video" width="320" /> |
 | Change Video Speed | Speed up or slow down a video with a simple adjustment flow. | <img src="screenshots/Video_actions/Change_video_speed.png" alt="Change Video Speed" width="320" /> |
 | Interpolate Video | Generate smoother motion and higher frame-rate playback. | <img src="screenshots/Video_actions/Interpolate_video.png" alt="Interpolate Video" width="320" /> |
+| Remove Noise (Video) | Remove background noise from a video's audio track without re-encoding the video. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
 | Media Info | Inspect technical media details directly from the FrameShift workflow. | <img src="screenshots/Video_actions/Media_info_video.png" alt="Media Info" width="320" /> |
 
 ### Audio Actions
@@ -73,11 +72,11 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | --- | --- | --- |
 | Convert Audio | Convert audio files to other formats with a clean minimal flow. | <img src="screenshots/Audio_actions/convert_audio.png" alt="Convert Audio" width="320" /> |
 | Cut Audio | Trim audio precisely without leaving the right-click workflow. | <img src="screenshots/Audio_actions/Cut_audio.png" alt="Cut Audio" width="320" /> |
-| Reverse Audio | Reverse an audio file for sound design or quick experiments. | <img src="screenshots/Audio_actions/Cut_audio.png" alt="Reverse Audio" width="320" /> |
+| Reverse Audio | Reverse an audio file for sound design or quick experiments. | |
 | Compress Audio | Reduce audio size for easier sharing and storage. | <img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress Audio" width="320" /> |
 | Change Pitch | Shift audio pitch with a straightforward adjustment interface. | <img src="screenshots/Audio_actions/Change_pitch.png" alt="Change Pitch" width="320" /> |
 | Change Audio Speed | Speed up or slow down audio while keeping the workflow simple. | <img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change Audio Speed" width="320" /> |
-| Remove Noise | Reduce background noise in audio with the local DeepFilterNet3 workflow. |  |
+| Remove Noise (Audio) | Reduce background noise in audio with the local DeepFilterNet3 workflow. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
 
 ### Image Actions
 
@@ -96,6 +95,8 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Action | Short Description | Screenshot |
 | --- | --- | --- |
 | Remove Background | Remove the background from an image with the local AI workflow. | <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove Background" width="320" /> |
+| Remove Noise (Audio) | Strip background noise from audio files with strength control, stereo mode, and live preview. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
+| Remove Noise (Video) | Denoise a video's audio track without re-encoding the video stream. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
 | Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |
 
 ## Built For

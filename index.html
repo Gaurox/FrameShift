@@ -29,7 +29,7 @@
   "name": "FrameShift",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "1.0.2",
+  "softwareVersion": "1.0.3",
   "description": "Windows desktop utility for local media actions from the Explorer right-click menu.",
   "url": "https://gaurox.github.io/FrameShift/",
   "downloadUrl": "https://github.com/gaurox/FrameShift/releases",
@@ -136,17 +136,6 @@
 
       <article class="demo-row reverse">
         <div class="demo-media">
-          <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio separation demo" loading="lazy" />
-        </div>
-        <div class="demo-text">
-          <span class="demo-tag">AI · vocals, drums, bass, other</span>
-          <h3>Audio Separation</h3>
-          <p>Split a song into vocals, drums, bass, other, or instrumental with a clean local workflow. Choose CPU or DirectML GPU and keep every export next to the original file.</p>
-        </div>
-      </article>
-
-      <article class="demo-row reverse">
-        <div class="demo-media">
           <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="Image to PDF demo" loading="lazy" />
         </div>
         <div class="demo-text">
@@ -173,12 +162,12 @@
       <div class="ai-card">
         <h2>Local AI is now part of FrameShift.</h2>
         <p>
-          Remove Background and Audio Separation now run locally inside FrameShift through ONNX Runtime.
+          Four AI actions now run locally inside FrameShift through ONNX Runtime.
           Remove Background uses
-          <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>,
-          Remove Noise uses DeepFilterNet3 exports for offline speech denoising,
-          while Audio Separation is powered by HTDemucs exports with CPU and DirectML GPU support.
-          More local AI modules are still planned for future versions, and they will follow the same rule:
+          <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>.
+          Remove Noise (Audio and Video) uses DeepFilterNet3 exports for offline speech denoising.
+          Audio Separation is powered by HTDemucs exports with CPU and DirectML GPU support.
+          More local AI modules are planned for future versions, and they will follow the same rule:
           <strong>always local, never in the cloud.</strong>
         </p>
       </div>
@@ -262,11 +251,13 @@
         <figure><img src="screenshots/Video_actions/Crop_video.png" alt="Crop video" loading="lazy" /><figcaption>Crop</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Cut_video.png" alt="Cut video" loading="lazy" /><figcaption>Cut</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Resize_video.png" alt="Resize video" loading="lazy" /><figcaption>Resize</figcaption></figure>
+        <figure><img src="screenshots/Video_actions/rotate_video.png" alt="Rotate / flip video" loading="lazy" /><figcaption>Rotate / Flip</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Change_video_speed.png" alt="Change video speed" loading="lazy" /><figcaption>Change speed</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Extract_audio.png" alt="Extract audio" loading="lazy" /><figcaption>Extract audio</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" loading="lazy" /><figcaption>Create GIF</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Interpolate_video.png" alt="Interpolate video" loading="lazy" /><figcaption>Interpolate</figcaption></figure>
         <figure><img src="screenshots/Video_actions/Media_info_video.png" alt="Media info" loading="lazy" /><figcaption>Media info</figcaption></figure>
+        <figure><img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise video" loading="lazy" /><figcaption>Remove Noise</figcaption></figure>
       </div>
 
       <h3 class="gallery-subtitle">Audio</h3>
@@ -274,9 +265,10 @@
         <figure><img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress audio" loading="lazy" /><figcaption>Compress</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/convert_audio.png" alt="Convert audio" loading="lazy" /><figcaption>Convert</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/Cut_audio.png" alt="Cut audio" loading="lazy" /><figcaption>Cut</figcaption></figure>
-        <figure><img src="screenshots/Audio_actions/Cut_audio.png" alt="Reverse audio" loading="lazy" /><figcaption>Reverse</figcaption></figure>
+
         <figure><img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change audio speed" loading="lazy" /><figcaption>Change speed</figcaption></figure>
         <figure><img src="screenshots/Audio_actions/Change_pitch.png" alt="Change pitch" loading="lazy" /><figcaption>Change pitch</figcaption></figure>
+        <figure><img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise audio" loading="lazy" /><figcaption>Remove Noise</figcaption></figure>
         <figure><img src="screenshots/AI_actions/Audio_separation.png" alt="Audio separation" loading="lazy" /><figcaption>Audio Separation</figcaption></figure>
       </div>
     </div>

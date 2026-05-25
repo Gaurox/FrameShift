@@ -80,6 +80,11 @@ internal static class Program
             return RunRemoveNoise(registry, actionId, logger, inputPaths, options);
         }
 
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunRemoveNoiseVideo(registry, actionId, logger, inputPaths, options);
+        }
+
         if (ShouldRunConversionBatch(actionId, options))
         {
             return RunConversionBatch(registry, actionId, logger, inputPaths);
@@ -287,6 +292,16 @@ internal static class Program
     }
 
     private static int RunRemoveNoise(
+        ActionRegistry registry,
+        string actionId,
+        AppLogger logger,
+        IReadOnlyList<string> inputPaths,
+        IReadOnlyDictionary<string, string> options)
+    {
+        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
+    }
+
+    private static int RunRemoveNoiseVideo(
         ActionRegistry registry,
         string actionId,
         AppLogger logger,
@@ -560,6 +575,140 @@ internal static class Program
         return true;
     }
 
+    private static bool ValidateRemoveNoiseVideoInputs(IReadOnlyList<string> inputPaths)
+    {
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var ext = Path.GetExtension(inputPaths[0]).ToLowerInvariant();
+        if (!RemoveNoise.RemoveNoiseVideoSettings.IsSupportedVideoExtension(ext))
+        {
+            ShowCliError(MediaActionMessages.UnsupportedSourceFormat(
+                ext,
+                RemoveNoise.RemoveNoiseVideoSettings.GetSupportedVideoExtensionsText()));
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool EnsureRemoveNoiseVideoOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger)
+    {
+        if (options.ContainsKey(ActionOptionKeys.NoiseStrength))
+            return true;
+
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var sourceIsStereo = false;
+        string? ffmpegPath = null;
+        try
+        {
+            var toolLocator   = new ToolLocator();
+            var ffprobeRunner = new FfprobeRunner(logger);
+            var ffprobePath   = toolLocator.ResolveFfprobePath();
+            ffmpegPath = toolLocator.ResolveFfmpegPath();
+            var probeAttempt = ffprobeRunner
+                .TryProbeMediaAsync(ffprobePath, inputPaths[0], CancellationToken.None)
+                .GetAwaiter().GetResult();
+
+            if (probeAttempt.Probe is not null)
+                sourceIsStereo = probeAttempt.Probe.PrimaryAudioChannels >= 2;
+        }
+        catch (Exception ex)
+        {
+            logger.Log($"Program: EnsureRemoveNoiseVideoOptions probe failed (non-fatal): {ex.Message}");
+        }
+
+        var previewSourcePath = inputPaths.Count == 1 ? inputPaths[0] : null;
+
+        try
+        {
+            using var picker = new RemoveNoiseVideoPickerForm(
+                RemoveNoiseVideoPickerForm.BuildSourceLabel(inputPaths),
+                sourceIsStereo,
+                previewSourcePath,
+                ffmpegPath);
+            if (picker.ShowDialog() != DialogResult.OK || picker.SelectedStrength is null)
+                return false;
+
+            options[ActionOptionKeys.NoiseStrength]      = picker.SelectedStrength;
+            options[ActionOptionKeys.ProcessStereoAudio] = picker.ProcessStereo ? "true" : "false";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Remove Noise (Video)")));
+            return false;
+        }
+    }
+
+    private static bool EnsureRemoveNoiseAudioOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger)
+    {
+        if (options.ContainsKey(ActionOptionKeys.NoiseStrength))
+            return true;
+
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var sourceIsStereo = false;
+        string? ffmpegPath = null;
+        try
+        {
+            var toolLocator   = new ToolLocator();
+            var ffprobeRunner = new FfprobeRunner(logger);
+            var ffprobePath   = toolLocator.ResolveFfprobePath();
+            ffmpegPath = toolLocator.ResolveFfmpegPath();
+            var probeAttempt = ffprobeRunner
+                .TryProbeMediaAsync(ffprobePath, inputPaths[0], CancellationToken.None)
+                .GetAwaiter().GetResult();
+
+            if (probeAttempt.Probe is not null)
+                sourceIsStereo = probeAttempt.Probe.PrimaryAudioChannels >= 2;
+        }
+        catch (Exception ex)
+        {
+            logger.Log($"Program: EnsureRemoveNoiseAudioOptions probe failed (non-fatal): {ex.Message}");
+        }
+
+        var previewSourcePath = inputPaths.Count == 1 ? inputPaths[0] : null;
+
+        try
+        {
+            using var picker = new RemoveNoiseAudioPickerForm(
+                RemoveNoiseAudioPickerForm.BuildSourceLabel(inputPaths),
+                sourceIsStereo,
+                previewSourcePath,
+                ffmpegPath);
+            if (picker.ShowDialog() != DialogResult.OK || picker.SelectedStrength is null)
+                return false;
+
+            options[ActionOptionKeys.NoiseStrength]      = picker.SelectedStrength;
+            options[ActionOptionKeys.ProcessStereoAudio] = picker.ProcessStereo ? "true" : "false";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Remove Noise")));
+            return false;
+        }
+    }
+
     private static bool ShouldPreferGpuForSeparateAudio(IReadOnlyDictionary<string, string>? options)
     {
         if (options is not null &&
@@ -687,9 +836,37 @@ internal static class Program
         }
 
         if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureRemoveNoiseAudioOptions(inputPaths, effectiveOptions, logger))
+        {
+            logger.Log("Program: Remove Noise options prompt exited before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
             !EnsureRemoveNoiseModelReady(logger))
         {
             logger.Log("Program: Remove Noise preflight exited before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
+            !ValidateRemoveNoiseVideoInputs(inputPaths))
+        {
+            logger.Log("Program: Remove Noise (Video) input validation failed before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureRemoveNoiseVideoOptions(inputPaths, effectiveOptions, logger))
+        {
+            logger.Log("Program: Remove Noise (Video) options prompt exited before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureRemoveNoiseModelReady(logger))
+        {
+            logger.Log("Program: Remove Noise (Video) preflight exited before progress window opened.");
             return 0;
         }
 
@@ -1011,6 +1188,18 @@ internal static class Program
                 continue;
             }
 
+            if (string.Equals(token, "--noise-strength", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.NoiseStrength] = args[++index];
+                continue;
+            }
+
+            if (string.Equals(token, "--stereo", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.ProcessStereoAudio] = args[++index];
+                continue;
+            }
+
             if ((string.Equals(token, "--target-size-bytes", StringComparison.OrdinalIgnoreCase) ||
                  string.Equals(token, "--size-bytes", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
             {
@@ -1199,6 +1388,11 @@ internal static class Program
         if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateRemoveNoiseDefinition();
+        }
+
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateRemoveNoiseVideoDefinition();
         }
 
         return null;

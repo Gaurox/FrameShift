@@ -136,7 +136,11 @@ public sealed class ActionRegistry
                 toolLocator),
             new RemoveBackgroundAction(),
             new SeparateAudioAction(),
-            new RemoveNoiseAction()
+            new RemoveNoiseAction(ffmpegRunner, ffprobeRunner, toolLocator),
+            new RemoveNoiseVideoAction(
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator)
         ]);
     }
 }

@@ -10,6 +10,7 @@ public static class IconPaths
     public static string AppIcon => Combine("app", "app.ico");
     public static string AppPng => Combine("app", "app.png");
     public static string SeparateAudioAiIcon => Combine("ai", "separate_audio_icon.ico");
+    public static string RemoveNoiseAiIcon => Combine("ai", "remove_noise_icon.ico");
     public static string CompressVideoIcon => Combine("menus", "context", "ico", "compress-video-image-audio-icon.ico");
     public static string ConvertVideoIcon => Combine("menus", "context", "ico", "convert-audio-video-image-icon.ico");
     public static string MediaInfoIcon => Combine("menus", "context", "ico", "media-info-video-image-audio-icon.ico");

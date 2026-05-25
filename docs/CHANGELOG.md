@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.3
+
+- Added `Remove Noise (Audio)` picker UI with strength selection (Light / Normal / Strong / Maximum), optional stereo processing (two independent L+R passes), and 8-second audio preview.
+- Added stereo processing pipeline to `Remove Noise` audio action: FFmpeg channel extraction via `pan` filter, two sequential DeepFilterNet3 passes, and FFmpeg stereo merge in the source container format.
+- Updated `Remove Noise` audio action to respect the `noise-strength` option (previously always applied maximum denoising).
+
 ## 1.0.2
 
 - Added `Remove Noise` as a local AI action for offline speech denoising via DeepFilterNet3, with adjacent unique output naming and Explorer context-menu integration.

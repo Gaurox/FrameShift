@@ -285,6 +285,29 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Denoise");
 
+    public static BatchDefinition CreateRemoveNoiseVideoDefinition() => new(
+        ActionId: "remove-noise-video",
+        DisplayName: "Remove Noise (Video)",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: FrameShift.Core.AI.RemoveNoise.RemoveNoiseVideoSettings.GetSupportedVideoExtensionsText(),
+        MutexName: @"Local\FrameShift_RemoveNoiseVideoBatch",
+        PipeName: "FrameShift_RemoveNoiseVideoBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: static extension =>
+            extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mkv", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".avi", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mov", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".webm", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".m4v", StringComparison.OrdinalIgnoreCase),
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Denoise");
+
     private async Task ProcessLoopAsync(CancellationToken cancellationToken)
     {
         _logger.Log("ConversionBatchSession: queue loop entered.");

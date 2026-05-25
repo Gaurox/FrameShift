@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -75,6 +75,7 @@ Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
 Name: "ai"; Description: "FrameShift AI"; Types: complete custom
 Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
 Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
+Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
 Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
 
 [Files]
@@ -313,6 +314,10 @@ procedure CleanupContextMenuAIKeys;
 begin
   CleanupContextMenuAIKeysForHive(HKCU, ImageExtensions);
   CleanupContextMenuAIKeysForHive(HKLM, ImageExtensions);
+  CleanupContextMenuAIKeysForHive(HKCU, VideoExtensions);
+  CleanupContextMenuAIKeysForHive(HKLM, VideoExtensions);
+  CleanupContextMenuAIKeysForHive(HKCU, AudioExtensions);
+  CleanupContextMenuAIKeysForHive(HKLM, AudioExtensions);
 end;
 
 procedure EnsureFrameShiftAIRootForHive(const Hive: Integer; const Ext: string);
@@ -342,6 +347,10 @@ begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico');
   end
   else if MenuKey = 'remove_noise' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_noise_icon.ico');
+  end
+  else if MenuKey = 'remove_noise_video' then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_noise_icon.ico');
   end
@@ -839,6 +848,15 @@ begin
       'remove_noise',
       'Remove noise',
       'remove-noise');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_noise_video') then
+  begin
+    ApplyAIActionMenuList(
+      VideoExtensions,
+      'remove_noise_video',
+      'Remove noise (video)',
+      'remove-noise-video');
   end;
 
   if WizardIsComponentSelected('ai\separate_audio') then
