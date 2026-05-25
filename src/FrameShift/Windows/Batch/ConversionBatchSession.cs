@@ -263,6 +263,28 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Separate");
 
+    public static BatchDefinition CreateRemoveNoiseDefinition() => new(
+        ActionId: "remove-noise",
+        DisplayName: "Remove Noise",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: FrameShift.Core.AI.RemoveNoise.RemoveNoiseAction.GetSupportedExtensionsText(),
+        MutexName: @"Local\FrameShift_RemoveNoiseBatch",
+        PipeName: "FrameShift_RemoveNoiseBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: static extension =>
+            extension.Equals(".wav", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".flac", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".ogg", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".m4a", StringComparison.OrdinalIgnoreCase),
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Denoise");
+
     private async Task ProcessLoopAsync(CancellationToken cancellationToken)
     {
         _logger.Log("ConversionBatchSession: queue loop entered.");

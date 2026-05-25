@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>FrameShift — Two-click media actions, 100% local</title>
-<meta name="description" content="FrameShift is a Windows desktop utility for local media actions from the Explorer right-click menu: convert, compress, crop, cut, remove background, audio separation, and more." />
+<meta name="description" content="FrameShift is a Windows desktop utility for local media actions from the Explorer right-click menu: convert, compress, crop, cut, remove background, remove noise, audio separation, and more." />
 <meta name="author" content="Gaurox" />
 <meta name="google-site-verification" content="JGO4WajI-jMV60-eYiXCpWxHMAfuzLIYzUYMraR2pIs" />
 <meta name="robots" content="index,follow,max-image-preview:large" />
@@ -14,13 +14,13 @@
 <meta property="og:locale" content="en_US" />
 <meta property="og:site_name" content="FrameShift" />
 <meta property="og:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta property="og:description" content="Windows desktop utility for local media actions from the Explorer right-click menu. Powered by FFmpeg and local AI, including remove background and audio separation." />
+<meta property="og:description" content="Windows desktop utility for local media actions from the Explorer right-click menu. Powered by FFmpeg and local AI, including remove background, remove noise, and audio separation." />
 <meta property="og:url" content="https://gaurox.github.io/FrameShift/" />
 <meta property="og:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
 <meta property="og:image:alt" content="FrameShift Explorer right-click menu demo" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta name="twitter:description" content="Windows desktop utility for local media actions from the Explorer right-click menu, including remove background and audio separation." />
+<meta name="twitter:description" content="Windows desktop utility for local media actions from the Explorer right-click menu, including remove background, remove noise, and audio separation." />
 <meta name="twitter:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
 <script type="application/ld+json">
 {
@@ -29,7 +29,7 @@
   "name": "FrameShift",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "1.0.1",
+  "softwareVersion": "1.0.2",
   "description": "Windows desktop utility for local media actions from the Explorer right-click menu.",
   "url": "https://gaurox.github.io/FrameShift/",
   "downloadUrl": "https://github.com/gaurox/FrameShift/releases",
@@ -45,6 +45,7 @@
     "Crop and resize",
     "Cut and extract",
     "Remove background locally",
+    "Remove noise locally",
     "Separate audio into stems locally",
     "Image to PDF"
   ]
@@ -175,6 +176,7 @@
           Remove Background and Audio Separation now run locally inside FrameShift through ONNX Runtime.
           Remove Background uses
           <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>,
+          Remove Noise uses DeepFilterNet3 exports for offline speech denoising,
           while Audio Separation is powered by HTDemucs exports with CPU and DirectML GPU support.
           More local AI modules are still planned for future versions, and they will follow the same rule:
           <strong>always local, never in the cloud.</strong>
@@ -220,7 +222,7 @@
           </ul>
         </article>
         <article class="actions-col">
-          <h3>Audio <span class="count">7</span></h3>
+          <h3>Audio <span class="count">8</span></h3>
           <ul>
             <li>Compress</li>
             <li>Convert</li>
@@ -228,6 +230,7 @@
             <li>Reverse</li>
             <li>Change speed</li>
             <li>Change pitch</li>
+            <li>Remove noise <span class="ai-pill">AI</span></li>
             <li>Audio Separation <span class="ai-pill">AI</span></li>
           </ul>
         </article>

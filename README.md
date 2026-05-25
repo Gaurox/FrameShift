@@ -18,6 +18,8 @@ FrameShift is a desktop utility for fast video, audio, image, and AI-assisted me
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
 Remove backgrounds locally with a focused AI workflow directly launched from Explorer.
+Remove noise from audio files locally with the same right-click flow, keeping the output next to the source.
+Remove noise from audio files locally with the same right-click flow, without leaving a trace on your machine.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
@@ -75,6 +77,7 @@ Build image-based PDF documents with a visual layout workflow designed for quick
 | Compress Audio | Reduce audio size for easier sharing and storage. | <img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress Audio" width="320" /> |
 | Change Pitch | Shift audio pitch with a straightforward adjustment interface. | <img src="screenshots/Audio_actions/Change_pitch.png" alt="Change Pitch" width="320" /> |
 | Change Audio Speed | Speed up or slow down audio while keeping the workflow simple. | <img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change Audio Speed" width="320" /> |
+| Remove Noise | Reduce background noise in audio with the local DeepFilterNet3 workflow. |  |
 
 ### Image Actions
 

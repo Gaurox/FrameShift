@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using RemoveBackground = FrameShift.Core.AI.RemoveBackground;
+using RemoveNoise = FrameShift.Core.AI.RemoveNoise;
 using SeparateAudio = FrameShift.Core.AI.SeparateAudio;
 using FrameShift.Core.Actions;
 using FrameShift.Core.FFmpeg;
@@ -72,6 +73,11 @@ internal static class Program
         if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
         {
             return RunSeparateAudio(registry, actionId, logger, inputPaths, options);
+        }
+
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunRemoveNoise(registry, actionId, logger, inputPaths, options);
         }
 
         if (ShouldRunConversionBatch(actionId, options))
@@ -271,6 +277,16 @@ internal static class Program
     }
 
     private static int RunSeparateAudio(
+        ActionRegistry registry,
+        string actionId,
+        AppLogger logger,
+        IReadOnlyList<string> inputPaths,
+        IReadOnlyDictionary<string, string> options)
+    {
+        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
+    }
+
+    private static int RunRemoveNoise(
         ActionRegistry registry,
         string actionId,
         AppLogger logger,
@@ -493,6 +509,57 @@ internal static class Program
         return ready;
     }
 
+    private static bool EnsureRemoveNoiseModelReady(AppLogger logger)
+    {
+        if (RemoveNoise.DeepFilterNetModelLocator.AllModelsExist())
+        {
+            logger.Log("Program: Remove Noise models already present.");
+            return true;
+        }
+
+        logger.Log("Program: Remove Noise models missing. Opening DownloadModelForm.");
+        using var downloadForm = new DownloadModelForm(
+            "FrameShift AI - Remove Noise",
+            "Download the AI model to enable noise removal",
+            RemoveNoise.DeepFilterNetModelDownloader.ModelDisplayName,
+            RemoveNoise.DeepFilterNetModelDownloader.ModelLicense,
+            RemoveNoise.DeepFilterNetModelDownloader.TotalSizeBytes,
+            async (progress, ct) =>
+            {
+                RemoveNoise.DeepFilterNetModelLocator.EnsureDirectoryExists();
+                await RemoveNoise.DeepFilterNetModelDownloader.DownloadAllAsync(
+                    System.IO.Path.GetDirectoryName(RemoveNoise.DeepFilterNetModelLocator.EncPath)!,
+                    progress,
+                    ct).ConfigureAwait(false);
+            });
+
+        var dialogResult = downloadForm.ShowDialog();
+        var ready = dialogResult == DialogResult.OK && RemoveNoise.DeepFilterNetModelLocator.AllModelsExist();
+        logger.Log($"Program: Remove Noise preflight completed. dialogResult={dialogResult}, ready={ready}.");
+        return ready;
+    }
+
+    private static bool ValidateRemoveNoiseInputs(
+        IReadOnlyList<string> inputPaths)
+    {
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var sourceExtension = Path.GetExtension(inputPaths[0]).ToLowerInvariant();
+        if (!RemoveNoise.RemoveNoiseAction.IsAudioExtensionSupported(sourceExtension))
+        {
+            ShowCliError(MediaActionMessages.UnsupportedSourceFormat(
+                sourceExtension,
+                RemoveNoise.RemoveNoiseAction.GetSupportedExtensionsText()));
+            return false;
+        }
+
+        return true;
+    }
+
     private static bool ShouldPreferGpuForSeparateAudio(IReadOnlyDictionary<string, string>? options)
     {
         if (options is not null &&
@@ -609,6 +676,20 @@ internal static class Program
             !EnsureSeparateAudioModelReady(logger, effectiveOptions))
         {
             logger.Log("Program: Separate Audio preflight exited before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
+            !ValidateRemoveNoiseInputs(inputPaths))
+        {
+            logger.Log("Program: Remove Noise input validation failed before progress window opened.");
+            return 0;
+        }
+
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
+            !EnsureRemoveNoiseModelReady(logger))
+        {
+            logger.Log("Program: Remove Noise preflight exited before progress window opened.");
             return 0;
         }
 
@@ -1113,6 +1194,11 @@ internal static class Program
         if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateSeparateAudioDefinition();
+        }
+
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateRemoveNoiseDefinition();
         }
 
         return null;

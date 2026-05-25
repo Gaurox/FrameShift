@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.0.2
+
+- Added `Remove Noise` as a local AI action for offline speech denoising via DeepFilterNet3, with adjacent unique output naming and Explorer context-menu integration.
+- Simplified the `Remove Noise` experience to a direct action without profiles or extra UI settings.
+- Updated the installer and release metadata to version `1.0.2`.
+
 ## 1.0.1
 
 - Added `Audio Separation` as a local AI action with CPU and DirectML GPU paths, multi-stem export, and adjacent unique output naming.

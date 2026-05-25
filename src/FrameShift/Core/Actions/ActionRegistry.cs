@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FrameShift.Core.AI.RemoveBackground;
+using FrameShift.Core.AI.RemoveNoise;
 using FrameShift.Core.AI.SeparateAudio;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
@@ -134,7 +135,8 @@ public sealed class ActionRegistry
                 ffprobeRunner,
                 toolLocator),
             new RemoveBackgroundAction(),
-            new SeparateAudioAction()
+            new SeparateAudioAction(),
+            new RemoveNoiseAction()
         ]);
     }
 }

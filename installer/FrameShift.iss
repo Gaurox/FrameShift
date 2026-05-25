@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.0.2"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -74,6 +74,7 @@ Name: "tools"; Description: "Outils"; Types: complete custom
 Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
 Name: "ai"; Description: "FrameShift AI"; Types: complete custom
 Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
+Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
 Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
 
 [Files]
@@ -339,6 +340,10 @@ begin
   if MenuKey = 'remove_background' then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico');
+  end
+  else if MenuKey = 'remove_noise' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_noise_icon.ico');
   end
   else if MenuKey = 'separate_audio' then
   begin
@@ -825,6 +830,15 @@ begin
       'remove_background',
       'Remove background',
       'remove-background');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_noise') then
+  begin
+    ApplyAIActionMenuList(
+      AudioExtensions,
+      'remove_noise',
+      'Remove noise',
+      'remove-noise');
   end;
 
   if WizardIsComponentSelected('ai\separate_audio') then
