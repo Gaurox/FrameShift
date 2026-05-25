@@ -141,6 +141,9 @@ Media Info :
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoAction.cs`
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoSettings.cs`
 
+Helpers core utiles :
+- `src/FrameShift/Core/Helpers/ImageAutoCropDetector.cs`
+
 ## Windows/UI
 
 Batch et progression :
@@ -201,6 +204,7 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/CreateGifSettingsTests.cs`
 - `tests/FrameShift.Tests/CutAudioSettingsTests.cs`
 - `tests/FrameShift.Tests/ExtractAudioCatalogTests.cs`
+- `tests/FrameShift.Tests/ImageAutoCropDetectorTests.cs`
 - `tests/FrameShift.Tests/OutputPathHelperTests.cs`
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
@@ -211,6 +215,7 @@ Assets de test utiles :
 ## Notes
 
 - `Image to PDF` est un module interactif lancé via `Program.cs`, pas un exécutable séparé.
+- `CropImageForm` et `CropVideoForm` partagent maintenant une base UI proche via `FrameShiftCropEditorUi.cs`, avec auto-crop visuel et navigation de preview.
 - `Media Info` passe par `FfprobeRunner.TryProbeMediaInfoAsync(...)` puis `MediaInfoFormatter`.
 - `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.

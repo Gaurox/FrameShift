@@ -5,6 +5,7 @@ namespace FrameShift.Core.Logging;
 
 public sealed class AppLogger
 {
+    private static readonly object _writeLock = new();
     public static string LogPath
     {
         get
@@ -36,7 +37,10 @@ public sealed class AppLogger
         {
             var logDirectory = Path.GetDirectoryName(LogPath) ?? Path.Combine(AppContext.BaseDirectory, "logs");
             Directory.CreateDirectory(logDirectory);
-            File.AppendAllText(LogPath, line + Environment.NewLine);
+            lock (_writeLock)
+            {
+                File.AppendAllText(LogPath, line + Environment.NewLine);
+            }
         }
         catch
         {

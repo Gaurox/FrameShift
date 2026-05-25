@@ -26,6 +26,12 @@ public sealed class ProgressForm : Form, IProgressReporter
     private static readonly Color AccentColor = FrameShiftTheme.SecondaryBlue;
     private static readonly Color DangerColor = Color.FromArgb(198, 40, 40);
 
+    private static readonly Font s_font9 = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_fontSemibold9 = new("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_fontSemibold11 = new("Segoe UI Semibold", 11F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_fontSemibold16 = new("Segoe UI Semibold", 16F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_font10 = new("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
+
     private readonly Label _eyebrowLabel;
     private readonly Label _currentFileLabel;
     private readonly Label _currentActionLabel;
@@ -56,7 +62,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(920, 560);
         Size = new Size(1060, 640);
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        Font = s_font9;
         BackColor = PageBackgroundColor;
 
         if (File.Exists(IconPaths.AppIcon))
@@ -85,7 +91,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             Dock = DockStyle.Top,
             Height = 18,
             ForeColor = AccentColor,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = s_fontSemibold9,
             Text = "Current task"
         };
 
@@ -94,7 +100,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             Dock = DockStyle.Top,
             Height = 34,
             ForeColor = TitleColor,
-            Font = new Font("Segoe UI Semibold", 16F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = s_fontSemibold16,
             Text = "No active task"
         };
 
@@ -103,7 +109,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             Dock = DockStyle.Top,
             Height = 24,
             ForeColor = BodyColor,
-            Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = s_font10,
             AutoEllipsis = true,
             Text = "No file selected"
         };
@@ -131,7 +137,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             Dock = DockStyle.Left,
             Width = 80,
             ForeColor = TitleColor,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = s_fontSemibold9,
             Text = "0%"
         };
 
@@ -187,7 +193,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             Dock = DockStyle.Top,
             Height = 28,
             ForeColor = TitleColor,
-            Font = new Font("Segoe UI Semibold", 11F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = s_fontSemibold11,
             Text = "Queue"
         };
 
@@ -645,7 +651,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         grid.DefaultCellStyle.SelectionBackColor = FrameShiftTheme.AccentSoft;
         grid.DefaultCellStyle.SelectionForeColor = TitleColor;
         grid.DefaultCellStyle.Padding = new Padding(0, 6, 0, 6);
-        grid.DefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        grid.DefaultCellStyle.Font = s_font9;
         grid.RowTemplate.Height = 40;
         grid.ScrollBars = ScrollBars.Vertical;
 

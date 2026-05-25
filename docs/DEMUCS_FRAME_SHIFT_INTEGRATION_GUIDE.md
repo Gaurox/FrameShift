@@ -1,7 +1,7 @@
 # Demucs → FrameShift Integration Guide
 
 > **Audience :** développeur reprenant l'intégration dans `E:\AI\FrameShift_V1` sans avoir lu l'historique.  
-> **Date :** 2026-05-23 — état V2 GPU validé sur audio réel 30 min.
+> **Date :** 2026-05-25 — intégration C# complète, auditée et corrigée (v1.0.5).
 
 ---
 
@@ -9,7 +9,12 @@
 
 ### État actuel
 
-Deux pipelines de séparation de sources audio HTDemucs v4 sont **validés en production** et prêts pour intégration dans FrameShift. Aucun n'est encore intégré — tout le code est dans `E:\AI\Demuc_ONNX` en mode prototype Python.
+Deux pipelines de séparation de sources audio HTDemucs v4 sont **intégrés et validés en production** dans FrameShift depuis la version 1.0.1. Le code de référence Python reste dans `E:\AI\Demuc_ONNX` (lecture seule — ne pas modifier ni importer directement).
+
+**Corrections apportées en 1.0.5 (2026-05-25) :**
+- Fallback DML corrigé : en cas d'échec DirectML, le moteur bascule sur `htdemucs.onnx` (V1 CPU, STFT in-graph) et non plus sur le modèle split exécuté sur CPU (qui n'apporte aucun gain hors GPU).
+- Réutilisation de session ONNX : l'engine est désormais créé une seule fois par batch et réutilisé sur tous les fichiers de la file, éliminant le rechargement du modèle à chaque appel.
+- Audit complet (STFT/iSTFT, OLA, chunking, ordre des stems) confirmé correct — aucune modification des invariants mathématiques.
 
 | Pipeline | Modèle | EP | Statut |
 |---|---|---|---|
@@ -238,9 +243,11 @@ Tous dans `E:\AI\Demuc_ONNX\`.
 
 ---
 
-## 5. Intégration FrameShift — structure proposée
+## 5. Intégration FrameShift — structure implémentée
 
-### 5.1 Localisation suggérée
+> **Statut (2026-05-25) :** l'intégration est complète depuis la version 1.0.1. Les noms de fichiers ci-dessous reflètent la structure réelle dans `src/FrameShift/Core/AI/SeparateAudio/` et `src/FrameShift/Windows/AI/`. Certains noms proposés initialement diffèrent légèrement des fichiers créés.
+
+### 5.1 Localisation réelle
 
 ```
 E:\AI\FrameShift_V1\
@@ -385,7 +392,9 @@ Alternative plus simple : implémenter via `System.Numerics.Complex` + FFT direc
 
 ---
 
-## 6. Interface utilisateur prévue
+## 6. Interface utilisateur (implémentée)
+
+> **Statut (2026-05-25) :** l'UI est implémentée dans `SeparateAudioPickerForm.cs`. Les paramètres avancés (§6.3) n'ont pas été exposés — l'expérience est délibérément simplifiée.
 
 ### 6.1 Sélection des stems (checkboxes)
 
@@ -430,39 +439,28 @@ Annulation : `CancellationToken` vérifié **entre chunks uniquement** — un ch
 
 ---
 
-## 7. Travaux restants avant intégration complète
+## 7. État de l'intégration et travaux ouverts
 
-### 7.1 Obligatoire pour V1 CPU (point d'entrée recommandé)
+> **Statut (2026-05-25) :** tous les travaux bloquants listés dans les §7.1–7.3 originaux sont **terminés** depuis la version 1.0.1 (V1 CPU + V2 GPU). L'audit complet du 2026-05-25 a confirmé que toute la chaîne mathématique (STFT/iSTFT, OLA, chunking, ordre des stems) est correcte et conforme aux prototypes Python de référence.
 
-| Tâche | Effort | Notes |
+### 7.1 Corrections apportées en v1.0.5 (2026-05-25)
+
+| Correction | Fichier | Description |
 |---|---|---|
-| Port C# du chunker OLA streaming | ~150 LoC | Algo direct depuis `separate_streaming.py` + §5.2 |
-| Test d'intégration sur vrai WAV 44.1 kHz | 1 jour | Valider sur morceau commercial court (~3 min) |
-| Gestion d'erreur / annulation entre chunks | ~50 LoC | `CancellationToken` entre chunks, pas pendant inférence |
-| Progress reporting | ~20 LoC | `IProgress<float>` ou événement par chunk |
-| Resample si input non-44100 Hz | selon NAudio | Input doit être exactement 44100 Hz stéréo float32 |
+| Fallback DML → V1 CPU | `AudioSeparationEngine.cs` | Échec DML → `htdemucs.onnx` CPU EP (et non split sur CPU) |
+| Réutilisation session ONNX | `SeparateAudioAction.cs` | `_gpuEngine`/`_cpuEngine` lazy, réutilisés sur tout le batch |
+| Radio buttons UI | `SeparateAudioPickerForm.cs` | `BackColor=Surface` + `UseVisualStyleBackColor=true` ; espacement corrigé pour éviter le chevauchement des bounds |
 
-### 7.2 Optionnel V1 CPU
+### 7.2 Limites connues acceptées
 
-| Tâche | Bénéfice | Notes |
+| Limite | Impact | Pipeline concerné |
 |---|---|---|
-| Quantification INT8 | RAM ORT ~0.8 GB | Nécessite re-validation SNR |
-| Pré-chargement modèle en background | UX | Charger au démarrage app |
+| `AudioChunkReader` charge le fichier entier en RAM | Acceptable jusqu'à ~20 min ; problématique au-delà de 1 h | V1 + V2 |
+| PCM_16 : `× 32767f` au lieu de `× 32768f` | Off-by-1 LSB au pic négatif — inaudible | V1 + V2 |
+| Allocations par chunk (DenseTensor, buffer spec) | Pression GC, pas un problème de correction | V2 |
+| +180 MB VRAM résiduel après dispose V2 | Surveillance recommandée en multi-morceaux longs | V2 |
 
-### 7.3 V2 GPU — DirectML (validé, prêt pour port C#)
-
-**Statut : prototype Python validé sur 30 min audio réel — GO.**
-
-| Étape | Effort | Notes |
-|---|---|---|
-| Port C# de HostSpectro (STFT/iSTFT) | ~100–200 LoC | Voir §5.5 ; alternative : MathNet FFT |
-| Port C# du chunker V2 (DML EP) | ~200 LoC | Identique V1 + appel session DML + HostSpectro |
-| Validation 30 min DML bout-en-bout C# | 1 jour | Comparer à référence V1 CPU sur même fichier |
-| Fallback automatique CPU si DML absent | ~30 LoC | Détection provider au démarrage |
-| Architecture downloader pour `htdemucs_split.onnx` | identique V1 | SHA256 à recalculer sur fichier déployé |
-| Test multi-morceaux successifs (fuite VRAM) | demi-journée | +180 MB VRAM résiduel observé — à surveiller |
-
-### 7.4 Optimisations V2.1 (non bloquantes)
+### 7.3 Optimisations V2.1 (non bloquantes)
 
 L'iSTFT host (torch ConvTranspose1d CPU) représente **63 % du wall time V2** (57 s / 90 s). Pistes :
 

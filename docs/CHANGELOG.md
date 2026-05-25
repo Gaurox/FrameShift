@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 1.0.5
+
+- Fixed `Audio Separation` DML fallback: on DirectML initialization failure the engine now falls back to the V1 CPU model (`htdemucs.onnx`) instead of running the split model on CPU, which had no benefit over the full in-graph model on that execution provider.
+- Fixed `Audio Separation` ONNX session lifecycle: the engine is now created once per queue batch and reused across all files, eliminating the per-file load cost for large batches.
+- Fixed `Audio Separation` picker radio buttons not rendering their selection circles on certain system themes; the engine radio buttons now use `BackColor = Surface` with visual-style rendering enabled so the indicator is always visible.
+- Fixed layout overlap in the `Audio Separation` picker engine row that caused the GPU radio button circle to be painted over by the adjacent Automatic button's background.
+- Added SHA256 integrity verification to `Remove Background` model download, consistent with the existing pattern in `Audio Separation`.
+- Fixed `AppLogger` concurrent write safety: file append is now serialized across threads, preventing silent log line loss during parallel batch processing.
+- Fixed `FfmpegRunner` cancellation: orphan processes are now force-killed on wait timeout, and the exit code is no longer accessed on a process that may still be running.
+- Fixed installer FFmpeg/FFprobe source path to use the publish output folder instead of the source tree, ensuring the packaged binaries always match the built payload.
+- Fixed installer context menu registry writes to target only HKLM on admin installs, eliminating duplicate Explorer entries.
+- Fixed installer upgrade flow: the existing uninstaller now completes fully before the setup exits, preventing registry and file race conditions.
+- Added `SHChangeNotify` call after installer registry writes so Explorer reflects context menu changes immediately without requiring a logoff.
+- Hardened `build_installer.ps1` with a git cleanliness check, a changelog consistency gate, and an automated test run before packaging.
+- Replaced the `MainForm` placeholder with a structured landing screen showing action categories and usage hint.
+- Fixed `ProgressForm` GDI font leak: per-instance `Font` allocations replaced with shared static instances.
+
 ## 1.0.4
 
 - Upgraded `Crop Image` with automatic border-aware crop suggestions, mouse-wheel zoom, fit-to-view, and drag navigation for faster visual adjustments.

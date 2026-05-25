@@ -10,14 +10,22 @@ Use this checklist before pushing a release-oriented update or publishing a new 
 
 ## Pre-Push Checks
 
-- Run `dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj -c Release`
 - Re-read `README.md` if the user-facing surface changed.
-- Re-check version consistency if the release number changed:
+- Ensure `docs/CHANGELOG.md` has a `## {version}` section matching the version in `src/FrameShift/FrameShift.csproj`.
+- Re-check version consistency across:
   - `src/FrameShift/FrameShift.csproj`
   - `installer/FrameShift.iss`
   - `docs/CHANGELOG.md`
 
 ## Release Build
+
+The following are **automated** by `build_installer.ps1` and do not require manual action:
+
+- **Git cleanliness check** — warns (with prompt to continue) if the working tree has uncommitted changes.
+- **CHANGELOG consistency check** — aborts if `docs/CHANGELOG.md` has no `## {version}` section for the current csproj version.
+- **Test gate** — runs `dotnet test` in Release mode and aborts on any failure.
+
+Manual steps after the script completes:
 
 - Run `.\build_installer.ps1`
 - Confirm the expected installer is produced in `installer/`
@@ -25,7 +33,6 @@ Use this checklist before pushing a release-oriented update or publishing a new 
 
 ## Git Check
 
-- Review `git status`
 - Review staged files before committing
 - Use a clear commit message
 - Push only when the repository state is intentional and clean

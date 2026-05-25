@@ -8,12 +8,18 @@ using FrameShift.Core.Progress;
 
 namespace FrameShift.Core.AI.SeparateAudio;
 
-internal sealed class SeparateAudioAction : IFrameShiftAction
+internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
 {
     public ActionDescriptor Descriptor { get; } = new(
         "separate-audio",
         "Audio Separation",
         "Sépare les pistes audio (voix, batterie, basse, autres) via un modèle IA local.");
+
+    // Engines are created on first use and reused across all batch calls.
+    // Two separate instances cover the GPU and CPU code paths independently.
+    private AudioSeparationEngine? _gpuEngine;
+    private AudioSeparationEngine? _cpuEngine;
+    private bool _disposed;
 
     public async Task<ActionExecutionResult> ExecuteAsync(
         ActionRequest request,
@@ -41,8 +47,12 @@ internal sealed class SeparateAudioAction : IFrameShiftAction
             "cpu",
             StringComparison.OrdinalIgnoreCase);
 
-        var modelPath = preferGpu ? ModelLocator.GpuModelPath : ModelLocator.CpuModelPath;
-        if (!File.Exists(modelPath))
+        // Accept the call if at least one model exists that can serve this request.
+        // The engine resolves the exact model and EP, including fallback from DML to CPU.
+        var canRun = preferGpu
+            ? (ModelLocator.GpuModelExists() || ModelLocator.CpuModelExists())
+            : ModelLocator.CpuModelExists();
+        if (!canRun)
             return new ActionExecutionResult(
                 false,
                 "AI model not found. Run FrameShift.exe --action separate-audio from Explorer to download it first.");
@@ -57,7 +67,7 @@ internal sealed class SeparateAudioAction : IFrameShiftAction
 
         try
         {
-            using var engine = new AudioSeparationEngine();
+            var engine = GetOrCreateEngine(preferGpu);
 
             var progress = new Progress<AudioSeparationProgress>(p =>
             {
@@ -89,6 +99,27 @@ internal sealed class SeparateAudioAction : IFrameShiftAction
             monitorStop.Cancel();
             try { await monitorTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
         }
+    }
+
+    private AudioSeparationEngine GetOrCreateEngine(bool preferGpu)
+    {
+        if (preferGpu)
+        {
+            _gpuEngine ??= new AudioSeparationEngine();
+            return _gpuEngine;
+        }
+
+        _cpuEngine ??= new AudioSeparationEngine();
+        return _cpuEngine;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+        _disposed = true;
+        _gpuEngine?.Dispose();
+        _cpuEngine?.Dispose();
     }
 
     private static bool IsAudioExtensionSupported(string ext) =>

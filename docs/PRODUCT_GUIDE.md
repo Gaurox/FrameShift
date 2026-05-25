@@ -90,6 +90,10 @@ Mono-fichier interactif :
 - `image-to-pdf`
 - `media-info`
 
+Recadrage visuel actuel :
+- `crop-image` propose maintenant un auto-crop, un zoom molette, un retour `Fit` et un déplacement de la feuille au clic-glissé ;
+- `crop-video` reprend la même logique visuelle, avec auto-crop calculé sur la frame de travail sélectionnée puis appliqué à toute la vidéo.
+
 UI commune :
 - la fenêtre de progression partagée affiche aussi un bandeau donation discret avec bouton `Donate` ;
 - ce bandeau n'interrompt jamais le traitement et peut être fermé pour la session.

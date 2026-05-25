@@ -29,6 +29,46 @@ function Get-ProjectVersion {
 $appVersion = Get-ProjectVersion -ProjectFilePath $projectFile
 $installerExe = Join-Path $installerDir ("FrameShift_{0}_Setup.exe" -f $appVersion)
 
+# --- Gate 1: working tree must be clean ---
+Write-Host "Checking git working tree..." -ForegroundColor Cyan
+$gitDirty = git -C $repoRoot status --porcelain 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'git status failed — skipping cleanliness check.' -ForegroundColor Yellow
+} elseif (![string]::IsNullOrWhiteSpace($gitDirty)) {
+    Write-Host ''
+    Write-Host 'Uncommitted changes detected:' -ForegroundColor Yellow
+    Write-Host $gitDirty -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host 'The installer will package the published output regardless, but the working tree is not clean.' -ForegroundColor Yellow
+    $confirm = Read-Host 'Continue anyway? [y/N]'
+    if ($confirm -notmatch '^[yY]$') {
+        throw 'Build aborted: uncommitted changes present.'
+    }
+} else {
+    Write-Host "Working tree clean." -ForegroundColor Green
+}
+
+# --- Gate 2: CHANGELOG.md must have a section for this version ---
+Write-Host "Checking CHANGELOG.md for version $appVersion..." -ForegroundColor Cyan
+$changelogPath = Join-Path $repoRoot 'docs\CHANGELOG.md'
+if (!(Test-Path $changelogPath)) {
+    throw "CHANGELOG.md not found at: $changelogPath"
+}
+$changelogContent = Get-Content -LiteralPath $changelogPath -Raw
+if ($changelogContent -notmatch "(?m)^## $([regex]::Escape($appVersion))\s*$") {
+    throw "CHANGELOG.md has no '## $appVersion' section. Add a release entry before building."
+}
+Write-Host "CHANGELOG.md ## $appVersion section found — OK" -ForegroundColor Green
+
+# --- Gate 3: tests must pass ---
+Write-Host "Running tests..." -ForegroundColor Cyan
+$testProject = Join-Path $repoRoot 'tests\FrameShift.Tests\FrameShift.Tests.csproj'
+dotnet test $testProject -c Release --no-restore --verbosity minimal
+if ($LASTEXITCODE -ne 0) {
+    throw 'Tests failed. Fix all test failures before building the installer.'
+}
+Write-Host "All tests passed." -ForegroundColor Green
+
 Write-Host "Publishing FrameShift release payload v$appVersion..." -ForegroundColor Cyan
 dotnet publish $projectFile -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=false
 if ($LASTEXITCODE -ne 0) {

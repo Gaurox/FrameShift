@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.4"
+#define MyAppVersion "1.0.5"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -80,14 +80,15 @@ Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete cust
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
-Source: "{#ToolsDir}\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image
-Source: "{#ToolsDir}\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio tools\media_info
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio tools\media_info
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
 
 [Code]
 procedure ExitProcess(uExitCode: Integer); external 'ExitProcess@kernel32.dll stdcall';
+procedure SHChangeNotify(wEventId: LongInt; uFlags: Cardinal; dwItem1: Integer; dwItem2: Integer); external 'SHChangeNotify@shell32.dll stdcall';
 
 const
   VideoExtensions = '.mp4,.mkv,.avi,.mov,.webm,.m4v';
@@ -223,7 +224,7 @@ begin
     '',
     '',
     SW_SHOWNORMAL,
-    ewNoWait,
+    ewWaitUntilTerminated,
     ResultCode);
 end;
 
@@ -379,10 +380,13 @@ begin
   while RemainingExtensions <> '' do
   begin
     Extension := GetListItem(RemainingExtensions);
-    ConfigureAIActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId);
     if IsAdminInstallMode then
     begin
       ConfigureAIActionMenuForHive(HKLM, Extension, MenuKey, LabelText, ActionId);
+    end
+    else
+    begin
+      ConfigureAIActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId);
     end;
   end;
 end;
@@ -547,10 +551,13 @@ begin
   while RemainingExtensions <> '' do
   begin
     Extension := GetListItem(RemainingExtensions);
-    ConfigureActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId, PositionValue);
     if IsAdminInstallMode then
     begin
       ConfigureActionMenuForHive(HKLM, Extension, MenuKey, LabelText, ActionId, PositionValue);
+    end
+    else
+    begin
+      ConfigureActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId, PositionValue);
     end;
   end;
 end;
@@ -956,6 +963,7 @@ begin
   if CurStep = ssPostInstall then
   begin
     InstallSelectedMenus;
+    SHChangeNotify($08000000, $0000, 0, 0);
   end;
 end;
 
@@ -968,6 +976,7 @@ begin
   begin
     CleanupContextMenuKeys;
     CleanupContextMenuAIKeys;
+    SHChangeNotify($08000000, $0000, 0, 0);
 
     ModelsDir := ExpandConstant('{localappdata}\FrameShift\AI\Models');
     if DirExists(ModelsDir) then

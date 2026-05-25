@@ -353,15 +353,18 @@ public sealed class FfmpegRunner
             progressState,
             monitorStopSource.Token);
 
+        int exitCode;
         if (canceled)
         {
-            await WaitForExitAfterCancellationAsync(process).ConfigureAwait(false);
+            var processExited = await WaitForExitAfterCancellationAsync(process).ConfigureAwait(false);
+            exitCode = processExited ? process.ExitCode : -1;
         }
         else
         {
             _logger.Log($"FfmpegRunner: WaitForExitAsync started (normal). pid={TryGetProcessId(process)}.");
             await process.WaitForExitAsync().ConfigureAwait(false);
-            _logger.Log($"FfmpegRunner: WaitForExitAsync finished (normal). pid={TryGetProcessId(process)}, exitCode={process.ExitCode}.");
+            exitCode = process.ExitCode;
+            _logger.Log($"FfmpegRunner: WaitForExitAsync finished (normal). pid={TryGetProcessId(process)}, exitCode={exitCode}.");
         }
 
         progressState.MarkFinished();
@@ -375,8 +378,8 @@ public sealed class FfmpegRunner
             SuppressCancellationAsync(visualProgressTask),
             SuppressCancellationAsync(queueCancellationTask)).ConfigureAwait(false);
 
-        _logger.Log($"FfmpegRunner: RunAsync returning. canceled={canceled}, exitCode={process.ExitCode}, scope={cancellationScope}, currentFile={currentFile ?? "<none>"}.");
-        return new FfmpegRunResult(process.ExitCode, stderrBuilder.ToString(), canceled, cancellationScope);
+        _logger.Log($"FfmpegRunner: RunAsync returning. canceled={canceled}, exitCode={exitCode}, scope={cancellationScope}, currentFile={currentFile ?? "<none>"}.");
+        return new FfmpegRunResult(exitCode, stderrBuilder.ToString(), canceled, cancellationScope);
     }
 
     public async Task<bool> IsEncoderAvailableAsync(
@@ -736,7 +739,7 @@ public sealed class FfmpegRunner
         }
     }
 
-    private async Task WaitForExitAfterCancellationAsync(Process process)
+    private async Task<bool> WaitForExitAfterCancellationAsync(Process process)
     {
         _logger.Log($"FfmpegRunner: WaitForExitAsync started after cancellation. pid={TryGetProcessId(process)}.");
         var waitForExitTask = process.WaitForExitAsync();
@@ -745,10 +748,12 @@ public sealed class FfmpegRunner
         {
             await waitForExitTask.ConfigureAwait(false);
             _logger.Log($"FfmpegRunner: WaitForExitAsync finished after cancellation. pid={TryGetProcessId(process)}, exitCode={process.ExitCode}.");
-            return;
+            return true;
         }
 
-        _logger.Log($"FfmpegRunner: WaitForExitAsync timeout after cancellation. pid={TryGetProcessId(process)}.");
+        _logger.Log($"FfmpegRunner: WaitForExitAsync timeout after cancellation — forcing kill. pid={TryGetProcessId(process)}.");
+        TryKill(process, "post-cancellation-timeout", null);
+        return false;
     }
 
     private async Task DrainProcessOutputAsync(

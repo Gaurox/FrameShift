@@ -121,11 +121,24 @@ internal sealed class AudioSeparationEngine : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    AppLogger.LogStatic($"AudioSeparationEngine: DirectML init failed, falling back to CPU split model. {ex}");
-                    _session = CreateCpuSession(ModelLocator.GpuModelPath);
-                    _usesSplitPipeline = true;
-                    _hostSpectro = new HostSpectro();
-                    Provider = "CPU (split)";
+                    AppLogger.LogStatic($"AudioSeparationEngine: DirectML init failed. {ex.Message}");
+                    // Prefer V1 CPU model (STFT in-graph) over CPU-split; the split model
+                    // on CPU EP is slower than V1 CPU due to host iSTFT overhead.
+                    if (ModelLocator.CpuModelExists())
+                    {
+                        AppLogger.LogStatic("AudioSeparationEngine: falling back to V1 CPU model.");
+                        _session = CreateCpuSession(ModelLocator.CpuModelPath);
+                        _usesSplitPipeline = false;
+                        Provider = "CPU";
+                    }
+                    else
+                    {
+                        AppLogger.LogStatic("AudioSeparationEngine: V1 CPU model not found, using split model on CPU (suboptimal).");
+                        _session = CreateCpuSession(ModelLocator.GpuModelPath);
+                        _usesSplitPipeline = true;
+                        _hostSpectro = new HostSpectro();
+                        Provider = "CPU (split)";
+                    }
                 }
             }
             else if (ModelLocator.CpuModelExists())
@@ -136,6 +149,8 @@ internal sealed class AudioSeparationEngine : IDisposable
             }
             else if (ModelLocator.GpuModelExists())
             {
+                // Only the split model is available; run it on CPU as last resort.
+                AppLogger.LogStatic("AudioSeparationEngine: only split model found, using CPU EP (suboptimal).");
                 _session = CreateCpuSession(ModelLocator.GpuModelPath);
                 _usesSplitPipeline = true;
                 _hostSpectro = new HostSpectro();

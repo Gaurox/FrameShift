@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.Logging;
@@ -21,6 +22,9 @@ public static class ModelDownloader
 
     private const string ModelUrl =
         "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx";
+
+    private const string ExpectedSha256 =
+        "D39B897CEB16AE654C1731F3DBA0CF9B368D9CAE74B5A57459B455CC8BFEC402";
 
     public static async Task DownloadAsync(
         string destinationPath,
@@ -113,11 +117,19 @@ public static class ModelDownloader
                 return;
             }
 
+            progress.Report(new ModelDownloadProgress(totalBytesRead, totalBytes, 99, "Verifying integrity..."));
+            VerifySha256(tempPath, ExpectedSha256);
+
             File.Move(tempPath, destinationPath);
 
             AppLogger.LogStatic($"ModelDownloader: complete. bytesReceived={totalBytesRead}");
 
             progress.Report(new ModelDownloadProgress(totalBytesRead, totalBytes, 100, "Download complete."));
+        }
+        catch (InvalidDataException)
+        {
+            TryDeleteFile(tempPath);
+            throw;
         }
         catch (OperationCanceledException)
         {
@@ -131,6 +143,23 @@ public static class ModelDownloader
             TryDeleteFile(tempPath);
             throw;
         }
+    }
+
+    private static void VerifySha256(string filePath, string expectedHex)
+    {
+        using var sha = SHA256.Create();
+        using var stream = File.OpenRead(filePath);
+        var hash = sha.ComputeHash(stream);
+        var actual = Convert.ToHexString(hash);
+
+        if (!string.Equals(actual, expectedHex, StringComparison.OrdinalIgnoreCase))
+        {
+            AppLogger.LogStatic($"ModelDownloader: SHA256 mismatch. expected={expectedHex} actual={actual}");
+            throw new InvalidDataException(
+                "Downloaded model file is corrupted (SHA256 mismatch). Please try again.");
+        }
+
+        AppLogger.LogStatic("ModelDownloader: SHA256 verified OK.");
     }
 
     private static void TryDeleteFile(string path)

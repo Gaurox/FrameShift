@@ -82,9 +82,9 @@ public sealed class SeparateAudioPickerForm : Form
             "Engine");
         Controls.Add(engineSection);
 
-        _autoRadioButton = CreateEngineRadioButton("Automatic", new Point(18, 32));
-        _gpuRadioButton = CreateEngineRadioButton("GPU (DirectML)", new Point(152, 32));
-        _cpuRadioButton = CreateEngineRadioButton("CPU only", new Point(320, 32));
+        _autoRadioButton = CreateEngineRadioButton("Automatic", new Point(18, 32), 110);
+        _gpuRadioButton = CreateEngineRadioButton("GPU (DirectML)", new Point(150, 32), 140);
+        _cpuRadioButton = CreateEngineRadioButton("CPU only", new Point(320, 32), 110);
 
         if (!dmlAvailable)
         {
@@ -292,15 +292,15 @@ public sealed class SeparateAudioPickerForm : Form
         };
     }
 
-    private static RadioButton CreateEngineRadioButton(string text, Point location)
+    private static RadioButton CreateEngineRadioButton(string text, Point location, int width)
     {
         return new RadioButton
         {
             Location = location,
-            Size = new Size(150, 22),
+            Size = new Size(width, 22),
             Text = text,
             ForeColor = FrameShiftTheme.TextPrimary,
-            BackColor = Color.Transparent,
+            BackColor = FrameShiftTheme.Surface,
             UseVisualStyleBackColor = true
         };
     }
