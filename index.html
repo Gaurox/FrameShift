@@ -314,6 +314,15 @@
 
 </main>
 
+<div class="lightbox" id="gallery-lightbox" aria-hidden="true">
+  <div class="lightbox-backdrop" data-lightbox-close="true"></div>
+  <div class="lightbox-dialog" role="dialog" aria-modal="true" aria-labelledby="lightbox-caption">
+    <button class="lightbox-close" type="button" aria-label="Close enlarged screenshot" data-lightbox-close="true">×</button>
+    <img class="lightbox-image" id="lightbox-image" src="" alt="" />
+    <p class="lightbox-caption" id="lightbox-caption"></p>
+  </div>
+</div>
+
 <footer class="footer">
   <div class="container footer-inner">
     <div class="footer-brand">
@@ -330,6 +339,76 @@
     <p class="footer-copy">© 2026 gaurox · Made on Windows</p>
   </div>
 </footer>
+
+<script>
+(() => {
+  const lightbox = document.getElementById("gallery-lightbox");
+  const lightboxImage = document.getElementById("lightbox-image");
+  const lightboxCaption = document.getElementById("lightbox-caption");
+  const galleryCards = document.querySelectorAll(".gallery-grid figure");
+
+  if (!lightbox || !lightboxImage || !lightboxCaption || galleryCards.length === 0) {
+    return;
+  }
+
+  let activeCard = null;
+
+  const closeLightbox = () => {
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxImage.src = "";
+    lightboxImage.alt = "";
+    lightboxCaption.textContent = "";
+
+    if (activeCard) {
+      activeCard.focus();
+      activeCard = null;
+    }
+  };
+
+  const openLightbox = (card) => {
+    const image = card.querySelector("img");
+    const caption = card.querySelector("figcaption");
+    if (!image) {
+      return;
+    }
+
+    activeCard = card;
+    lightboxImage.src = image.currentSrc || image.src;
+    lightboxImage.alt = image.alt || "";
+    lightboxCaption.textContent = caption ? caption.textContent : image.alt || "";
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+  };
+
+  galleryCards.forEach((card) => {
+    card.tabIndex = 0;
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `Open enlarged screenshot: ${card.textContent.trim()}`);
+
+    card.addEventListener("click", () => openLightbox(card));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openLightbox(card);
+      }
+    });
+  });
+
+  lightbox.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.lightboxClose === "true") {
+      closeLightbox();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
+      closeLightbox();
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
