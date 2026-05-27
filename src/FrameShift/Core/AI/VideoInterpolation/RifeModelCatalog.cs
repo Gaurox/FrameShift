@@ -30,7 +30,8 @@ internal static class RifeModelCatalog
 
     public static IReadOnlyList<RifeModelDefinition> GetAll() => s_models;
 
-    public static RifeModelDefinition GetDefault() => s_models[0];
+    public static RifeModelDefinition GetDefault() =>
+        GetById("rife-v426-x2") ?? s_models[0];
 
     public static RifeModelDefinition? GetById(string? modelId)
     {
