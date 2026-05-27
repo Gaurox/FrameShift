@@ -23,6 +23,7 @@ public sealed class DownloadModelForm : Form
     public DownloadModelForm(
         string featureTitle,
         string featureSubtitle,
+        string preferredIconPath,
         string modelDisplayName,
         string modelLicense,
         long modelSizeBytes,
@@ -30,7 +31,7 @@ public sealed class DownloadModelForm : Form
     {
         _downloadAction = downloadAction;
 
-        FrameShiftWindowChrome.Apply(this, "FrameShift AI - Download model");
+        FrameShiftWindowChrome.Apply(this, "FrameShift AI - Download model", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -43,8 +44,8 @@ public sealed class DownloadModelForm : Form
         var header = FrameShiftUiFactory.CreateFixedHeader(
             featureTitle,
             featureSubtitle,
-            string.Empty,
-            IconPaths.AppIcon,
+            preferredIconPath,
+            IconPaths.FrameShiftAiIcon,
             "AI");
         Controls.Add(header);
 

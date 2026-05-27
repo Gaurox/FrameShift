@@ -33,6 +33,12 @@ public static class ActionOptionKeys
     public const string FlipHorizontal = "flip-h";
     public const string FlipVertical = "flip-v";
     public const string InterpolateFps = "interpolate-fps";
+    public const string InterpolateModelId = "interpolate-model-id";
+    public const string InterpolateMultiplier = "interpolate-multiplier";
+    public const string InterpolatePlaybackDivisor = "interpolate-playback-divisor";
+    public const string InterpolateSlowMotionKeepPitch = "interpolate-slowmotion-keep-pitch";
+    public const string InterpolateSlowMotionRemoveAudio = "interpolate-slowmotion-remove-audio";
+    public const string InterpolatePipeline = "interpolate-pipeline";
     public const string Stems = "stems";
     public const string SeparateEngine = "separate-engine";
     public const string NoiseStrength = "noise-strength";

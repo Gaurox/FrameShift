@@ -1,0 +1,80 @@
+﻿[
+    {
+        "name":  "cancel_long_rawvideo_inference",
+        "pipeline":  "rawvideo",
+        "action":  "cancel_button",
+        "delaySeconds":  10,
+        "exitCode":  0,
+        "noFreeze":  true,
+        "noNewOutput":  true,
+        "noResidualTemp":  true,
+        "noOrphanFfmpeg":  true,
+        "noLingeringFrameShift":  true,
+        "residualTempDirs":  [
+
+                             ],
+        "orphanFfmpeg":  {
+
+                         },
+        "lingeringFrameShift":  {
+
+                                }
+    },
+    {
+        "name":  "close_window_rawvideo_medium",
+        "pipeline":  "rawvideo",
+        "action":  "close_window",
+        "delaySeconds":  5,
+        "exitCode":  1,
+        "noFreeze":  true,
+        "noNewOutput":  false,
+        "noResidualTemp":  true,
+        "noOrphanFfmpeg":  true,
+        "noLingeringFrameShift":  true,
+        "residualTempDirs":  [
+
+                             ],
+        "orphanFfmpeg":  {
+
+                         },
+        "lingeringFrameShift":  {
+
+                                }
+    },
+    {
+        "name":  "cancel_rawvideo_late_medium",
+        "pipeline":  "rawvideo",
+        "action":  "cancel_button",
+        "delaySeconds":  28,
+        "exitCode":  1,
+        "noFreeze":  true,
+        "noNewOutput":  false,
+        "noResidualTemp":  true,
+        "noOrphanFfmpeg":  true,
+        "noLingeringFrameShift":  true,
+        "residualTempDirs":  [
+
+                             ],
+        "orphanFfmpeg":  {
+
+                         },
+        "lingeringFrameShift":  {
+
+                                }
+    },
+    {
+        "name":  "auto_fallback_on_rawvideo_failure",
+        "exitCode":  0,
+        "producedOutput":  true,
+        "fallbackLogged":  true,
+        "noResidualTemp":  true,
+        "noOrphanFfmpeg":  true,
+        "noLingeringFrameShift":  true,
+        "residualTempDirs":  [
+
+                             ],
+        "orphanFfmpeg":  {
+
+                         }
+    }
+]

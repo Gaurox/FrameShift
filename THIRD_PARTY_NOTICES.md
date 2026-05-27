@@ -11,7 +11,7 @@ FrameShift's optional `Remove Background` feature downloads the following model 
 
 - Model: `BiRefNet Lite FP16`
 - Source URL used by the application:
-  `https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx`
+  `https://huggingface.co/Gaurox/frameshift-models/resolve/main/birefnet_lite-onnx/model_fp16.onnx`
 - License string currently exposed by the application:
   `MIT License — Free for commercial and non-commercial use`
 
@@ -25,11 +25,15 @@ FrameShift also uses ONNX Runtime DirectML through the NuGet package:
 
 Any redistribution of that dependency remains subject to its upstream license and notices.
 
+## AI Model License Summary
+
+FrameShift's current optional AI model downloads map to these upstream license families:
+
+- `BiRefNet Lite FP16` (`Remove Background`): MIT
+- `DeepFilterNet3 ONNX` (`Remove Noise`): dual-licensed MIT or Apache-2.0 upstream
+- `HTDemucs` / `HTDemucs Split` (`Separate Audio`): MIT
+- `RIFE v4.26 x2 ONNX` (`Interpolate Video`): MIT
+
 ## Recommendation
 
-Before public release, verify the current upstream license pages for:
-
-- the BiRefNet Lite ONNX model distribution;
-- ONNX Runtime DirectML.
-
-If either upstream project requires attribution, notice reproduction, or bundled license text, keep those notices in this file or in a dedicated `licenses/` folder.
+If public redistribution requirements change upstream, keep the corresponding license texts and attribution notes in this file or in a dedicated `licenses/` folder.

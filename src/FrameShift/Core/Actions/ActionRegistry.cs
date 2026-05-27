@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FrameShift.Core.AI.RemoveBackground;
 using FrameShift.Core.AI.RemoveNoise;
 using FrameShift.Core.AI.SeparateAudio;
+using FrameShift.Core.AI.VideoInterpolation;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
 using FrameShift.Core.Helpers;
@@ -131,6 +132,10 @@ public sealed class ActionRegistry
                 ffprobeRunner,
                 toolLocator),
             new InterpolateVideoAction(
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
+            new RifeInterpolateVideoAction(
                 ffmpegRunner,
                 ffprobeRunner,
                 toolLocator),

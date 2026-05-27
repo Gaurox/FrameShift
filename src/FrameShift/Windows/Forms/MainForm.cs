@@ -1,5 +1,7 @@
 using System;
 using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using FrameShift.Windows.Helpers;
 
@@ -12,9 +14,19 @@ public sealed class MainForm : Form
     private static readonly Font s_tileTitleFont = new("Segoe UI Semibold", 11F, FontStyle.Regular, GraphicsUnit.Point);
     private static readonly Font s_tileBodyFont  = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
     private static readonly Font s_hintFont      = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+    private readonly string[] _startupPaths;
 
     public MainForm()
+        : this(Array.Empty<string>())
     {
+    }
+
+    public MainForm(IEnumerable<string> startupPaths)
+    {
+        _startupPaths = startupPaths?
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .ToArray() ?? [];
+
         FrameShiftWindowChrome.Apply(this, "FrameShift");
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(640, 440);
@@ -33,14 +45,14 @@ public sealed class MainForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
 
-        root.Controls.Add(BuildHeader(), 0, 0);
+        root.Controls.Add(BuildHeader(_startupPaths), 0, 0);
         root.Controls.Add(BuildTileGrid(), 0, 1);
-        root.Controls.Add(BuildHint(), 0, 2);
+        root.Controls.Add(BuildHint(_startupPaths), 0, 2);
 
         Controls.Add(root);
     }
 
-    private static Panel BuildHeader()
+    private static Panel BuildHeader(IReadOnlyList<string> startupPaths)
     {
         var panel = new Panel
         {
@@ -61,7 +73,7 @@ public sealed class MainForm : Form
         {
             AutoSize = true,
             Location = new Point(2, 36),
-            Text = $"Local multimedia processing for Windows  ·  v{Application.ProductVersion}",
+            Text = BuildSubtitle(startupPaths),
             Font = s_subtitleFont,
             ForeColor = FrameShiftTheme.TextMuted
         };
@@ -91,7 +103,7 @@ public sealed class MainForm : Form
             ("Video",    "Convert · Cut · Crop · GIF · Resize · Extract · Rotate · Interpolate"),
             ("Audio",    "Convert · Cut · Reverse · Pitch · Speed · Compress · Separate"),
             ("Image",    "Convert · Crop · Resize · Rotate · Compress · PDF · Icon"),
-            ("AI tools", "Remove Background · Remove Noise · Separate Audio"),
+            ("AI tools", "Remove Background · Remove Noise · Separate Audio · RIFE Interpolate"),
         };
 
         for (var i = 0; i < tiles.Length; i++)
@@ -155,15 +167,45 @@ public sealed class MainForm : Form
         return panel;
     }
 
-    private static Label BuildHint()
+    private static Label BuildHint(IReadOnlyList<string> startupPaths)
     {
         return new Label
         {
             Dock = DockStyle.Fill,
-            Text = "Right-click files in Windows Explorer to use FrameShift.",
+            Text = BuildHintText(startupPaths),
             Font = s_hintFont,
             ForeColor = FrameShiftTheme.TextMuted,
             TextAlign = ContentAlignment.MiddleLeft
         };
+    }
+
+    private static string BuildSubtitle(IReadOnlyList<string> startupPaths)
+    {
+        if (startupPaths.Count == 0)
+        {
+            return $"Local multimedia processing for Windows  ·  v{Application.ProductVersion}";
+        }
+
+        return $"{FormatSelectionLabel(startupPaths)}  ·  v{Application.ProductVersion}";
+    }
+
+    private static string BuildHintText(IReadOnlyList<string> startupPaths)
+    {
+        if (startupPaths.Count == 0)
+        {
+            return "Right-click files in Windows Explorer to use FrameShift.";
+        }
+
+        return "UI launched from a file selection. Action routing is not wired here yet.";
+    }
+
+    private static string FormatSelectionLabel(IReadOnlyList<string> startupPaths)
+    {
+        if (startupPaths.Count == 1)
+        {
+            return $"Selected: {Path.GetFileName(startupPaths[0])}";
+        }
+
+        return $"{startupPaths.Count} selected items";
     }
 }

@@ -310,4 +310,13 @@ public static class MediaActionMessages
 
     public static string InterpolateVideoFrameRateUnavailable() =>
         "FrameShift could not determine the video frame rate needed for interpolation.";
+
+    public static string RifeInterpolateVideoSettingsMissing() =>
+        "RIFE interpolate video settings are missing.";
+
+    public static string RifeInterpolateVideoSettingsInvalid() =>
+        "RIFE interpolate video settings are invalid.";
+
+    public static string RifeInterpolateVideoModelMissing() =>
+        "The selected RIFE model is not available.";
 }

@@ -21,7 +21,7 @@ public static class ModelDownloader
     public const long ExpectedSizeBytes = 115L * 1024L * 1024L;
 
     private const string ModelUrl =
-        "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/main/onnx/model_fp16.onnx";
+        "https://huggingface.co/Gaurox/frameshift-models/resolve/main/birefnet_lite-onnx/model_fp16.onnx";
 
     private const string ExpectedSha256 =
         "D39B897CEB16AE654C1731F3DBA0CF9B368D9CAE74B5A57459B455CC8BFEC402";

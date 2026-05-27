@@ -162,7 +162,10 @@ L'UI doit rester :
 
 La chrome Windows des fenêtres d'action doit rester centralisée :
 - titre standard `FrameShift - <fonction>` ;
-- icône de barre de titre et de barre des tâches = icône globale FrameShift ;
+- icône de barre de titre et de barre des tâches pilotée par la couche UI commune ;
+- fenêtres d'action standard : icône globale FrameShift ;
+- fenêtres IA et écrans de téléchargement de modèle : icône `FrameShift AI` ;
+- bandeau interne des fenêtres IA : icône dédiée de la fonction quand elle existe dans `Assets\Icons\ai` ;
 - bandeau interne de la fonction = séparé et géré par les helpers UI partagés.
 
 Un bandeau donation discret peut être partagé par la fenêtre de progression commune sans bloquer le traitement ni changer la logique de queue.

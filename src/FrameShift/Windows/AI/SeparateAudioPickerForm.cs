@@ -29,7 +29,7 @@ public sealed class SeparateAudioPickerForm : Form
         bool dmlAvailable,
         IReadOnlyDictionary<string, string>? initialOptions = null)
     {
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Audio Separation");
+        FrameShiftWindowChrome.Apply(this, "FrameShift - Audio Separation", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -43,7 +43,7 @@ public sealed class SeparateAudioPickerForm : Form
             "FrameShift - Audio Separation",
             $"Source: {sourceLabel}",
             IconPaths.SeparateAudioAiIcon,
-            IconPaths.AppIcon,
+            IconPaths.FrameShiftAiIcon,
             "AI");
         Controls.Add(header);
 

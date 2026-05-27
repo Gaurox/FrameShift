@@ -11,6 +11,15 @@ Règles de lecture :
 ## Entrypoints et packaging
 
 - `src/FrameShift/Program.cs`
+- `src/FrameShift/ProgramCli.cs`
+- `src/FrameShift/ProgramBatch.cs`
+- `src/FrameShift/ProgramAiPreflight.cs`
+- `src/FrameShift/ProgramImageToPdf.cs`
+- `src/FrameShift/ProgramPickersConversion.cs`
+- `src/FrameShift/ProgramPickersCut.cs`
+- `src/FrameShift/ProgramPickersImage.cs`
+- `src/FrameShift/ProgramPickersResizeCompress.cs`
+- `src/FrameShift/ProgramPickersTiming.cs`
 - `src/FrameShift/FrameShift.csproj`
 - `tests/FrameShift.Tests/FrameShift.Tests.csproj`
 - `installer/FrameShift.iss`
@@ -77,7 +86,9 @@ Vidéo :
 - `src/FrameShift/Core/Actions/ExtractAudioCatalog.cs`
 - `src/FrameShift/Core/Actions/ExtractFramesAction.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoAction.cs`
+- `src/FrameShift/Core/Actions/RifeInterpolateVideoAction.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoSettings.cs`
+- `src/FrameShift/Core/Actions/RifeInterpolateVideoSettings.cs`
 - `src/FrameShift/Core/Actions/RemoveAudioAction.cs`
 - `src/FrameShift/Core/Actions/ResizeVideoAction.cs`
 - `src/FrameShift/Core/Actions/ResizeSettings.cs`
@@ -122,6 +133,7 @@ Media Info :
 ## Core/AI
 
 - `src/FrameShift/Core/AI/AiModelDownloadProgress.cs`
+- `src/FrameShift/Core/AI/AiModelFileDownloader.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/IBackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/ModelDownloader.cs`
@@ -139,7 +151,14 @@ Media Info :
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseAction.cs`
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseEngine.cs`
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoAction.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifePerfTimer.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifePerformanceMetrics.cs`
 - `src/FrameShift/Core/AI/RemoveNoise/RemoveNoiseVideoSettings.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifeFrameInterpolationEngine.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifeModelCatalog.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifeModelDefinition.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifeModelDownloader.cs`
+- `src/FrameShift/Core/AI/VideoInterpolation/RifeModelLocator.cs`
 
 Helpers core utiles :
 - `src/FrameShift/Core/Helpers/ImageAutoCropDetector.cs`
@@ -152,6 +171,8 @@ Batch et progression :
 
 IA :
 - `src/FrameShift/Windows/AI/DownloadModelForm.cs`
+- `src/FrameShift/Windows/AI/RemoveNoiseAudioPickerForm.cs`
+- `src/FrameShift/Windows/AI/RifeInterpolateVideoPickerForm.cs`
 - `src/FrameShift/Windows/AI/SeparateAudioPickerForm.cs`
 - `src/FrameShift/Windows/AI/RemoveNoiseVideoPickerForm.cs`
 
@@ -206,6 +227,7 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/ExtractAudioCatalogTests.cs`
 - `tests/FrameShift.Tests/ImageAutoCropDetectorTests.cs`
 - `tests/FrameShift.Tests/OutputPathHelperTests.cs`
+- `tests/FrameShift.Tests/RifeInterpolateVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 
@@ -214,8 +236,17 @@ Assets de test utiles :
 
 ## Notes
 
-- `Image to PDF` est un module interactif lancé via `Program.cs`, pas un exécutable séparé.
+- Le launcher `Program` est maintenant découpé en plusieurs fichiers `partial` :
+- `Program.cs` = entrypoint + routage principal ;
+- `ProgramCli.cs` = parsing CLI ;
+- `ProgramBatch.cs` = batch, progression, annulation ;
+- `ProgramAiPreflight.cs` = préflight IA ;
+- `ProgramImageToPdf.cs` = flux single-instance `Image to PDF` ;
+- `ProgramPickers*.cs` = fallback UI et collecte d'options par familles d'actions.
+- `Image to PDF` reste un module interactif lancé par ce launcher `Program`, pas un exécutable séparé.
 - `CropImageForm` et `CropVideoForm` partagent maintenant une base UI proche via `FrameShiftCropEditorUi.cs`, avec auto-crop visuel et navigation de preview.
 - `Media Info` passe par `FfprobeRunner.TryProbeMediaInfoAsync(...)` puis `MediaInfoFormatter`.
 - `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
+- `DownloadModelForm` est maintenant le downloader IA partagé des modules `remove-background`, `remove-noise`, `separate-audio` et `interpolate-video-rife`.
+- `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.

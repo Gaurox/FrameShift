@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.5"
+#define MyAppVersion "1.0.6"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -77,11 +77,12 @@ Name: "ai\remove_background"; Description: "Remove background"; Types: complete 
 Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
 Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
 Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
+Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio tools\media_info
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image ai\interpolate_video_rife
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio ai\interpolate_video_rife tools\media_info
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
@@ -358,6 +359,10 @@ begin
   else if MenuKey = 'separate_audio' then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\separate_audio_icon.ico');
+  end
+  else if MenuKey = 'interpolate_video_rife' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\Interpolate_icon.ico');
   end
   else
   begin
@@ -873,6 +878,15 @@ begin
       'separate_audio',
       'Audio separation',
       'separate-audio');
+  end;
+
+  if WizardIsComponentSelected('ai\interpolate_video_rife') then
+  begin
+    ApplyAIActionMenuList(
+      VideoExtensions,
+      'interpolate_video_rife',
+      'Interpolate video (RIFE)',
+      'interpolate-video-rife');
   end;
 end;
 

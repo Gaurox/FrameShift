@@ -12,7 +12,7 @@ namespace FrameShift.Core.AI.RemoveNoise;
 internal static class DeepFilterNetModelDownloader
 {
     public const string ModelDisplayName = "DeepFilterNet3 (enc + erb_dec + df_dec + config)";
-    public const string ModelLicense     = "Apache 2.0 — Free for commercial and non-commercial use";
+    public const string ModelLicense     = "MIT or Apache 2.0 — Upstream dual license";
     public const long   TotalSizeBytes   = 9_738_000L;
 
     private const string BaseUrl =

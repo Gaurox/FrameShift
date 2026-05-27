@@ -10,6 +10,7 @@ Documentation centrale du projet FrameShift.
 - [Migration Plan](MIGRATION_PLAN.md)
 - [Changelog](CHANGELOG.md)
 - [Code File Index](CODE_FILE_INDEX.md)
+- [RIFE Interpolation Notes](RIFE_INTERPOLATION_NOTES.md)
 
 ## Scope
 

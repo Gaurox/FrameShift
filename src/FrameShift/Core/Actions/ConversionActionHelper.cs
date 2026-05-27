@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace FrameShift.Core.Actions;
 
@@ -29,9 +30,31 @@ public static class ConversionActionHelper
 
     public static void DeleteIfExists(string path)
     {
-        if (File.Exists(path))
+        if (!File.Exists(path))
         {
-            File.Delete(path);
+            return;
+        }
+
+        const int maxAttempts = 10;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+
+                return;
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                Thread.Sleep(200);
+            }
+            catch (UnauthorizedAccessException) when (attempt < maxAttempts)
+            {
+                Thread.Sleep(200);
+            }
         }
     }
 

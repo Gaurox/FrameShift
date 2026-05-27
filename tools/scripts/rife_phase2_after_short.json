@@ -1,0 +1,21 @@
+﻿{
+    "input":  "E:\\AI\\FrameShift_V1\\tests\\input\\Video5s_16fps_no_sound-1280p.mp4",
+    "sourceBytes":  1419668,
+    "exitCode":  0,
+    "provider":  "DirectML",
+    "totalMs":  5760.3,
+    "realFps":  27.95,
+    "pairCount":  80,
+    "encodedFrameCount":  161,
+    "imageToTensorMs":  1251.5,
+    "tensorToImageMs":  870,
+    "onnxMs":  1506.2,
+    "ioMs":  1535.8,
+    "extractMs":  181.8,
+    "frameReadMs":  166.8,
+    "frameWriteMs":  787.9,
+    "reconstructMs":  399.3,
+    "peakWorkingSetMb":  7.02,
+    "vramApprox":  "33.75 MB minimum tensor footprint",
+    "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
+}

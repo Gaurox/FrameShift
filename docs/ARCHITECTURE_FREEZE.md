@@ -79,6 +79,9 @@ Le projet conserve un point d’entrée CLI commun :
 FrameShift.exe --action <id> [options] <input-paths...>
 ```
 
+Implémentation active :
+- le launcher reste centré sur `Program`, mais ce code est désormais réparti en plusieurs fichiers `partial` pour séparer bootstrap, parsing CLI, batch/progression, préflight IA, `Image to PDF` et pickers.
+
 Mais cela ne signifie pas “headless complet” pour toutes les actions.
 
 État réel :
@@ -108,7 +111,11 @@ Actions avec entrée CLI mais couverture headless partielle selon les options fo
 - `change-audio-speed`
 - `change-video-speed`
 - `interpolate-video`
+- `interpolate-video-rife`
+- `remove-noise`
+- `remove-noise-video`
 - `remove-background` s’appuie sur la progression commune, avec file visible, annulation propre et préflight du modèle si nécessaire.
+- `separate-audio`
 
 Actions les plus proches d’un mode batch/CLI stable :
 - `convert-video`
@@ -121,6 +128,23 @@ Actions les plus proches d’un mode batch/CLI stable :
 - `remove-background`
 
 La documentation ne doit donc pas promettre “compatibilité CLI complète” sans préciser ce niveau.
+
+## IA locale : état réel figé
+
+Modules IA actifs :
+- `remove-background`
+- `remove-noise`
+- `remove-noise-video`
+- `separate-audio`
+- `interpolate-video-rife`
+
+Règles stables :
+- pas de modèle embarqué dans Git ni dans l’installateur ;
+- téléchargement du modèle au moment utile, pas à l’ouverture simple d’une UI ;
+- vérification d’intégrité du modèle dans le flux de préflight ou de téléchargement quand le module le prévoit ;
+- intégration Explorer dédiée sous `FrameShift AI` ;
+- barre de titre des fenêtres IA fixée sur l’icône `FrameShift AI` ;
+- icônes de fonction IA dédiées centralisées dans `Assets\Icons\ai` pour les bandeaux internes et les menus Explorer.
 
 ## Linux
 

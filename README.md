@@ -18,6 +18,7 @@ FrameShift is a desktop utility for fast video, audio, image, and AI-assisted me
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
 Remove backgrounds, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
+RIFE interpolation is also available as a dedicated local AI workflow for smoother motion on supported video clips.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
@@ -100,6 +101,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Remove Noise (Audio) | Strip background noise from audio files with strength control, stereo mode, and live preview. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
 | Remove Noise (Video) | Denoise a video's audio track without re-encoding the video stream. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
 | Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |
+| Interpolate Video (RIFE) | Generate smoother motion with the local RIFE workflow, model preflight, and adjacent unique outputs. | <img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate Video RIFE" width="320" /> |
 
 ## Built For
 
@@ -136,6 +138,7 @@ tests/
 - [Migration Plan](docs/MIGRATION_PLAN.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Code File Index](docs/CODE_FILE_INDEX.md)
+- [RIFE Interpolation Notes](docs/RIFE_INTERPOLATION_NOTES.md)
 
 ## Notes
 

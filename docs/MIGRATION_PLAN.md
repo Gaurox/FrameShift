@@ -15,7 +15,7 @@ Ce document sert désormais de rappel d’architecture et de garde-fou post-migr
 ## Ce qui est stabilisé
 
 Base active validée :
-- `Program.cs` pour le launcher, le parsing CLI et l’ouverture des pickers ;
+- le launcher `Program` découpé en plusieurs fichiers `partial` pour séparer entrypoint, parsing CLI, batch, préflight IA, `Image to PDF` et pickers ;
 - `ActionRegistry.cs` pour la surface des actions core ;
 - `FfmpegRunner.cs` pour tous les appels FFmpeg ;
 - `FfprobeRunner.cs` pour tous les appels FFprobe, y compris Media Info ;
@@ -36,7 +36,7 @@ UI partagée active :
 
 Le modèle dominant est :
 
-1. entrée `Program.cs`
+1. entrée `Program`
 2. ouverture éventuelle d’un formulaire WinForms
 3. sérialisation des options dans `ActionOptionKeys`
 4. validation et exécution par une action core
@@ -107,4 +107,4 @@ La migration initiale est finie, mais il reste de la consolidation :
 - le code actif fait foi ;
 - `references/` sert uniquement de contexte ;
 - toute nouvelle capacité doit être branchée jusqu’au publish et à l’installateur ;
-- toute promesse documentaire doit être vérifiée contre `Program.cs`, `ActionRegistry.cs` et `installer/FrameShift.iss`.
+- toute promesse documentaire doit être vérifiée contre les fichiers `Program*.cs`, `ActionRegistry.cs` et `installer/FrameShift.iss`.

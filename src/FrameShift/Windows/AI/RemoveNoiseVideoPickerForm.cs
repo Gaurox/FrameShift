@@ -50,7 +50,7 @@ public sealed class RemoveNoiseVideoPickerForm : Form
         if (previewSourcePath != null && ffmpegPath != null)
             _ffmpegRunner = new FfmpegRunner(new AppLogger());
 
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Noise (Video)");
+        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Noise (Video)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -64,7 +64,7 @@ public sealed class RemoveNoiseVideoPickerForm : Form
             "FrameShift - Remove Noise (Video)",
             $"Source: {sourceLabel}",
             IconPaths.RemoveNoiseAiIcon,
-            IconPaths.AppIcon,
+            IconPaths.FrameShiftAiIcon,
             "AI");
         Controls.Add(header);
 
@@ -74,10 +74,10 @@ public sealed class RemoveNoiseVideoPickerForm : Form
             "Noise reduction strength");
         Controls.Add(strengthSection);
 
-        _lightTile   = CreateStrengthTile("Light",   "Bruit présent, réduit", new Point(13,  32), RemoveNoiseVideoSettings.StrengthLight,   false, out _lightRadio);
-        _normalTile  = CreateStrengthTile("Normal",  "Réduction équilibrée",  new Point(143, 32), RemoveNoiseVideoSettings.StrengthNormal,  false, out _normalRadio);
-        _strongTile  = CreateStrengthTile("Strong",  "Réduction forte",       new Point(273, 32), RemoveNoiseVideoSettings.StrengthStrong,  false, out _strongRadio);
-        _maximumTile = CreateStrengthTile("Maximum", "Nettoyage maximal",     new Point(403, 32), RemoveNoiseVideoSettings.StrengthMaximum, true,  out _maximumRadio);
+        _lightTile   = CreateStrengthTile("Light",   "Noticeable noise, lightly reduced", new Point(13,  32), RemoveNoiseVideoSettings.StrengthLight,   false, out _lightRadio);
+        _normalTile  = CreateStrengthTile("Normal",  "Balanced noise reduction",           new Point(143, 32), RemoveNoiseVideoSettings.StrengthNormal,  false, out _normalRadio);
+        _strongTile  = CreateStrengthTile("Strong",  "Aggressive noise reduction",         new Point(273, 32), RemoveNoiseVideoSettings.StrengthStrong,  false, out _strongRadio);
+        _maximumTile = CreateStrengthTile("Maximum", "Maximum cleanup",                    new Point(403, 32), RemoveNoiseVideoSettings.StrengthMaximum, true,  out _maximumRadio);
 
         strengthSection.Controls.AddRange([_lightTile, _normalTile, _strongTile, _maximumTile]);
 

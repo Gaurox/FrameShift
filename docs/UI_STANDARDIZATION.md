@@ -35,7 +35,8 @@ Niveaux actifs :
 - `FrameShiftUiFactory.cs` : construction des briques standard (`header`, sections, info cards, boutons, champs) ;
 - `FrameShiftEditorShellUi.cs` : shell commun pour les écrans d’édition avec bandeau + spacer + zone de travail principale ;
 - `FrameShiftCropEditorUi.cs` : shell partagé de la famille `crop`.
-- `FrameShiftWindowChrome.cs` : chrome Windows commune des fenêtres d’action (`Text`, `ShowIcon`, icône globale FrameShift).
+- `FrameShiftWindowChrome.cs` : chrome Windows commune des fenêtres d’action (`Text`, `ShowIcon`, icône globale ou IA selon le contexte).
+- `IconPaths.cs` : mapping centralisé des icônes actives, y compris les icônes IA du dossier `Assets\Icons\ai`.
 
 Règle de structure :
 - d’abord réutiliser la couche commune globale ;
@@ -171,12 +172,15 @@ La barre de titre Windows doit rester uniforme sur toutes les fenêtres d’acti
 
 Règles :
 - le texte de la fenêtre doit suivre `FrameShift - <nom de la fonction>` ;
-- l’icône de la barre de titre et de la barre des tâches doit être l’icône globale FrameShift ;
-- les icônes de fonction dédiées restent réservées au bandeau interne juste en dessous, quand elles apportent une vraie valeur visuelle ;
+- les fenêtres standard utilisent l’icône globale FrameShift ;
+- les fenêtres IA et téléchargements de modèles IA utilisent l’icône `FrameShift AI` dans la barre de titre ;
+- les icônes de fonction dédiées des fonctionnalités IA restent réservées au bandeau interne ;
+- ces icônes dédiées doivent venir uniquement de `Assets\Icons\ai` ;
 - la chrome Windows doit être appliquée via une couche commune, pas recodée dans chaque formulaire.
 
 Règle d’implémentation :
 - utiliser `FrameShiftWindowChrome.Apply(...)` pour les fenêtres d’action qui partagent cette chrome standard ;
+- utiliser la surcharge avec `FrameShift AI` comme icône préférée pour les fenêtres IA ;
 - conserver le bandeau interne séparé et inchangé ;
 - ne pas mélanger chrome Windows et bandeau interne dans un seul helper local.
 
@@ -449,6 +453,69 @@ Règles :
 - les boutons inline doivent rester compacts, lisibles et alignés verticalement avec le champ ;
 - aucun bouton, séparateur ou bordure ne doit se superposer au texte ou à la bordure du champ ;
 - si ce pattern apparaît plusieurs fois dans une même fenêtre, tous les groupes doivent utiliser la même géométrie.
+
+### 8.3 Harmonisation `TextBox` / sélecteurs déroulants
+
+Références actuelles à suivre :
+- `CompressVideoForm.cs`
+- `RifeInterpolateVideoPickerForm.cs`
+- `FrameShiftUiFactory.cs`
+
+Objectif :
+- éviter qu’un `TextBox` paraisse “dessiné” différemment d’un sélecteur juste à côté ;
+- éviter les hauteurs mixtes ;
+- éviter les blocs tassés où un menu dépasse en bas ;
+- éviter les menus trop étroits ou trop courts.
+
+Pattern standard recommandé :
+- les champs de valeur utilisent `CreateValueTextBox(...)` dans `CreateFixedTextInputHost(...)` ;
+- hauteur visuelle standard : `30 px` ;
+- padding interne standard du host : `8, 5, 8, 5` ;
+- les sélecteurs doivent reprendre la même hauteur visuelle que les champs texte voisins ;
+- dans une même ligne, `TextBox`, sélecteurs et suffixes doivent partager la même base verticale.
+
+Règles de cohérence :
+- ne pas mélanger dans une même ligne un `TextBox` encadré et un `ComboBox` qui a l’air plus haut ou plus bas ;
+- si un sélecteur natif ne donne pas un rendu cohérent, le masquer derrière un petit conteneur stylé FrameShift plutôt que d’accepter un compromis visuel ;
+- utiliser le même rayon, le même bleu de bordure et le même fond que les autres champs ;
+- garder les libellés sur une ligne dédiée au-dessus quand cela améliore l’alignement ;
+- si une ligne commence à être dense, agrandir la section ou la fenêtre au lieu de compresser les contrôles.
+
+Pattern retenu pour les sélecteurs stylés :
+- un `Panel` encadré via `CreateFramedPanel(...)` ;
+- padding `8, 5, 8, 5` ;
+- un `Label` docké en remplissage pour la valeur ;
+- un petit `Label` docké à droite pour la flèche `▾` ;
+- un `ContextMenuStrip` pour la sélection.
+
+Quand utiliser ce pattern :
+- si l’on veut que le sélecteur ait exactement la même présence visuelle qu’un champ texte ;
+- si plusieurs sélecteurs doivent être strictement harmonisés avec des champs de valeur en lecture seule ;
+- si l’on veut contrôler précisément la largeur d’ouverture du menu.
+
+Règles pour les menus déroulants :
+- par défaut, le menu doit au minimum reprendre la largeur du contrôle d’ancrage ;
+- pour un sélecteur large comme `Model`, le menu doit s’ouvrir sur toute la largeur du bloc ;
+- pour un petit sélecteur comme `Target`, on peut garder une largeur minimale raisonnable, mais jamais inférieure à celle du contrôle ;
+- si la largeur du menu est forcée, recalculer aussi sa hauteur préférée ;
+- ne jamais fixer seulement la largeur d’un `ContextMenuStrip` sans recalculer sa hauteur, sinon les petits menus risquent d’apparaître tronqués ;
+- chaque `ToolStripMenuItem` doit recevoir la largeur utile du menu quand `AutoSize` est désactivé.
+
+Règles de layout :
+- laisser au moins une marge visible sous le dernier contrôle d’un bloc ;
+- si un sélecteur du bas semble “collé” à la bordure, agrandir le bloc avant d’ajouter des offsets locaux arbitraires ;
+- après toute modification de hauteur interne, redescendre aussi le bloc d’info, le footer et la taille globale de la fenêtre ;
+- vérifier qu’aucune ligne de contrôle, aucun menu et aucun bloc d’info ne se superposent visuellement.
+
+Méthode de validation :
+- ouvrir la fenêtre avec un vrai fichier ;
+- ouvrir chaque menu déroulant, pas seulement le plus grand ;
+- vérifier séparément un petit menu (`Target`), un menu moyen (`Playback`) et un menu large (`Model`) ;
+- vérifier que tous les choix restent lisibles, non tronqués et alignés ;
+- vérifier que la fenêtre reste propre à `100 %` et en DPI Windows standard.
+
+Principe à retenir :
+- si un contrôle de saisie ou de sélection paraît différent des autres, ce n’est pas un détail cosmétique : il faut l’aligner sur le pattern standard avant de considérer la fenêtre terminée.
 
 ---
 

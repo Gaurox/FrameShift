@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Added `Remove Noise (Video)` as a local AI action with dedicated picker UI and adjacent output workflow.
+- Expanded the shared AI model download flow so local AI actions use a consistent preflight/downloader UX.
+- Standardized AI window and Explorer icons around the active assets in `Assets\Icons\ai`.
+- Kept the local AI documentation and active file index aligned with the current product surface.
+
+## 1.0.6
+
+- Added `Interpolate Video (RIFE)` as a local AI action with integrated model support, Explorer integration, and a dedicated picker UI.
+- Added the shared RIFE model preflight/download flow so the model is validated before launch.
+- Updated product and installer metadata to version `1.0.6`.
+
 ## 1.0.5
 
 - Fixed `Audio Separation` DML fallback: on DirectML initialization failure the engine now falls back to the V1 CPU model (`htdemucs.onnx`) instead of running the split model on CPU, which had no benefit over the full in-graph model on that execution provider.
