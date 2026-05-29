@@ -7,6 +7,10 @@
 - Standardized AI window and Explorer icons around the active assets in `Assets\Icons\ai`.
 - Kept the local AI documentation and active file index aligned with the current product surface.
 
+## 1.0.7
+
+- Security and compliance fixes: completed third-party license notices, removed developer paths from scripts, added log rotation, added NuGet package lock files, added SECURITY.md.
+
 ## 1.0.6
 
 - Added `Interpolate Video (RIFE)` as a local AI action with integrated model support, Explorer integration, and a dedicated picker UI.

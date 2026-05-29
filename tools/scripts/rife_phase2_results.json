@@ -18,7 +18,7 @@
         "reconstructMs":  391.8,
         "peakWorkingSetMb":  6.92,
         "vramApprox":  "33.75 MB minimum tensor footprint",
-        "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
+        "reportPath":  "%LOCALAPPDATA%\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
     },
     {
         "input":  "E:\\AI\\FrameShift_V1\\tests\\input\\video13s_25fps_sound_1080p.mp4",
@@ -39,7 +39,7 @@
         "reconstructMs":  1953.9,
         "peakWorkingSetMb":  4.69,
         "vramApprox":  "71.72 MB minimum tensor footprint",
-        "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
+        "reportPath":  "%LOCALAPPDATA%\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
     },
     {
         "input":  "E:\\AI\\FrameShift_V1\\tests\\input\\video217s_25fps_sound_1080p.mp4",
@@ -60,6 +60,6 @@
         "reconstructMs":  101208.8,
         "peakWorkingSetMb":  4.73,
         "vramApprox":  "71.72 MB minimum tensor footprint",
-        "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
+        "reportPath":  "%LOCALAPPDATA%\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
     }
 ]

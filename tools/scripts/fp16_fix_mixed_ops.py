@@ -19,8 +19,8 @@ from onnx import AttributeProto, TensorProto, helper
 
 warnings.filterwarnings("ignore")
 
-MODEL_IN = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted.onnx"
-MODEL_OUT = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted_fix1.onnx"
+MODEL_IN = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted.onnx")
+MODEL_OUT = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted_fix1.onnx")
 
 PATCH_OPS = {"Add", "Sub", "Mul", "Div"}
 ERROR_RE = re.compile(

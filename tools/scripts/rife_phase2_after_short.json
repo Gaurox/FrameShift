@@ -17,5 +17,5 @@
     "reconstructMs":  399.3,
     "peakWorkingSetMb":  7.02,
     "vramApprox":  "33.75 MB minimum tensor footprint",
-    "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
+    "reportPath":  "%LOCALAPPDATA%\\FrameShift\\logs\\RifePerformanceReport_latest.txt"
 }

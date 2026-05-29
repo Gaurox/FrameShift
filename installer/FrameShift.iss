@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.6"
+#define MyAppVersion "1.0.7"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -985,6 +985,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ModelsDir: string;
   AIDir: string;
+  LogsDir: string;
 begin
   if CurUninstallStep = usUninstall then
   begin
@@ -1004,6 +1005,19 @@ begin
         DelTree(ModelsDir, True, True, True);
         AIDir := ExpandConstant('{localappdata}\FrameShift\AI');
         RemoveDir(AIDir);
+      end;
+    end;
+
+    LogsDir := ExpandConstant('{localappdata}\FrameShift\logs');
+    if DirExists(LogsDir) then
+    begin
+      if MsgBox(
+        'Do you also want to delete diagnostic logs?' + #13#10#13#10 +
+        'Location: ' + LogsDir,
+        mbConfirmation,
+        MB_YESNO) = IDYES then
+      begin
+        DelTree(LogsDir, True, True, True);
       end;
     end;
   end;

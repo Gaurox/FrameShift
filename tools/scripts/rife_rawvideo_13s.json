@@ -24,5 +24,5 @@
     "sourceDurationSeconds":  13.24,
     "outputDurationSeconds":  13.22,
     "syncDeltaMs":  20,
-    "reportPath":  "C:\\Users\\Adrien\\AppData\\Local\\FrameShift\\logs\\RifeRawVideoPerformanceReport_latest.txt"
+    "reportPath":  "%LOCALAPPDATA%\\FrameShift\\logs\\RifeRawVideoPerformanceReport_latest.txt"
 }

@@ -6,7 +6,8 @@ import onnx
 from onnx import TensorProto
 from collections import defaultdict
 
-MODEL = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx"
+import os
+MODEL = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx")
 
 print("Loading model...", flush=True)
 model = onnx.load(MODEL)

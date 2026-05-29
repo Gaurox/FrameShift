@@ -4,8 +4,8 @@ import onnxruntime as ort
 import os
 
 MODELS = {
-    "FP32":    r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx",
-    "FP16_v4": r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_v4.onnx",
+    "FP32":    os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx"),
+    "FP16_v4": os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_v4.onnx"),
 }
 SIZES = [("720p",  1280, 768), ("1080p", 1920, 1088)]
 WARMUP = 5

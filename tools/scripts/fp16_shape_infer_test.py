@@ -6,7 +6,8 @@ import time, warnings
 warnings.filterwarnings("ignore")
 import onnx
 
-MODEL = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx"
+import os
+MODEL = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx")
 
 print("Loading...", flush=True)
 t0 = time.perf_counter()

@@ -1,9 +1,10 @@
 """Quick load+inference test for FP16 v3 model."""
-import time, numpy as np, onnxruntime as ort
+import time, numpy as np, onnxruntime as ort, os
 
+_base = os.environ.get("LOCALAPPDATA", "")
 for label, path in [
-    ("FP32",    r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx"),
-    ("FP16_v3", r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_v3.onnx"),
+    ("FP32",    os.path.join(_base, r"FrameShift\AI\Models\rife\rife_v426_x2.onnx")),
+    ("FP16_v3", os.path.join(_base, r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_v3.onnx")),
 ]:
     print(f"\n=== {label} ===", flush=True)
     opts = ort.SessionOptions()

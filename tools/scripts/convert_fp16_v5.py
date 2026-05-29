@@ -9,8 +9,8 @@ import time, os
 import onnx
 from onnxconverter_common import float16
 
-MODEL_FP32 = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx"
-MODEL_FP16 = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_v5.onnx"
+MODEL_FP32 = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx")
+MODEL_FP16 = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_v5.onnx")
 
 # Block everything that must stay FP32 (shape ops, index ops, aux inputs)
 BLOCK = {

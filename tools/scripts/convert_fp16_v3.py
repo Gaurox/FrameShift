@@ -8,8 +8,8 @@ import numpy as np
 import onnx
 from onnx import TensorProto, numpy_helper, helper, AttributeProto
 
-MODEL_FP32 = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx"
-MODEL_FP16 = r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_v3.onnx"
+MODEL_FP32 = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx")
+MODEL_FP16 = os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_v3.onnx")
 
 t0 = time.perf_counter()
 print("Loading model...", flush=True)

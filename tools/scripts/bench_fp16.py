@@ -5,11 +5,12 @@ import time
 import numpy as np
 import onnxruntime as ort
 import sys
+import os
 
 MODELS = {
-    "FP32":       r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx",
-    "FP16_v1":    r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16.onnx",
-    "FP16_v2":    r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_v2.onnx",
+    "FP32":       os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx"),
+    "FP16_v1":    os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16.onnx"),
+    "FP16_v2":    os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_v2.onnx"),
 }
 
 # Test at 720p padded (same as FrameShift actual use case for 1280x720 video)

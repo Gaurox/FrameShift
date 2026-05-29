@@ -6,6 +6,8 @@ namespace FrameShift.Core.Logging;
 public sealed class AppLogger
 {
     private static readonly object _writeLock = new();
+    private const long MaxLogSizeBytes = 1L * 1024L * 1024L; // 1 MB
+
     public static string LogPath
     {
         get
@@ -39,8 +41,36 @@ public sealed class AppLogger
             Directory.CreateDirectory(logDirectory);
             lock (_writeLock)
             {
+                RotateIfNeeded();
                 File.AppendAllText(LogPath, line + Environment.NewLine);
             }
+        }
+        catch
+        {
+        }
+    }
+
+    private static void RotateIfNeeded()
+    {
+        try
+        {
+            if (!File.Exists(LogPath))
+            {
+                return;
+            }
+
+            if (new FileInfo(LogPath).Length < MaxLogSizeBytes)
+            {
+                return;
+            }
+
+            var archivePath = LogPath + ".old";
+            if (File.Exists(archivePath))
+            {
+                File.Delete(archivePath);
+            }
+
+            File.Move(LogPath, archivePath);
         }
         catch
         {

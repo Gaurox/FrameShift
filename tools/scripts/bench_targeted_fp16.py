@@ -5,8 +5,8 @@ import onnxruntime as ort
 import os
 
 MODELS = {
-    "FP32":         r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2.onnx",
-    "FP16_targeted": r"C:\Users\Adrien\AppData\Local\FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted.onnx",
+    "FP32":         os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2.onnx"),
+    "FP16_targeted": os.path.join(os.environ.get("LOCALAPPDATA", ""), r"FrameShift\AI\Models\rife\rife_v426_x2_fp16_targeted.onnx"),
 }
 SIZES = [
     ("720p_padded",  1280, 768),
