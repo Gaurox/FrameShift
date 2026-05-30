@@ -1,11 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.0.8
 
 - Added `Remove Noise (Video)` as a local AI action with dedicated picker UI and adjacent output workflow.
 - Expanded the shared AI model download flow so local AI actions use a consistent preflight/downloader UX.
 - Standardized AI window and Explorer icons around the active assets in `Assets\Icons\ai`.
-- Kept the local AI documentation and active file index aligned with the current product surface.
+- Fixed AI engine lifecycle: `BackgroundRemovalEngine` and `RemoveNoiseEngine` are now created once per batch and reused across all files, then disposed at the end of the batch, eliminating the per-file ONNX session load cost.
+- Fixed batch routing: replaced four redundant per-action wrapper methods with a single dispatch entry using a shared action-id registry, removing duplicate CLI paths for AI batch actions.
+- Added unit tests for `FfmpegRunner.TryParseFfmpegTime`, `FfmpegProgressState` phase transitions, `ProgramCli.TryParseArguments`, and `ConversionActionHelper` error classification.
 
 ## 1.0.7
 

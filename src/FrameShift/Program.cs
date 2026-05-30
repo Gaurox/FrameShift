@@ -75,24 +75,9 @@ internal static partial class Program
             return 1;
         }
 
-        if (actionId.Equals("remove-background", StringComparison.OrdinalIgnoreCase))
+        if (IsAiBatchAction(actionId))
         {
-            return RunRemoveBackground(registry, actionId, logger, inputPaths, options);
-        }
-
-        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
-        {
-            return RunSeparateAudio(registry, actionId, logger, inputPaths, options);
-        }
-
-        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
-        {
-            return RunRemoveNoise(registry, actionId, logger, inputPaths, options);
-        }
-
-        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase))
-        {
-            return RunRemoveNoiseVideo(registry, actionId, logger, inputPaths, options);
+            return RunConversionBatch(registry, actionId, logger, inputPaths, options);
         }
 
         if (ShouldRunConversionBatch(actionId, options))
@@ -293,46 +278,6 @@ internal static partial class Program
         }
 
         return RunQueuedActionWithProgressForm(action, inputPaths, options, logger, "single-run");
-    }
-
-    private static int RunRemoveBackground(
-        ActionRegistry registry,
-        string actionId,
-        AppLogger logger,
-        IReadOnlyList<string> inputPaths,
-        IReadOnlyDictionary<string, string> options)
-    {
-        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
-    }
-
-    private static int RunSeparateAudio(
-        ActionRegistry registry,
-        string actionId,
-        AppLogger logger,
-        IReadOnlyList<string> inputPaths,
-        IReadOnlyDictionary<string, string> options)
-    {
-        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
-    }
-
-    private static int RunRemoveNoise(
-        ActionRegistry registry,
-        string actionId,
-        AppLogger logger,
-        IReadOnlyList<string> inputPaths,
-        IReadOnlyDictionary<string, string> options)
-    {
-        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
-    }
-
-    private static int RunRemoveNoiseVideo(
-        ActionRegistry registry,
-        string actionId,
-        AppLogger logger,
-        IReadOnlyList<string> inputPaths,
-        IReadOnlyDictionary<string, string> options)
-    {
-        return RunConversionBatch(registry, actionId, logger, inputPaths, options);
     }
 
     private static int RunMediaInfo(string inputPath, AppLogger logger)

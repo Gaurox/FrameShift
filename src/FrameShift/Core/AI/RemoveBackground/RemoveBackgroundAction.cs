@@ -7,12 +7,22 @@ using FrameShift.Core.Progress;
 
 namespace FrameShift.Core.AI.RemoveBackground;
 
-internal sealed class RemoveBackgroundAction : IFrameShiftAction
+internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
 {
+    private BackgroundRemovalEngine? _engine;
+    private bool _disposed;
+
     public ActionDescriptor Descriptor { get; } = new(
         "remove-background",
         "Remove Background",
         "Supprime le fond d'une image via un modèle IA local.");
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _engine?.Dispose();
+    }
 
     public async Task<ActionExecutionResult> ExecuteAsync(
         ActionRequest request,
@@ -59,12 +69,12 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction
 
         try
         {
-            using var engine = new BackgroundRemovalEngine();
+            _engine ??= new BackgroundRemovalEngine();
 
             var progress = new Progress<InferenceProgress>(p =>
             {
-                var currentAction = engine.Provider is "DirectML" or "CPU"
-                    ? $"Remove Background ({engine.Provider})"
+                var currentAction = _engine.Provider is "DirectML" or "CPU"
+                    ? $"Remove Background ({_engine.Provider})"
                     : "Remove Background";
                 request.ProgressReporter?.ReportProgress(
                     p.Percent * 10,
@@ -73,7 +83,7 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction
                     p.Status);
             });
 
-            var outputPath = await engine.RemoveBackgroundAsync(
+            var outputPath = await _engine.RemoveBackgroundAsync(
                 request.InputPath,
                 progress,
                 linkedCancellationSource.Token).ConfigureAwait(false);

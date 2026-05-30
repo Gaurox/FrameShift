@@ -8,7 +8,7 @@ namespace FrameShift;
 
 internal static partial class Program
 {
-    private static bool TryParseArguments(
+    internal static bool TryParseArguments(
         string[] args,
         out string actionId,
         out List<string> inputPaths,

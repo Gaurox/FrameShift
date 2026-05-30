@@ -11,17 +11,26 @@ using FrameShift.Core.Progress;
 
 namespace FrameShift.Core.AI.RemoveNoise;
 
-internal sealed class RemoveNoiseAction : IFrameShiftAction
+internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
 {
     private readonly FfmpegRunner _ffmpegRunner;
     private readonly FfprobeRunner _ffprobeRunner;
     private readonly ToolLocator _toolLocator;
+    private RemoveNoiseEngine? _engine;
+    private bool _disposed;
 
     public RemoveNoiseAction(FfmpegRunner ffmpegRunner, FfprobeRunner ffprobeRunner, ToolLocator toolLocator)
     {
         _ffmpegRunner  = ffmpegRunner;
         _ffprobeRunner = ffprobeRunner;
         _toolLocator   = toolLocator;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _engine?.Dispose();
     }
 
     public ActionDescriptor Descriptor { get; } = new(
@@ -108,7 +117,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction
                 // ── Mono path ────────────────────────────────────────────────
                 request.ProgressReporter?.ReportState("processing", "Loading AI model...");
 
-                using var engine = new RemoveNoiseEngine();
+                _engine ??= new RemoveNoiseEngine();
                 var progress = new Progress<(int percent, string status)>(p =>
                 {
                     request.ProgressReporter?.ReportProgress(
@@ -118,7 +127,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction
                         p.status);
                 });
 
-                outputPath = await engine
+                outputPath = await _engine
                     .RemoveNoiseAsync(request.InputPath!, progress, linked.Token, minGain)
                     .ConfigureAwait(false);
             }
@@ -161,14 +170,14 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction
                 request.ProgressReporter?.ReportProgress(50, request.InputPath!, Descriptor.DisplayName, "Denoising L channel...");
                 request.ProgressReporter?.ReportState("processing", "Denoising L channel...");
 
-                using var engineStereo = new RemoveNoiseEngine();
+                _engine ??= new RemoveNoiseEngine();
                 var aiProgressL = new Progress<(int percent, string status)>(p =>
                 {
                     var permille = Math.Clamp(50 + p.percent * 470 / 100, 50, 520);
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath!, Descriptor.DisplayName, $"L: {p.status}");
                 });
 
-                tempCleanWavL = await engineStereo
+                tempCleanWavL = await _engine
                     .RemoveNoiseAsync(tempExtractedWavL, aiProgressL, linked.Token, minGain)
                     .ConfigureAwait(false);
 
@@ -182,7 +191,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath!, Descriptor.DisplayName, $"R: {p.status}");
                 });
 
-                tempCleanWavR = await engineStereo
+                tempCleanWavR = await _engine
                     .RemoveNoiseAsync(tempExtractedWavR, aiProgressR, linked.Token, minGain)
                     .ConfigureAwait(false);
 

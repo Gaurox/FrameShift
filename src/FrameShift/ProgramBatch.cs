@@ -14,6 +14,19 @@ namespace FrameShift;
 
 internal static partial class Program
 {
+    // Single authoritative lists — all action-ID dispatch reads from here.
+    private static readonly HashSet<string> s_aiBatchActions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "remove-background", "separate-audio", "remove-noise", "remove-noise-video"
+    };
+
+    private static readonly HashSet<string> s_conversionBatchActions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "convert-video", "convert-audio", "convert-image", "extract-audio", "extract-frames"
+    };
+
+    private static bool IsAiBatchAction(string actionId) => s_aiBatchActions.Contains(actionId);
+
     private static int RunConversionBatch(
         ActionRegistry registry,
         string actionId,
@@ -145,6 +158,7 @@ internal static partial class Program
         logger.Log("Program: before Application.Run (batch progress form).");
         Application.Run(progressForm);
         logger.Log("Program: after Application.Run returns (batch progress form).");
+        (action as IDisposable)?.Dispose();
         return session.ExitCode;
     }
 
@@ -198,6 +212,7 @@ internal static partial class Program
         logger.Log("Program: before Application.Run (deferred batch progress form).");
         Application.Run(progressForm);
         logger.Log("Program: after Application.Run returns (deferred batch progress form).");
+        (action as IDisposable)?.Dispose();
         return session.ExitCode;
     }
 
@@ -314,22 +329,12 @@ internal static partial class Program
         logger.Log($"Program: before Application.Run ({cancellationSourceName} progress form).");
         Application.Run(progressForm);
         logger.Log($"Program: after Application.Run returns ({cancellationSourceName} progress form).");
+        (action as IDisposable)?.Dispose();
         return exitCode;
     }
 
     private static bool ShouldRunConversionBatch(string actionId, IReadOnlyDictionary<string, string> options)
-    {
-        if (!options.Any())
-        {
-            return actionId.Equals("convert-video", StringComparison.OrdinalIgnoreCase) ||
-                   actionId.Equals("convert-audio", StringComparison.OrdinalIgnoreCase) ||
-                   actionId.Equals("convert-image", StringComparison.OrdinalIgnoreCase) ||
-                   actionId.Equals("extract-audio", StringComparison.OrdinalIgnoreCase) ||
-                   actionId.Equals("extract-frames", StringComparison.OrdinalIgnoreCase);
-        }
-
-        return false;
-    }
+        => !options.Any() && s_conversionBatchActions.Contains(actionId);
 
     private static ConversionBatchSession.BatchDefinition? GetConversionBatchDefinition(string actionId)
     {

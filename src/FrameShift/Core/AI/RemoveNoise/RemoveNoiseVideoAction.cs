@@ -11,17 +11,26 @@ using FrameShift.Core.Progress;
 
 namespace FrameShift.Core.AI.RemoveNoise;
 
-internal sealed class RemoveNoiseVideoAction : IFrameShiftAction
+internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
 {
     private readonly FfmpegRunner _ffmpegRunner;
     private readonly FfprobeRunner _ffprobeRunner;
     private readonly ToolLocator _toolLocator;
+    private RemoveNoiseEngine? _engine;
+    private bool _disposed;
 
     public RemoveNoiseVideoAction(FfmpegRunner ffmpegRunner, FfprobeRunner ffprobeRunner, ToolLocator toolLocator)
     {
         _ffmpegRunner = ffmpegRunner;
         _ffprobeRunner = ffprobeRunner;
         _toolLocator = toolLocator;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _engine?.Dispose();
     }
 
     public ActionDescriptor Descriptor { get; } = new(
@@ -141,14 +150,14 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction
                 request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, "Loading AI model...");
                 request.ProgressReporter?.ReportState("processing", "Loading AI model...");
 
-                using var engine = new RemoveNoiseEngine();
+                _engine ??= new RemoveNoiseEngine();
                 var aiProgress = new Progress<(int percent, string status)>(p =>
                 {
                     var permille = Math.Clamp(50 + p.percent * 850 / 100, 50, 900);
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName, p.status);
                 });
 
-                tempCleanWav = await engine
+                tempCleanWav = await _engine
                     .RemoveNoiseAsync(tempExtractedWav, aiProgress, linked.Token, minGain)
                     .ConfigureAwait(false);
 
@@ -191,14 +200,14 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction
                 request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, "Denoising L channel...");
                 request.ProgressReporter?.ReportState("processing", "Denoising L channel...");
 
-                using var engineStereo = new RemoveNoiseEngine();
+                _engine ??= new RemoveNoiseEngine();
                 var aiProgressL = new Progress<(int percent, string status)>(p =>
                 {
                     var permille = Math.Clamp(50 + p.percent * 470 / 100, 50, 520);
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName, $"L: {p.status}");
                 });
 
-                tempCleanWavL = await engineStereo
+                tempCleanWavL = await _engine
                     .RemoveNoiseAsync(tempExtractedWavL, aiProgressL, linked.Token, minGain)
                     .ConfigureAwait(false);
 
@@ -212,7 +221,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName, $"R: {p.status}");
                 });
 
-                tempCleanWavR = await engineStereo
+                tempCleanWavR = await _engine
                     .RemoveNoiseAsync(tempExtractedWavR, aiProgressR, linked.Token, minGain)
                     .ConfigureAwait(false);
 

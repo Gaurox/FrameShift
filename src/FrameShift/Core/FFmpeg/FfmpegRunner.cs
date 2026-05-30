@@ -613,7 +613,7 @@ public sealed class FfmpegRunner
         }
     }
 
-    private static bool TryParseFfmpegTime(string value, out double seconds)
+    internal static bool TryParseFfmpegTime(string value, out double seconds)
     {
         seconds = 0;
         if (string.IsNullOrWhiteSpace(value))
