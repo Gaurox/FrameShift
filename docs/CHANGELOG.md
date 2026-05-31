@@ -1,10 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Added **LaMa 2025 (Fast)** as a second inpainting model in `Remove Object`: 93 MB, Apache-2.0, opencv/inpainting_lama Jan 2025 — identical API to LaMa FP32, smaller download, selectable from the ComboBox. Renamed existing model to **LaMa FP32 (Quality)**.
+- Added `ForceCpu` per-model flag to `ObjectRemovalModelDefinition` to allow future models to opt into DirectML without engine changes.
+
 ## 1.0.9
 
-- Added `Remove Object (Image)` as a local AI inpainting action: visual editor with zoom/pan canvas, red-overlay brush mask, eraser, adjustable brush size, and fit-to-window; model catalogue with ComboBox selector (extensible for future models); on-demand model download with SHA-256 integrity check; output as `_cleaned.png` adjacent to the source; Explorer context-menu integration under `FrameShift AI → Remove object` for common image formats.
-- Added two selectable inpainting models: **LaMa FP32 (Quality)** (208 MB, Apache-2.0, Carve/LaMa-ONNX, CPU-only — FFC/FFT operators unsupported by DirectML) and **LaMa 2025 (Fast)** (93 MB, Apache-2.0, opencv/inpainting_lama Jan 2025 — identical API, smaller download). Both use the same inference pipeline; the engine switches automatically when the selection changes.
-- Added `ForceCpu` per-model flag to `ObjectRemovalModelDefinition` to allow future models to opt into DirectML without engine changes.
+- Added `Remove Object (Image)` as a local AI inpainting action: visual editor with zoom/pan canvas, red-overlay brush mask, eraser, adjustable brush size, and fit-to-window; model catalogue with ComboBox selector (extensible for future models); LaMa FP32 as the default model (CPU-only — FFC/FFT operators unsupported by DirectML); on-demand model download with SHA-256 integrity check; output as `_cleaned.png` adjacent to the source; Explorer context-menu integration under `FrameShift AI → Remove object` for common image formats.
 
 ## 1.0.8
 
