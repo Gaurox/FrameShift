@@ -57,6 +57,7 @@ Actions image :
 - `rotate-flip-image`
 - `image-to-pdf`
 - `remove-background`
+- `remove-object`
 - `media-info`
 
 Actions IA locales :
@@ -65,6 +66,7 @@ Actions IA locales :
 - `remove-noise-video`
 - `separate-audio`
 - `interpolate-video-rife`
+- `remove-object`
 
 Règles communes des actions IA :
 - téléchargement du modèle seulement au moment utile ;
@@ -129,6 +131,7 @@ En pratique :
 - `remove-noise` et `remove-noise-video` utilisent un picker de force et des options audio adaptées au média source ;
 - `separate-audio` suit le même modèle avec fallback picker si `--stems` ou `--separate-engine` ne sont pas fournis ;
 - `interpolate-video-rife` suit un flux UI-first avec picker de modèle/multiplicateur/vitesse puis préflight du modèle avant traitement ;
+- `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible (LaMa FP32 actuellement) ;
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies

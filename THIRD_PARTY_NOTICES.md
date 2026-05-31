@@ -120,6 +120,29 @@ These models are not stored in the repository and are downloaded on demand into 
 
 ---
 
+## Remove Object Models
+
+FrameShift's optional `Remove Object` feature downloads the following models at runtime.
+
+> **Common data notice**: Both models were trained on the Places2 dataset (MIT CSAIL).
+> Places2 terms restrict use to *"non-commercial research and educational purposes only"*.
+> The commercial status of weights derived from Places2 data is not formally settled.
+> FrameShift is a free, donation-supported application and documents this honestly.
+
+### LaMa FP32
+
+- Model: `LaMa FP32` (`lama_fp32.onnx`)
+- Source URL:
+  `https://huggingface.co/Gaurox/frameshift-models/resolve/main/lama-onnx/lama_fp32.onnx`
+- ONNX port: [Carve/LaMa-ONNX](https://huggingface.co/Carve/LaMa-ONNX) — **Apache-2.0**
+- Original model: [advimman/lama](https://github.com/advimman/lama) — **Apache-2.0**, Copyright © 2021 Samsung Research
+- **Weights**: trained on Places2 — commercial use not guaranteed (see notice above)
+
+
+These models are not stored in the repository and are downloaded on demand into the local user profile.
+
+---
+
 ## Recommendation
 
 If public redistribution requirements change upstream, keep the corresponding license texts and attribution notes in this file or in a dedicated `licenses/` folder.

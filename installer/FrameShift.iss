@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.8"
+#define MyAppVersion "1.0.9"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -78,6 +78,7 @@ Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
 Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
 Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
 Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
+Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
@@ -363,6 +364,10 @@ begin
   else if MenuKey = 'interpolate_video_rife' then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\Interpolate_icon.ico');
+  end
+  else if MenuKey = 'remove_object' then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_object.ico');
   end
   else
   begin
@@ -887,6 +892,15 @@ begin
       'interpolate_video_rife',
       'Interpolate video (RIFE)',
       'interpolate-video-rife');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_object') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'remove_object',
+      'Remove object',
+      'remove-object');
   end;
 end;
 

@@ -277,6 +277,11 @@ internal static partial class Program
             return RunImageToPdf(action, inputPaths, options, logger);
         }
 
+        if (actionId.Equals("remove-object", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunRemoveObject(inputPaths[0], logger);
+        }
+
         return RunQueuedActionWithProgressForm(action, inputPaths, options, logger, "single-run");
     }
 

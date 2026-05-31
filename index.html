@@ -29,7 +29,7 @@
   "name": "FrameShift",
   "applicationCategory": "MultimediaApplication",
   "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "1.0.8",
+  "softwareVersion": "1.0.9",
   "description": "Windows desktop utility for local media actions from the Explorer right-click menu.",
   "url": "https://gaurox.github.io/FrameShift/",
   "downloadUrl": "https://github.com/gaurox/FrameShift/releases",
@@ -46,6 +46,7 @@
     "Visual auto crop for images and video",
     "Cut and extract",
     "Remove background locally",
+    "Remove objects from images locally",
     "Remove noise locally",
     "Separate audio into stems locally",
     "RIFE video interpolation locally",
@@ -80,7 +81,7 @@
     <div class="hero-inner">
       <h1 class="hero-title">Transform your media in two clicks.</h1>
       <p class="hero-sub">
-        Convert, compress, crop, cut, extract audio, remove backgrounds, split audio stems, smooth motion with RIFE and more —
+        Convert, compress, crop, cut, extract audio, remove backgrounds, remove objects from images, split audio stems, smooth motion with RIFE and more —
         straight from the Windows right-click menu.
         <strong>100% local. 100% offline. No upload, ever.</strong>
       </p>
@@ -137,7 +138,29 @@
     <div class="container">
       <h2 class="section-title">See it in action</h2>
 
+      <!-- 1 — media left -->
       <article class="demo-row">
+        <div class="demo-media">
+          <div class="ba-split">
+            <div class="ba-panel">
+              <img src="screenshots/image_exemple/train_000001.png" alt="Before: original image with object to remove" loading="lazy" />
+              <span class="ba-label">Before</span>
+            </div>
+            <div class="ba-panel">
+              <img src="screenshots/image_exemple/train_000001_cleaned.png" alt="After: object removed by local AI inpainting" loading="lazy" />
+              <span class="ba-label">After</span>
+            </div>
+          </div>
+        </div>
+        <div class="demo-text">
+          <span class="demo-tag">AI · runs locally</span>
+          <h3>Remove Object</h3>
+          <p>Paint over any object with a brush, click Apply — the AI reconstructs the background behind it. No upload, no cloud. Runs entirely on your machine with LaMa inpainting via ONNX Runtime.</p>
+        </div>
+      </article>
+
+      <!-- 2 — media right -->
+      <article class="demo-row reverse">
         <div class="demo-media">
           <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove background demo" loading="lazy" />
         </div>
@@ -148,7 +171,8 @@
         </div>
       </article>
 
-      <article class="demo-row reverse">
+      <!-- 3 — media left -->
+      <article class="demo-row">
         <div class="demo-media">
           <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="Image to PDF demo" loading="lazy" />
         </div>
@@ -158,7 +182,8 @@
         </div>
       </article>
 
-      <article class="demo-row">
+      <!-- 4 — media right -->
+      <article class="demo-row reverse">
         <div class="demo-media">
           <img src="screenshots/Gif_demos/demo_interpolate.gif" alt="Interpolate video demo" loading="lazy" />
         </div>
@@ -177,7 +202,8 @@
       <div class="ai-card">
         <h2>Local AI is now part of FrameShift.</h2>
         <p>
-          Five AI actions now run locally inside FrameShift through ONNX Runtime.
+          Six AI actions now run locally inside FrameShift through ONNX Runtime.
+          Remove Object uses LaMa inpainting — paint a mask over any object and the AI fills it in.
           Remove Background uses
           <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>.
           Remove Noise (Audio and Video) uses DeepFilterNet3 exports for offline speech denoising.
@@ -196,7 +222,7 @@
       <h2 class="section-title">All actions, at a glance</h2>
       <div class="actions-grid">
         <article class="actions-col">
-          <h3>Image <span class="count">8</span></h3>
+          <h3>Image <span class="count">9</span></h3>
           <ul>
             <li>Compress</li>
             <li>Convert</li>
@@ -206,6 +232,7 @@
             <li>Create Icon</li>
             <li>Image → PDF</li>
             <li>Remove Background <span class="ai-pill">AI</span></li>
+            <li>Remove Object <span class="ai-pill">AI</span></li>
           </ul>
         </article>
         <article class="actions-col">
@@ -223,9 +250,9 @@
             <li>Create GIF</li>
             <li>Rotate / Flip</li>
             <li>Interpolate</li>
+            <li>Media info</li>
             <li>Interpolate (RIFE) <span class="ai-pill">AI</span></li>
             <li>Remove noise <span class="ai-pill">AI</span></li>
-            <li>Media info</li>
           </ul>
         </article>
         <article class="actions-col">
@@ -260,6 +287,7 @@
         <figure><img src="screenshots/Image_actions/Rotate_image.png" alt="Rotate image" loading="lazy" /><figcaption>Rotate</figcaption></figure>
         <figure><img src="screenshots/Image_actions/ConvertToIcon.png" alt="Create icon" loading="lazy" /><figcaption>Create Icon</figcaption></figure>
         <figure><img src="screenshots/Image_actions/Image_to_pdf.png" alt="Image to PDF" loading="lazy" /><figcaption>Image → PDF</figcaption></figure>
+        <figure><img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" loading="lazy" /><figcaption>Remove Object</figcaption></figure>
       </div>
 
       <h3 class="gallery-subtitle">Video</h3>

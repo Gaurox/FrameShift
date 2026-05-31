@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9
+
+- Added `Remove Object (Image)` as a local AI inpainting action: visual editor with zoom/pan canvas, red-overlay brush mask, eraser, adjustable brush size, and fit-to-window; model catalogue with ComboBox selector (extensible for future models); LaMa FP32 as the sole model (CPU-only — FFC/FFT operators unsupported by DirectML); on-demand model download with SHA-256 integrity check; output as `_cleaned.png` adjacent to the source; Explorer context-menu integration under `FrameShift AI → Remove object` for common image formats.
+
 ## 1.0.8
 
 - Added `Remove Noise (Video)` as a local AI action with dedicated picker UI and adjacent output workflow.

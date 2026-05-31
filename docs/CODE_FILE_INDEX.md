@@ -15,6 +15,7 @@ Règles de lecture :
 - `src/FrameShift/ProgramBatch.cs`
 - `src/FrameShift/ProgramAiPreflight.cs`
 - `src/FrameShift/ProgramImageToPdf.cs`
+- `src/FrameShift/ProgramRemoveObject.cs`
 - `src/FrameShift/ProgramPickersConversion.cs`
 - `src/FrameShift/ProgramPickersCut.cs`
 - `src/FrameShift/ProgramPickersImage.cs`
@@ -159,6 +160,13 @@ Media Info :
 - `src/FrameShift/Core/AI/VideoInterpolation/RifeModelDefinition.cs`
 - `src/FrameShift/Core/AI/VideoInterpolation/RifeModelDownloader.cs`
 - `src/FrameShift/Core/AI/VideoInterpolation/RifeModelLocator.cs`
+- `src/FrameShift/Core/AI/RemoveObject/IObjectRemovalEngine.cs`
+- `src/FrameShift/Core/AI/RemoveObject/ModelDownloader.cs`
+- `src/FrameShift/Core/AI/RemoveObject/ModelLocator.cs`
+- `src/FrameShift/Core/AI/RemoveObject/ObjectRemovalEngine.cs`
+- `src/FrameShift/Core/AI/RemoveObject/ObjectRemovalModelCatalog.cs`
+- `src/FrameShift/Core/AI/RemoveObject/ObjectRemovalModelDefinition.cs`
+- `src/FrameShift/Core/AI/RemoveObject/RemoveObjectAction.cs`
 
 Helpers core utiles :
 - `src/FrameShift/Core/Helpers/ImageAutoCropDetector.cs`
@@ -175,6 +183,7 @@ IA :
 - `src/FrameShift/Windows/AI/RifeInterpolateVideoPickerForm.cs`
 - `src/FrameShift/Windows/AI/SeparateAudioPickerForm.cs`
 - `src/FrameShift/Windows/AI/RemoveNoiseVideoPickerForm.cs`
+- `src/FrameShift/Windows/AI/RemoveObjectEditorForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
@@ -249,4 +258,5 @@ Assets de test utiles :
 - `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
 - `DownloadModelForm` est maintenant le downloader IA partagé des modules `remove-background`, `remove-noise`, `separate-audio` et `interpolate-video-rife`.
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
+- `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.

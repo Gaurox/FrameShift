@@ -92,6 +92,7 @@ Mais cela ne signifie pas “headless complet” pour toutes les actions.
 UI-first ou dépendantes d’un formulaire :
 - `media-info`
 - `image-to-pdf`
+- `remove-object`
 
 Actions avec entrée CLI mais couverture headless partielle selon les options fournies :
 - `cut-audio`
@@ -137,6 +138,7 @@ Modules IA actifs :
 - `remove-noise-video`
 - `separate-audio`
 - `interpolate-video-rife`
+- `remove-object`
 
 Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
