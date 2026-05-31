@@ -102,7 +102,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Remove Noise (Video) | Denoise a video's audio track without re-encoding the video stream. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
 | Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |
 | Interpolate Video (RIFE) | Generate smoother motion with the local RIFE workflow, model preflight, and adjacent unique outputs. | <img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate Video RIFE" width="320" /> |
-| Remove Object (Image) | Paint a mask over any object and let the local LaMa AI reconstruct the background behind it. | <img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" width="320" /> |
+| Remove Object (Image) | Paint a mask over any object and let the local inpainting AI reconstruct the background. Two models available: LaMa FP32 (Quality) and LaMa 2025 (Fast). | <img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" width="320" /> |
 
 ## Built For
 

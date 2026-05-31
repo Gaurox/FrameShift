@@ -5,7 +5,8 @@
 > Audience : développeurs et agents IA reprenant le travail, éventuellement plusieurs semaines après la phase d'étude.
 > Règle d'or : ce guide est autoportant. Il n'est pas nécessaire de relire la recherche initiale pour développer la fonctionnalité.
 
-> **Note post-implémentation (mai 2026)** : MI-GAN 512 a été retiré du catalogue après validation — le modèle ONNX produit des résultats non fonctionnels (output saturé en couleur uniforme) quel que soit le pré-traitement testé (13 combinaisons normalisation/masque/décodage). **LaMa FP32** est le seul modèle actif. Le catalogue reste extensible (ComboBox présent dans l'UI) pour l'ajout futur d'autres modèles d'inpainting.
+> **Note post-implémentation (mai 2026)** : MI-GAN 512 a été retiré du catalogue après validation — le modèle ONNX produit des résultats non fonctionnels (output saturé en couleur uniforme) quel que soit le pré-traitement testé (13 combinaisons normalisation/masque/décodage).
+> **Mise à jour (mai 2026)** : un second modèle a été ajouté — **LaMa 2025 (Fast)** (`inpainting_lama_2025jan.onnx`, 93 MB, Apache-2.0, opencv/inpainting_lama). API identique à LaMa FP32 (mêmes tenseurs `image`/`mask`, même plage de sortie [0,255]), aucun changement d'engine. Accessible via le ComboBox (`lama-fast`). SHA256 : `7DF918AC3921D3DAF0AAE1D219776CF0DC4E4935F035AF81841B40ADCF74FDF2`. Hébergé sur `Gaurox/frameshift-models/lama-opencv-onnx/`. La propriété `ForceCpu` a été ajoutée à `ObjectRemovalModelDefinition` (défaut `true`) pour permettre aux futurs modèles d'activer DirectML sans toucher à l'engine.
 
 ---
 
