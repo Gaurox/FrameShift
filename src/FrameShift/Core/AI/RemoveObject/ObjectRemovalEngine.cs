@@ -208,8 +208,8 @@ private static float[,] ScaleMask(bool[,] mask, int srcW, int srcH, int dstW, in
             progress.Report(new InpaintProgress(3, "Loading ONNX model..."));
             var modelPath = ModelLocator.GetModelPath(_def);
             AppLogger.LogStatic($"ObjectRemovalEngine: loading session. model={modelPath}");
-            // LaMa uses FFC/FFT operators unsupported by DirectML at runtime — always CPU
-            (_session, _providerName) = CreateSession(modelPath, forceCpu: true);
+            // ForceCpu=true: LaMa-based models use FFC/FFT operators unsupported by DirectML at runtime
+            (_session, _providerName) = CreateSession(modelPath, forceCpu: _def.ForceCpu);
             AppLogger.LogStatic($"ObjectRemovalEngine: session ready. provider={_providerName}");
             _sessionReady = true;
         }
@@ -237,7 +237,7 @@ private static float[,] ScaleMask(bool[,] mask, int srcW, int srcH, int dstW, in
         }
         else
         {
-            AppLogger.LogStatic("ObjectRemovalEngine: FFC/FFT model — using CPU provider directly");
+            AppLogger.LogStatic("ObjectRemovalEngine: ForceCpu=true — using CPU provider directly");
         }
 
         var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };

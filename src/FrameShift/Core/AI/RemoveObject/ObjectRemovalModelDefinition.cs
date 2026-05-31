@@ -9,4 +9,5 @@ internal sealed record ObjectRemovalModelDefinition(
     string ExpectedSha256,
     long ExpectedSizeBytes,
     string License,
-    int InputSize = 512);
+    int InputSize = 512,
+    bool ForceCpu = true);
