@@ -131,7 +131,7 @@ En pratique :
 - `remove-noise` et `remove-noise-video` utilisent un picker de force et des options audio adaptées au média source ;
 - `separate-audio` suit le même modèle avec fallback picker si `--stems` ou `--separate-engine` ne sont pas fournis ;
 - `interpolate-video-rife` suit un flux UI-first avec picker de modèle/multiplicateur/vitesse puis préflight du modèle avant traitement ;
-- `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible (LaMa FP32 actuellement) ;
+- `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible avec deux modèles disponibles : **LaMa FP32 (Quality)** (~208 MB) et **LaMa 2025 (Fast)** (~93 MB, opencv/inpainting_lama Jan 2025) ;
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies
