@@ -240,27 +240,37 @@ internal static partial class Program
             }
         }
 
-        if (actionId.Equals("compress-video", StringComparison.OrdinalIgnoreCase))
+        if (actionId.Equals("compress-video", StringComparison.OrdinalIgnoreCase) ||
+            actionId.Equals("compress-audio", StringComparison.OrdinalIgnoreCase) ||
+            actionId.Equals("compress-image", StringComparison.OrdinalIgnoreCase))
         {
-            if (!EnsureCompressVideoOptions(inputPaths, options, logger))
+            // Headless path: all required options were supplied via CLI — validate and run directly.
+            var looksHeadless = actionId switch
             {
-                return 0;
-            }
-        }
+                "compress-video" or "compress-audio" => options.ContainsKey(ActionOptionKeys.Profile),
+                "compress-image" => options.ContainsKey(ActionOptionKeys.Profile) ||
+                                    options.ContainsKey(ActionOptionKeys.Target) ||
+                                    options.ContainsKey(ActionOptionKeys.TargetSizeBytes),
+                _ => false
+            };
 
-        if (actionId.Equals("compress-audio", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!EnsureCompressAudioOptions(inputPaths, options, logger))
+            if (!looksHeadless)
             {
-                return 0;
+                return RunCompressBatch(actionId, action, inputPaths, logger);
             }
-        }
 
-        if (actionId.Equals("compress-image", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!EnsureCompressImageOptions(inputPaths, options, logger))
+            // Headless: fall through to original Ensure* validation below.
+            if (actionId.Equals("compress-video", StringComparison.OrdinalIgnoreCase))
             {
-                return 0;
+                if (!EnsureCompressVideoOptions(inputPaths, options, logger)) return 0;
+            }
+            else if (actionId.Equals("compress-audio", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!EnsureCompressAudioOptions(inputPaths, options, logger)) return 0;
+            }
+            else
+            {
+                if (!EnsureCompressImageOptions(inputPaths, options, logger)) return 0;
             }
         }
 

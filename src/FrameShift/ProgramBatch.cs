@@ -333,6 +333,87 @@ internal static partial class Program
         return exitCode;
     }
 
+    private static async Task<RunActionResult> ExecuteQueuedRequestsAsync(
+        IFrameShiftAction action,
+        IReadOnlyList<ActionRequest> requests,
+        IProgressReporter progressReporter,
+        CancellationToken cancellationToken)
+    {
+        var queueRunner = new ActionQueueRunner();
+        var withReporter = requests
+            .Select(r => r with { ProgressReporter = progressReporter })
+            .ToArray();
+
+        var results = await queueRunner.RunAsync(action, withReporter, cancellationToken).ConfigureAwait(false);
+        var anyFailure = results.Any(result => !result.Success && !result.Canceled);
+        var failureMessage = results.FirstOrDefault(result => !result.Success && !result.Canceled)?.Message;
+        var anySuccess = results.Any(result => result.Success);
+        var allCanceled = results.Any() && results.All(result => result.Canceled);
+        var anyGlobalCancellation = results.Any(result => result.CancellationScope == CancellationScope.All);
+        var anyCurrentItemCancellation = results.Any(result => result.CancellationScope == CancellationScope.CurrentItem);
+        var shouldCloseWindow =
+            !anyFailure &&
+            (anyGlobalCancellation || anySuccess || !(allCanceled && anyCurrentItemCancellation));
+
+        return new RunActionResult(anyFailure ? 1 : 0, failureMessage, shouldCloseWindow);
+    }
+
+    private static int RunQueuedRequestsWithProgressForm(
+        IFrameShiftAction action,
+        IReadOnlyList<ActionRequest> requests,
+        AppLogger logger,
+        string cancellationSourceName)
+    {
+        using var progressForm = new ProgressForm();
+        using var cancellationSource = new CancellationTokenSource();
+        progressForm.CancelRequested += (_, _) =>
+        {
+            logger.Log($"Program: {cancellationSourceName} CancelRequested event received.");
+            RequestCancellationAsync(cancellationSource, logger, cancellationSourceName);
+        };
+
+        var exitCode = 1;
+        string? failureMessage = null;
+        var shouldCloseWindow = true;
+        progressForm.Shown += async (_, _) =>
+        {
+            try
+            {
+                var runResult = await ExecuteQueuedRequestsAsync(action, requests, progressForm, cancellationSource.Token).ConfigureAwait(true);
+                exitCode = runResult.ExitCode;
+                failureMessage = runResult.FailureMessage;
+                shouldCloseWindow = runResult.ShouldCloseWindow;
+                if (exitCode != 0 && !string.IsNullOrWhiteSpace(failureMessage))
+                {
+                    logger.Log($"ACTION FAILED ({action.Descriptor.Id}): {failureMessage}");
+                    ShowCliError(failureMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Log(ex.ToString());
+                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError("An unexpected error occurred.")));
+                exitCode = 1;
+            }
+            finally
+            {
+                if (!progressForm.IsDisposed)
+                {
+                    if (shouldCloseWindow || cancellationSource.IsCancellationRequested)
+                        progressForm.CloseSafely();
+                    else
+                        progressForm.EnableCloseMode(failureMessage);
+                }
+            }
+        };
+
+        logger.Log($"Program: before Application.Run ({cancellationSourceName} progress form).");
+        Application.Run(progressForm);
+        logger.Log($"Program: after Application.Run returns ({cancellationSourceName} progress form).");
+        (action as IDisposable)?.Dispose();
+        return exitCode;
+    }
+
     private static bool ShouldRunConversionBatch(string actionId, IReadOnlyDictionary<string, string> options)
         => !options.Any() && s_conversionBatchActions.Contains(actionId);
 
