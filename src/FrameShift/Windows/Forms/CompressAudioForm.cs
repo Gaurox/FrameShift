@@ -183,10 +183,10 @@ public sealed class CompressAudioForm : Form
 
     private static Control CreateHeader(string sourcePath, string sourceExtension, long sourceBytes, string audioInfo)
     {
-        _ = sourcePath;
+        var fileName = Path.GetFileName(sourcePath);
         return FrameShiftUiFactory.CreateFixedHeader(
             "FrameShift - Compress Audio",
-            $"Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}    Audio: {audioInfo}",
+            $"{fileName}    Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}    Audio: {audioInfo}",
             IconPaths.CompressVideoIcon,
             IconPaths.AppIcon,
             "▶");

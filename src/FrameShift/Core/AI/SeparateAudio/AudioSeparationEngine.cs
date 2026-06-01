@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FrameShift.Core.AI;
 using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
 using Microsoft.ML.OnnxRuntime;

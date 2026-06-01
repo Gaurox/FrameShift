@@ -6,11 +6,26 @@ namespace FrameShift.Core.AI;
 
 internal static class AiModelStorage
 {
-    public static readonly string RootDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FrameShift",
-        "AI",
-        "Models");
+    // Resolved lazily from AiModelSettings, then cached for the process lifetime.
+    private static string? _rootDirectory;
+
+    public static string RootDirectory
+    {
+        get
+        {
+            if (_rootDirectory is not null)
+                return _rootDirectory;
+
+            _rootDirectory = AiModelSettings.Load().GetEffectiveModelsDirectory();
+            AppLogger.LogStatic($"AiModelStorage: resolved RootDirectory={_rootDirectory}");
+            return _rootDirectory;
+        }
+    }
+
+    /// <summary>
+    /// Forces the cached root to be re-read on next access (call after the user changes the folder).
+    /// </summary>
+    public static void InvalidateCache() => _rootDirectory = null;
 
     public static void EnsureDirectory(string path)
     {
@@ -20,17 +35,13 @@ internal static class AiModelStorage
     public static void TryMigrateFile(string legacyPath, string targetPath, string logPrefix)
     {
         if (File.Exists(targetPath) || !File.Exists(legacyPath))
-        {
             return;
-        }
 
         try
         {
             var directory = Path.GetDirectoryName(targetPath);
             if (!string.IsNullOrWhiteSpace(directory))
-            {
                 Directory.CreateDirectory(directory);
-            }
 
             File.Move(legacyPath, targetPath);
             AppLogger.LogStatic($"{logPrefix}: migrated legacy file to {targetPath}");
@@ -44,9 +55,7 @@ internal static class AiModelStorage
     public static void TryDeleteDirectoryIfEmpty(string path, string logPrefix)
     {
         if (!Directory.Exists(path))
-        {
             return;
-        }
 
         try
         {

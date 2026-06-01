@@ -135,6 +135,8 @@ Media Info :
 
 - `src/FrameShift/Core/AI/AiModelDownloadProgress.cs`
 - `src/FrameShift/Core/AI/AiModelFileDownloader.cs`
+- `src/FrameShift/Core/AI/AiModelSettings.cs`
+- `src/FrameShift/Core/AI/OnnxProviderHelper.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/IBackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/ModelDownloader.cs`
@@ -260,3 +262,7 @@ Assets de test utiles :
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
 - `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
+- `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle.
+- `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.
+- `OnnxProviderHelper.cs` centralise la création de session ONNX (DML → CPU), la détection d'échec DML à l'inférence et les messages utilisateur propres (sans chemins internes ONNX Runtime).
+- `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.

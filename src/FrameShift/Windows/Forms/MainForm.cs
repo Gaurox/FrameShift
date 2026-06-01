@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using FrameShift.Core.AI;
 using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.Forms;
@@ -15,6 +17,8 @@ public sealed class MainForm : Form
     private static readonly Font s_tileBodyFont  = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
     private static readonly Font s_hintFont      = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
     private readonly string[] _startupPaths;
+
+    private Label? _pathLabel;
 
     public MainForm()
         : this(Array.Empty<string>())
@@ -29,8 +33,8 @@ public sealed class MainForm : Form
 
         FrameShiftWindowChrome.Apply(this, "FrameShift");
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(640, 440);
-        Size = new Size(680, 480);
+        MinimumSize = new Size(640, 540);
+        Size = new Size(680, 580);
         BackColor = FrameShiftTheme.PageBackground;
 
         var root = new TableLayoutPanel
@@ -38,18 +42,165 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(24),
             ColumnCount = 1,
-            RowCount = 3,
+            RowCount = 4,
             BackColor = FrameShiftTheme.PageBackground
         };
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 68F));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F));
         root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
 
         root.Controls.Add(BuildHeader(_startupPaths), 0, 0);
         root.Controls.Add(BuildTileGrid(), 0, 1);
-        root.Controls.Add(BuildHint(_startupPaths), 0, 2);
+        root.Controls.Add(BuildModelsSection(), 0, 2);
+        root.Controls.Add(BuildHint(_startupPaths), 0, 3);
 
         Controls.Add(root);
+    }
+
+    private Panel BuildModelsSection()
+    {
+        var section = FrameShiftUiFactory.CreateFramedPanel(
+            FrameShiftTheme.Surface,
+            FrameShiftTheme.PrimaryBlue,
+            FrameShiftUiMetrics.PanelCornerRadius);
+        section.Dock = DockStyle.Fill;
+        section.Padding = new Padding(12, 10, 12, 10);
+
+        var titleLabel = new Label
+        {
+            Dock = DockStyle.Top,
+            Height = FrameShiftUiMetrics.SectionTitleHeight,
+            Text = "AI models folder",
+            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
+            ForeColor = FrameShiftTheme.SecondaryBlue,
+            Margin = Padding.Empty
+        };
+
+        var settings = AiModelSettings.Load();
+        var effectivePath = settings.GetEffectiveModelsDirectory();
+
+        _pathLabel = new Label
+        {
+            Dock = DockStyle.Top,
+            Height = 18,
+            Text = effectivePath,
+            Font = s_hintFont,
+            ForeColor = FrameShiftTheme.TextSecondary,
+            AutoEllipsis = true,
+            Margin = new Padding(0, 2, 0, 6)
+        };
+
+        var buttonPanel = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 34,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = false,
+            BackColor = FrameShiftTheme.Surface,
+            Padding = Padding.Empty,
+            Margin = Padding.Empty
+        };
+
+        var btnBrowse = CreateSecondaryButton("Browse...");
+        var btnReset  = CreateSecondaryButton("Reset to default");
+        var btnOpen   = CreateSecondaryButton("Open folder");
+
+        btnBrowse.Click += (_, _) => BrowseModelsFolder();
+        btnReset.Click  += (_, _) => ResetModelsFolder();
+        btnOpen.Click   += (_, _) => OpenModelsFolder();
+
+        buttonPanel.Controls.Add(btnBrowse);
+        buttonPanel.Controls.Add(btnReset);
+        buttonPanel.Controls.Add(btnOpen);
+
+        section.Controls.Add(buttonPanel);
+        section.Controls.Add(_pathLabel);
+        section.Controls.Add(titleLabel);
+
+        return section;
+    }
+
+    private void BrowseModelsFolder()
+    {
+        using var dlg = new FolderBrowserDialog
+        {
+            Description = "Select AI models folder",
+            UseDescriptionForTitle = true,
+            ShowNewFolderButton = true
+        };
+
+        var settings = AiModelSettings.Load();
+        var current = settings.GetEffectiveModelsDirectory();
+        if (Directory.Exists(current))
+            dlg.InitialDirectory = current;
+
+        if (dlg.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        settings.ModelsDirectory = dlg.SelectedPath;
+        settings.Save();
+        AiModelStorage.InvalidateCache();
+
+        UpdatePathLabel(dlg.SelectedPath);
+    }
+
+    private void ResetModelsFolder()
+    {
+        var settings = AiModelSettings.Load();
+        settings.ModelsDirectory = null;
+        settings.Save();
+        AiModelStorage.InvalidateCache();
+
+        var effective = settings.GetEffectiveModelsDirectory();
+        UpdatePathLabel(effective);
+    }
+
+    private void OpenModelsFolder()
+    {
+        var settings = AiModelSettings.Load();
+        var path = settings.GetEffectiveModelsDirectory();
+        try
+        {
+            Directory.CreateDirectory(path);
+            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Could not open folder:\n{ex.Message}",
+                "FrameShift",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+    }
+
+    private void UpdatePathLabel(string path)
+    {
+        if (_pathLabel is not null)
+            _pathLabel.Text = path;
+    }
+
+    private static Button CreateSecondaryButton(string text)
+    {
+        var btn = new Button
+        {
+            Text = text,
+            Height = 30,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.SecondaryBlue,
+            Cursor = Cursors.Hand,
+            Margin = new Padding(0, 0, 8, 0),
+            Padding = new Padding(10, 4, 10, 4)
+        };
+        btn.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
+        btn.FlatAppearance.BorderSize  = 1;
+        btn.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
+        btn.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        return btn;
     }
 
     private static Panel BuildHeader(IReadOnlyList<string> startupPaths)
@@ -153,7 +304,6 @@ public sealed class MainForm : Form
         panel.Controls.Add(actionsLabel);
         panel.Controls.Add(titleLabel);
 
-        // Hover effect — propagate to child labels so the entire tile reacts
         void SetHover(bool hovered)
             => panel.BackColor = hovered ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface;
 
@@ -182,9 +332,7 @@ public sealed class MainForm : Form
     private static string BuildSubtitle(IReadOnlyList<string> startupPaths)
     {
         if (startupPaths.Count == 0)
-        {
             return $"Local multimedia processing for Windows  ·  v{Application.ProductVersion}";
-        }
 
         return $"{FormatSelectionLabel(startupPaths)}  ·  v{Application.ProductVersion}";
     }
@@ -192,9 +340,7 @@ public sealed class MainForm : Form
     private static string BuildHintText(IReadOnlyList<string> startupPaths)
     {
         if (startupPaths.Count == 0)
-        {
             return "Right-click files in Windows Explorer to use FrameShift.";
-        }
 
         return "UI launched from a file selection. Action routing is not wired here yet.";
     }
@@ -202,9 +348,7 @@ public sealed class MainForm : Form
     private static string FormatSelectionLabel(IReadOnlyList<string> startupPaths)
     {
         if (startupPaths.Count == 1)
-        {
             return $"Selected: {Path.GetFileName(startupPaths[0])}";
-        }
 
         return $"{startupPaths.Count} selected items";
     }

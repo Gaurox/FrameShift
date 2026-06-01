@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FrameShift.Core.AI;
 using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
 using Microsoft.ML.OnnxRuntime;
@@ -82,36 +83,62 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InferenceProgress(50, "Running AI inference..."));
 
-        using var results = _session!.Run(inputs);
+        IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results;
+        try
+        {
+            results = _session!.Run(inputs);
+        }
+        catch (Exception ex) when (_providerName == "DirectML" && OnnxProviderHelper.IsLikelyDmlRuntimeFailure(ex))
+        {
+            AppLogger.LogStatic($"BackgroundRemovalEngine: DirectML inference failed, retrying on CPU. {ex}");
+            progress.Report(new InferenceProgress(50, OnnxProviderHelper.GetDmlFallbackUserMessage()));
+            _session?.Dispose();
+            _session = null;
+            _sessionReady = false;
+            var modelPath = ModelLocator.ModelPath;
+            var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
+            _session = new InferenceSession(modelPath, cpuOpts);
+            _providerName = "CPU";
+            Provider = "CPU";
+            _sessionReady = true;
+            results = _session.Run(inputs);
+        }
 
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InferenceProgress(70, "Building alpha mask..."));
 
-        using var mask = BuildMask(results);
-
-        mask.Mutate(ctx => ctx.Resize(original.Width, original.Height));
-
-        cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(85, "Compositing final PNG..."));
-
-        using var finalImage = CompositeFinalImage(original, mask);
-
-        cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(95, "Saving PNG..."));
-
-        outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_nobg", ".png");
-
-        try
+        SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8> mask;
+        using (results)
         {
-            finalImage.SaveAsPng(outputPath, new PngEncoder
-            {
-                CompressionLevel = PngCompressionLevel.BestSpeed
-            });
+            mask = BuildMask(results);
         }
-        catch
+
+        using (mask)
         {
-            DeletePartialOutput(outputPath);
-            throw;
+            mask.Mutate(ctx => ctx.Resize(original.Width, original.Height));
+
+            cancellationToken.ThrowIfCancellationRequested();
+            progress.Report(new InferenceProgress(85, "Compositing final PNG..."));
+
+            using var finalImage = CompositeFinalImage(original, mask);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            progress.Report(new InferenceProgress(95, "Saving PNG..."));
+
+            outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_nobg", ".png");
+
+            try
+            {
+                finalImage.SaveAsPng(outputPath, new PngEncoder
+                {
+                    CompressionLevel = PngCompressionLevel.BestSpeed
+                });
+            }
+            catch
+            {
+                DeletePartialOutput(outputPath);
+                throw;
+            }
         }
 
         progress.Report(new InferenceProgress(100, "Done."));
@@ -262,26 +289,8 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         return result;
     }
 
-    private static (InferenceSession session, string provider) CreateSession(string modelPath)
-    {
-        try
-        {
-            var opts = new SessionOptions();
-            opts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-            opts.AppendExecutionProvider_DML();
-            AppLogger.LogStatic("BackgroundRemovalEngine: using DirectML provider");
-            return (new InferenceSession(modelPath, opts), "DirectML");
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogStatic(
-                "BackgroundRemovalEngine: DirectML failed, falling back to CPU. " + ex.Message);
-            var opts = new SessionOptions();
-            opts.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-            AppLogger.LogStatic("BackgroundRemovalEngine: using CPU provider");
-            return (new InferenceSession(modelPath, opts), "CPU");
-        }
-    }
+    private static (InferenceSession session, string provider) CreateSession(string modelPath) =>
+        OnnxProviderHelper.CreateSessionPreferred(modelPath, "BackgroundRemovalEngine");
 
     private static void ValidateInput(string inputPath)
     {

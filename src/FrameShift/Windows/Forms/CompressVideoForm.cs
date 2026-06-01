@@ -172,10 +172,10 @@ public sealed class CompressVideoForm : Form
 
     private static Control CreateHeader(string sourcePath, string sourceExtension, long sourceBytes, string? resolutionText)
     {
-        _ = sourcePath;
+        var fileName = Path.GetFileName(sourcePath);
         return FrameShiftUiFactory.CreateFixedHeader(
             "FrameShift - Compress Video",
-            $"Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}    Video: {resolutionText ?? "unknown"}",
+            $"{fileName}    Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}    Video: {resolutionText ?? "unknown"}",
             IconPaths.CompressVideoIcon,
             IconPaths.AppIcon,
             "▶");

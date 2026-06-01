@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FrameShift.Core.AI;
 using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
 using Microsoft.ML.OnnxRuntime;
@@ -219,30 +220,8 @@ private static float[,] ScaleMask(bool[,] mask, int srcW, int srcH, int dstW, in
         }
     }
 
-    private static (InferenceSession session, string provider) CreateSession(string modelPath, bool forceCpu)
-    {
-        if (!forceCpu)
-        {
-            try
-            {
-                var opts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
-                opts.AppendExecutionProvider_DML();
-                AppLogger.LogStatic("ObjectRemovalEngine: using DirectML provider");
-                return (new InferenceSession(modelPath, opts), "DirectML");
-            }
-            catch (Exception ex)
-            {
-                AppLogger.LogStatic($"ObjectRemovalEngine: DirectML failed, falling back to CPU. {ex.Message}");
-            }
-        }
-        else
-        {
-            AppLogger.LogStatic("ObjectRemovalEngine: ForceCpu=true — using CPU provider directly");
-        }
-
-        var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
-        return (new InferenceSession(modelPath, cpuOpts), "CPU");
-    }
+    private static (InferenceSession session, string provider) CreateSession(string modelPath, bool forceCpu) =>
+        OnnxProviderHelper.CreateSessionPreferred(modelPath, "ObjectRemovalEngine", forceCpu);
 
     private static void DeletePartialOutput(string? outputPath)
     {

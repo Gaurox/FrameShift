@@ -189,10 +189,10 @@ public sealed class CompressImageForm : Form
 
     private static Control CreateHeader(string sourcePath, string sourceExtension, long sourceBytes)
     {
-        _ = sourcePath;
+        var fileName = Path.GetFileName(sourcePath);
         return FrameShiftUiFactory.CreateFixedHeader(
             "FrameShift - Compress Image",
-            $"Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}",
+            $"{fileName}    Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}",
             IconPaths.CompressVideoIcon,
             IconPaths.AppIcon,
             "▶");

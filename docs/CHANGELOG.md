@@ -5,6 +5,12 @@
 - Translated the `Media Info` action output to English for all three media kinds (video, audio, image): all section headers, field labels, units (`GiB`/`MiB`/`KiB`/`bytes`, `fps`, `channel(s)`), and compression values, plus the window labels (`File:`, `Information`, `Copy`, `Close`). No French text remains in the action.
 - Added **LaMa 2025 (Fast)** as a second inpainting model in `Remove Object`: 93 MB, Apache-2.0, opencv/inpainting_lama Jan 2025 — identical API to LaMa FP32, smaller download, selectable from the ComboBox. Renamed existing model to **LaMa FP32 (Quality)**.
 - Added `ForceCpu` per-model flag to `ObjectRemovalModelDefinition` to allow future models to opt into DirectML without engine changes.
+- Added configurable AI models folder: user preferences are persisted in `%LOCALAPPDATA%\FrameShift\config\settings.json`; if `ModelsDirectory` is absent, empty, or not writable, the application automatically falls back to the default path (`%LOCALAPPDATA%\FrameShift\AI\Models`).
+- Added "AI models folder" section to `MainForm` with Browse, Reset to default, and Open folder actions; the displayed path updates immediately on change.
+- Added AI models folder choice to the Inno Setup installer: a dedicated page lets users pick a custom directory at install time; the choice is saved to `settings.json` and respected on uninstall.
+- Fixed `Remove Background`: DirectML failures that occur during inference (`session.Run`) now trigger an automatic CPU retry instead of a hard crash; the progress bar shows a clean status message without internal ONNX Runtime build paths.
+- Fixed AI error messages: `OnnxRuntimeException` details (including internal build paths such as `E:\_work\...`) are now written only to the diagnostic log; the UI displays a short, readable message.
+- Centralized ONNX session creation (DirectML → CPU fallback) for `Remove Background`, `Remove Object`, and `RIFE Interpolate Video` into `OnnxProviderHelper`.
 
 ## 1.0.9
 

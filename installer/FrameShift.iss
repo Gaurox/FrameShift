@@ -114,6 +114,10 @@ var
   ExistingInstallInstallRadio: TNewRadioButton;
   ExistingInstallUninstallRadio: TNewRadioButton;
   ExistingInstallSelectedAction: Integer;
+  AiModelsPage: TWizardPage;
+  AiModelsDirEdit: TEdit;
+  AiModelsDirBrowseButton: TButton;
+  AiModelsSelectedDir: string;
 
 function GetListItem(var List: string): string;
 var
@@ -904,6 +908,109 @@ begin
   end;
 end;
 
+function GetDefaultModelsDir(): string;
+begin
+  Result := ExpandConstant('{localappdata}\FrameShift\AI\Models');
+end;
+
+procedure AiModelsBrowseClick(Sender: TObject);
+var
+  Dir: string;
+begin
+  Dir := AiModelsDirEdit.Text;
+  if Dir = '' then
+    Dir := GetDefaultModelsDir();
+  if BrowseForFolder('Select AI models folder', Dir, False) then
+    AiModelsDirEdit.Text := Dir;
+end;
+
+procedure CreateAiModelsPage();
+var
+  DescLabel: TNewStaticText;
+  DirLabel: TNewStaticText;
+  EditPanel: TPanel;
+begin
+  AiModelsPage := CreateCustomPage(
+    wpSelectComponents,
+    'AI models folder',
+    'Choose where FrameShift AI will store downloaded AI models.');
+
+  DescLabel := TNewStaticText.Create(AiModelsPage);
+  DescLabel.Parent := AiModelsPage.Surface;
+  DescLabel.Left := ScaleX(0);
+  DescLabel.Top := ScaleY(4);
+  DescLabel.Width := AiModelsPage.SurfaceWidth;
+  DescLabel.Height := ScaleY(32);
+  DescLabel.AutoSize := False;
+  DescLabel.WordWrap := True;
+  DescLabel.Caption :=
+    'Models are downloaded on first use and never included in the installer.' + #13#10 +
+    'Leave the default to use ' + GetDefaultModelsDir() + '.';
+
+  DirLabel := TNewStaticText.Create(AiModelsPage);
+  DirLabel.Parent := AiModelsPage.Surface;
+  DirLabel.Left := ScaleX(0);
+  DirLabel.Top := DescLabel.Top + DescLabel.Height + ScaleY(10);
+  DirLabel.Width := AiModelsPage.SurfaceWidth;
+  DirLabel.Height := ScaleY(16);
+  DirLabel.AutoSize := False;
+  DirLabel.Caption := 'AI models folder:';
+
+  AiModelsDirEdit := TEdit.Create(AiModelsPage);
+  AiModelsDirEdit.Parent := AiModelsPage.Surface;
+  AiModelsDirEdit.Left := ScaleX(0);
+  AiModelsDirEdit.Top := DirLabel.Top + DirLabel.Height + ScaleY(4);
+  AiModelsDirEdit.Width := AiModelsPage.SurfaceWidth - ScaleX(90);
+  AiModelsDirEdit.Height := ScaleY(22);
+  AiModelsDirEdit.Text := GetDefaultModelsDir();
+
+  AiModelsDirBrowseButton := TButton.Create(AiModelsPage);
+  AiModelsDirBrowseButton.Parent := AiModelsPage.Surface;
+  AiModelsDirBrowseButton.Left := AiModelsDirEdit.Left + AiModelsDirEdit.Width + ScaleX(8);
+  AiModelsDirBrowseButton.Top := AiModelsDirEdit.Top - ScaleY(1);
+  AiModelsDirBrowseButton.Width := ScaleX(78);
+  AiModelsDirBrowseButton.Height := ScaleY(24);
+  AiModelsDirBrowseButton.Caption := 'Browse...';
+  AiModelsDirBrowseButton.OnClick := @AiModelsBrowseClick;
+end;
+
+procedure WriteAiModelSettings(const ModelsDir: string);
+var
+  ConfigDir: string;
+  ConfigFile: string;
+  JsonContent: string;
+  EscapedDir: string;
+  I: Integer;
+  C: Char;
+begin
+  if (ModelsDir = '') or (ModelsDir = GetDefaultModelsDir()) then
+    exit;
+
+  ConfigDir := ExpandConstant('{localappdata}\FrameShift\config');
+  ConfigFile := ConfigDir + '\settings.json';
+
+  if not ForceDirectories(ConfigDir) then
+    exit;
+
+  // Minimal JSON escaping for the path (backslash → \\)
+  EscapedDir := '';
+  for I := 1 to Length(ModelsDir) do
+  begin
+    C := ModelsDir[I];
+    if C = '\' then
+      EscapedDir := EscapedDir + '\\'
+    else
+      EscapedDir := EscapedDir + C;
+  end;
+
+  JsonContent :=
+    '{' + #13#10 +
+    '  "ModelsDirectory": "' + EscapedDir + '"' + #13#10 +
+    '}';
+
+  SaveStringToFile(ConfigFile, JsonContent, False);
+end;
+
 procedure InitializeWizard();
 begin
   HasInstalledVersion := FindInstalledVersion();
@@ -915,6 +1022,8 @@ begin
   begin
     InstalledVersionState := ExistingInstallStateSame;
   end;
+
+  CreateAiModelsPage();
 
   ExistingInstallPage :=
     CreateCustomPage(
@@ -992,12 +1101,50 @@ begin
   begin
     InstallSelectedMenus;
     SHChangeNotify($08000000, $0000, 0, 0);
+    if AiModelsPage <> nil then
+      WriteAiModelSettings(Trim(AiModelsDirEdit.Text));
   end;
+end;
+
+function ReadModelsDirectoryFromSettings(): string;
+var
+  ConfigFile: string;
+  JsonText: AnsiString;
+  Tail: string;
+  KeyPos: Integer;
+  QuotePos: Integer;
+  EndPos: Integer;
+begin
+  Result := '';
+  ConfigFile := ExpandConstant('{localappdata}\FrameShift\config\settings.json');
+  if not FileExists(ConfigFile) then
+    exit;
+  if not LoadStringFromFile(ConfigFile, JsonText) then
+    exit;
+  // Locate the key
+  KeyPos := Pos('"ModelsDirectory"', String(JsonText));
+  if KeyPos = 0 then
+    exit;
+  // Slice everything after the key
+  Tail := Copy(String(JsonText), KeyPos + Length('"ModelsDirectory"'), MaxInt);
+  // Find the opening quote of the value (skip past colon/spaces)
+  QuotePos := Pos('"', Tail);
+  if QuotePos = 0 then
+    exit;
+  Tail := Copy(Tail, QuotePos + 1, MaxInt);
+  // Find the closing quote
+  EndPos := Pos('"', Tail);
+  if EndPos = 0 then
+    exit;
+  Result := Copy(Tail, 1, EndPos - 1);
+  // Unescape \\ → \
+  Result := StringChangeEx(Result, '\\', '\', True);
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ModelsDir: string;
+  CustomModelsDir: string;
   AIDir: string;
   LogsDir: string;
 begin
@@ -1007,7 +1154,12 @@ begin
     CleanupContextMenuAIKeys;
     SHChangeNotify($08000000, $0000, 0, 0);
 
+    // Use custom models dir from settings if present, otherwise the default
     ModelsDir := ExpandConstant('{localappdata}\FrameShift\AI\Models');
+    CustomModelsDir := ReadModelsDirectoryFromSettings();
+    if (CustomModelsDir <> '') and (CustomModelsDir <> ModelsDir) then
+      ModelsDir := CustomModelsDir;
+
     if DirExists(ModelsDir) then
     begin
       if MsgBox(

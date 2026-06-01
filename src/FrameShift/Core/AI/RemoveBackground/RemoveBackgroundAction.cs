@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using FrameShift.Core.AI;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Progress;
 
@@ -102,7 +103,8 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
         catch (Exception ex)
         {
             request.Logger.Log($"RemoveBackgroundAction: failed. {ex}");
-            return new ActionExecutionResult(false, $"Remove Background failed: {ex.Message}");
+            return new ActionExecutionResult(false,
+                OnnxProviderHelper.GetCleanUserMessage(ex, "Remove Background"));
         }
         finally
         {

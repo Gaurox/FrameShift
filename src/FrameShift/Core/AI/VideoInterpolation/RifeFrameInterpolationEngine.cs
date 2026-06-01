@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using FrameShift.Core.AI;
 using FrameShift.Core.Logging;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
@@ -635,24 +636,8 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
         }
     }
 
-    private static (InferenceSession session, string provider) CreateSession(string modelPath)
-    {
-        try
-        {
-            var options = new SessionOptions();
-            options.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-            options.AppendExecutionProvider_DML();
-            AppLogger.LogStatic("RifeFrameInterpolationEngine: using DirectML provider");
-            return (new InferenceSession(modelPath, options), "DirectML");
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogStatic($"RifeFrameInterpolationEngine: DirectML failed, falling back to CPU. {ex.Message}");
-            var options = new SessionOptions();
-            options.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-            return (new InferenceSession(modelPath, options), "CPU");
-        }
-    }
+    private static (InferenceSession session, string provider) CreateSession(string modelPath) =>
+        OnnxProviderHelper.CreateSessionPreferred(modelPath, "RifeFrameInterpolationEngine");
 
     private static int AlignTo64(int value)
     {
