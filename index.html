@@ -1,448 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>FrameShift — Two-click media actions, 100% local</title>
-<meta name="description" content="FrameShift is a Windows desktop utility for local media actions from the Explorer right-click menu: convert, compress, crop, cut, remove background, remove noise, audio separation, RIFE interpolation, and more, with dedicated visual crop tools for images and video." />
-<meta name="author" content="Gaurox" />
-<meta name="google-site-verification" content="JGO4WajI-jMV60-eYiXCpWxHMAfuzLIYzUYMraR2pIs" />
-<meta name="robots" content="index,follow,max-image-preview:large" />
-<meta name="theme-color" content="#4D79B4" />
-<link rel="canonical" href="https://gaurox.github.io/FrameShift/" />
-<meta property="og:type" content="website" />
-<meta property="og:locale" content="en_US" />
-<meta property="og:site_name" content="FrameShift" />
-<meta property="og:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta property="og:description" content="Windows desktop utility for local media actions from the Explorer right-click menu. Powered by FFmpeg and local AI, including RIFE interpolation and visual auto crop for images and video." />
-<meta property="og:url" content="https://gaurox.github.io/FrameShift/" />
-<meta property="og:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
-<meta property="og:image:alt" content="FrameShift Explorer right-click menu demo" />
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="FrameShift — Two-click media actions, 100% local" />
-<meta name="twitter:description" content="Windows desktop utility for local media actions from the Explorer right-click menu, including visual auto crop for images and video, remove background, remove noise, audio separation, and RIFE interpolation." />
-<meta name="twitter:image" content="https://gaurox.github.io/FrameShift/screenshots/Gif_demos/demo_menus_gif.gif" />
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "FrameShift",
-  "applicationCategory": "MultimediaApplication",
-  "operatingSystem": "Windows 10, Windows 11",
-  "softwareVersion": "1.0.10",
-  "description": "Windows desktop utility for local media actions from the Explorer right-click menu.",
-  "url": "https://gaurox.github.io/FrameShift/",
-  "downloadUrl": "https://github.com/gaurox/FrameShift/releases",
-  "isAccessibleForFree": true,
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "featureList": [
-    "Convert media",
-    "Compress files",
-    "Crop and resize",
-    "Visual auto crop for images and video",
-    "Cut and extract",
-    "Remove background locally",
-    "Remove objects from images locally",
-    "Remove noise locally",
-    "Separate audio into stems locally",
-    "RIFE video interpolation locally",
-    "Image to PDF"
-  ]
-}
-</script>
-<link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="0; url=https://gaurox.dev/frameshift/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FrameShift moved to gaurox.dev</title>
+  <meta name="description" content="The official FrameShift page has moved to gaurox.dev." />
+  <meta name="robots" content="noindex,follow" />
+  <link rel="canonical" href="https://gaurox.dev/frameshift/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="FrameShift moved to gaurox.dev" />
+  <meta property="og:description" content="The official FrameShift page is now hosted on gaurox.dev." />
+  <meta property="og:url" content="https://gaurox.dev/frameshift/" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="FrameShift moved to gaurox.dev" />
+  <meta name="twitter:description" content="The official FrameShift page is now hosted on gaurox.dev." />
+  <script>
+    window.location.replace("https://gaurox.dev/frameshift/");
+  </script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: rgba(255,255,255,.92);
+      --surface-border: #d8e2f2;
+      --text-primary: #1f283a;
+      --text-secondary: #525e73;
+      --blue: #4d79b4;
+      --blue-hover: #3f6699;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(142, 186, 243, 0.30), transparent 30rem),
+        radial-gradient(circle at bottom right, rgba(77, 121, 180, 0.14), transparent 34rem),
+        var(--bg);
+      color: var(--text-primary);
+    }
+
+    .panel {
+      width: min(680px, 100%);
+      padding: 36px;
+      border: 1px solid var(--surface-border);
+      border-radius: 24px;
+      background: var(--surface);
+      box-shadow: 0 18px 48px rgba(31, 40, 58, 0.10);
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.05em;
+    }
+
+    p {
+      margin: 0 0 20px;
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 12px;
+      background: var(--blue);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    a:hover { background: var(--blue-hover); }
+  </style>
 </head>
 <body>
-
-<header class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="#top">
-      <span class="brand-mark"></span>
-      <span class="brand-name">FrameShift</span>
-    </a>
-    <nav class="nav-links">
-      <a href="#why">Why</a>
-      <a href="#demos">Demos</a>
-      <a href="#actions">Actions</a>
-      <a href="#gallery">Gallery</a>
-      <a href="https://github.com/gaurox/FrameShift" class="nav-cta">GitHub</a>
-    </nav>
-  </div>
-</header>
-
-<main id="top">
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-inner">
-      <h1 class="hero-title">Transform your media in two clicks.</h1>
-      <p class="hero-sub">
-        Convert, compress, crop, cut, extract audio, remove backgrounds, remove objects from images, split audio stems, smooth motion with RIFE and more —
-        straight from the Windows right-click menu.
-        <strong>100% local. 100% offline. No upload, ever.</strong>
-      </p>
-      <div class="hero-cta">
-        <a class="btn btn-primary" href="https://github.com/gaurox/FrameShift/releases">Download</a>
-        <a class="btn btn-outline" href="https://github.com/gaurox/FrameShift">View on GitHub</a>
-      </div>
-      <div class="hero-media">
-        <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="FrameShift Explorer menu demo" loading="eager" />
-      </div>
-      <ul class="hero-badges">
-        <li><span class="dot"></span> Windows-first</li>
-        <li><span class="dot"></span> Runs locally</li>
-        <li><span class="dot"></span> Powered by FFmpeg</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- WHY -->
-  <section id="why" class="why">
-    <div class="container">
-      <h2 class="section-title">Why FrameShift?</h2>
-      <div class="why-grid">
-        <article class="why-card">
-          <h3>Two clicks. That's it.</h3>
-          <p>Right-click a file, pick an action, you're done. No app to open, no import, no export. The workflow disappears so you can focus on the file.</p>
-        </article>
-        <article class="why-card">
-          <h3>Everything stays on your machine.</h3>
-          <p>No cloud, no upload, no telemetry. Your photos, videos and audio files never leave your disk. Works the same with or without an internet connection.</p>
-        </article>
-        <article class="why-card">
-          <h3>Built on FFmpeg.</h3>
-          <p>The open-source reference for audio and video, natively integrated. Reliable, fast, and battle-tested — no proprietary black box.</p>
-        </article>
-        <article class="why-card">
-          <h3>Built for quick corrections.</h3>
-          <p>Need to crop, trim, rotate, resize, or extract something fast? FrameShift is designed for small, repeated media fixes that should take seconds, not minutes.</p>
-        </article>
-        <article class="why-card">
-          <h3>No messy outputs.</h3>
-          <p>Results stay next to the original file with safe unique naming. You keep your source, avoid accidental overwrites, and stay in control of every version.</p>
-        </article>
-        <article class="why-card">
-          <h3>Local AI, when it helps.</h3>
-          <p>Use AI features like background removal, denoising, and audio separation locally on your machine. No upload, no subscription wall, no sending private files to a remote service.</p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- DEMOS -->
-  <section id="demos" class="demos">
-    <div class="container">
-      <h2 class="section-title">See it in action</h2>
-
-      <!-- 1 — media left -->
-      <article class="demo-row">
-        <div class="demo-media">
-          <div class="ba-split">
-            <div class="ba-panel">
-              <img src="screenshots/image_exemple/train_000001.png" alt="Before: original image with object to remove" loading="lazy" />
-              <span class="ba-label">Before</span>
-            </div>
-            <div class="ba-panel">
-              <img src="screenshots/image_exemple/train_000001_cleaned.png" alt="After: object removed by local AI inpainting" loading="lazy" />
-              <span class="ba-label">After</span>
-            </div>
-          </div>
-        </div>
-        <div class="demo-text">
-          <span class="demo-tag">AI · runs locally</span>
-          <h3>Remove Object</h3>
-          <p>Paint over any object with a brush, click Apply — the AI reconstructs the background behind it. No upload, no cloud. Runs entirely on your machine with LaMa inpainting via ONNX Runtime.</p>
-        </div>
-      </article>
-
-      <!-- 2 — media right -->
-      <article class="demo-row reverse">
-        <div class="demo-media">
-          <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove background demo" loading="lazy" />
-        </div>
-        <div class="demo-text">
-          <span class="demo-tag">AI · runs locally</span>
-          <h3>Remove Background</h3>
-          <p>Cut out subjects from your images with a single click. No subscription, no upload — the model runs on your GPU through ONNX Runtime + DirectML.</p>
-        </div>
-      </article>
-
-      <!-- 3 — media left -->
-      <article class="demo-row">
-        <div class="demo-media">
-          <img src="screenshots/Gif_demos/Demo_image.to.pdf.gif" alt="Image to PDF demo" loading="lazy" />
-        </div>
-        <div class="demo-text">
-          <h3>Image to PDF</h3>
-          <p>Select your images, choose the action, get a clean PDF ready to share. Order, page size and orientation handled for you.</p>
-        </div>
-      </article>
-
-      <!-- 4 — media right -->
-      <article class="demo-row reverse">
-        <div class="demo-media">
-          <img src="screenshots/Gif_demos/demo_interpolate.gif" alt="Interpolate video demo" loading="lazy" />
-        </div>
-        <div class="demo-text">
-          <span class="demo-tag">AI · runs locally</span>
-          <h3>Interpolate Video (RIFE)</h3>
-          <p>Generate smoother motion with the local RIFE workflow, model preflight, and ONNX Runtime DirectML acceleration when available.</p>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- AI BANNER -->
-  <section class="ai-banner">
-    <div class="container">
-      <div class="ai-card">
-        <h2>Local AI is now part of FrameShift.</h2>
-        <p>
-          Six AI actions now run locally inside FrameShift through ONNX Runtime.
-          Remove Object uses LaMa inpainting — paint a mask over any object and the AI fills it in.
-          Remove Background uses
-          <a href="https://huggingface.co/onnx-community/BiRefNet_lite-ONNX" target="_blank" rel="noopener">BiRefNet Lite</a>.
-          Remove Noise (Audio and Video) uses DeepFilterNet3 exports for offline speech denoising.
-          Audio Separation is powered by HTDemucs exports with CPU and DirectML GPU support.
-          Interpolate Video (RIFE) uses a local interpolation model with shared preflight and downloader flow.
-          More local AI modules are planned for future versions, and they will follow the same rule:
-          <strong>always local, never in the cloud.</strong>
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ACTIONS CATALOG -->
-  <section id="actions" class="actions">
-    <div class="container">
-      <h2 class="section-title">All actions, at a glance</h2>
-      <div class="actions-grid">
-        <article class="actions-col">
-          <h3>Image <span class="count">9</span></h3>
-          <ul>
-            <li>Compress</li>
-            <li>Convert</li>
-            <li>Crop</li>
-            <li>Resize</li>
-            <li>Rotate</li>
-            <li>Create Icon</li>
-            <li>Image → PDF</li>
-            <li>Remove Background <span class="ai-pill">AI</span></li>
-            <li>Remove Object <span class="ai-pill">AI</span></li>
-          </ul>
-        </article>
-        <article class="actions-col">
-          <h3>Video <span class="count">15</span></h3>
-          <ul>
-            <li>Compress</li>
-            <li>Convert</li>
-            <li>Crop</li>
-            <li>Cut</li>
-            <li>Remove audio</li>
-            <li>Resize</li>
-            <li>Change speed</li>
-            <li>Extract audio</li>
-            <li>Extract frames</li>
-            <li>Create GIF</li>
-            <li>Rotate / Flip</li>
-            <li>Interpolate</li>
-            <li>Media info</li>
-            <li>Interpolate (RIFE) <span class="ai-pill">AI</span></li>
-            <li>Remove noise <span class="ai-pill">AI</span></li>
-          </ul>
-        </article>
-        <article class="actions-col">
-          <h3>Audio <span class="count">8</span></h3>
-          <ul>
-            <li>Compress</li>
-            <li>Convert</li>
-            <li>Cut</li>
-            <li>Reverse</li>
-            <li>Change speed</li>
-            <li>Change pitch</li>
-            <li>Remove noise <span class="ai-pill">AI</span></li>
-            <li>Audio Separation <span class="ai-pill">AI</span></li>
-          </ul>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- GALLERY -->
-  <section id="gallery" class="gallery">
-    <div class="container">
-      <h2 class="section-title">A clean window for every action</h2>
-      <p class="section-sub">Every UI is designed to be readable, run in seconds, and get out of the way.</p>
-
-      <h3 class="gallery-subtitle">Image</h3>
-      <div class="gallery-grid">
-        <figure><img src="screenshots/Image_actions/Compress_image.png" alt="Compress image" loading="lazy" /><figcaption>Compress</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/Convert_Image.png" alt="Convert image" loading="lazy" /><figcaption>Convert</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/Crop_image.png" alt="Crop image" loading="lazy" /><figcaption>Crop</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/resize_image.png" alt="Resize image" loading="lazy" /><figcaption>Resize</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/Rotate_image.png" alt="Rotate image" loading="lazy" /><figcaption>Rotate</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/ConvertToIcon.png" alt="Create icon" loading="lazy" /><figcaption>Create Icon</figcaption></figure>
-        <figure><img src="screenshots/Image_actions/Image_to_pdf.png" alt="Image to PDF" loading="lazy" /><figcaption>Image → PDF</figcaption></figure>
-        <figure><img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" loading="lazy" /><figcaption>Remove Object</figcaption></figure>
-      </div>
-
-      <h3 class="gallery-subtitle">Video</h3>
-      <div class="gallery-grid">
-        <figure><img src="screenshots/Video_actions/compress_video.png" alt="Compress video" loading="lazy" /><figcaption>Compress</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/convert_video.png" alt="Convert video" loading="lazy" /><figcaption>Convert</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Crop_video.png" alt="Crop video" loading="lazy" /><figcaption>Crop</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Cut_video.png" alt="Cut video" loading="lazy" /><figcaption>Cut</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Resize_video.png" alt="Resize video" loading="lazy" /><figcaption>Resize</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/rotate_video.png" alt="Rotate / flip video" loading="lazy" /><figcaption>Rotate / Flip</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Change_video_speed.png" alt="Change video speed" loading="lazy" /><figcaption>Change speed</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Extract_audio.png" alt="Extract audio" loading="lazy" /><figcaption>Extract audio</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" loading="lazy" /><figcaption>Create GIF</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Interpolate_video.png" alt="Interpolate video" loading="lazy" /><figcaption>Interpolate</figcaption></figure>
-        <figure><img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate video RIFE" loading="lazy" /><figcaption>Interpolate (RIFE)</figcaption></figure>
-        <figure><img src="screenshots/Video_actions/Media_info_video.png" alt="Media info" loading="lazy" /><figcaption>Media info</figcaption></figure>
-        <figure><img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise video" loading="lazy" /><figcaption>Remove Noise</figcaption></figure>
-      </div>
-
-      <h3 class="gallery-subtitle">Audio</h3>
-      <div class="gallery-grid">
-        <figure><img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress audio" loading="lazy" /><figcaption>Compress</figcaption></figure>
-        <figure><img src="screenshots/Audio_actions/convert_audio.png" alt="Convert audio" loading="lazy" /><figcaption>Convert</figcaption></figure>
-        <figure><img src="screenshots/Audio_actions/Cut_audio.png" alt="Cut audio" loading="lazy" /><figcaption>Cut</figcaption></figure>
-
-        <figure><img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change audio speed" loading="lazy" /><figcaption>Change speed</figcaption></figure>
-        <figure><img src="screenshots/Audio_actions/Change_pitch.png" alt="Change pitch" loading="lazy" /><figcaption>Change pitch</figcaption></figure>
-        <figure><img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise audio" loading="lazy" /><figcaption>Remove Noise</figcaption></figure>
-        <figure><img src="screenshots/AI_actions/Audio_separation.png" alt="Audio separation" loading="lazy" /><figcaption>Audio Separation</figcaption></figure>
-      </div>
-    </div>
-  </section>
-
-  <!-- TECH -->
-  <section class="tech">
-    <div class="container">
-      <h2 class="section-title">Under the hood</h2>
-      <ul class="tech-list">
-        <li>Windows 10 / 11 · .NET 8 LTS · self-contained <code>win-x64</code></li>
-        <li>FFmpeg &amp; FFprobe bundled — no external install required</li>
-        <li>Clean Inno Setup installer, complete uninstall</li>
-        <li>Local AI via ONNX Runtime + DirectML (GPU when available, CPU fallback)</li>
-        <li>Open source · GPL v3.0</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- DONATION -->
-  <section class="donate">
-    <div class="container">
-      <div class="donate-card">
-        <h3>Enjoying FrameShift?</h3>
-        <p>FrameShift is free and built in my spare time. If the tool saves you time, a coffee is always appreciated.</p>
-        <a class="btn btn-outline" href="https://paypal.me/gaurox" target="_blank" rel="noopener">Buy me a coffee</a>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<div class="lightbox" id="gallery-lightbox" aria-hidden="true">
-  <div class="lightbox-backdrop" data-lightbox-close="true"></div>
-  <div class="lightbox-dialog" role="dialog" aria-modal="true" aria-labelledby="lightbox-caption">
-    <button class="lightbox-close" type="button" aria-label="Close enlarged screenshot" data-lightbox-close="true">×</button>
-    <img class="lightbox-image" id="lightbox-image" src="" alt="" />
-    <p class="lightbox-caption" id="lightbox-caption"></p>
-  </div>
-</div>
-
-<footer class="footer">
-  <div class="container footer-inner">
-    <div class="footer-brand">
-      <span class="brand-mark"></span>
-      <span>FrameShift</span>
-    </div>
-    <nav class="footer-links">
-      <a href="https://github.com/gaurox/FrameShift">GitHub</a>
-      <a href="https://github.com/gaurox/FrameShift/issues">Issues</a>
-      <a href="https://github.com/gaurox/FrameShift/releases">Releases</a>
-      <a href="LICENSE">License (GPL v3.0)</a>
-      <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a>
-    </nav>
-    <p class="footer-copy">© 2026 gaurox · Made on Windows</p>
-  </div>
-</footer>
-
-<script>
-(() => {
-  const lightbox = document.getElementById("gallery-lightbox");
-  const lightboxImage = document.getElementById("lightbox-image");
-  const lightboxCaption = document.getElementById("lightbox-caption");
-  const galleryCards = document.querySelectorAll(".gallery-grid figure");
-
-  if (!lightbox || !lightboxImage || !lightboxCaption || galleryCards.length === 0) {
-    return;
-  }
-
-  let activeCard = null;
-
-  const closeLightbox = () => {
-    lightbox.classList.remove("is-open");
-    lightbox.setAttribute("aria-hidden", "true");
-    lightboxImage.src = "";
-    lightboxImage.alt = "";
-    lightboxCaption.textContent = "";
-
-    if (activeCard) {
-      activeCard.focus();
-      activeCard = null;
-    }
-  };
-
-  const openLightbox = (card) => {
-    const image = card.querySelector("img");
-    const caption = card.querySelector("figcaption");
-    if (!image) {
-      return;
-    }
-
-    activeCard = card;
-    lightboxImage.src = image.currentSrc || image.src;
-    lightboxImage.alt = image.alt || "";
-    lightboxCaption.textContent = caption ? caption.textContent : image.alt || "";
-    lightbox.classList.add("is-open");
-    lightbox.setAttribute("aria-hidden", "false");
-  };
-
-  galleryCards.forEach((card) => {
-    card.tabIndex = 0;
-    card.setAttribute("role", "button");
-    card.setAttribute("aria-label", `Open enlarged screenshot: ${card.textContent.trim()}`);
-
-    card.addEventListener("click", () => openLightbox(card));
-    card.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        openLightbox(card);
-      }
-    });
-  });
-
-  lightbox.addEventListener("click", (event) => {
-    const target = event.target;
-    if (target instanceof HTMLElement && target.dataset.lightboxClose === "true") {
-      closeLightbox();
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
-      closeLightbox();
-    }
-  });
-})();
-</script>
-
+  <main class="panel">
+    <h1>FrameShift moved</h1>
+    <p>The official FrameShift page is now hosted on gaurox.dev.</p>
+    <a href="https://gaurox.dev/frameshift/">Open the new FrameShift page</a>
+  </main>
 </body>
 </html>
