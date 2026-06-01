@@ -8,12 +8,12 @@ public sealed class MediaInfoAction : IFrameShiftAction
     public ActionDescriptor Descriptor { get; } = new(
         "media-info",
         "Media Info",
-        "Affiche les métadonnées techniques du fichier média sélectionné.");
+        "Displays the technical metadata of the selected media file.");
 
     public Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
         return Task.FromResult(new ActionExecutionResult(
             false,
-            "Media Info nécessite une interface graphique et ne peut pas être exécuté en mode headless."));
+            "Media Info requires a graphical interface and cannot be run in headless mode."));
     }
 }

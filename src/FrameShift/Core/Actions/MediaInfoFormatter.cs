@@ -64,21 +64,21 @@ public static class MediaInfoFormatter
 
         var vStream = data.VideoStreams.Count > 0 ? data.VideoStreams[0] : null;
 
-        lines.Add("Général");
-        lines.Add(AddLine("Nom complet", fileInfo.FullName));
+        lines.Add("General");
+        lines.Add(AddLine("Complete name", fileInfo.FullName));
         lines.Add(AddLine("Format", formatName));
-        lines.Add(AddLine("Format, Profil", formatProfile));
-        lines.Add(AddLine("Identifiant du codec", codecId));
-        lines.Add(AddLine("Taille du fichier", fileSize));
-        lines.Add(AddLine("Durée", duration));
-        lines.Add(AddLine("Type de débit global", "Variable"));
-        lines.Add(AddLine("Débit global", globalBitrate));
+        lines.Add(AddLine("Format profile", formatProfile));
+        lines.Add(AddLine("Codec ID", codecId));
+        lines.Add(AddLine("File size", fileSize));
+        lines.Add(AddLine("Duration", duration));
+        lines.Add(AddLine("Overall bit rate mode", "Variable"));
+        lines.Add(AddLine("Overall bit rate", globalBitrate));
 
         if (vStream != null)
-            lines.Add(AddLine("Débit im/s", FormatFps(vStream.AvgFrameRate)));
+            lines.Add(AddLine("Frame rate", FormatFps(vStream.AvgFrameRate)));
 
-        lines.Add(AddLine("Date d'encodage", encodedDate));
-        lines.Add(AddLine("Date de marquage", encodedDate));
+        lines.Add(AddLine("Encoded date", encodedDate));
+        lines.Add(AddLine("Tagged date", encodedDate));
         lines.Add(string.Empty);
 
         if (vStream != null)
@@ -94,31 +94,31 @@ public static class MediaInfoFormatter
             var codecTag = vStream.CodecTagString ?? "-";
             var vEncodedDate = vStream.TagCreationTime ?? "-";
 
-            lines.Add("Vidéo");
+            lines.Add("Video");
             lines.Add(AddLine("ID", vStream.Index.ToString()));
             lines.Add(AddLine("Format", vFormat));
-            lines.Add(AddLine("Format/Infos", vFormatInfo));
-            lines.Add(AddLine("Format, Profil", vStream.Profile ?? "-"));
-            lines.Add(AddLine("Identifiant du codec", codecTag));
-            lines.Add(AddLine("Identifiant du codec/Infos", vFormatInfo));
-            lines.Add(AddLine("Durée", duration));
-            lines.Add(AddLine("Débit", vBitrate));
-            lines.Add(AddLine("Largeur", width));
-            lines.Add(AddLine("Hauteur", height));
-            lines.Add(AddLine("Facteur de forme l/h", vStream.DisplayAspectRatio ?? "-"));
-            lines.Add(AddLine("Type de débit im/s", "Constant"));
-            lines.Add(AddLine("Débit im/s", vFps));
-            lines.Add(AddLine("Espace de couleurs", vStream.PixFmt ?? "-"));
-            lines.Add(AddLine("Sous-échantillonnage de la chrominance", chroma));
-            lines.Add(AddLine("Profondeur binaire", bitDepth));
-            lines.Add(AddLine("Bits/(Pixel*Image)", "-"));
-            lines.Add(AddLine("Taille du flux", "-"));
-            lines.Add(AddLine("Bibliothèque utilisée", vStream.TagEncoder ?? "-"));
-            lines.Add(AddLine("Langue", vStream.TagLanguage ?? "-"));
-            lines.Add(AddLine("Date d'encodage", vEncodedDate));
-            lines.Add(AddLine("Date de marquage", vEncodedDate));
-            lines.Add(AddLine("Gamme de couleurs", vStream.ColorRange ?? "-"));
-            lines.Add(AddLine("Configuration des codecs", codecTag));
+            lines.Add(AddLine("Format/Info", vFormatInfo));
+            lines.Add(AddLine("Format profile", vStream.Profile ?? "-"));
+            lines.Add(AddLine("Codec ID", codecTag));
+            lines.Add(AddLine("Codec ID/Info", vFormatInfo));
+            lines.Add(AddLine("Duration", duration));
+            lines.Add(AddLine("Bit rate", vBitrate));
+            lines.Add(AddLine("Width", width));
+            lines.Add(AddLine("Height", height));
+            lines.Add(AddLine("Display aspect ratio", vStream.DisplayAspectRatio ?? "-"));
+            lines.Add(AddLine("Frame rate mode", "Constant"));
+            lines.Add(AddLine("Frame rate", vFps));
+            lines.Add(AddLine("Color space", vStream.PixFmt ?? "-"));
+            lines.Add(AddLine("Chroma subsampling", chroma));
+            lines.Add(AddLine("Bit depth", bitDepth));
+            lines.Add(AddLine("Bits/(Pixel*Frame)", "-"));
+            lines.Add(AddLine("Stream size", "-"));
+            lines.Add(AddLine("Writing library", vStream.TagEncoder ?? "-"));
+            lines.Add(AddLine("Language", vStream.TagLanguage ?? "-"));
+            lines.Add(AddLine("Encoded date", vEncodedDate));
+            lines.Add(AddLine("Tagged date", vEncodedDate));
+            lines.Add(AddLine("Color range", vStream.ColorRange ?? "-"));
+            lines.Add(AddLine("Codec configuration box", codecTag));
             lines.Add(string.Empty);
         }
 
@@ -139,21 +139,21 @@ public static class MediaInfoFormatter
             lines.Add("Audio");
             lines.Add(AddLine("ID", aStream.Index.ToString()));
             lines.Add(AddLine("Format", aFormat));
-            lines.Add(AddLine("Format/Infos", aFormatInfo));
-            lines.Add(AddLine("Identifiant du codec", codecTagA));
-            lines.Add(AddLine("Durée", duration));
-            lines.Add(AddLine("Type de débit", "Variable"));
-            lines.Add(AddLine("Débit", aBitrate));
-            lines.Add(AddLine("Débit maximum", "-"));
-            lines.Add(AddLine("Canal(aux)", channels));
-            lines.Add(AddLine("Agencement des canaux", channelLayout));
-            lines.Add(AddLine("Echantillonnage", sampleRate));
-            lines.Add(AddLine("Débit im/s", frameRate));
-            lines.Add(AddLine("Mode de compression", GetCompressionMode(aStream.CodecName)));
-            lines.Add(AddLine("Taille du flux", "-"));
-            lines.Add(AddLine("Langue", aStream.TagLanguage ?? "-"));
-            lines.Add(AddLine("Date d'encodage", aEncodedDate));
-            lines.Add(AddLine("Date de marquage", aEncodedDate));
+            lines.Add(AddLine("Format/Info", aFormatInfo));
+            lines.Add(AddLine("Codec ID", codecTagA));
+            lines.Add(AddLine("Duration", duration));
+            lines.Add(AddLine("Bit rate mode", "Variable"));
+            lines.Add(AddLine("Bit rate", aBitrate));
+            lines.Add(AddLine("Maximum bit rate", "-"));
+            lines.Add(AddLine("Channel(s)", channels));
+            lines.Add(AddLine("Channel layout", channelLayout));
+            lines.Add(AddLine("Sampling rate", sampleRate));
+            lines.Add(AddLine("Frame rate", frameRate));
+            lines.Add(AddLine("Compression mode", GetCompressionMode(aStream.CodecName)));
+            lines.Add(AddLine("Stream size", "-"));
+            lines.Add(AddLine("Language", aStream.TagLanguage ?? "-"));
+            lines.Add(AddLine("Encoded date", aEncodedDate));
+            lines.Add(AddLine("Tagged date", aEncodedDate));
         }
 
         return string.Join("\r\n", lines);
@@ -201,27 +201,27 @@ public static class MediaInfoFormatter
             }
         }
 
-        lines.Add("Général");
-        lines.Add(AddLine("Nom complet", fileInfo.FullName));
+        lines.Add("General");
+        lines.Add(AddLine("Complete name", fileInfo.FullName));
         lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Taille du fichier", fileSize));
-        lines.Add(AddLine("Durée", duration));
-        lines.Add(AddLine("Type de débit global", "Variable"));
-        lines.Add(AddLine("Débit global", globalBitrate));
-        lines.Add(AddLine("Bibliothèque utilisée", library));
+        lines.Add(AddLine("File size", fileSize));
+        lines.Add(AddLine("Duration", duration));
+        lines.Add(AddLine("Overall bit rate mode", "Variable"));
+        lines.Add(AddLine("Overall bit rate", globalBitrate));
+        lines.Add(AddLine("Writing library", library));
         lines.Add(string.Empty);
         lines.Add("Audio");
         lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Format, Version", version));
-        lines.Add(AddLine("Format, Profil", profile));
-        lines.Add(AddLine("Durée", duration));
-        lines.Add(AddLine("Type de débit", "Variable"));
-        lines.Add(AddLine("Débit", bitrate));
-        lines.Add(AddLine("Canal(aux)", channels));
-        lines.Add(AddLine("Echantillonnage", sampleRate));
-        lines.Add(AddLine("Débit im/s", frameRate));
-        lines.Add(AddLine("Mode de compression", compression));
-        lines.Add(AddLine("Taille du flux", $"{fileSize} (100%)"));
+        lines.Add(AddLine("Format version", version));
+        lines.Add(AddLine("Format profile", profile));
+        lines.Add(AddLine("Duration", duration));
+        lines.Add(AddLine("Bit rate mode", "Variable"));
+        lines.Add(AddLine("Bit rate", bitrate));
+        lines.Add(AddLine("Channel(s)", channels));
+        lines.Add(AddLine("Sampling rate", sampleRate));
+        lines.Add(AddLine("Frame rate", frameRate));
+        lines.Add(AddLine("Compression mode", compression));
+        lines.Add(AddLine("Stream size", $"{fileSize} (100%)"));
 
         return string.Join("\r\n", lines);
     }
@@ -255,20 +255,20 @@ public static class MediaInfoFormatter
             bitDepth = GetBitDepth(vStream.BitsPerRawSample, vStream.PixFmt);
         }
 
-        lines.Add("Général");
-        lines.Add(AddLine("Nom complet", fileInfo.FullName));
-        lines.Add(AddLine("Nom du fichier", fileInfo.Name));
+        lines.Add("General");
+        lines.Add(AddLine("Complete name", fileInfo.FullName));
+        lines.Add(AddLine("File name", fileInfo.Name));
         lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Taille du fichier", fileSize));
+        lines.Add(AddLine("File size", fileSize));
         lines.Add(string.Empty);
         lines.Add("Image");
         lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Largeur", width));
-        lines.Add(AddLine("Hauteur", height));
-        lines.Add(AddLine("Espace de couleurs", colorSpace));
-        lines.Add(AddLine("Profondeur binaire", bitDepth));
-        lines.Add(AddLine("Mode de compression", compression));
-        lines.Add(AddLine("Taille du flux", $"{fileSize} (100%)"));
+        lines.Add(AddLine("Width", width));
+        lines.Add(AddLine("Height", height));
+        lines.Add(AddLine("Color space", colorSpace));
+        lines.Add(AddLine("Bit depth", bitDepth));
+        lines.Add(AddLine("Compression mode", compression));
+        lines.Add(AddLine("Stream size", $"{fileSize} (100%)"));
 
         return string.Join("\r\n", lines);
     }
@@ -278,10 +278,10 @@ public static class MediaInfoFormatter
         const long GiB = 1L << 30;
         const long MiB = 1 << 20;
         const long KiB = 1 << 10;
-        if (bytes >= GiB) return $"{(double)bytes / GiB:N2} Gio";
-        if (bytes >= MiB) return $"{(double)bytes / MiB:N0} Mio";
-        if (bytes >= KiB) return $"{(double)bytes / KiB:N0} Kio";
-        return $"{bytes} octets";
+        if (bytes >= GiB) return $"{(double)bytes / GiB:N2} GiB";
+        if (bytes >= MiB) return $"{(double)bytes / MiB:N0} MiB";
+        if (bytes >= KiB) return $"{(double)bytes / KiB:N0} KiB";
+        return $"{bytes} bytes";
     }
 
     private static string FormatDuration(string? seconds)
@@ -317,7 +317,7 @@ public static class MediaInfoFormatter
         if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var num)) return "-";
         if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var den) || den == 0) return "-";
 
-        return $"{num / den:N3} im/s";
+        return $"{num / den:N3} fps";
     }
 
     private static string FormatSampleRate(string? sampleRateStr)
@@ -334,13 +334,13 @@ public static class MediaInfoFormatter
         if (string.Equals(codecName, "mp3", StringComparison.OrdinalIgnoreCase))
             spf = sr <= 24000 ? 576 : 1152;
 
-        return $"{(double)sr / spf:N3} im/s ({spf} SPF)";
+        return $"{(double)sr / spf:N3} fps ({spf} SPF)";
     }
 
     private static string FormatChannels(string? channelsStr)
     {
         if (!int.TryParse(channelsStr, out var ch)) return "-";
-        return ch == 1 ? "1 canal" : ch == 2 ? "2 canaux" : $"{ch} canaux";
+        return ch == 1 ? "1 channel" : $"{ch} channels";
     }
 
     private static string AddLine(string label, string? value)
@@ -412,10 +412,10 @@ public static class MediaInfoFormatter
         if (string.IsNullOrWhiteSpace(codecName)) return "-";
         return codecName.ToLowerInvariant() switch
         {
-            "flac" or "pcm_s16le" or "wav" or "png" => "Sans perte",
-            "bmp" => "Non compressé",
+            "flac" or "pcm_s16le" or "wav" or "png" => "Lossless",
+            "bmp" => "Uncompressed",
             "tiff" => "Variable",
-            _ => "Avec perte"
+            _ => "Lossy"
         };
     }
 

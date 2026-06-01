@@ -33,7 +33,7 @@ public sealed class MediaInfoForm : Form
 
         var header = FrameShiftUiFactory.CreateFixedHeader(
             "FrameShift - Media Info",
-            $"Fichier : {fileName}",
+            $"File: {fileName}",
             iconPath,
             IconPaths.AppIcon,
             "ℹ");
@@ -42,7 +42,7 @@ public sealed class MediaInfoForm : Form
         var section = FrameShiftUiFactory.CreateFixedSection(
             new Point(outerPad, sectionStartY),
             new Size(sectionW, sectionH),
-            "Informations");
+            "Information");
         Controls.Add(section);
 
         const int textPadX = 12;
@@ -69,7 +69,7 @@ public sealed class MediaInfoForm : Form
         var copyX = closeX - FrameShiftUiMetrics.FooterButtonGap - FrameShiftUiMetrics.SecondaryButtonWidth;
 
         var copyButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Copier",
+            "Copy",
             new Point(copyX, buttonY),
             new Size(FrameShiftUiMetrics.SecondaryButtonWidth, buttonH),
             primary: false);
@@ -77,7 +77,7 @@ public sealed class MediaInfoForm : Form
         Controls.Add(copyButton);
 
         var closeButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Fermer",
+            "Close",
             new Point(closeX, buttonY),
             new Size(FrameShiftUiMetrics.PrimaryButtonWidth, buttonH),
             primary: true);

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Translated the `Media Info` action output to English for all three media kinds (video, audio, image): all section headers, field labels, units (`GiB`/`MiB`/`KiB`/`bytes`, `fps`, `channel(s)`), and compression values, plus the window labels (`File:`, `Information`, `Copy`, `Close`). No French text remains in the action.
 - Added **LaMa 2025 (Fast)** as a second inpainting model in `Remove Object`: 93 MB, Apache-2.0, opencv/inpainting_lama Jan 2025 — identical API to LaMa FP32, smaller download, selectable from the ComboBox. Renamed existing model to **LaMa FP32 (Quality)**.
 - Added `ForceCpu` per-model flag to `ObjectRemovalModelDefinition` to allow future models to opt into DirectML without engine changes.
 

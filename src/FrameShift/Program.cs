@@ -298,7 +298,7 @@ internal static partial class Program
 
         if (!File.Exists(ffprobePath))
         {
-            ShowCliError("ffprobe introuvable. Vérifiez l'installation de FrameShift.");
+            ShowCliError("ffprobe not found. Check your FrameShift installation.");
             return 1;
         }
 
