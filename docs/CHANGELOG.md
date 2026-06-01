@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added multi-file support for `Compress Video`, `Compress Audio`, and `Compress Image`: when several files are selected in Windows Explorer, the parallel instances are coalesced (mutex + named pipe + debounce) and a choice popup appears — **Use same settings for all files** opens one compression window and applies the result to the whole queue; **Configure each file separately** opens the compression window once per file in sequence, each file carrying its own settings; **Cancel** exits cleanly. Single-file behavior and headless CLI mode (`--profile`) are unchanged.
+- Compress form headers now display the source filename (without path) in the subtitle line, making the current file immediately identifiable when configuring files one by one.
 - Translated the `Media Info` action output to English for all three media kinds (video, audio, image): all section headers, field labels, units (`GiB`/`MiB`/`KiB`/`bytes`, `fps`, `channel(s)`), and compression values, plus the window labels (`File:`, `Information`, `Copy`, `Close`). No French text remains in the action.
 - Added **LaMa 2025 (Fast)** as a second inpainting model in `Remove Object`: 93 MB, Apache-2.0, opencv/inpainting_lama Jan 2025 — identical API to LaMa FP32, smaller download, selectable from the ComboBox. Renamed existing model to **LaMa FP32 (Quality)**.
 - Added `ForceCpu` per-model flag to `ObjectRemovalModelDefinition` to allow future models to opt into DirectML without engine changes.
