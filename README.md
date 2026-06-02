@@ -2,8 +2,6 @@
 
 Official website: https://gaurox.dev/frameshift/
 
-Website screenshots note: the `screenshots/` folder in this repository is the source of truth for both the README and the Gaurox website page. When screenshots change, sync this folder to `E:\AI\Gaurox_Website\frameshift\screenshots` with the shared sync script in `E:\AI\sync-gaurox-website-screenshots.ps1`.
-
 <p align="center">
   Windows-first offline media processing built for fast right-click workflows.
 </p>
