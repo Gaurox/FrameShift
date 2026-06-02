@@ -144,6 +144,9 @@ Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
 - téléchargement du modèle au moment utile, pas à l’ouverture simple d’une UI ;
 - vérification d’intégrité du modèle dans le flux de préflight ou de téléchargement quand le module le prévoit ;
+- `remove-background` conserve `fast` comme comportement par défaut et expose trois modèles via option CLI / menu Explorer sans dupliquer l’action ;
+- dans l’état figé de `1.0.11`, les deux modèles `high-resolution` tournent volontairement en **CPU only** ; seul `fast` reste en `DirectML` avec fallback CPU ;
+- la file batch WinForms doit accepter les relances tardives d’une action déjà ouverte comme des requêtes indépendantes, même quand plusieurs invocations ciblent exactement le même chemin source ;
 - intégration Explorer dédiée sous `FrameShift AI` ;
 - barre de titre des fenêtres IA fixée sur l’icône `FrameShift AI` ;
 - icônes de fonction IA dédiées centralisées dans `Assets\Icons\ai` pour les bandeaux internes et les menus Explorer.

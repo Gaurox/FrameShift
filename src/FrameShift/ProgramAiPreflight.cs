@@ -19,35 +19,143 @@ namespace FrameShift;
 
 internal static partial class Program
 {
-    private static bool EnsureRemoveBackgroundModelReady(AppLogger logger)
+    private static bool EnsureRemoveBackgroundModelReady(
+        AppLogger logger,
+        IReadOnlyDictionary<string, string>? options = null)
     {
-        if (RemoveBackground.ModelLocator.ModelExists())
+        var model = ResolveBackgroundRemovalModel(options, logger);
+        if (model is null)
         {
-            logger.Log("Program: Remove Background model already present.");
+            return false;
+        }
+
+        if (model.ManualOnly)
+        {
+            return EnsureBriaManualModelReady(model, logger);
+        }
+
+        var modelPath = RemoveBackground.ModelLocator.GetModelPath(model);
+        if (File.Exists(modelPath) &&
+            RemoveBackground.ModelDownloader.IsModelFileValid(modelPath, model, logger))
+        {
+            logger.Log($"Program: Remove Background model already present and verified. modelId={model.Id}.");
             return true;
         }
 
-        logger.Log("Program: Remove Background model missing. Opening DownloadModelForm.");
+        if (File.Exists(modelPath))
+        {
+            logger.Log($"Program: Remove Background model failed verification. Removing invalid file. modelId={model.Id}.");
+            try
+            {
+                File.Delete(modelPath);
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"Program: failed to delete invalid Remove Background model. {ex}");
+            }
+        }
+
+        logger.Log($"Program: Remove Background model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
             "FrameShift AI - Remove Background",
             "Download the AI model to enable background removal",
             IconPaths.RemoveBackgroundAiIcon,
-            RemoveBackground.ModelDownloader.ModelDisplayName,
-            RemoveBackground.ModelDownloader.ModelLicense,
-            RemoveBackground.ModelDownloader.ExpectedSizeBytes,
+            model.DisplayName,
+            model.License,
+            model.ExpectedSizeBytes,
             async (progress, ct) =>
             {
-                RemoveBackground.ModelLocator.EnsureDirectoryExists();
+                RemoveBackground.ModelLocator.EnsureDirectoryExists(model);
                 await RemoveBackground.ModelDownloader.DownloadAsync(
-                    RemoveBackground.ModelLocator.ModelPath,
-                    new Progress<RemoveBackground.ModelDownloadProgress>(p =>
-                        progress.Report(new FrameShift.Core.AI.AiModelDownloadProgress(p.Percent, p.Status))),
+                    model,
+                    modelPath,
+                    progress,
                     ct).ConfigureAwait(false);
             });
         var dialogResult = downloadForm.ShowDialog();
-        var modelReady = dialogResult == DialogResult.OK && RemoveBackground.ModelLocator.ModelExists();
-        logger.Log($"Program: Remove Background preflight completed. dialogResult={dialogResult}, modelReady={modelReady}.");
+        var modelReady = dialogResult == DialogResult.OK &&
+            File.Exists(modelPath) &&
+            RemoveBackground.ModelDownloader.IsModelFileValid(modelPath, model, logger);
+        logger.Log($"Program: Remove Background preflight completed. dialogResult={dialogResult}, modelReady={modelReady}, modelId={model.Id}.");
         return modelReady;
+    }
+
+    // BRIA RMBG-2.0 models are user-supplied. FrameShift never downloads them: it only
+    // verifies the file the user placed in the model folder and, when missing or invalid,
+    // points to the official BRIA page (strict SHA256 pin, warn-only fallback on mismatch).
+    private static bool EnsureBriaManualModelReady(
+        RemoveBackground.BackgroundRemovalModelDefinition model,
+        AppLogger logger)
+    {
+        var modelFolder = RemoveBackground.ModelLocator.GetModelDirectory(model);
+        var modelPath = RemoveBackground.ModelLocator.GetModelPath(model);
+        var infoPageUrl = model.InfoPageUrl ?? "https://huggingface.co/briaai/RMBG-2.0/tree/main";
+        var approxMb = model.ExpectedSizeBytes / (1024L * 1024L);
+
+        try
+        {
+            RemoveBackground.ModelLocator.EnsureDirectoryExists(model);
+        }
+        catch (Exception ex)
+        {
+            logger.Log($"Program: failed to create BRIA model folder. {ex.Message}");
+        }
+
+        FrameShift.Windows.AI.BriaModelStatus CheckStatus()
+        {
+            if (!File.Exists(modelPath))
+            {
+                return FrameShift.Windows.AI.BriaModelStatus.Missing;
+            }
+
+            return RemoveBackground.ModelDownloader.IsModelFileValid(modelPath, model, logger)
+                ? FrameShift.Windows.AI.BriaModelStatus.Valid
+                : FrameShift.Windows.AI.BriaModelStatus.Mismatch;
+        }
+
+        var status = CheckStatus();
+        if (status == FrameShift.Windows.AI.BriaModelStatus.Valid)
+        {
+            logger.Log($"Program: BRIA model present and verified. modelId={model.Id}.");
+            return true;
+        }
+
+        logger.Log($"Program: BRIA model not ready. status={status}, modelId={model.Id}, path={modelPath}.");
+        using var notice = new FrameShift.Windows.AI.BriaModelNoticeForm(
+            model.FileName,
+            modelFolder,
+            infoPageUrl,
+            $"~{approxMb} MB",
+            status,
+            CheckStatus);
+        var dialogResult = notice.ShowDialog();
+        var proceed = dialogResult == DialogResult.OK && notice.Proceed;
+        logger.Log($"Program: BRIA notice dialog completed. proceed={proceed}, modelId={model.Id}.");
+        return proceed;
+    }
+
+    private static RemoveBackground.BackgroundRemovalModelDefinition? ResolveBackgroundRemovalModel(
+        IReadOnlyDictionary<string, string>? options,
+        AppLogger logger)
+    {
+        string? modelId = null;
+        if (options is not null &&
+            options.TryGetValue(ActionOptionKeys.BackgroundRemovalModel, out var optionValue) &&
+            !string.IsNullOrWhiteSpace(optionValue))
+        {
+            modelId = optionValue;
+        }
+
+        var model = RemoveBackground.BackgroundRemovalModelCatalog.GetById(modelId) ??
+            RemoveBackground.BackgroundRemovalModelCatalog.GetDefault();
+
+        if (!string.IsNullOrWhiteSpace(modelId) &&
+            !string.Equals(model.Id, modelId, StringComparison.OrdinalIgnoreCase))
+        {
+            logger.Log($"Program: Remove Background model option not found. requested={modelId}, fallback={model.Id}.");
+        }
+
+        return model;
     }
 
     private static bool EnsureSeparateAudioModelReady(

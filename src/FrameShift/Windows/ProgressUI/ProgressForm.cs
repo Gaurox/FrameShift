@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
@@ -15,7 +16,7 @@ public sealed class ProgressForm : Form, IProgressReporter
 {
     private static bool s_donationBannerDismissed;
 
-    public delegate void QueueItemRemoveRequestedEventHandler(object? sender, string inputPath);
+    public delegate void QueueItemRemoveRequestedEventHandler(object? sender, string queueItemId);
 
     private static readonly Color PageBackgroundColor = FrameShiftTheme.PageBackground;
     private static readonly Color SurfaceColor = FrameShiftTheme.Surface;
@@ -45,9 +46,11 @@ public sealed class ProgressForm : Form, IProgressReporter
     private readonly Button _cancelButton;
     private readonly Panel _donationPanel;
     private readonly RowStyle _donationRowStyle;
-    private readonly Dictionary<string, DataGridViewRow> _queueRows = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _removedQueueItems = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _canceledQueueItems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DataGridViewRow> _queueRows = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _queueItemPaths = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, List<string>> _queueItemIdsByPath = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _removedQueueItems = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _canceledQueueItems = new(StringComparer.Ordinal);
     private bool _allowProgrammaticClose;
     private bool _allowUserClose;
     private bool _closeRequested;
@@ -295,17 +298,27 @@ public sealed class ProgressForm : Form, IProgressReporter
 
     public bool IsQueueItemRemovalRequested(string inputPath)
     {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            return false;
+        }
+
         lock (_removedQueueItems)
         {
-            return _removedQueueItems.Contains(inputPath);
+            return GetQueueItemIdsForPath(inputPath).Any(queueItemId => _removedQueueItems.Contains(queueItemId));
         }
     }
 
     public bool IsQueueItemCancellationRequested(string inputPath)
     {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            return false;
+        }
+
         lock (_canceledQueueItems)
         {
-            return _canceledQueueItems.Contains(inputPath);
+            return GetQueueItemIdsForPath(inputPath).Any(queueItemId => _canceledQueueItems.Contains(queueItemId));
         }
     }
 
@@ -364,6 +377,8 @@ public sealed class ProgressForm : Form, IProgressReporter
         {
             _queueGrid.Rows.Clear();
             _queueRows.Clear();
+            _queueItemPaths.Clear();
+            _queueItemIdsByPath.Clear();
             lock (_removedQueueItems)
             {
                 _removedQueueItems.Clear();
@@ -373,46 +388,47 @@ public sealed class ProgressForm : Form, IProgressReporter
                 _canceledQueueItems.Clear();
             }
 
-            foreach (var item in items)
+            for (var index = 0; index < items.Count; index++)
             {
-                AddQueueRow(item, "queued", string.Empty);
+                var item = items[index];
+                AddQueueRow(CreateAnonymousQueueItemId(item, index), item, "queued", string.Empty);
             }
         });
     }
 
-    public void AddQueueItem(string item)
+    public void AddQueueItem(string queueItemId, string item)
     {
         RunOnUiThread(() =>
         {
-            if (_queueRows.ContainsKey(item))
+            if (_queueRows.ContainsKey(queueItemId))
             {
                 return;
             }
 
             lock (_removedQueueItems)
             {
-                _removedQueueItems.Remove(item);
+                _removedQueueItems.Remove(queueItemId);
             }
             lock (_canceledQueueItems)
             {
-                _canceledQueueItems.Remove(item);
+                _canceledQueueItems.Remove(queueItemId);
             }
 
-            AddQueueRow(item, "queued", string.Empty);
+            AddQueueRow(queueItemId, item, "queued", string.Empty);
         });
     }
 
-    public void RemoveQueueItem(string item)
+    public void RemoveQueueItem(string queueItemId)
     {
         RunOnUiThread(() =>
         {
-            if (!_queueRows.TryGetValue(item, out var row))
+            if (!_queueRows.TryGetValue(queueItemId, out var row))
             {
                 return;
             }
 
             _queueGrid.Rows.Remove(row);
-            _queueRows.Remove(item);
+            RemoveQueueRowMappings(queueItemId);
         });
     }
 
@@ -501,7 +517,8 @@ public sealed class ProgressForm : Form, IProgressReporter
                     continue;
                 }
 
-                var inputPath = row.Tag as string ?? string.Empty;
+                var queueItemId = row.Tag as string ?? string.Empty;
+                var inputPath = TryGetQueueItemPath(queueItemId) ?? string.Empty;
                 var details = Convert.ToString(row.Cells[2].Value) ?? string.Empty;
                 return $"{Path.GetFileName(inputPath)} | state={state} | details={details}";
             }
@@ -686,17 +703,25 @@ public sealed class ProgressForm : Form, IProgressReporter
         return grid;
     }
 
-    private void AddQueueRow(string item, string state, string details)
+    private void AddQueueRow(string queueItemId, string item, string state, string details)
     {
         var rowIndex = _queueGrid.Rows.Add(Path.GetFileName(item), state, details, "×");
         var row = _queueGrid.Rows[rowIndex];
-        row.Tag = item;
-        _queueRows[item] = row;
+        row.Tag = queueItemId;
+        _queueRows[queueItemId] = row;
+        _queueItemPaths[queueItemId] = item;
+        if (!_queueItemIdsByPath.TryGetValue(item, out var queueItemIds))
+        {
+            queueItemIds = new List<string>();
+            _queueItemIdsByPath[item] = queueItemIds;
+        }
+
+        queueItemIds.Add(queueItemId);
     }
 
     private void UpdateQueueItemInternal(string currentFile, string state, string? message)
     {
-        if (!_queueRows.TryGetValue(currentFile, out var row))
+        if (!TryGetQueueRowForPath(currentFile, state, out var queueItemId, out var row))
         {
             AppLogger.LogStatic($"ProgressForm: UpdateQueueItemInternal skipped because row was not found for '{currentFile}' with target state '{state}'.");
             return;
@@ -705,7 +730,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         if (row.DataGridView != _queueGrid || row.Index < 0)
         {
             AppLogger.LogStatic($"ProgressForm: UpdateQueueItemInternal removed stale row reference for '{currentFile}' with target state '{state}'.");
-            _queueRows.Remove(currentFile);
+            RemoveQueueRowMappings(queueItemId);
             return;
         }
 
@@ -720,7 +745,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         {
             lock (_canceledQueueItems)
             {
-                _canceledQueueItems.Remove(currentFile);
+                _canceledQueueItems.Remove(queueItemId);
             }
         }
 
@@ -740,7 +765,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         }
 
         var row = _queueGrid.Rows[e.RowIndex];
-        if (row.Tag is not string inputPath)
+        if (row.Tag is not string queueItemId)
         {
             return;
         }
@@ -749,13 +774,13 @@ public sealed class ProgressForm : Form, IProgressReporter
         if (string.Equals(state, "queued", StringComparison.OrdinalIgnoreCase))
         {
             _queueGrid.Rows.RemoveAt(e.RowIndex);
-            _queueRows.Remove(inputPath);
+            RemoveQueueRowMappings(queueItemId);
             lock (_removedQueueItems)
             {
-                _removedQueueItems.Add(inputPath);
+                _removedQueueItems.Add(queueItemId);
             }
 
-            QueueItemRemoveRequested?.Invoke(this, inputPath);
+            QueueItemRemoveRequested?.Invoke(this, queueItemId);
             return;
         }
 
@@ -766,13 +791,13 @@ public sealed class ProgressForm : Form, IProgressReporter
 
         lock (_canceledQueueItems)
         {
-            if (!_canceledQueueItems.Add(inputPath))
+            if (!_canceledQueueItems.Add(queueItemId))
             {
                 return;
             }
         }
 
-        UpdateQueueItemInternal(inputPath, "canceling", "Canceling current file...");
+        UpdateQueueItemInternal(TryGetQueueItemPath(queueItemId) ?? string.Empty, "canceling", "Canceling current file...");
     }
 
     private void QueueGridOnCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
@@ -853,17 +878,21 @@ public sealed class ProgressForm : Form, IProgressReporter
                     continue;
                 }
 
-                if (row.Tag is not string inputPath)
+                if (row.Tag is not string queueItemId)
                 {
                     continue;
                 }
 
                 lock (_canceledQueueItems)
                 {
-                    _canceledQueueItems.Add(inputPath);
+                    _canceledQueueItems.Add(queueItemId);
                 }
 
-                UpdateQueueItemInternal(inputPath, "canceling", "Canceling current file...");
+                var inputPath = TryGetQueueItemPath(queueItemId);
+                if (!string.IsNullOrWhiteSpace(inputPath))
+                {
+                    UpdateQueueItemInternal(inputPath, "canceling", "Canceling current file...");
+                }
             }
         });
     }
@@ -880,14 +909,117 @@ public sealed class ProgressForm : Form, IProgressReporter
                     continue;
                 }
 
-                if (row.Tag is not string inputPath)
+                if (row.Tag is not string queueItemId)
                 {
                     continue;
                 }
 
-                UpdateQueueItemInternal(inputPath, "canceled", MediaActionMessages.CanceledBeforeProcessing());
+                var inputPath = TryGetQueueItemPath(queueItemId);
+                if (!string.IsNullOrWhiteSpace(inputPath))
+                {
+                    UpdateQueueItemInternal(inputPath, "canceled", MediaActionMessages.CanceledBeforeProcessing());
+                }
             }
         });
+    }
+
+    private IEnumerable<string> GetQueueItemIdsForPath(string inputPath)
+    {
+        return _queueItemIdsByPath.TryGetValue(inputPath, out var queueItemIds)
+            ? queueItemIds.ToArray()
+            : Array.Empty<string>();
+    }
+
+    private string? TryGetQueueItemPath(string queueItemId)
+    {
+        return _queueItemPaths.TryGetValue(queueItemId, out var inputPath)
+            ? inputPath
+            : null;
+    }
+
+    private void RemoveQueueRowMappings(string queueItemId)
+    {
+        _queueRows.Remove(queueItemId);
+        if (!_queueItemPaths.Remove(queueItemId, out var inputPath) || string.IsNullOrWhiteSpace(inputPath))
+        {
+            return;
+        }
+
+        if (!_queueItemIdsByPath.TryGetValue(inputPath, out var queueItemIds))
+        {
+            return;
+        }
+
+        queueItemIds.Remove(queueItemId);
+        if (queueItemIds.Count == 0)
+        {
+            _queueItemIdsByPath.Remove(inputPath);
+        }
+    }
+
+    private bool TryGetQueueRowForPath(string inputPath, string targetState, out string queueItemId, out DataGridViewRow row)
+    {
+        if (!_queueItemIdsByPath.TryGetValue(inputPath, out var queueItemIds) || queueItemIds.Count == 0)
+        {
+            queueItemId = string.Empty;
+            row = null!;
+            return false;
+        }
+
+        (string QueueItemId, DataGridViewRow? Row) FindRow(Func<string, bool> predicate)
+        {
+            foreach (var candidateQueueItemId in queueItemIds)
+            {
+                if (!_queueRows.TryGetValue(candidateQueueItemId, out var candidateRow))
+                {
+                    continue;
+                }
+
+                var candidateState = Convert.ToString(candidateRow.Cells[1].Value) ?? string.Empty;
+                if (!predicate(candidateState))
+                {
+                    continue;
+                }
+
+                return (candidateQueueItemId, candidateRow);
+            }
+
+            return (string.Empty, null);
+        }
+
+        var match = FindRow(state =>
+                string.Equals(state, "canceling", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(state, "processing", StringComparison.OrdinalIgnoreCase));
+
+        if (match.Row is null && string.Equals(targetState, "processing", StringComparison.OrdinalIgnoreCase))
+        {
+            match = FindRow(state => string.Equals(state, "queued", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (match.Row is null)
+        {
+            match = FindRow(state => string.Equals(state, "queued", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (match.Row is null)
+        {
+            match = FindRow(_ => true);
+        }
+
+        queueItemId = match.QueueItemId;
+        if (match.Row is null)
+        {
+            row = null!;
+            return false;
+        }
+
+        row = match.Row;
+        return true;
+    }
+
+    private static string CreateAnonymousQueueItemId(string inputPath, int index)
+    {
+        return $"anon::{index}::{inputPath}";
     }
 
     private static string AppendEta(string message, string? etaText)

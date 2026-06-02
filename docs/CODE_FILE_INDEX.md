@@ -137,6 +137,8 @@ Media Info :
 - `src/FrameShift/Core/AI/AiModelFileDownloader.cs`
 - `src/FrameShift/Core/AI/AiModelSettings.cs`
 - `src/FrameShift/Core/AI/OnnxProviderHelper.cs`
+- `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelCatalog.cs`
+- `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelDefinition.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/IBackgroundRemovalEngine.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/ModelDownloader.cs`
@@ -186,6 +188,7 @@ IA :
 - `src/FrameShift/Windows/AI/SeparateAudioPickerForm.cs`
 - `src/FrameShift/Windows/AI/RemoveNoiseVideoPickerForm.cs`
 - `src/FrameShift/Windows/AI/RemoveObjectEditorForm.cs`
+- `src/FrameShift/Windows/AI/BriaModelNoticeForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
@@ -228,6 +231,13 @@ Helpers UI :
 - `src/FrameShift/Windows/Helpers/PreviewFrameHelper.cs`
 - `src/FrameShift/Windows/Helpers/PreviewLayoutHelper.cs`
 
+Responsabilités UI partagées :
+- `FrameShiftUiMetrics.cs` centralise les métriques de géométrie UI actives : marges, hauteurs standard, footer, gaps, rayons, largeurs de rail.
+- `FrameShiftUiLayout.cs` centralise les placements réutilisables sensibles à la largeur utile : sections titrées, footer, rangées de boutons.
+- `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` portent les shells communs des écrans riches avec `TableLayoutPanel`, spacer explicite et hiérarchie stable.
+- `FrameShiftWindowChrome.cs` reste le point d’entrée commun pour la barre de titre, `ShowIcon` et la sélection d’icône FrameShift / FrameShift AI.
+- La stratégie DPI visible dans le code actif repose aujourd’hui sur `AutoScaleMode = AutoScaleMode.Dpi` sur les dialogues concernés, l’usage de métriques partagées et des `MinimumSize` explicites sur les écrans riches.
+
 ## Tests
 
 Unit tests actifs :
@@ -259,6 +269,9 @@ Assets de test utiles :
 - `Media Info` passe par `FfprobeRunner.TryProbeMediaInfoAsync(...)` puis `MediaInfoFormatter`.
 - `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
 - `DownloadModelForm` est maintenant le downloader IA partagé des modules `remove-background`, `remove-noise`, `separate-audio` et `interpolate-video-rife`.
+- `RemoveBackground` suit désormais un mini-catalogue de modèles (`fast`, `high-resolution`, `high-resolution-general`) inspiré des patterns déjà utilisés pour `Remove Object` et RIFE ; les deux variantes HR sont figées en CPU only dans `1.0.11`.
+- Le catalogue `RemoveBackground` inclut aussi deux modèles **fournis par l'utilisateur** BRIA RMBG-2.0 (`bria-balanced`, `bria-high-quality`) marqués `ManualOnly` : aucun téléchargement/redistribution par FrameShift. Le préflight (`ProgramAiPreflight.EnsureBriaManualModelReady`) vérifie la présence + le SHA256 officiel et affiche `BriaModelNoticeForm` (Open BRIA page / Open folder / Re-check / Cancel, + Use anyway sur mismatch ; dialog adaptatif piloté par un délégué `Func<BriaModelStatus>`, Re-check revalide en place et enchaîne sur l'action) au lieu d'ouvrir `DownloadModelForm`.
+- `ConversionBatchSession.cs` et `ProgressForm.cs` gèrent désormais une identité de queue distincte par invocation batch, ce qui permet d’empiler plusieurs relances du même fichier dans la fenêtre ouverte sans perte silencieuse.
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
 - `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
@@ -266,3 +279,4 @@ Assets de test utiles :
 - `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.
 - `OnnxProviderHelper.cs` centralise la création de session ONNX (DML → CPU), la détection d'échec DML à l'inférence et les messages utilisateur propres (sans chemins internes ONNX Runtime).
 - `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.
+- La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.

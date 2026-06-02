@@ -5,6 +5,8 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -23,11 +25,12 @@ internal sealed class ConversionBatchSession
     private readonly BatchDefinition _definition;
     private readonly IFrameShiftAction _action;
     private readonly AppLogger _logger;
-    private readonly ConcurrentQueue<string> _pendingPaths = new();
-    private readonly HashSet<string> _knownPaths = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _removedPaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentQueue<BatchQueueItem> _pendingPaths = new();
+    private readonly Dictionary<string, BatchQueueItem> _knownItems = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _removedItems = new(StringComparer.Ordinal);
     private readonly object _sync = new();
     private readonly QueueSignalState _queueState = new();
+    private long _queueItemSequence;
 
     private Dictionary<string, string>? _sharedOptions;
     private Thread? _pipeServerThread;
@@ -106,13 +109,16 @@ internal sealed class ConversionBatchSession
         _progressForm.QueueItemRemoveRequested += OnQueueItemRemoveRequested;
         _progressForm.CancelRequested += OnCancelRequested;
 
-        foreach (var inputPath in GetPendingPathsSnapshot())
+        foreach (var item in GetPendingPathsSnapshot())
         {
-            _progressForm.AddQueueItem(inputPath);
+            _progressForm.AddQueueItem(item.QueueItemId, item.InputPath);
         }
     }
 
-    public static void SendPathsToPrimaryInstance(BatchDefinition definition, IEnumerable<string> inputPaths)
+    public static void SendPathsToPrimaryInstance(
+        BatchDefinition definition,
+        IEnumerable<string> inputPaths,
+        IReadOnlyDictionary<string, string>? options = null)
     {
         using var pipeClient = new NamedPipeClientStream(".", definition.PipeName, PipeDirection.Out);
         pipeClient.Connect(5000);
@@ -126,9 +132,70 @@ internal sealed class ConversionBatchSession
         {
             if (!string.IsNullOrWhiteSpace(inputPath))
             {
-                writer.WriteLine(inputPath);
+                // One JSON object per line carries the path together with the per-launch
+                // CLI options (e.g. --rmbg-model), so the receiving session does not fall
+                // back to its own shared options for queued items.
+                writer.WriteLine(FormatQueueMessage(inputPath, options));
             }
         }
+    }
+
+    // Wire format helpers. Each queue message is a single-line JSON object. A bare path line
+    // (no leading '{') is still accepted for backward compatibility with older callers.
+    private sealed record QueueMessage(
+        [property: JsonPropertyName("path")] string Path,
+        [property: JsonPropertyName("options")] Dictionary<string, string>? Options);
+
+    private static readonly JsonSerializerOptions s_queueMessageJsonOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    internal static string FormatQueueMessage(string inputPath, IReadOnlyDictionary<string, string>? options)
+    {
+        var optionsCopy = options is { Count: > 0 }
+            ? new Dictionary<string, string>(options)
+            : null;
+        return JsonSerializer.Serialize(new QueueMessage(inputPath, optionsCopy), s_queueMessageJsonOptions);
+    }
+
+    internal static bool TryParseQueueMessage(
+        string? line,
+        out string inputPath,
+        out IReadOnlyDictionary<string, string>? options)
+    {
+        inputPath = string.Empty;
+        options = null;
+
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        var trimmed = line.Trim();
+        if (trimmed.StartsWith('{'))
+        {
+            try
+            {
+                var message = JsonSerializer.Deserialize<QueueMessage>(trimmed, s_queueMessageJsonOptions);
+                if (message is not null && !string.IsNullOrWhiteSpace(message.Path))
+                {
+                    inputPath = message.Path;
+                    options = message.Options is { Count: > 0 }
+                        ? new Dictionary<string, string>(message.Options, StringComparer.OrdinalIgnoreCase)
+                        : null;
+                    return true;
+                }
+            }
+            catch (JsonException)
+            {
+                // Fall through and treat the line as a bare path (backward compatibility).
+            }
+        }
+
+        // Backward compatibility: a plain path line with no options.
+        inputPath = trimmed;
+        return true;
     }
 
     public static BatchDefinition CreateVideoDefinition() => new(
@@ -356,15 +423,15 @@ internal sealed class ConversionBatchSession
                     _sharedOptions = optionResult.Options;
                 }
 
-                if (_pendingPaths.TryDequeue(out var inputPath))
+                if (_pendingPaths.TryDequeue(out var queueItem))
                 {
-                    if (IsRemoved(inputPath))
+                    if (IsRemoved(queueItem.QueueItemId))
                     {
                         continue;
                     }
 
-                    _currentInputPath = inputPath;
-                    await ProcessQueuedPathAsync(inputPath, cancellationToken).ConfigureAwait(false);
+                    _currentInputPath = queueItem.InputPath;
+                    await ProcessQueuedPathAsync(queueItem, cancellationToken).ConfigureAwait(false);
                     _currentInputPath = null;
                     continue;
                 }
@@ -409,8 +476,9 @@ internal sealed class ConversionBatchSession
         }
     }
 
-    private async Task ProcessQueuedPathAsync(string inputPath, CancellationToken cancellationToken)
+    private async Task ProcessQueuedPathAsync(BatchQueueItem queueItem, CancellationToken cancellationToken)
     {
+        var inputPath = queueItem.InputPath;
         _logger.Log($"ConversionBatchSession: item started. inputPath={inputPath}");
         if (!_definition.IsSupportedSourceExtension(Path.GetExtension(inputPath)))
         {
@@ -431,7 +499,10 @@ internal sealed class ConversionBatchSession
             return;
         }
 
-        var request = new ActionRequest(inputPath, _logger, _progressForm, _sharedOptions);
+        // Per-item options (carried over the pipe from the launch that queued this file) win
+        // over the session's shared options, so each queued item runs with its own model.
+        var effectiveOptions = MergeOptions(_sharedOptions, queueItem.Options);
+        var request = new ActionRequest(inputPath, _logger, _progressForm, effectiveOptions);
         ReportQueueItem(inputPath, "processing", "Starting.");
         var result = await _action.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         _logger.Log($"ConversionBatchSession: item returned from action.ExecuteAsync. inputPath={inputPath}, success={result.Success}, canceled={result.Canceled}, scope={result.CancellationScope}, message={result.Message}");
@@ -459,6 +530,22 @@ internal sealed class ConversionBatchSession
         }
     }
 
+    internal static IReadOnlyDictionary<string, string> MergeOptions(
+        IReadOnlyDictionary<string, string> sharedOptions,
+        IReadOnlyDictionary<string, string>? itemOptions)
+    {
+        var merged = new Dictionary<string, string>(sharedOptions, StringComparer.OrdinalIgnoreCase);
+        if (itemOptions is not null)
+        {
+            foreach (var kv in itemOptions)
+            {
+                merged[kv.Key] = kv.Value;
+            }
+        }
+
+        return merged;
+    }
+
     public void WaitForPickerDebounce(CancellationToken cancellationToken)
     {
         while (!IsPickerDebounceElapsed())
@@ -472,7 +559,7 @@ internal sealed class ConversionBatchSession
     {
         var pendingPaths = GetPendingPathsSnapshot();
         var supportedPaths = pendingPaths
-            .Where(path => _definition.IsSupportedSourceExtension(Path.GetExtension(path)))
+            .Where(item => _definition.IsSupportedSourceExtension(Path.GetExtension(item.InputPath)))
             .ToArray();
 
         if (supportedPaths.Length == 0)
@@ -481,24 +568,24 @@ internal sealed class ConversionBatchSession
             foreach (var pendingPath in pendingPaths)
             {
                 ReportQueueItem(
-                    pendingPath,
+                    pendingPath.InputPath,
                     "failed",
                     MediaActionMessages.UnsupportedSourceFormat(
-                        Path.GetExtension(pendingPath),
+                        Path.GetExtension(pendingPath.InputPath),
                         _definition.SupportedSourceFormatsText));
             }
 
             return BatchOptionResult.Failed();
         }
 
-        var targets = _definition.GetTargetsForSelection(supportedPaths);
+        var targets = _definition.GetTargetsForSelection(supportedPaths.Select(item => item.InputPath).ToArray());
         if (targets.Count == 0)
         {
             ExitCode = 1;
             foreach (var supportedPath in supportedPaths)
             {
                 ReportQueueItem(
-                    supportedPath,
+                    supportedPath.InputPath,
                     "failed",
                     MediaActionMessages.NoAlternativeTargetFormatsAvailable());
             }
@@ -508,7 +595,7 @@ internal sealed class ConversionBatchSession
 
         var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var sourceLabel = supportedPaths.Length == 1
-            ? FormatSelectionLabel(Path.GetFileName(supportedPaths[0]))
+            ? FormatSelectionLabel(Path.GetFileName(supportedPaths[0].InputPath))
             : $"{supportedPaths.Length} selected files";
 
         ConversionSelection? selection = null;
@@ -557,12 +644,13 @@ internal sealed class ConversionBatchSession
         return BatchOptionResult.Succeeded(options);
     }
 
-    private string[] GetPendingPathsSnapshot()
+    private BatchQueueItem[] GetPendingPathsSnapshot()
     {
         lock (_sync)
         {
-            return _knownPaths
-                .Where(path => !_removedPaths.Contains(path))
+            return _knownItems.Values
+                .Where(item => !_removedItems.Contains(item.QueueItemId))
+                .OrderBy(item => item.Sequence)
                 .ToArray();
         }
     }
@@ -602,10 +690,10 @@ internal sealed class ConversionBatchSession
                     string? line;
                     while ((line = reader.ReadLine()) is not null)
                     {
-                        if (!string.IsNullOrWhiteSpace(line))
+                        if (TryParseQueueMessage(line, out var inputPath, out var itemOptions))
                         {
-                            EnqueuePaths([line]);
-                            _logger.Log($"QUEUED FROM SECONDARY INSTANCE ({_definition.ActionId}): " + line);
+                            EnqueueItem(inputPath, itemOptions);
+                            _logger.Log($"QUEUED FROM SECONDARY INSTANCE ({_definition.ActionId}): {inputPath} [options={DescribeOptions(itemOptions)}]");
                         }
                     }
                 }
@@ -625,44 +713,61 @@ internal sealed class ConversionBatchSession
         serverThread.Start();
     }
 
+    // Items enqueued from the primary launch carry no per-item options: they fall back to the
+    // session's shared options, which already are their options.
     private void EnqueuePaths(IEnumerable<string> inputPaths)
     {
         foreach (var inputPath in inputPaths)
         {
-            if (string.IsNullOrWhiteSpace(inputPath))
-            {
-                continue;
-            }
-
-            lock (_sync)
-            {
-                _removedPaths.Remove(inputPath);
-                if (!_knownPaths.Add(inputPath))
-                {
-                    continue;
-                }
-            }
-
-            _pendingPaths.Enqueue(inputPath);
-            Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
-            _progressForm?.AddQueueItem(inputPath);
-            _logger.Log($"QUEUED ({_definition.ActionId}): " + inputPath);
+            EnqueueItem(inputPath, null);
         }
     }
 
-    private void OnQueueItemRemoveRequested(object? sender, string inputPath)
+    private void EnqueueItem(string inputPath, IReadOnlyDictionary<string, string>? options)
     {
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            return;
+        }
+
+        var queueItem = CreateQueueItem(inputPath, options);
         lock (_sync)
         {
-            if (!_knownPaths.Remove(inputPath))
+            _knownItems[queueItem.QueueItemId] = queueItem;
+            _removedItems.Remove(queueItem.QueueItemId);
+        }
+
+        _pendingPaths.Enqueue(queueItem);
+        Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
+        _progressForm?.AddQueueItem(queueItem.QueueItemId, inputPath);
+        _logger.Log($"QUEUED ({_definition.ActionId}): {inputPath} [queueItemId={queueItem.QueueItemId}, options={DescribeOptions(options)}]");
+    }
+
+    private static string DescribeOptions(IReadOnlyDictionary<string, string>? options)
+    {
+        if (options is null || options.Count == 0)
+        {
+            return "<none>";
+        }
+
+        return string.Join(", ", options.Select(kv => $"{kv.Key}={kv.Value}"));
+    }
+
+    private void OnQueueItemRemoveRequested(object? sender, string queueItemId)
+    {
+        string? inputPath = null;
+        lock (_sync)
+        {
+            if (!_knownItems.Remove(queueItemId, out var queueItem))
             {
                 return;
             }
 
-            _removedPaths.Add(inputPath);
+            inputPath = queueItem.InputPath;
+            _removedItems.Add(queueItemId);
         }
 
-        _logger.Log($"REMOVED FROM QUEUE ({_definition.ActionId}): " + inputPath);
+        _logger.Log($"REMOVED FROM QUEUE ({_definition.ActionId}): {inputPath} [queueItemId={queueItemId}]");
     }
 
     private void OnCancelRequested(object? sender, EventArgs e)
@@ -671,19 +776,19 @@ internal sealed class ConversionBatchSession
         _logger.Log("ConversionBatchSession: OnCancelRequested entered.");
         var canceledBeforeProcessing = CancelPendingPaths();
         _logger.Log($"ConversionBatchSession: OnCancelRequested canceled pending items count={canceledBeforeProcessing.Length}.");
-        foreach (var path in canceledBeforeProcessing)
+        foreach (var item in canceledBeforeProcessing)
         {
-            ReportQueueItem(path, "canceled", MediaActionMessages.CanceledBeforeProcessing());
+            ReportQueueItem(item.InputPath, "canceled", MediaActionMessages.CanceledBeforeProcessing());
         }
 
         ScheduleGlobalCancelDiagnostics("cancel-requested");
     }
 
-    private bool IsRemoved(string inputPath)
+    private bool IsRemoved(string queueItemId)
     {
         lock (_sync)
         {
-            if (_removedPaths.Remove(inputPath))
+            if (_removedItems.Remove(queueItemId))
             {
                 return true;
             }
@@ -692,23 +797,22 @@ internal sealed class ConversionBatchSession
         return false;
     }
 
-    private string[] CancelPendingPaths()
+    private BatchQueueItem[] CancelPendingPaths()
     {
         lock (_sync)
         {
             var pendingPaths = _pendingPaths
                 .ToArray()
-                .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(item => !string.IsNullOrWhiteSpace(item.InputPath))
                 .ToArray();
 
             while (_pendingPaths.TryDequeue(out _))
             {
             }
 
-            foreach (var path in pendingPaths)
+            foreach (var item in pendingPaths)
             {
-                _removedPaths.Add(path);
+                _removedItems.Add(item.QueueItemId);
             }
 
             return pendingPaths;
@@ -804,6 +908,16 @@ internal sealed class ConversionBatchSession
         _progressForm?.ReportQueueItem(inputPath, state, message);
     }
 
+    private BatchQueueItem CreateQueueItem(string inputPath, IReadOnlyDictionary<string, string>? options)
+    {
+        var sequence = Interlocked.Increment(ref _queueItemSequence);
+        return new BatchQueueItem(
+            $"{_definition.ActionId}:{sequence}",
+            inputPath,
+            sequence,
+            options);
+    }
+
     public sealed record BatchDefinition(
         string ActionId,
         string DisplayName,
@@ -832,4 +946,10 @@ internal sealed class ConversionBatchSession
 
         public static BatchOptionResult Succeeded(Dictionary<string, string> options) => new(true, options);
     }
+
+    private sealed record BatchQueueItem(
+        string QueueItemId,
+        string InputPath,
+        long Sequence,
+        IReadOnlyDictionary<string, string>? Options);
 }

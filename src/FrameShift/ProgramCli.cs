@@ -63,6 +63,13 @@ internal static partial class Program
                 continue;
             }
 
+            if ((string.Equals(token, "--rmbg-model", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--remove-background-model", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.BackgroundRemovalModel] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--stereo", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.ProcessStereoAudio] = args[++index];

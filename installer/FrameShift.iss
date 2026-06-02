@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.10"
+#define MyAppVersion "1.0.11"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -42,6 +42,18 @@ Name: "custom"; Description: "Custom installation"; Flags: iscustom
 
 [Components]
 Name: "core"; Description: "FrameShift application"; Types: complete custom; Flags: fixed
+Name: "ai"; Description: "FrameShift AI"; Types: complete custom
+Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
+Name: "ai\remove_background\fast"; Description: "Fast"; Types: complete custom
+Name: "ai\remove_background\high_resolution"; Description: "High Resolution (Matting) - CPU only"; Types: custom
+Name: "ai\remove_background\high_resolution_general"; Description: "High Resolution (General) - CPU only"; Types: custom
+Name: "ai\remove_background\bria_balanced"; Description: "BRIA Remove Background (Balanced) - manual model, not included"; Types: custom
+Name: "ai\remove_background\bria_high_quality"; Description: "BRIA Remove Background (High Quality) - manual model, not included"; Types: custom
+Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
+Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
+Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
+Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
+Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
 Name: "video"; Description: "Video actions"; Types: complete custom
 Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
@@ -72,13 +84,6 @@ Name: "image\resize_image"; Description: "Resize image"; Types: complete custom
 Name: "image\rotate_flip_image"; Description: "Rotate / Flip image"; Types: complete custom
 Name: "tools"; Description: "Outils"; Types: complete custom
 Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
-Name: "ai"; Description: "FrameShift AI"; Types: complete custom
-Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
-Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
-Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
-Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
-Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
-Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
@@ -339,7 +344,7 @@ end;
 
 procedure ConfigureAIActionMenuForHive(
   const Hive: Integer;
-  const Ext, MenuKey, LabelText, ActionId: string);
+  const Ext, MenuKey, LabelText, ActionId, CommandSuffix: string);
 var
   KeyPath: string;
   CommandValue: string;
@@ -349,7 +354,7 @@ begin
   KeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShiftAI\shell\' + MenuKey;
   RegDeleteKeyIncludingSubkeys(Hive, KeyPath);
   RegWriteStringValue(Hive, KeyPath, 'MUIVerb', LabelText);
-  if MenuKey = 'remove_background' then
+  if Pos('remove_background', MenuKey) = 1 then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico');
   end
@@ -380,12 +385,12 @@ begin
   RegWriteStringValue(Hive, KeyPath, 'Icon', IconPath);
   CommandValue :=
     '"' + ExpandConstant('{app}\{#MyAppExeName}') + '"' +
-    ' --action ' + ActionId + ' "%1"';
+    ' --action ' + ActionId + CommandSuffix + ' "%1"';
   RegWriteStringValue(Hive, KeyPath + '\command', '', CommandValue);
 end;
 
 procedure ApplyAIActionMenuList(
-  const Extensions, MenuKey, LabelText, ActionId: string);
+  const Extensions, MenuKey, LabelText, ActionId, CommandSuffix: string);
 var
   RemainingExtensions: string;
   Extension: string;
@@ -396,11 +401,11 @@ begin
     Extension := GetListItem(RemainingExtensions);
     if IsAdminInstallMode then
     begin
-      ConfigureAIActionMenuForHive(HKLM, Extension, MenuKey, LabelText, ActionId);
+      ConfigureAIActionMenuForHive(HKLM, Extension, MenuKey, LabelText, ActionId, CommandSuffix);
     end
     else
     begin
-      ConfigureAIActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId);
+      ConfigureAIActionMenuForHive(HKCU, Extension, MenuKey, LabelText, ActionId, CommandSuffix);
     end;
   end;
 end;
@@ -853,13 +858,57 @@ begin
       '');
   end;
 
-  if WizardIsComponentSelected('ai\remove_background') then
+  if WizardIsComponentSelected('ai\remove_background\fast') or
+     (WizardIsComponentSelected('ai\remove_background') and
+      not WizardIsComponentSelected('ai\remove_background\high_resolution') and
+      not WizardIsComponentSelected('ai\remove_background\high_resolution_general')) then
   begin
     ApplyAIActionMenuList(
       ImageExtensions,
-      'remove_background',
-      'Remove background',
-      'remove-background');
+      'remove_background_fast',
+      'Remove Background (Fast)',
+      'remove-background',
+      ' --rmbg-model fast');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_background\high_resolution') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'remove_background_high_resolution',
+      'Remove Background (High Resolution Matting)',
+      'remove-background',
+      ' --rmbg-model high-resolution');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_background\high_resolution_general') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'remove_background_high_resolution_general',
+      'Remove Background (High Resolution General)',
+      'remove-background',
+      ' --rmbg-model high-resolution-general');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_background\bria_balanced') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'remove_background_bria_balanced',
+      'Remove Background (BRIA Balanced)',
+      'remove-background',
+      ' --rmbg-model bria-balanced');
+  end;
+
+  if WizardIsComponentSelected('ai\remove_background\bria_high_quality') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'remove_background_bria_high_quality',
+      'Remove Background (BRIA High Quality)',
+      'remove-background',
+      ' --rmbg-model bria-high-quality');
   end;
 
   if WizardIsComponentSelected('ai\remove_noise') then
@@ -868,7 +917,8 @@ begin
       AudioExtensions,
       'remove_noise',
       'Remove noise',
-      'remove-noise');
+      'remove-noise',
+      '');
   end;
 
   if WizardIsComponentSelected('ai\remove_noise_video') then
@@ -877,7 +927,8 @@ begin
       VideoExtensions,
       'remove_noise_video',
       'Remove noise (video)',
-      'remove-noise-video');
+      'remove-noise-video',
+      '');
   end;
 
   if WizardIsComponentSelected('ai\separate_audio') then
@@ -886,7 +937,8 @@ begin
       AudioExtensions,
       'separate_audio',
       'Audio separation',
-      'separate-audio');
+      'separate-audio',
+      '');
   end;
 
   if WizardIsComponentSelected('ai\interpolate_video_rife') then
@@ -895,7 +947,8 @@ begin
       VideoExtensions,
       'interpolate_video_rife',
       'Interpolate video (RIFE)',
-      'interpolate-video-rife');
+      'interpolate-video-rife',
+      '');
   end;
 
   if WizardIsComponentSelected('ai\remove_object') then
@@ -904,7 +957,8 @@ begin
       ImageExtensions,
       'remove_object',
       'Remove object',
-      'remove-object');
+      'remove-object',
+      '');
   end;
 end;
 
@@ -1011,6 +1065,79 @@ begin
   SaveStringToFile(ConfigFile, JsonContent, False);
 end;
 
+function GetEffectiveModelsDir(): string;
+begin
+  if AiModelsPage <> nil then
+    Result := Trim(AiModelsDirEdit.Text)
+  else
+    Result := '';
+  if Result = '' then
+    Result := GetDefaultModelsDir();
+end;
+
+procedure CreateBriaModelAssets(
+  const ModelsDir, SubFolder, ModelDisplayName, FileName, ApproxSize: string);
+var
+  Dir: string;
+  Readme: string;
+  License: string;
+begin
+  Dir := ModelsDir + '\RemoveBackground\' + SubFolder;
+  if not ForceDirectories(Dir) then
+    exit;
+
+  Readme :=
+    ModelDisplayName + #13#10 +
+    '====================================' + #13#10#13#10 +
+    'FrameShift does NOT distribute, bundle, mirror or download the BRIA RMBG-2.0 model.' + #13#10 +
+    'This folder is a placeholder for a model file you must obtain yourself.' + #13#10#13#10 +
+    'How to install:' + #13#10 +
+    '  1. Open the official BRIA page:' + #13#10 +
+    '       https://huggingface.co/briaai/RMBG-2.0/tree/main' + #13#10 +
+    '  2. Review BRIA''s documentation and licensing.' + #13#10 +
+    '  3. Download the ONNX model and place it in THIS folder.' + #13#10#13#10 +
+    'Expected file:   ' + FileName + #13#10 +
+    'Approximate size: ' + ApproxSize + #13#10 +
+    'Target folder:    ' + Dir + #13#10#13#10 +
+    'FrameShift verifies the file against the official BRIA checksum. If it does not' + #13#10 +
+    'match, FrameShift will point you back to the official BRIA page.' + #13#10;
+  SaveStringToFile(Dir + '\README.txt', Readme, False);
+
+  License :=
+    'BRIA RMBG-2.0 - License notice' + #13#10 +
+    '====================================' + #13#10#13#10 +
+    'The BRIA RMBG-2.0 model is distributed separately by BRIA AI.' + #13#10 +
+    'FrameShift does not redistribute, bundle or host this model.' + #13#10#13#10 +
+    'Usage of the model is governed solely by BRIA''s licensing terms' + #13#10 +
+    '(non-commercial; CC BY-NC 4.0 at the time of writing).' + #13#10#13#10 +
+    'You must review the official BRIA page and accept BRIA''s terms before use:' + #13#10 +
+    '  https://huggingface.co/briaai/RMBG-2.0/tree/main' + #13#10;
+  SaveStringToFile(Dir + '\LICENSE_NOTICE.txt', License, False);
+end;
+
+procedure CreateSelectedBriaAssets();
+var
+  ModelsDir: string;
+begin
+  ModelsDir := GetEffectiveModelsDir();
+
+  if WizardIsComponentSelected('ai\remove_background\bria_balanced') then
+    CreateBriaModelAssets(
+      ModelsDir,
+      'BriaBalanced',
+      'Remove Background (BRIA Balanced)',
+      'model_fp16.onnx',
+      '~500 MB');
+
+  if WizardIsComponentSelected('ai\remove_background\bria_high_quality') then
+    CreateBriaModelAssets(
+      ModelsDir,
+      'BriaHighQuality',
+      'Remove Background (BRIA High Quality)',
+      'model.onnx',
+      '~1 GB');
+end;
+
 procedure InitializeWizard();
 begin
   HasInstalledVersion := FindInstalledVersion();
@@ -1103,6 +1230,7 @@ begin
     SHChangeNotify($08000000, $0000, 0, 0);
     if AiModelsPage <> nil then
       WriteAiModelSettings(Trim(AiModelsDirEdit.Text));
+    CreateSelectedBriaAssets();
   end;
 end;
 

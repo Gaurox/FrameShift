@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace FrameShift.Core.AI.RemoveBackground;
 internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
 {
     private BackgroundRemovalEngine? _engine;
+    private string? _engineModelId;
     private bool _disposed;
 
     public ActionDescriptor Descriptor { get; } = new(
@@ -47,11 +49,13 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
                 MediaActionMessages.UnsupportedSourceFormat(sourceExtension, ".png, .jpg, .jpeg, .webp, .bmp"));
         }
 
-        if (!ModelLocator.ModelExists())
+        var model = ResolveModel(request.Options);
+        if (!ModelLocator.ModelExists(model))
         {
-            return new ActionExecutionResult(
-                false,
-                "AI model not found. Run FrameShift.exe --action remove-background from Explorer to download it first.");
+            var notFoundMessage = model.ManualOnly
+                ? $"BRIA model not installed. Place '{model.FileName}' in '{ModelLocator.GetModelDirectory(model)}' (download it manually from {model.InfoPageUrl})."
+                : "AI model not found. Run FrameShift.exe --action remove-background from Explorer to download it first.";
+            return new ActionExecutionResult(false, notFoundMessage);
         }
 
         request.ProgressReporter?.ReportState("processing", "Loading ONNX model...");
@@ -70,13 +74,19 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
 
         try
         {
-            _engine ??= new BackgroundRemovalEngine();
+            if (_engine is null || !string.Equals(_engineModelId, model.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                _engine?.Dispose();
+                _engine = new BackgroundRemovalEngine(model);
+                _engineModelId = model.Id;
+            }
 
             var progress = new Progress<InferenceProgress>(p =>
             {
+                var modeLabel = GetModeLabel(model);
                 var currentAction = _engine.Provider is "DirectML" or "CPU"
-                    ? $"Remove Background ({_engine.Provider})"
-                    : "Remove Background";
+                    ? $"Remove Background ({modeLabel}, {_engine.Provider})"
+                    : $"Remove Background ({modeLabel})";
                 request.ProgressReporter?.ReportProgress(
                     p.Percent * 10,
                     request.InputPath,
@@ -117,6 +127,40 @@ internal sealed class RemoveBackgroundAction : IFrameShiftAction, IDisposable
             {
             }
         }
+    }
+
+    private static string GetModeLabel(BackgroundRemovalModelDefinition model)
+    {
+        if (!string.IsNullOrWhiteSpace(model.ModeLabel))
+        {
+            return model.ModeLabel!;
+        }
+
+        if (string.Equals(model.Id, "fast", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Fast";
+        }
+
+        if (string.Equals(model.Id, "high-resolution-general", StringComparison.OrdinalIgnoreCase))
+        {
+            return "High Resolution General";
+        }
+
+        return "High Resolution Matting";
+    }
+
+    private static BackgroundRemovalModelDefinition ResolveModel(
+        IReadOnlyDictionary<string, string>? options)
+    {
+        if (options is not null &&
+            options.TryGetValue(ActionOptionKeys.BackgroundRemovalModel, out var modelId) &&
+            !string.IsNullOrWhiteSpace(modelId))
+        {
+            return BackgroundRemovalModelCatalog.GetById(modelId) ??
+                BackgroundRemovalModelCatalog.GetDefault();
+        }
+
+        return BackgroundRemovalModelCatalog.GetDefault();
     }
 
     private static CancellationScope GetCancellationScope(

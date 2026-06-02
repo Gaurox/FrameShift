@@ -44,6 +44,29 @@ Règle de structure :
 - éviter les helpers mono-écran déguisés en couche commune ;
 - ne pas reconstruire localement les marges, hauteurs de bandeau, largeurs de rail et cartes standards si un helper partagé existe déjà.
 
+### 0.1 Règles DPI actives
+
+Le chantier DPI/UI a figé des règles obligatoires pour les fenêtres WinForms FrameShift.
+
+Constat à retenir :
+- le comportement `AutoScale` WinForms ne suffit pas à lui seul à garantir une géométrie correcte sur tous les écrans Windows ;
+- les problèmes corrigés concernaient la géométrie complète, pas uniquement la police ;
+- les régressions visées étaient les textes coupés, labels tronqués, groupes trop petits, chevauchements, et fenêtres trop basses à `125 %`, `133 %`, `150 %` et `175 %`.
+
+Règles actives :
+- utiliser `AutoScaleMode = AutoScaleMode.Dpi` sur les dialogues fixes et les pickers standard ;
+- centraliser les dimensions de référence dans `FrameShiftUiMetrics.cs` au lieu de disperser des nombres magiques liés à `96 DPI` ;
+- centraliser la disposition dans `FrameShiftUiLayout.cs`, `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` pour garder des espacements cohérents ;
+- appliquer la chrome commune via `FrameShiftWindowChrome.Apply(...)` avant la construction fine des contrôles ;
+- définir un `MinimumSize` explicite sur les fenêtres redimensionnables ou denses quand la lisibilité dépend d’une largeur/hauteur minimales ;
+- préférer des layouts à base de `TableLayoutPanel`, `Dock`, `Padding` et panneaux de section plutôt qu’un empilement fragile de coordonnées isolées.
+
+Règle critique :
+- ne jamais compter sur une double mise à l’échelle ;
+- la géométrie de construction doit rester la référence logique ;
+- la géométrie runtime ne doit pas être retraitée une seconde fois par une logique locale concurrente ;
+- toute nouvelle fenêtre doit choisir une seule stratégie de scaling et s’y tenir.
+
 ---
 
 ## 1. Palette de référence
@@ -103,6 +126,12 @@ Règle d’implémentation :
 - utiliser en priorité `FrameShiftUiMetrics` pour les marges et hauteurs standard ;
 - utiliser `FrameShiftEditorShellUi` pour les écrans avec un grand workspace et un rail latéral ;
 - ne pas redéfinir localement `OuterPadding`, `HeaderHeight` ou une largeur de rail déjà standardisée.
+
+Règles DPI complémentaires :
+- pour une fenêtre fixe, partir d’une taille cliente qui laisse de l’air au contenu à `100 %` puis vérifier qu’elle reste lisible aux paliers Windows validés ;
+- pour une fenêtre redimensionnable, définir un `MinimumSize` cohérent avec la grille réelle ;
+- ne pas “récupérer” un manque de place par des offsets locaux ou par une compression arbitraire du footer ;
+- si le contenu long force un compromis, agrandir la fenêtre ou la section avant de réduire les espacements standard.
 
 ---
 
@@ -234,6 +263,11 @@ Règle d’implémentation :
 - utiliser `FrameShiftUiFactory.CreateFillSection(...)` pour les sections standards ;
 - pour les cartes latérales d’écrans d’édition, utiliser un helper commun de shell si plusieurs écrans partagent la même structure ;
 - éviter de recréer localement un “panel group” quasi identique d’un écran à l’autre.
+
+Règles DPI :
+- la hauteur d’une section doit être pensée à partir de son contenu réel ;
+- éviter les sections trop basses qui supposent implicitement un affichage à `100 %` ;
+- si une section dépend d’un texte potentiellement plus long, réserver une hauteur qui absorbe la croissance verticale normale sans chevauchement.
 
 ---
 
@@ -412,6 +446,25 @@ Règles :
 - si la saisie est optionnelle, la zone de saisie doit être désactivée visuellement quand l’option n’est pas cochée.
 - les menus de sélection simples doivent conserver le rendu natif Windows et ne doivent pas être enfermés dans un cadre bleu supplémentaire ;
 - si un champ de sélection doit être renforcé visuellement, préférer la sobriété du cadre Windows standard plutôt qu’un double encadrement custom.
+
+Règles DPI :
+- ne pas fixer une hauteur de champ qui devient illisible dès que le rendu Windows agrandit la police ou les bordures ;
+- si plusieurs contrôles sont alignés sur une ligne, vérifier qu’ils gardent tous la même base visuelle après scaling ;
+- éviter de serrer une ligne jusqu’au point où la moindre hausse de DPI tronque l’unité, la flèche ou le texte.
+
+### 8.4 Gestion des labels longs
+
+Règles :
+- utiliser `AutoEllipsis = true` pour les labels de résumé, d’état ou de source quand la ligne doit rester mono-ligne ;
+- ne pas tronquer silencieusement un libellé critique sans stratégie visuelle claire ;
+- si un texte doit rester entièrement lisible, lui réserver une largeur ou une hauteur adaptée au lieu de le compresser ;
+- réduire en priorité le texte secondaire avant de sacrifier le titre principal ou le bouton d’action ;
+- éviter les labels trop proches du bord droit d’une section.
+
+Cas typiques :
+- résumé source dans un bandeau ;
+- ligne d’information dans une carte ;
+- label d’état dans une colonne latérale.
 
 ### 8.1 Pattern recommandé pour une saisie optionnelle
 
@@ -646,6 +699,12 @@ Règles spécifiques :
 Règle pratique :
 - si une fenêtre redimensionnable ne peut pas respecter les espacements standards à sa taille minimale, sa taille minimale doit être relevée avant de modifier le style.
 
+Règles `MinimumSize` :
+- `MinimumSize` n’est pas optionnel pour une fenêtre riche qui combine preview, rail latéral, cartes d’info et footer ;
+- la taille minimale doit protéger la lisibilité des boutons, des labels et des contrôles interactifs ;
+- relever `MinimumSize` est préférable à l’introduction de micro-ajustements locaux qui cassent la cohérence globale ;
+- après modification d’une grille ou d’une section, revérifier que `MinimumSize` reste aligné avec la géométrie réellement nécessaire.
+
 Blocs titrés à hauteur adaptée :
 - le titre du bloc doit avoir une position fixe en haut du bloc ;
 - le premier élément du contenu doit commencer sous le titre avec le même espacement vertical que celui utilisé entre deux lignes de contenu ;
@@ -668,6 +727,19 @@ Implémentation WinForms recommandée :
 - quand un écran utilise un header avec icône de fonction, prévoir si nécessaire un léger offset visuel validé pour compenser un asset non centré naturellement ;
 - le centrage d’une icône dans son canevas doit être évalué visuellement, pas seulement mathématiquement ;
 - pour les fenêtres fixes WinForms, vérifier explicitement la hauteur utile restante après addition de tous les espacements standards, au lieu de supposer que la somme théorique du layout suffit.
+
+Règles `TableLayoutPanel` :
+- utiliser `RowStyle` et `ColumnStyle` explicites pour les lignes critiques ;
+- réserver une ligne fixe aux toolbars ou footers qui doivent toujours rester visibles ;
+- éviter les combinaisons ambiguës de lignes `Percent` avec des blocs obligatoires placés tout en bas ;
+- ne pas compter sur le layout implicite pour absorber un contenu qui varie avec le DPI ;
+- si un bloc titré dépend d’une hauteur calculée, ajuster explicitement sa ligne plutôt que de laisser WinForms improviser.
+
+Règles de marges :
+- conserver `OuterPadding`, `BlockGap`, `LineGap` et `StandardSectionPadding` comme références de base ;
+- éviter les marges locales arbitraires destinées seulement à “faire rentrer” un écran ;
+- quand un bloc semble trop serré, corriger la grille ou la hauteur utile avant d’ajouter un `+2` ou `-3` dispersé ;
+- les marges doivent servir la lisibilité, pas masquer un problème structurel de layout.
 
 ### 12.3 Fenêtres d’édition audio et vidéo compactes
 
@@ -694,6 +766,7 @@ Règles :
 
 Avant de valider une nouvelle UI, vérifier :
 
+- `AutoScaleMode = AutoScaleMode.Dpi` est bien défini si la fenêtre suit le modèle des dialogues/pickers standard ;
 - le bandeau supérieur suit le standard ;
 - le titre est clair ;
 - l’icône de la fonction est visible ;
@@ -709,6 +782,10 @@ Avant de valider une nouvelle UI, vérifier :
 - le premier élément, les lignes internes et le bas du bloc utilisent la même unité verticale ;
 - les saisies optionnelles utilisent bien un champ composite lisible quand nécessaire ;
 - les menus de sélection simples ne créent pas de double cadre bleu ;
+- les labels longs sont soit pleinement lisibles, soit gérés volontairement via `AutoEllipsis` ;
+- les `TableLayoutPanel` critiques ont des lignes/colonnes explicites et ne cachent pas une rangée importante ;
+- la fenêtre tient correctement à `125 %`, `133 %`, `150 %` et `175 %` sans texte coupé ni chevauchement ;
+- si la fenêtre est redimensionnable, `MinimumSize` protège réellement la géométrie minimale validée ;
 - aucune partie de la fenêtre ne paraît improvisée.
 
 Si l’un de ces points n’est pas respecté, il faut corriger la fenêtre avant de la considérer comme standardisée.

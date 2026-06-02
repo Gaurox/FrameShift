@@ -99,7 +99,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 
 | Action | Short Description | Screenshot |
 | --- | --- | --- |
-| Remove Background | Remove the background from an image with the local AI workflow. | <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove Background" width="320" /> |
+| Remove Background | Remove the background from an image with local AI modes: Fast, High Resolution Matting (CPU), High Resolution General (CPU), plus two optional **user-supplied** BRIA RMBG-2.0 modes (Balanced / High Quality). The BRIA models are never bundled, downloaded or redistributed by FrameShift — you obtain them manually from BRIA's [official page](https://huggingface.co/briaai/RMBG-2.0/tree/main) (non-commercial / CC BY-NC 4.0) and place them in the model folder. Re-launches while the progress window is already open are appended directly to the visible queue, including repeated runs on the same source file. | <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove Background" width="320" /> |
 | Remove Noise (Audio) | Strip background noise from audio files with strength control, stereo mode, and live preview. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
 | Remove Noise (Video) | Denoise a video's audio track without re-encoding the video stream. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
 | Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |

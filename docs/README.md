@@ -7,6 +7,7 @@ Documentation centrale du projet FrameShift.
 - [Project Overview](PRODUCT_GUIDE.md)
 - [Project Rules](PROJECT_RULES.md)
 - [Architecture Freeze](ARCHITECTURE_FREEZE.md)
+- [BiRefNet High Resolution Decision Note](BIREFNET_HIGH_RESOLUTION_DECISION.md)
 - [Migration Plan](MIGRATION_PLAN.md)
 - [Changelog](CHANGELOG.md)
 - [Code File Index](CODE_FILE_INDEX.md)

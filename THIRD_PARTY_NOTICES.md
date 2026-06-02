@@ -62,9 +62,11 @@ Full license text: https://github.com/SixLabors/ImageSharp/blob/main/LICENSE
 
 ---
 
-## Remove Background Model
+## Remove Background Models
 
-FrameShift's optional `Remove Background` feature downloads the following model at runtime:
+FrameShift's optional `Remove Background` feature downloads one of the following models at runtime:
+
+### BiRefNet Lite FP16 (Fast)
 
 - Model: `BiRefNet Lite FP16`
 - Source URL used by the application:
@@ -72,7 +74,41 @@ FrameShift's optional `Remove Background` feature downloads the following model 
 - Upstream model repository: https://huggingface.co/onnx-community/BiRefNet_lite-ONNX
 - License: **MIT License**
 
-This model is not stored in the repository and is downloaded on demand into the local user profile.
+### BiRefNet HR Matting (High Resolution)
+
+- Model: `BiRefNet_HR-matting-epoch_135.onnx`
+- Source URL used by the application:
+  `https://huggingface.co/Gaurox/frameshift-models/resolve/main/birefnet_hr-matting-onnx/BiRefNet_HR-matting-epoch_135.onnx`
+- Upstream model card: https://huggingface.co/ZhengPeng7/BiRefNet_HR-matting
+- Upstream repository and release source: https://github.com/ZhengPeng7/BiRefNet
+- License: **MIT License**
+- Runtime note in FrameShift `1.0.11`: this mode is currently executed on **CPU only**
+
+### BiRefNet HR General (High Resolution)
+
+- Model: `BiRefNet_HR-general-epoch_130.onnx`
+- Source URL used by the application:
+  `https://huggingface.co/Gaurox/frameshift-models/resolve/main/birefnet_hr-general-onnx/BiRefNet_HR-general-epoch_130.onnx`
+- Upstream model card: https://huggingface.co/ZhengPeng7/BiRefNet_HR
+- Upstream repository and release source: https://github.com/ZhengPeng7/BiRefNet
+- License: **MIT License**
+- Runtime note in FrameShift `1.0.11`: this mode is currently executed on **CPU only**
+
+These models are not stored in the repository and are downloaded on demand into the local user profile.
+
+### BRIA RMBG-2.0 (BRIA Balanced / BRIA High Quality) — user-supplied
+
+- Models: `model_fp16.onnx` (~500 MB, "BRIA Balanced") and `model.onnx` (~1 GB, "BRIA High Quality")
+- Official source the user must visit: https://huggingface.co/briaai/RMBG-2.0/tree/main
+- License: **BRIA RMBG-2.0 — CC BY-NC 4.0 (non-commercial use only)**
+- **FrameShift does NOT distribute, bundle, mirror, host or download these models.** They are
+  user-supplied: the user must obtain the file manually from BRIA's official page above, review
+  BRIA's documentation and licensing, and place it in the corresponding local model folder.
+- FrameShift verifies the file against the official BRIA file's content SHA256, cross-checked
+  against the exact official byte size (verified 2026-06-03). On mismatch FrameShift directs the
+  user back to the official BRIA page rather than redistributing anything.
+- BRIA support is optional, off by default, and intended for non-commercial use only.
+  No commercial compatibility is claimed.
 
 ---
 

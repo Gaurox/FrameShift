@@ -47,119 +47,141 @@ internal static partial class Program
         }
 
         using var batchMutex = new Mutex(true, definition.MutexName, out var isPrimaryInstance);
-        if (!isPrimaryInstance)
+        var ownsBatchMutex = isPrimaryInstance;
+        var preflightCompleted = false;
+        try
         {
-            try
+            if (!isPrimaryInstance)
             {
-                ConversionBatchSession.SendPathsToPrimaryInstance(definition, inputPaths);
-                return 0;
+                // Resolve this launch's real options (model selection, stems, denoise strength, …)
+                // in the secondary instance so they travel with the queued item over the pipe,
+                // instead of silently inheriting the primary session's options.
+                if (!RunBatchActionPreflight(actionId, inputPaths, effectiveOptions, logger))
+                {
+                    logger.Log($"Program: {definition.ActionId} preflight canceled in secondary instance before queue injection.");
+                    return 0;
+                }
+
+                preflightCompleted = true;
+
+                try
+                {
+                    ConversionBatchSession.SendPathsToPrimaryInstance(definition, inputPaths, effectiveOptions);
+                    logger.Log($"Program: queued paths into existing {definition.ActionId} session.");
+                    return 0;
+                }
+                catch (Exception ex)
+                {
+                    logger.Log($"Program: queue injection failed for existing {definition.ActionId} session. {ex}");
+                    logger.Log($"Program: waiting for existing {definition.ActionId} session to close so a new UI can be opened.");
+
+                    try
+                    {
+                        ownsBatchMutex = batchMutex.WaitOne(TimeSpan.FromSeconds(5));
+                    }
+                    catch (AbandonedMutexException)
+                    {
+                        ownsBatchMutex = true;
+                        logger.Log($"Program: acquired abandoned mutex for {definition.ActionId}; reopening session.");
+                    }
+
+                    if (!ownsBatchMutex)
+                    {
+                        ShowCliError($"FrameShift is already running, but the new {definition.DisplayName.ToLowerInvariant()} file could not be queued.");
+                        return 1;
+                    }
+
+                    logger.Log($"Program: existing {definition.ActionId} session closed before queue injection; reopening a new session.");
+                }
             }
-            catch (Exception ex)
+
+            if (!registry.TryGet(actionId, out var action))
             {
-                logger.Log(ex.ToString());
-                ShowCliError($"FrameShift is already running, but the new {definition.DisplayName.ToLowerInvariant()} file could not be queued.");
+                ShowCliError(MediaActionMessages.UnknownAction(actionId));
                 return 1;
             }
+
+            if (!preflightCompleted && !RunBatchActionPreflight(actionId, inputPaths, effectiveOptions, logger))
+            {
+                logger.Log($"Program: {definition.ActionId} preflight exited before progress window opened.");
+                return 0;
+            }
+
+            if (actionId.Equals("convert-video", StringComparison.OrdinalIgnoreCase) ||
+                actionId.Equals("convert-audio", StringComparison.OrdinalIgnoreCase) ||
+                actionId.Equals("convert-image", StringComparison.OrdinalIgnoreCase) ||
+                actionId.Equals("extract-audio", StringComparison.OrdinalIgnoreCase))
+            {
+                return RunDeferredProgressConversionBatch(definition, action, logger, inputPaths);
+            }
+
+            using var progressForm = new ProgressForm();
+            using var cancellationSource = new CancellationTokenSource();
+            progressForm.CancelRequested += (_, _) =>
+            {
+                logger.Log("Program: RunConversionBatch CancelRequested event received.");
+                RequestCancellationAsync(cancellationSource, logger, "batch");
+            };
+
+            var session = new ConversionBatchSession(definition, action, logger, progressForm);
+            if (effectiveOptions.Count > 0)
+            {
+                session.SetSharedOptions(effectiveOptions);
+            }
+
+            progressForm.Shown += (_, _) => session.Start(inputPaths.ToArray(), cancellationSource.Token);
+
+            logger.Log("Program: before Application.Run (batch progress form).");
+            Application.Run(progressForm);
+            logger.Log("Program: after Application.Run returns (batch progress form).");
+            (action as IDisposable)?.Dispose();
+            return session.ExitCode;
+        }
+        finally
+        {
+            if (ownsBatchMutex)
+            {
+                batchMutex.ReleaseMutex();
+            }
+        }
+    }
+
+    // Action-specific preflight (model download/verification and option prompts). Runs in both
+    // the primary instance and any secondary instance that queues into an existing session, so
+    // the per-launch options reflect the file actually being queued. Returns false when the user
+    // canceled or inputs were invalid (the caller exits without opening/queuing).
+    private static bool RunBatchActionPreflight(
+        string actionId,
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> effectiveOptions,
+        AppLogger logger)
+    {
+        if (actionId.Equals("remove-background", StringComparison.OrdinalIgnoreCase))
+        {
+            return EnsureRemoveBackgroundModelReady(logger, effectiveOptions);
         }
 
-        if (!registry.TryGet(actionId, out var action))
+        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
         {
-            ShowCliError(MediaActionMessages.UnknownAction(actionId));
-            return 1;
+            return EnsureSeparateAudioOptions(inputPaths, effectiveOptions, logger)
+                && EnsureSeparateAudioModelReady(logger, effectiveOptions);
         }
 
-        if (actionId.Equals("remove-background", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureRemoveBackgroundModelReady(logger))
+        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
         {
-            logger.Log("Program: Remove Background preflight exited before progress window opened.");
-            return 0;
+            return ValidateRemoveNoiseInputs(inputPaths)
+                && EnsureRemoveNoiseAudioOptions(inputPaths, effectiveOptions, logger)
+                && EnsureRemoveNoiseModelReady(logger);
         }
 
-        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureSeparateAudioOptions(inputPaths, effectiveOptions, logger))
+        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase))
         {
-            logger.Log("Program: Separate Audio options prompt exited before progress window opened.");
-            return 0;
+            return ValidateRemoveNoiseVideoInputs(inputPaths)
+                && EnsureRemoveNoiseVideoOptions(inputPaths, effectiveOptions, logger)
+                && EnsureRemoveNoiseModelReady(logger);
         }
 
-        if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureSeparateAudioModelReady(logger, effectiveOptions))
-        {
-            logger.Log("Program: Separate Audio preflight exited before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
-            !ValidateRemoveNoiseInputs(inputPaths))
-        {
-            logger.Log("Program: Remove Noise input validation failed before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureRemoveNoiseAudioOptions(inputPaths, effectiveOptions, logger))
-        {
-            logger.Log("Program: Remove Noise options prompt exited before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureRemoveNoiseModelReady(logger))
-        {
-            logger.Log("Program: Remove Noise preflight exited before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
-            !ValidateRemoveNoiseVideoInputs(inputPaths))
-        {
-            logger.Log("Program: Remove Noise (Video) input validation failed before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureRemoveNoiseVideoOptions(inputPaths, effectiveOptions, logger))
-        {
-            logger.Log("Program: Remove Noise (Video) options prompt exited before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase) &&
-            !EnsureRemoveNoiseModelReady(logger))
-        {
-            logger.Log("Program: Remove Noise (Video) preflight exited before progress window opened.");
-            return 0;
-        }
-
-        if (actionId.Equals("convert-video", StringComparison.OrdinalIgnoreCase) ||
-            actionId.Equals("convert-audio", StringComparison.OrdinalIgnoreCase) ||
-            actionId.Equals("convert-image", StringComparison.OrdinalIgnoreCase) ||
-            actionId.Equals("extract-audio", StringComparison.OrdinalIgnoreCase))
-        {
-            return RunDeferredProgressConversionBatch(definition, action, logger, inputPaths);
-        }
-
-        using var progressForm = new ProgressForm();
-        using var cancellationSource = new CancellationTokenSource();
-        progressForm.CancelRequested += (_, _) =>
-        {
-            logger.Log("Program: RunConversionBatch CancelRequested event received.");
-            RequestCancellationAsync(cancellationSource, logger, "batch");
-        };
-
-        var session = new ConversionBatchSession(definition, action, logger, progressForm);
-        if (effectiveOptions.Count > 0)
-        {
-            session.SetSharedOptions(effectiveOptions);
-        }
-
-        progressForm.Shown += (_, _) => session.Start(inputPaths.ToArray(), cancellationSource.Token);
-
-        logger.Log("Program: before Application.Run (batch progress form).");
-        Application.Run(progressForm);
-        logger.Log("Program: after Application.Run returns (batch progress form).");
-        (action as IDisposable)?.Dispose();
-        return session.ExitCode;
+        return true;
     }
 
     private static int RunDeferredProgressConversionBatch(

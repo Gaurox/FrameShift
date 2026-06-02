@@ -19,8 +19,8 @@ namespace FrameShift.Core.AI.RemoveBackground;
 
 internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDisposable
 {
-    private const int ModelSize = 1024;
     private const long MaxPixels = 80_000_000L;
+    private readonly BackgroundRemovalModelDefinition _model;
 
     public string Provider { get; private set; } = "—";
 
@@ -32,6 +32,11 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
 
     private readonly SemaphoreSlim _initGate = new(1, 1);
     private bool _sessionReady;
+
+    public BackgroundRemovalEngine(BackgroundRemovalModelDefinition model)
+    {
+        _model = model;
+    }
 
     public async Task<string> RemoveBackgroundAsync(
         string inputPath,
@@ -73,7 +78,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         progress.Report(new InferenceProgress(15, "Resizing for inference..."));
 
         using var resized = original.Clone(ctx =>
-            ctx.Resize(ModelSize, ModelSize));
+            ctx.Resize(_model.InputSize, _model.InputSize));
 
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InferenceProgress(30, "Building input tensor..."));
@@ -81,12 +86,12 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         var inputs = BuildInputs(resized);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(50, "Running AI inference..."));
+        progress.Report(new InferenceProgress(50, GetInferenceStatus()));
 
         IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results;
         try
         {
-            results = _session!.Run(inputs);
+            results = RunInferenceWithProgress(inputs, progress, cancellationToken);
         }
         catch (Exception ex) when (_providerName == "DirectML" && OnnxProviderHelper.IsLikelyDmlRuntimeFailure(ex))
         {
@@ -95,13 +100,13 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             _session?.Dispose();
             _session = null;
             _sessionReady = false;
-            var modelPath = ModelLocator.ModelPath;
+            var modelPath = ModelLocator.GetModelPath(_model);
             var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
             _session = new InferenceSession(modelPath, cpuOpts);
             _providerName = "CPU";
             Provider = "CPU";
             _sessionReady = true;
-            results = _session.Run(inputs);
+            results = RunInferenceWithProgress(inputs, progress, cancellationToken);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -159,7 +164,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
 
             progress.Report(new InferenceProgress(2, "Loading ONNX model..."));
 
-            var modelPath = ModelLocator.ModelPath;
+            var modelPath = ModelLocator.GetModelPath(_model);
             AppLogger.LogStatic($"BackgroundRemovalEngine: loading session. model={modelPath}");
 
             (_session, _providerName) = CreateSession(modelPath);
@@ -197,11 +202,12 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
 
     private static NamedOnnxValue BuildInputF32(SixLabors.ImageSharp.Image<Rgba32> resized, string inputName)
     {
-        var tensor = new DenseTensor<float>(new[] { 1, 3, ModelSize, ModelSize });
+        var size = resized.Width;
+        var tensor = new DenseTensor<float>(new[] { 1, 3, size, size });
 
-        for (int y = 0; y < ModelSize; y++)
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x < ModelSize; x++)
+            for (int x = 0; x < size; x++)
             {
                 var (r, g, b) = GetNormalizedPixel(resized[x, y]);
                 tensor[0, 0, y, x] = r;
@@ -215,11 +221,12 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
 
     private static NamedOnnxValue BuildInputF16(SixLabors.ImageSharp.Image<Rgba32> resized, string inputName)
     {
-        var tensor = new DenseTensor<Float16>(new[] { 1, 3, ModelSize, ModelSize });
+        var size = resized.Width;
+        var tensor = new DenseTensor<Float16>(new[] { 1, 3, size, size });
 
-        for (int y = 0; y < ModelSize; y++)
+        for (int y = 0; y < size; y++)
         {
-            for (int x = 0; x < ModelSize; x++)
+            for (int x = 0; x < size; x++)
             {
                 var (r, g, b) = GetNormalizedPixel(resized[x, y]);
                 tensor[0, 0, y, x] = (Float16)r;
@@ -242,34 +249,120 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         return (r, g, b);
     }
 
-    // Model outputs raw logits — sigmoid applied here per preprocessor_config.json / HF inference example.
+    // BiRefNet upstream weights output raw logits, so sigmoid is applied here (per
+    // preprocessor_config.json / HF inference example). The BRIA RMBG-2.0 transformers.js
+    // export already outputs a [0,1] alpha matte ("alphas"), so for those models
+    // (_model.OutputIsAlpha) the value is used directly without a second sigmoid.
     private SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8> BuildMask(
         IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results)
     {
-        var mask = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8>(ModelSize, ModelSize);
-
         if (_outputElementType == typeof(Float16))
         {
             var output = results.First().AsTensor<Float16>();
-            for (int y = 0; y < ModelSize; y++)
-                for (int x = 0; x < ModelSize; x++)
+            var sizeY = output.Dimensions[^2];
+            var sizeX = output.Dimensions[^1];
+            var mask = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8>(sizeX, sizeY);
+            for (int y = 0; y < sizeY; y++)
+                for (int x = 0; x < sizeX; x++)
                 {
-                    float sigmoid = 1f / (1f + MathF.Exp(-(float)output[0, 0, y, x]));
-                    mask[x, y] = new L8((byte)(sigmoid * 255f));
+                    mask[x, y] = new L8(MaskByte((float)output[0, 0, y, x]));
                 }
-        }
-        else
-        {
-            var output = results.First().AsTensor<float>();
-            for (int y = 0; y < ModelSize; y++)
-                for (int x = 0; x < ModelSize; x++)
-                {
-                    float sigmoid = 1f / (1f + MathF.Exp(-output[0, 0, y, x]));
-                    mask[x, y] = new L8((byte)(sigmoid * 255f));
-                }
+
+            return mask;
         }
 
-        return mask;
+        var outputF32 = results.First().AsTensor<float>();
+        var outputSizeY = outputF32.Dimensions[^2];
+        var outputSizeX = outputF32.Dimensions[^1];
+        var outputMask = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8>(outputSizeX, outputSizeY);
+        for (int y = 0; y < outputSizeY; y++)
+            for (int x = 0; x < outputSizeX; x++)
+            {
+                outputMask[x, y] = new L8(MaskByte(outputF32[0, 0, y, x]));
+            }
+
+        return outputMask;
+    }
+
+    private byte MaskByte(float value)
+    {
+        var alpha = _model.OutputIsAlpha
+            ? Math.Clamp(value, 0f, 1f)
+            : 1f / (1f + MathF.Exp(-value));
+        return (byte)(alpha * 255f);
+    }
+
+    private (InferenceSession session, string provider) CreateSession(string modelPath) =>
+        OnnxProviderHelper.CreateSessionPreferred(modelPath, "BackgroundRemovalEngine", _model.ForceCpu);
+
+    private IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunInferenceWithProgress(
+        IReadOnlyCollection<NamedOnnxValue> inputs,
+        IProgress<InferenceProgress> progress,
+        CancellationToken cancellationToken)
+    {
+        const int startPercent = 50;
+        const int endPercent = 82;
+
+        var status = GetInferenceStatus();
+        using var progressCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var progressTask = Task.Run(async () =>
+        {
+            var currentPercent = startPercent;
+            progress.Report(new InferenceProgress(currentPercent, status));
+
+            while (!progressCts.IsCancellationRequested && currentPercent < endPercent)
+            {
+                try
+                {
+                    await Task.Delay(1000, progressCts.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+
+                if (progressCts.IsCancellationRequested)
+                {
+                    break;
+                }
+
+                currentPercent++;
+                progress.Report(new InferenceProgress(currentPercent, status));
+            }
+        }, CancellationToken.None);
+
+        try
+        {
+            return _session!.Run(inputs);
+        }
+        finally
+        {
+            progressCts.Cancel();
+            try
+            {
+                progressTask.Wait(1000);
+            }
+            catch
+            {
+            }
+
+            progress.Report(new InferenceProgress(endPercent, status));
+        }
+    }
+
+    private string GetInferenceStatus()
+    {
+        if (_providerName == "CPU")
+        {
+            return "Running AI inference on CPU...";
+        }
+
+        if (_providerName == "DirectML")
+        {
+            return "Running AI inference on GPU...";
+        }
+
+        return "Running AI inference...";
     }
 
     private static SixLabors.ImageSharp.Image<Rgba32> CompositeFinalImage(
@@ -286,11 +379,9 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
                 result[x, y] = new Rgba32(src.R, src.G, src.B, alpha);
             }
         }
+
         return result;
     }
-
-    private static (InferenceSession session, string provider) CreateSession(string modelPath) =>
-        OnnxProviderHelper.CreateSessionPreferred(modelPath, "BackgroundRemovalEngine");
 
     private static void ValidateInput(string inputPath)
     {

@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using FrameShift.Core.AI;
 
@@ -7,9 +6,6 @@ namespace FrameShift.Core.AI.RemoveBackground;
 public static class ModelLocator
 {
     private const string LogPrefix = "RemoveBackgroundModelLocator";
-    private static readonly string ModelsDirectory = Path.Combine(
-        AiModelStorage.RootDirectory,
-        "birefnet_lite-onnx");
     private static readonly string LegacyModelPath = Path.Combine(
         AiModelStorage.RootDirectory,
         "model_fp16.onnx");
@@ -19,24 +15,34 @@ public static class ModelLocator
         "onnx",
         "model_fp16.onnx");
 
-    public static string ModelPath => Path.Combine(ModelsDirectory, "model_fp16.onnx");
+    public static string GetModelDirectory(BackgroundRemovalModelDefinition def) =>
+        Path.Combine(AiModelStorage.RootDirectory, def.Folder);
 
-    public static bool ModelExists()
+    public static string GetModelPath(BackgroundRemovalModelDefinition def) =>
+        Path.Combine(GetModelDirectory(def), def.FileName);
+
+    public static bool ModelExists(BackgroundRemovalModelDefinition def)
     {
-        TryMigrateLegacyLayout();
-        return File.Exists(ModelPath);
+        TryMigrateLegacyLayout(def);
+        return File.Exists(GetModelPath(def));
     }
 
-    public static void EnsureDirectoryExists()
+    public static void EnsureDirectoryExists(BackgroundRemovalModelDefinition def)
     {
-        AiModelStorage.EnsureDirectory(ModelsDirectory);
-        TryMigrateLegacyLayout();
+        AiModelStorage.EnsureDirectory(GetModelDirectory(def));
+        TryMigrateLegacyLayout(def);
     }
 
-    private static void TryMigrateLegacyLayout()
+    private static void TryMigrateLegacyLayout(BackgroundRemovalModelDefinition def)
     {
-        AiModelStorage.TryMigrateFile(LegacyModelPath, ModelPath, LogPrefix);
-        AiModelStorage.TryMigrateFile(LegacyNestedModelPath, ModelPath, LogPrefix);
-        AiModelStorage.TryDeleteDirectoryIfEmpty(Path.Combine(ModelsDirectory, "onnx"), LogPrefix);
+        if (!string.Equals(def.Id, "fast", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var targetPath = GetModelPath(def);
+        AiModelStorage.TryMigrateFile(LegacyModelPath, targetPath, LogPrefix);
+        AiModelStorage.TryMigrateFile(LegacyNestedModelPath, targetPath, LogPrefix);
+        AiModelStorage.TryDeleteDirectoryIfEmpty(Path.Combine(GetModelDirectory(def), "onnx"), LogPrefix);
     }
 }
