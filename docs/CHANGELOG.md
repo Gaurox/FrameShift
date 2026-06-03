@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.13
+
+- **Upscale Image — scale options.** The model picker now offers **x2 / x3 / x4** plus a **Custom size** mode with linked width/height fields (aspect locked to the source — editing one updates the other). Internally the model always runs at its native x4, then the result is resampled down (Lanczos) to the requested factor or size, so x2/x3 keep AI-grade detail. Everything is clamped to the model's reach (x1 … x4); a custom size larger than x4 is reduced to fit. Output naming reflects the choice (`_upscaled_2x`, `_upscaled_3x`, `_upscaled_4x`, or `_upscaled_<W>x<H>`). Headless flags: `--upscale-scale 2|3|4` and `--upscale-target <W>x<H>`. Custom size requires a single image; the presets apply to every selected file.
+
 ## 1.0.12
 
 - **Upscale Image 4x (new AI action).** Added `upscale-image`, a local AI upscaler. Image → image x4, output PNG `_upscaled_4x` next to the source, downloaded on demand. Runs on GPU via DirectML with automatic CPU fallback; tiling is automatic and invisible (512 px tiles with overlap, adaptive 512→256→128 on out-of-memory). New module under `Core/AI/Upscale/`, optional installer component `ai\upscale_image`, Explorer entry `FrameShift AI → Upscale Image 4x`.

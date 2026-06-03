@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.12"
+#define MyAppVersion "1.0.13"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"

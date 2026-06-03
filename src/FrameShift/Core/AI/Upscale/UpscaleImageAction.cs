@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -94,6 +95,7 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
 
             var outputPath = await _engine.UpscaleAsync(
                 request.InputPath,
+                ResolveUpscaleRequest(request.Options),
                 progress,
                 linkedCancellationSource.Token).ConfigureAwait(false);
 
@@ -125,6 +127,29 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
             {
             }
         }
+    }
+
+    private static UpscaleRequest ResolveUpscaleRequest(IReadOnlyDictionary<string, string>? options)
+    {
+        if (options is null) return new UpscaleRequest();
+
+        if (options.TryGetValue(ActionOptionKeys.UpscaleTargetWidth, out var widthText) &&
+            options.TryGetValue(ActionOptionKeys.UpscaleTargetHeight, out var heightText) &&
+            int.TryParse(widthText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var width) &&
+            int.TryParse(heightText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var height) &&
+            width > 0 && height > 0)
+        {
+            return new UpscaleRequest(TargetWidth: width, TargetHeight: height);
+        }
+
+        if (options.TryGetValue(ActionOptionKeys.UpscaleScale, out var scaleText) &&
+            double.TryParse(scaleText, NumberStyles.Float, CultureInfo.InvariantCulture, out var factor) &&
+            factor > 0)
+        {
+            return new UpscaleRequest(Factor: factor);
+        }
+
+        return new UpscaleRequest();
     }
 
     private static UpscaleModelDefinition ResolveModel(IReadOnlyDictionary<string, string>? options)

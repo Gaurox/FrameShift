@@ -31,6 +31,22 @@ Manual steps after the script completes:
 - Confirm the expected installer is produced in `installer/`
 - Confirm the publish payload and installer do not include unnecessary debug files
 
+### Inno Setup compiler (ISCC) location
+
+`build_installer.ps1` locates the Inno Setup compiler automatically. Its search order is:
+
+1. `%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`  ← **install location on the dev machine** (per-user install; resolves to `C:\Users\Adrien\AppData\Local\Programs\Inno Setup 6\ISCC.exe`)
+2. `C:\Program Files (x86)\Inno Setup 6\ISCC.exe`
+3. `C:\Program Files\Inno Setup 6\ISCC.exe`
+4. The Inno Setup 5 equivalents of (2) and (3)
+5. `ISCC.exe` on `PATH`
+
+If none are found the script prints the `.iss` path so it can be compiled manually:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" "/DMyAppVersion=<version>" installer\FrameShift.iss
+```
+
 ## Git Check
 
 - Review staged files before committing

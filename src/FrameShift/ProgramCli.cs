@@ -76,6 +76,26 @@ internal static partial class Program
                 continue;
             }
 
+            if (string.Equals(token, "--upscale-scale", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.UpscaleScale] = args[++index].TrimStart('x', 'X');
+                continue;
+            }
+
+            if (string.Equals(token, "--upscale-target", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                var spec = args[++index];
+                var parts = spec.Split(new[] { 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 &&
+                    int.TryParse(parts[0], out var targetWidth) &&
+                    int.TryParse(parts[1], out var targetHeight))
+                {
+                    options[ActionOptionKeys.UpscaleTargetWidth] = targetWidth.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    options[ActionOptionKeys.UpscaleTargetHeight] = targetHeight.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                }
+                continue;
+            }
+
             if (string.Equals(token, "--stereo", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.ProcessStereoAudio] = args[++index];

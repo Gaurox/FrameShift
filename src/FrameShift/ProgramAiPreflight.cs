@@ -161,14 +161,48 @@ internal static partial class Program
 
         try
         {
-            using var picker = new UpscaleImagePickerForm(UpscaleImagePickerForm.BuildSourceLabel(inputPaths));
+            // Custom target size needs the source dimensions and a single file; presets (x2/x3/x4)
+            // work for any selection.
+            int sourceWidth = 0, sourceHeight = 0;
+            bool allowCustom = inputPaths.Count == 1;
+            if (allowCustom)
+            {
+                try
+                {
+                    var info = SixLabors.ImageSharp.Image.Identify(inputPaths[0]);
+                    sourceWidth = info.Width;
+                    sourceHeight = info.Height;
+                }
+                catch (Exception ex)
+                {
+                    allowCustom = false;
+                    logger.Log($"Program: could not read image size for upscale custom target (non-fatal): {ex.Message}");
+                }
+            }
+
+            using var picker = new UpscaleImagePickerForm(
+                UpscaleImagePickerForm.BuildSourceLabel(inputPaths),
+                sourceWidth,
+                sourceHeight,
+                allowCustom);
             if (picker.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(picker.SelectedModelId))
             {
                 return false;
             }
 
             options[ActionOptionKeys.UpscaleModel] = picker.SelectedModelId!;
-            logger.Log($"Program: Upscale Image model selected via picker. modelId={picker.SelectedModelId}.");
+
+            if (picker.SelectedScale is { } scale)
+            {
+                options[ActionOptionKeys.UpscaleScale] = scale;
+            }
+            else if (picker.CustomTarget is { } target)
+            {
+                options[ActionOptionKeys.UpscaleTargetWidth] = target.Width.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                options[ActionOptionKeys.UpscaleTargetHeight] = target.Height.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            logger.Log($"Program: Upscale Image selected via picker. modelId={picker.SelectedModelId}, scale={picker.SelectedScale ?? "custom"}.");
             return true;
         }
         catch (Exception ex)

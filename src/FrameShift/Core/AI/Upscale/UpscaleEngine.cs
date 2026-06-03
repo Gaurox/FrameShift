@@ -10,6 +10,7 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using SharpImage = SixLabors.ImageSharp.Image;
 
 namespace FrameShift.Core.AI.Upscale;
@@ -42,16 +43,18 @@ internal sealed class UpscaleEngine : IUpscaleEngine
 
     public async Task<string> UpscaleAsync(
         string inputPath,
+        UpscaleRequest request,
         IProgress<UpscaleProgress> progress,
         CancellationToken cancellationToken)
     {
         return await Task.Run(
-            () => ProcessImageCore(inputPath, progress, cancellationToken),
+            () => ProcessImageCore(inputPath, request, progress, cancellationToken),
             cancellationToken).ConfigureAwait(false);
     }
 
     private string ProcessImageCore(
         string inputPath,
+        UpscaleRequest request,
         IProgress<UpscaleProgress> progress,
         CancellationToken cancellationToken)
     {
@@ -84,7 +87,20 @@ internal sealed class UpscaleEngine : IUpscaleEngine
             {
                 EnsureSession(forceCpu, progress, cancellationToken);
                 using var upscaled = RunTiled(original, tileSize, progress, cancellationToken);
-                return SaveOutput(inputPath, upscaled, progress);
+
+                var (finalWidth, finalHeight, suffix) = ResolveFinalSize(original.Width, original.Height, request);
+                var finalImage = (finalWidth == upscaled.Width && finalHeight == upscaled.Height)
+                    ? upscaled
+                    : ResampleTo(upscaled, finalWidth, finalHeight, progress);
+                try
+                {
+                    return SaveOutput(inputPath, finalImage, suffix, progress);
+                }
+                finally
+                {
+                    if (!ReferenceEquals(finalImage, upscaled))
+                        finalImage.Dispose();
+                }
             }
             catch (OperationCanceledException)
             {
@@ -226,10 +242,44 @@ internal sealed class UpscaleEngine : IUpscaleEngine
     private static byte ToByte(float value) =>
         (byte)(Math.Clamp(value, 0f, 1f) * 255f + 0.5f);
 
-    private static string SaveOutput(string inputPath, Image<Rgba32> image, IProgress<UpscaleProgress> progress)
+    // Resolves the final output dimensions and the file-name suffix. The model output is always
+    // sourceW*scale x sourceH*scale; a smaller target (x2/x3 or a custom size) is reached by resampling
+    // down. Everything is clamped to [source, native x4] so we never upsample beyond the model's reach.
+    private (int width, int height, string suffix) ResolveFinalSize(int sourceWidth, int sourceHeight, UpscaleRequest request)
+    {
+        int nativeWidth = sourceWidth * _def.ScaleFactor;
+        int nativeHeight = sourceHeight * _def.ScaleFactor;
+
+        if (request.TargetWidth is int targetWidth && request.TargetHeight is int targetHeight)
+        {
+            int w = Math.Clamp(targetWidth, sourceWidth, nativeWidth);
+            int h = Math.Clamp(targetHeight, sourceHeight, nativeHeight);
+            return (w, h, $"_upscaled_{w}x{h}");
+        }
+
+        double factor = Math.Clamp(request.Factor, 1d, _def.ScaleFactor);
+        int rw = Math.Clamp((int)Math.Round(sourceWidth * factor), sourceWidth, nativeWidth);
+        int rh = Math.Clamp((int)Math.Round(sourceHeight * factor), sourceHeight, nativeHeight);
+        return (rw, rh, $"_upscaled_{(int)Math.Round(factor)}x");
+    }
+
+    private static Image<Rgba32> ResampleTo(Image<Rgba32> source, int width, int height, IProgress<UpscaleProgress> progress)
+    {
+        progress.Report(new UpscaleProgress(93, "Resizing to target..."));
+        var result = source.Clone();
+        result.Mutate(ctx => ctx.Resize(new ResizeOptions
+        {
+            Size = new SixLabors.ImageSharp.Size(width, height),
+            Sampler = KnownResamplers.Lanczos3,
+            Mode = ResizeMode.Stretch
+        }));
+        return result;
+    }
+
+    private static string SaveOutput(string inputPath, Image<Rgba32> image, string suffix, IProgress<UpscaleProgress> progress)
     {
         progress.Report(new UpscaleProgress(95, "Saving PNG..."));
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_upscaled_4x", ".png");
+        var outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, suffix, ".png");
         try
         {
             image.SaveAsPng(outputPath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestSpeed });
