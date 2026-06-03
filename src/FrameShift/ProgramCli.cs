@@ -70,6 +70,12 @@ internal static partial class Program
                 continue;
             }
 
+            if (string.Equals(token, "--upscale-model", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.UpscaleModel] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--stereo", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.ProcessStereoAudio] = args[++index];

@@ -13,6 +13,7 @@ using FrameShift.Windows.Helpers;
 using RemoveBackground = FrameShift.Core.AI.RemoveBackground;
 using RemoveNoise = FrameShift.Core.AI.RemoveNoise;
 using SeparateAudio = FrameShift.Core.AI.SeparateAudio;
+using Upscale = FrameShift.Core.AI.Upscale;
 using VideoInterpolation = FrameShift.Core.AI.VideoInterpolation;
 
 namespace FrameShift;
@@ -132,6 +133,129 @@ internal static partial class Program
         var proceed = dialogResult == DialogResult.OK && notice.Proceed;
         logger.Log($"Program: BRIA notice dialog completed. proceed={proceed}, modelId={model.Id}.");
         return proceed;
+    }
+
+    private static bool EnsureUpscaleOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger)
+    {
+        // A model supplied via CLI (--upscale-model) skips the picker (headless override).
+        if (options.ContainsKey(ActionOptionKeys.UpscaleModel))
+        {
+            return true;
+        }
+
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var ext = Path.GetExtension(inputPaths[0]).ToLowerInvariant();
+        if (ext is not ".png" and not ".jpg" and not ".jpeg" and not ".webp" and not ".bmp")
+        {
+            ShowCliError(MediaActionMessages.UnsupportedSourceFormat(ext, ".png, .jpg, .jpeg, .webp, .bmp"));
+            return false;
+        }
+
+        try
+        {
+            using var picker = new UpscaleImagePickerForm(UpscaleImagePickerForm.BuildSourceLabel(inputPaths));
+            if (picker.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(picker.SelectedModelId))
+            {
+                return false;
+            }
+
+            options[ActionOptionKeys.UpscaleModel] = picker.SelectedModelId!;
+            logger.Log($"Program: Upscale Image model selected via picker. modelId={picker.SelectedModelId}.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Upscale Image")));
+            return false;
+        }
+    }
+
+    private static bool EnsureUpscaleModelReady(
+        AppLogger logger,
+        IReadOnlyDictionary<string, string>? options = null)
+    {
+        var model = ResolveUpscaleModel(options, logger);
+
+        var modelPath = Upscale.ModelLocator.GetModelPath(model);
+        if (File.Exists(modelPath) &&
+            Upscale.ModelDownloader.IsModelFileValid(modelPath, model, logger))
+        {
+            logger.Log($"Program: Upscale Image model already present and verified. modelId={model.Id}.");
+            return true;
+        }
+
+        if (File.Exists(modelPath))
+        {
+            logger.Log($"Program: Upscale Image model failed verification. Removing invalid file. modelId={model.Id}.");
+            try
+            {
+                File.Delete(modelPath);
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"Program: failed to delete invalid Upscale Image model. {ex}");
+            }
+        }
+
+        // NOTE(release): until realesrgan_x4plus_fp16.onnx is hosted on Gaurox/frameshift-models with a
+        // confirmed SHA256, the DownloadUrl is not live and this download will fail. The model can be
+        // tested by placing the file manually in the model folder (integrity is skipped while the hash
+        // is still the placeholder — see UpscaleModelCatalog).
+        logger.Log($"Program: Upscale Image model missing. Opening DownloadModelForm. modelId={model.Id}.");
+        using var downloadForm = new DownloadModelForm(
+            "FrameShift AI - Upscale Image",
+            "Download the AI model to enable image upscaling",
+            IconPaths.UpscaleAiIcon,
+            model.DisplayName,
+            model.License,
+            model.ExpectedSizeBytes,
+            async (progress, ct) =>
+            {
+                Upscale.ModelLocator.EnsureDirectoryExists(model);
+                await Upscale.ModelDownloader.DownloadAsync(
+                    model,
+                    modelPath,
+                    progress,
+                    ct).ConfigureAwait(false);
+            });
+        var dialogResult = downloadForm.ShowDialog();
+        var modelReady = dialogResult == DialogResult.OK &&
+            File.Exists(modelPath) &&
+            Upscale.ModelDownloader.IsModelFileValid(modelPath, model, logger);
+        logger.Log($"Program: Upscale Image preflight completed. dialogResult={dialogResult}, modelReady={modelReady}, modelId={model.Id}.");
+        return modelReady;
+    }
+
+    private static Upscale.UpscaleModelDefinition ResolveUpscaleModel(
+        IReadOnlyDictionary<string, string>? options,
+        AppLogger logger)
+    {
+        string? modelId = null;
+        if (options is not null &&
+            options.TryGetValue(ActionOptionKeys.UpscaleModel, out var optionValue) &&
+            !string.IsNullOrWhiteSpace(optionValue))
+        {
+            modelId = optionValue;
+        }
+
+        var model = Upscale.UpscaleModelCatalog.GetById(modelId) ??
+            Upscale.UpscaleModelCatalog.GetDefault();
+
+        if (!string.IsNullOrWhiteSpace(modelId) &&
+            !string.Equals(model.Id, modelId, StringComparison.OrdinalIgnoreCase))
+        {
+            logger.Log($"Program: Upscale Image model option not found. requested={modelId}, fallback={model.Id}.");
+        }
+
+        return model;
     }
 
     private static RemoveBackground.BackgroundRemovalModelDefinition? ResolveBackgroundRemovalModel(

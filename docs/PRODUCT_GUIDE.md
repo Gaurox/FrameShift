@@ -58,6 +58,7 @@ Actions image :
 - `image-to-pdf`
 - `remove-background`
 - `remove-object`
+- `upscale-image`
 - `media-info`
 
 Actions IA locales :
@@ -67,6 +68,7 @@ Actions IA locales :
 - `separate-audio`
 - `interpolate-video-rife`
 - `remove-object`
+- `upscale-image`
 
 Règles communes des actions IA :
 - téléchargement du modèle seulement au moment utile ;
@@ -136,6 +138,7 @@ En pratique :
 - `separate-audio` suit le même modèle avec fallback picker si `--stems` ou `--separate-engine` ne sont pas fournis ;
 - `interpolate-video-rife` suit un flux UI-first avec picker de modèle/multiplicateur/vitesse puis préflight du modèle avant traitement ;
 - `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible avec deux modèles disponibles : **LaMa FP32 (Quality)** (~208 MB) et **LaMa 2025 (Fast)** (~93 MB, opencv/inpainting_lama Jan 2025) ;
+- `upscale-image` agrandit une image **x4** ; une seule entrée Explorer ouvre un **picker de modèle** (choix exclusif, style FrameShift), `--upscale-model <id>` court-circuite le picker en headless. Trois modèles hébergés sur `Gaurox/frameshift-models/upscale-onnx/` (SHA256 vérifié, README + licences inclus) : **Real-ESRGAN x4plus** (général, défaut, BSD-3-Clause), **Real-ESRGAN Anime 6B** (anime/illustration, BSD-3-Clause), **Swin2SR (Quality)** (restauration, Apache-2.0, transformer plus lent). Progression commune, DirectML avec fallback CPU, tiling automatique et invisible (tuile 512, overlap, réduction adaptative en OOM, padding multiple-de-8 + crop pour Swin2SR), sortie PNG `_upscaled_4x` adjacente à la source ;
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies

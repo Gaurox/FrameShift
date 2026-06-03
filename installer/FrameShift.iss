@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.11"
+#define MyAppVersion "1.0.12"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -54,6 +54,7 @@ Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: compl
 Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
 Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
 Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
+Name: "ai\upscale_image"; Description: "Upscale image (4x)"; Types: complete custom
 Name: "video"; Description: "Video actions"; Types: complete custom
 Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
@@ -958,6 +959,16 @@ begin
       'remove_object',
       'Remove object',
       'remove-object',
+      '');
+  end;
+
+  if WizardIsComponentSelected('ai\upscale_image') then
+  begin
+    ApplyAIActionMenuList(
+      ImageExtensions,
+      'upscale_image',
+      'Upscale Image 4x',
+      'upscale-image',
       '');
   end;
 end;

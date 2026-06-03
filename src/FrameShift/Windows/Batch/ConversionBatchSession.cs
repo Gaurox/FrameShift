@@ -306,6 +306,28 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Process");
 
+    public static BatchDefinition CreateUpscaleImageDefinition() => new(
+        ActionId: "upscale-image",
+        DisplayName: "Upscale Image",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: ".png, .jpg, .jpeg, .webp, .bmp",
+        MutexName: @"Local\FrameShift_UpscaleImageBatch",
+        PipeName: "FrameShift_UpscaleImageBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: static extension =>
+            extension.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".webp", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".bmp", StringComparison.OrdinalIgnoreCase),
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Upscale");
+
     public static BatchDefinition CreateSeparateAudioDefinition() => new(
         ActionId: "separate-audio",
         DisplayName: "Audio Separation",

@@ -15,6 +15,8 @@ public static class IconPaths
     public static string RemoveNoiseAiIcon => Combine("ai", "remove_noise_icon.ico");
     public static string InterpolateAiIcon => Combine("ai", "Interpolate_icon.ico");
     public static string RemoveObjectAiIcon => Combine("ai", "remove_object.ico");
+    // TODO(asset): add Assets/Icons/ai/upscale.ico. Until then the header/menu fall back to the generic FrameShift AI icon.
+    public static string UpscaleAiIcon => Combine("ai", "upscale.ico");
     public static string CompressVideoIcon => Combine("menus", "context", "ico", "compress-video-image-audio-icon.ico");
     public static string ConvertVideoIcon => Combine("menus", "context", "ico", "convert-audio-video-image-icon.ico");
     public static string MediaInfoIcon => Combine("menus", "context", "ico", "media-info-video-image-audio-icon.ico");

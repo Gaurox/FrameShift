@@ -171,6 +171,14 @@ Media Info :
 - `src/FrameShift/Core/AI/RemoveObject/ObjectRemovalModelCatalog.cs`
 - `src/FrameShift/Core/AI/RemoveObject/ObjectRemovalModelDefinition.cs`
 - `src/FrameShift/Core/AI/RemoveObject/RemoveObjectAction.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleModelDefinition.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleModelCatalog.cs`
+- `src/FrameShift/Core/AI/Upscale/ModelLocator.cs`
+- `src/FrameShift/Core/AI/Upscale/ModelDownloader.cs`
+- `src/FrameShift/Core/AI/Upscale/IUpscaleEngine.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleTiler.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleEngine.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleImageAction.cs`
 
 Helpers core utiles :
 - `src/FrameShift/Core/Helpers/ImageAutoCropDetector.cs`
@@ -189,6 +197,7 @@ IA :
 - `src/FrameShift/Windows/AI/RemoveNoiseVideoPickerForm.cs`
 - `src/FrameShift/Windows/AI/RemoveObjectEditorForm.cs`
 - `src/FrameShift/Windows/AI/BriaModelNoticeForm.cs`
+- `src/FrameShift/Windows/AI/UpscaleImagePickerForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`

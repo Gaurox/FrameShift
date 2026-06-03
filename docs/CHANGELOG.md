@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.12
+
+- **Upscale Image 4x (new AI action).** Added `upscale-image`, a local AI upscaler. Image → image x4, output PNG `_upscaled_4x` next to the source, downloaded on demand. Runs on GPU via DirectML with automatic CPU fallback; tiling is automatic and invisible (512 px tiles with overlap, adaptive 512→256→128 on out-of-memory). New module under `Core/AI/Upscale/`, optional installer component `ai\upscale_image`, Explorer entry `FrameShift AI → Upscale Image 4x`.
+  - **Model picker.** A single Explorer entry opens a compact model picker (one exclusive choice per catalog model); `--upscale-model <id>` skips the picker for headless use. Three models, all hosted on `Gaurox/frameshift-models/upscale-onnx/` with pinned SHA256 (verified on download) and bundled README + license texts:
+    - **Real-ESRGAN x4plus** (default) — general photos/screenshots/AI images. BSD-3-Clause.
+    - **Real-ESRGAN Anime 6B** — anime / illustration / line art. BSD-3-Clause.
+    - **Swin2SR (Quality)** — restoration / anti-JPEG, highest fidelity, slower (transformer). Apache-2.0.
+  - Auto-download is hard-blocked if a model's checksum is ever left as a placeholder. No third-party mirror URL is hardcoded. Swin2SR needs input multiple-of-8; the engine pads each tile and crops the result automatically.
+
 ## 1.0.11
 
 - **Remove Background — model catalog.** The action now offers several selectable models, each with its own `--rmbg-model` value and Explorer context-menu entry. Free models are downloaded on demand; the BRIA modes are user-supplied:

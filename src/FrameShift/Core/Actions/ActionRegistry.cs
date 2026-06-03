@@ -4,6 +4,7 @@ using FrameShift.Core.AI.RemoveBackground;
 using FrameShift.Core.AI.RemoveNoise;
 using FrameShift.Core.AI.RemoveObject;
 using FrameShift.Core.AI.SeparateAudio;
+using FrameShift.Core.AI.Upscale;
 using FrameShift.Core.AI.VideoInterpolation;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
@@ -142,6 +143,7 @@ public sealed class ActionRegistry
                 toolLocator),
             new RemoveBackgroundAction(),
             new RemoveObjectAction(),
+            new UpscaleImageAction(),
             new SeparateAudioAction(),
             new RemoveNoiseAction(ffmpegRunner, ffprobeRunner, toolLocator),
             new RemoveNoiseVideoAction(

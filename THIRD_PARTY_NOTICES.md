@@ -187,6 +187,38 @@ These models are not stored in the repository and are downloaded on demand into 
 
 ---
 
+## Upscale Image Models
+
+FrameShift's optional `Upscale Image` feature downloads one of the following models at runtime
+(user choice via the model picker). All are hosted under
+`https://huggingface.co/Gaurox/frameshift-models/resolve/main/upscale-onnx/` with a `README.md` and
+the corresponding license texts; none are bundled in the installer or repository.
+
+### Real-ESRGAN x4plus (general, default)
+
+- Model: `realesrgan_x4plus_fp16.onnx` (~34 MB, FP16 weights with float32 I/O)
+- Upstream project: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
+- License: **BSD-3-Clause** (covers the model weights, not just the code)
+
+### Real-ESRGAN x4plus anime 6B (anime / illustration)
+
+- Model: `realesrgan_x4plus_anime_6b.onnx` (~18 MB, FP32)
+- Exported to ONNX from the official `RealESRGAN_x4plus_anime_6B.pth` weights (RRDBNet, 6 blocks).
+- Upstream project: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
+- License: **BSD-3-Clause**
+
+### Swin2SR real-world x4 (restoration / quality)
+
+- Model: `swin2sr_realworld_x4.onnx` (~54 MB, FP32 transformer)
+- Upstream project: https://github.com/mv-lab/swin2sr — base model
+  https://huggingface.co/caidas/swin2SR-realworld-sr-x4-64-bsrgan-psnr
+- ONNX from https://huggingface.co/onnx-community/swin2SR-realworld-sr-x4-64-bsrgan-psnr-ONNX
+- License: **Apache-2.0**
+
+These models are not stored in the repository and are downloaded on demand into the local user profile.
+
+---
+
 ## Recommendation
 
 If public redistribution requirements change upstream, keep the corresponding license texts and attribution notes in this file or in a dedicated `licenses/` folder.
