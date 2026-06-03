@@ -19,11 +19,17 @@ Official website: https://gaurox.dev/frameshift/
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-Remove backgrounds, remove objects from images, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
+Remove backgrounds, remove objects from images, upscale images, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
 RIFE interpolation is also available as a dedicated local AI workflow for smoother motion on supported video clips.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
+</p>
+
+Upscale images ×4 with a local AI model picked from a simple dropdown: Real-ESRGAN x4plus for general photos, screenshots and AI images, Real-ESRGAN Anime 6B for illustrations and line art, and Swin2SR for restoration-grade quality. It runs on the GPU via DirectML with CPU fallback, tiles large images automatically, and saves the result next to the source.
+
+<p align="center">
+  <img src="screenshots/AI_actions/Upscaler.png" alt="FrameShift upscale image model picker" width="900" />
 </p>
 
 Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
@@ -105,6 +111,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Audio Separation | Split audio into vocals, drums, bass, other, and instrumental with the local AI workflow. | <img src="screenshots/AI_actions/Audio_separation.png" alt="Audio Separation" width="320" /> |
 | Interpolate Video (RIFE) | Generate smoother motion with the local RIFE workflow, model preflight, and adjacent unique outputs. | <img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate Video RIFE" width="320" /> |
 | Remove Object (Image) | Paint a mask over any object and let the local inpainting AI reconstruct the background. Two models available: LaMa FP32 (Quality) and LaMa 2025 (Fast). | <img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" width="320" /> |
+| Upscale Image | Enlarge an image ×4 with a local AI model, chosen from a dropdown picker: **Real-ESRGAN x4plus** (general, default), **Real-ESRGAN Anime 6B** (anime / illustration), and **Swin2SR** (restoration / quality). Runs on GPU via DirectML with CPU fallback, automatic invisible tiling for large images, and the result saved as a new PNG next to the source. Models are downloaded on demand and integrity-checked. | <img src="screenshots/AI_actions/Upscaler.png" alt="Upscale Image" width="320" /> |
 
 ## Built For
 
