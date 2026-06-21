@@ -1,5 +1,10 @@
 # FrameShift Product Guide
 
+Version active : **1.14.0**.
+
+Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
+correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).
+
 ## Positioning
 
 FrameShift est un utilitaire Windows de traitement multimédia local.
@@ -34,6 +39,7 @@ Actions vidéo :
 - `change-video-speed`
 - `interpolate-video`
 - `interpolate-video-rife`
+- `upscale-video`
 - `remove-noise-video`
 - `media-info`
 
@@ -69,6 +75,7 @@ Actions IA locales :
 - `interpolate-video-rife`
 - `remove-object`
 - `upscale-image`
+- `upscale-video`
 
 Règles communes des actions IA :
 - téléchargement du modèle seulement au moment utile ;
@@ -80,13 +87,15 @@ Règles communes des actions IA :
 
 ## Modes d’usage réels
 
-Batch avec options partagées :
+Batch / progression commune :
 - `convert-video`
 - `convert-audio`
 - `convert-image`
 - `extract-audio`
 - `extract-frames`
 - `remove-background`
+- `upscale-image`
+- `upscale-video`
 
 Mono-fichier interactif :
 - `cut-audio`
@@ -138,7 +147,8 @@ En pratique :
 - `separate-audio` suit le même modèle avec fallback picker si `--stems` ou `--separate-engine` ne sont pas fournis ;
 - `interpolate-video-rife` suit un flux UI-first avec picker de modèle/multiplicateur/vitesse puis préflight du modèle avant traitement ;
 - `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible avec deux modèles disponibles : **LaMa FP32 (Quality)** (~208 MB) et **LaMa 2025 (Fast)** (~93 MB, opencv/inpainting_lama Jan 2025) ;
-- `upscale-image` agrandit une image **x4** ; une seule entrée Explorer ouvre un **picker de modèle** (choix exclusif, style FrameShift), `--upscale-model <id>` court-circuite le picker en headless. Trois modèles hébergés sur `Gaurox/frameshift-models/upscale-onnx/` (SHA256 vérifié, README + licences inclus) : **Real-ESRGAN x4plus** (général, défaut, BSD-3-Clause), **Real-ESRGAN Anime 6B** (anime/illustration, BSD-3-Clause), **Swin2SR (Quality)** (restauration, Apache-2.0, transformer plus lent). le picker propose aussi le facteur **x2 / x3 / x4** et une **taille cible** (largeur/hauteur liées, aspect verrouillé) ; le modèle tourne toujours en x4 natif puis la sortie est rééchantillonnée (Lanczos) vers le facteur/taille demandé (clampé à ≤ x4), nommage `_upscaled_2x`/`_3x`/`_4x`/`_<W>x<H>`, flags headless `--upscale-scale` et `--upscale-target`. Progression commune, DirectML avec fallback CPU, tiling automatique et invisible (tuile 512, overlap, réduction adaptative en OOM, padding multiple-de-8 + crop pour Swin2SR), sortie PNG adjacente à la source ;
+- `upscale-image` agrandit une image **x4** ; une seule entrée Explorer ouvre un **picker de modèle** (choix exclusif, style FrameShift), `--upscale-model <id>` court-circuite le picker en headless. Trois modèles hébergés dans le dossier dédié `Gaurox/frameshift-models/upscale-image-onnx/` (SHA256 vérifié, README et licences BSD-3/Apache-2.0 propres au dossier) : **Real-ESRGAN x4plus** (général, défaut), **Real-ESRGAN Anime 6B** et **Swin2SR (Quality)**. Le picker propose x2/x3/x4 et une taille cible ; passe x4 native puis Lanczos, nommage unique, DirectML → CPU et tuilage adaptatif restent inchangés ;
+- `upscale-video` partage le moteur et le downloader, mais utilise exclusivement `Gaurox/frameshift-models/upscale-video-onnx/` et son dossier local homonyme. Le picker propose **Real-ESRGAN General v3** (défaut), **AnimeVideo v3** et l'entrée distincte **x4plus Quality** (`realesrgan-x4plus-video`), en x2/x3/x4 ou taille cible. FFmpeg extrait les frames BMP puis les réencode au FPS source avec audio conservé ; DirectML retombe sur CPU, NVENC sur libx264, et un audio incompatible est transcodé. Les modèles valides de l'ancien dossier local `upscale-onnx` sont copiés automatiquement vers le nouveau dossier pour éviter un nouveau téléchargement. Le traitement image par image peut laisser un léger scintillement temporel sur certaines sources bruitées ;
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies

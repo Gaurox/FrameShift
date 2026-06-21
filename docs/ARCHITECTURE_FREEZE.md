@@ -2,6 +2,13 @@
 
 Décisions techniques stables tant qu’une révision explicite n’est pas validée.
 
+## Versioning
+
+- format : `1.<version fonctionnelle>.<correctif>` ;
+- nouvelle fonctionnalité : dernier nombre remis à `0` ;
+- petit correctif : incrément du dernier nombre ;
+- version active : `1.14.0`.
+
 ## Stack figée
 
 - langage : C#
@@ -113,6 +120,7 @@ Actions avec entrée CLI mais couverture headless partielle selon les options fo
 - `change-video-speed`
 - `interpolate-video`
 - `interpolate-video-rife`
+- `upscale-video`
 - `remove-noise`
 - `remove-noise-video`
 - `remove-background` s’appuie sur la progression commune, avec file visible, annulation propre et préflight du modèle si nécessaire.
@@ -140,6 +148,7 @@ Modules IA actifs :
 - `interpolate-video-rife`
 - `remove-object`
 - `upscale-image`
+- `upscale-video`
 
 Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
@@ -149,6 +158,8 @@ Règles stables :
 - dans l’état figé de `1.0.11`, les deux modèles `high-resolution` tournent volontairement en **CPU only** ; seul `fast` reste en `DirectML` avec fallback CPU ;
 - la file batch WinForms doit accepter les relances tardives d’une action déjà ouverte comme des requêtes indépendantes, même quand plusieurs invocations ciblent exactement le même chemin source ;
 - `upscale-image` (Upscale Image 4x) : mini-catalogue de 3 modèles (Real-ESRGAN x4plus défaut / Real-ESRGAN Anime 6B / Swin2SR Quality) choisis via un picker UI-first (`UpscaleImagePickerForm`), `--upscale-model <id>` en headless ; `DirectML` avec fallback CPU, tiling automatique (tuile 512, overlap, réduction adaptative 512→256→128 en OOM) ; le moteur gère par-modèle les noms de tenseurs et la contrainte multiple-de-fenêtre (Swin2SR = pad multiple de 8 + crop) ; échelle paramétrable x2/x3/x4 + taille cible (aspect verrouillé) via passe x4 native puis rééchantillonnage Lanczos clampé à ≤ x4 ; sortie PNG `_upscaled_<facteur ou WxH>` ; modèles hébergés sur Gaurox/frameshift-models avec SHA256 pinné/vérifié + README/licences ; l'auto-download est bloqué net si un checksum est laissé en placeholder ;
+- les artefacts upscale sont séparés par action : `upscale-image-onnx/` (x4plus, Anime 6B, Swin2SR) et `upscale-video-onnx/` (General v3, AnimeVideo v3, copie x4plus Quality), chacun avec README et licences autonomes sur Hugging Face et dans le stockage local. `ModelLocator` copie les anciens fichiers valides depuis `upscale-onnx/` pour compatibilité ;
+- `upscale-video` partage `UpscaleModelCatalog`, `ModelDownloader`, `UpscaleFrameProcessor` et le tuilage avec `upscale-image`, mais pas son dossier d'artefacts. Le pipeline FFmpeg suit RIFE : extraction BMP, traitement frame par frame avec session ONNX réutilisée, réencodage au FPS source, audio copié puis transcodé si nécessaire, fallback NVENC → CPU, progression, annulation et nettoyage ;
 - intégration Explorer dédiée sous `FrameShift AI` ;
 - barre de titre des fenêtres IA fixée sur l’icône `FrameShift AI` ;
 - icônes de fonction IA dédiées centralisées dans `Assets\Icons\ai` pour les bandeaux internes et les menus Explorer.

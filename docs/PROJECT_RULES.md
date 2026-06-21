@@ -201,6 +201,13 @@ Chaque action migrée doit valider :
 
 Après chaque modification de code, rebuild avant de considérer la tâche terminée.
 
+## Versioning
+
+- format : `1.<version fonctionnelle>.<correctif>` ;
+- une livraison fonctionnelle démarre à `.0` ;
+- les petits correctifs incrémentent le dernier nombre ;
+- synchroniser le `.csproj`, l'ISS et le changelog.
+
 ## Build Discipline
 
 Règle obligatoire pour toute modification faite dans le projet :

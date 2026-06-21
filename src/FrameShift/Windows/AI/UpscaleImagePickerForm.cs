@@ -15,7 +15,7 @@ namespace FrameShift.Windows.AI;
 /// FrameShift styled dropdown for the model, plus a scale row (x2 / x3 / x4 / custom size). The
 /// custom width/height fields keep the source aspect ratio locked (editing one updates the other).
 /// </summary>
-public sealed class UpscaleImagePickerForm : Form
+public class UpscaleImagePickerForm : Form
 {
     private readonly ContextMenuStrip _modelMenu;
     private readonly Label _selectorLabel;
@@ -27,6 +27,7 @@ public sealed class UpscaleImagePickerForm : Form
     private readonly double _ratio;
     private readonly bool _allowCustom;
     private bool _updatingFields;
+    private readonly bool _videoMode;
 
     private readonly RadioButton _scale2;
     private readonly RadioButton _scale3;
@@ -40,10 +41,15 @@ public sealed class UpscaleImagePickerForm : Form
         int sourceWidth,
         int sourceHeight,
         bool allowCustomSize,
-        string? initialModelId = null)
+        string? initialModelId = null,
+        bool videoMode = false)
     {
-        var models = UpscaleModelCatalog.GetAll();
-        var initial = UpscaleModelCatalog.GetById(initialModelId) ?? UpscaleModelCatalog.GetDefault();
+        _videoMode = videoMode;
+        var models = videoMode ? UpscaleModelCatalog.GetVideoModels() : UpscaleModelCatalog.GetImageModels();
+        var requestedInitial = UpscaleModelCatalog.GetById(initialModelId);
+        var initial = requestedInitial is not null && models.Any(model => model.Id == requestedInitial.Id)
+            ? requestedInitial
+            : videoMode ? UpscaleModelCatalog.GetDefaultVideo() : UpscaleModelCatalog.GetDefault();
         _selectedModelId = initial.Id;
 
         _sourceWidth = sourceWidth;
@@ -51,7 +57,9 @@ public sealed class UpscaleImagePickerForm : Form
         _allowCustom = allowCustomSize && sourceWidth > 0 && sourceHeight > 0;
         _ratio = _allowCustom ? (double)sourceWidth / sourceHeight : 1d;
 
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Upscale Image", IconPaths.UpscaleAiIcon, IconPaths.AppIcon);
+        string actionTitle = videoMode ? "Upscale Video" : "Upscale Image";
+        string actionIcon = videoMode ? IconPaths.UpscaleVideoAiIcon : IconPaths.UpscaleImageAiIcon;
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", actionIcon, IconPaths.AppIcon);
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -69,9 +77,9 @@ public sealed class UpscaleImagePickerForm : Form
         ClientSize = new Size(560, buttonsTop + 34 + 12);
 
         Controls.Add(FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift - Upscale Image",
+            $"FrameShift - {actionTitle}",
             $"Source: {sourceLabel}",
-            IconPaths.UpscaleAiIcon,
+            actionIcon,
             IconPaths.FrameShiftAiIcon,
             "AI"));
 
@@ -138,7 +146,7 @@ public sealed class UpscaleImagePickerForm : Form
             AutoEllipsis = true,
             Text = _allowCustom
                 ? $"Aspect locked to the source. Maximum {_sourceWidth * 4} x {_sourceHeight * 4} px (x4)."
-                : "Custom size needs a single image; x2 / x3 / x4 still apply to every selected file."
+                : $"Custom size needs a single {(videoMode ? "video" : "image")}; x2 / x3 / x4 still apply to every selected file."
         };
         scaleSection.Controls.Add(hint);
 
@@ -159,8 +167,11 @@ public sealed class UpscaleImagePickerForm : Form
             Location = new Point(12, 8),
             Size = new Size(512, 30),
             ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "The upscaled image is saved as a new PNG next to the source. " +
-                   "The AI model is downloaded once if it is not already installed."
+            Text = videoMode
+                ? "The upscaled video keeps its frame rate and audio when supported. " +
+                  "The AI model is downloaded once if it is not already installed."
+                : "The upscaled image is saved as a new PNG next to the source. " +
+                  "The AI model is downloaded once if it is not already installed."
         });
 
         var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, buttonsTop), new Size(120, 34), primary: false);
@@ -262,7 +273,8 @@ public sealed class UpscaleImagePickerForm : Form
 
     private void SelectModel(string modelId)
     {
-        var model = UpscaleModelCatalog.GetById(modelId) ?? UpscaleModelCatalog.GetDefault();
+        var model = UpscaleModelCatalog.GetById(modelId) ??
+            (_videoMode ? UpscaleModelCatalog.GetDefaultVideo() : UpscaleModelCatalog.GetDefault());
         _selectedModelId = model.Id;
         _selectorLabel.Text = $"{model.DisplayName}  —  x{model.ScaleFactor}";
         _descriptionLabel.Text = model.Summary;

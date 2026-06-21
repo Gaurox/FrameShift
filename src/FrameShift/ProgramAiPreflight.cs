@@ -214,40 +214,38 @@ internal static partial class Program
 
     private static bool EnsureUpscaleModelReady(
         AppLogger logger,
-        IReadOnlyDictionary<string, string>? options = null)
+        IReadOnlyDictionary<string, string>? options = null,
+        string featureName = "Upscale Image",
+        bool videoMode = false)
     {
-        var model = ResolveUpscaleModel(options, logger);
+        var model = ResolveUpscaleModel(options, logger, videoMode);
 
         var modelPath = Upscale.ModelLocator.GetModelPath(model);
         if (File.Exists(modelPath) &&
             Upscale.ModelDownloader.IsModelFileValid(modelPath, model, logger))
         {
-            logger.Log($"Program: Upscale Image model already present and verified. modelId={model.Id}.");
+            logger.Log($"Program: {featureName} model already present and verified. modelId={model.Id}.");
             return true;
         }
 
         if (File.Exists(modelPath))
         {
-            logger.Log($"Program: Upscale Image model failed verification. Removing invalid file. modelId={model.Id}.");
+            logger.Log($"Program: {featureName} model failed verification. Removing invalid file. modelId={model.Id}.");
             try
             {
                 File.Delete(modelPath);
             }
             catch (Exception ex)
             {
-                logger.Log($"Program: failed to delete invalid Upscale Image model. {ex}");
+                logger.Log($"Program: failed to delete invalid {featureName} model. {ex}");
             }
         }
 
-        // NOTE(release): until realesrgan_x4plus_fp16.onnx is hosted on Gaurox/frameshift-models with a
-        // confirmed SHA256, the DownloadUrl is not live and this download will fail. The model can be
-        // tested by placing the file manually in the model folder (integrity is skipped while the hash
-        // is still the placeholder — see UpscaleModelCatalog).
-        logger.Log($"Program: Upscale Image model missing. Opening DownloadModelForm. modelId={model.Id}.");
+        logger.Log($"Program: {featureName} model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Upscale Image",
-            "Download the AI model to enable image upscaling",
-            IconPaths.UpscaleAiIcon,
+            $"FrameShift AI - {featureName}",
+            $"Download the AI model to enable {(videoMode ? "video" : "image")} upscaling",
+            videoMode ? IconPaths.UpscaleVideoAiIcon : IconPaths.UpscaleImageAiIcon,
             model.DisplayName,
             model.License,
             model.ExpectedSizeBytes,
@@ -264,13 +262,105 @@ internal static partial class Program
         var modelReady = dialogResult == DialogResult.OK &&
             File.Exists(modelPath) &&
             Upscale.ModelDownloader.IsModelFileValid(modelPath, model, logger);
-        logger.Log($"Program: Upscale Image preflight completed. dialogResult={dialogResult}, modelReady={modelReady}, modelId={model.Id}.");
+        logger.Log($"Program: {featureName} preflight completed. dialogResult={dialogResult}, modelReady={modelReady}, modelId={model.Id}.");
         return modelReady;
+    }
+
+    private static bool EnsureUpscaleVideoOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger)
+    {
+        // Supplying the model explicitly is the headless override, matching Upscale Image.
+        if (options.ContainsKey(ActionOptionKeys.UpscaleModel))
+        {
+            options.TryGetValue(ActionOptionKeys.UpscaleModel, out var modelId);
+            var model = Upscale.UpscaleModelCatalog.GetById(modelId);
+            if (model is null || !model.RecommendedForVideo)
+            {
+                ShowCliError($"Unknown or unsupported video upscale model: {modelId}.");
+                return false;
+            }
+
+            return true;
+        }
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        const string supported = ".mp4, .mkv, .avi, .mov, .webm, .m4v";
+        foreach (var inputPath in inputPaths)
+        {
+            var extension = Path.GetExtension(inputPath).ToLowerInvariant();
+            if (extension is not ".mp4" and not ".mkv" and not ".avi" and not ".mov" and not ".webm" and not ".m4v")
+            {
+                ShowCliError(MediaActionMessages.UnsupportedSourceFormat(extension, supported));
+                return false;
+            }
+        }
+
+        try
+        {
+            int sourceWidth = 0;
+            int sourceHeight = 0;
+            bool allowCustom = inputPaths.Count == 1;
+            if (allowCustom)
+            {
+                var locator = new ToolLocator();
+                var runner = new FfprobeRunner(logger);
+                var probeAttempt = runner.TryProbeMediaAsync(
+                        locator.ResolveFfprobePath(),
+                        inputPaths[0],
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                if (probeAttempt.Probe is { HasVideo: true, VideoWidth: > 0, VideoHeight: > 0 } probe)
+                {
+                    sourceWidth = probe.VideoWidth;
+                    sourceHeight = probe.VideoHeight;
+                }
+                else
+                {
+                    allowCustom = false;
+                    logger.Log($"Program: video dimensions unavailable for upscale custom target: {probeAttempt.ErrorMessage}");
+                }
+            }
+
+            using var picker = new UpscaleVideoPickerForm(
+                UpscaleImagePickerForm.BuildSourceLabel(inputPaths),
+                sourceWidth,
+                sourceHeight,
+                allowCustom);
+            if (picker.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(picker.SelectedModelId))
+                return false;
+
+            options[ActionOptionKeys.UpscaleModel] = picker.SelectedModelId!;
+            if (picker.SelectedScale is { } scale)
+            {
+                options[ActionOptionKeys.UpscaleScale] = scale;
+            }
+            else if (picker.CustomTarget is { } target)
+            {
+                options[ActionOptionKeys.UpscaleTargetWidth] = target.Width.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                options[ActionOptionKeys.UpscaleTargetHeight] = target.Height.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            logger.Log($"Program: Upscale Video selected via picker. modelId={picker.SelectedModelId}, scale={picker.SelectedScale ?? "custom"}.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Upscale Video")));
+            return false;
+        }
     }
 
     private static Upscale.UpscaleModelDefinition ResolveUpscaleModel(
         IReadOnlyDictionary<string, string>? options,
-        AppLogger logger)
+        AppLogger logger,
+        bool videoMode = false)
     {
         string? modelId = null;
         if (options is not null &&
@@ -281,12 +371,14 @@ internal static partial class Program
         }
 
         var model = Upscale.UpscaleModelCatalog.GetById(modelId) ??
-            Upscale.UpscaleModelCatalog.GetDefault();
+            (videoMode
+                ? Upscale.UpscaleModelCatalog.GetDefaultVideo()
+                : Upscale.UpscaleModelCatalog.GetDefault());
 
         if (!string.IsNullOrWhiteSpace(modelId) &&
             !string.Equals(model.Id, modelId, StringComparison.OrdinalIgnoreCase))
         {
-            logger.Log($"Program: Upscale Image model option not found. requested={modelId}, fallback={model.Id}.");
+            logger.Log($"Program: upscale model option not found. requested={modelId}, fallback={model.Id}.");
         }
 
         return model;

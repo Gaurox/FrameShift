@@ -5,6 +5,11 @@ The `screenshots/` folder in this repository is the single source of truth for F
 - this repository README
 - the public page at `https://gaurox.dev/frameshift/`
 
+Upscale Video assets:
+
+- `screenshots/Gif_demos/demo_upscale_video.gif` — README/web demonstration;
+- `screenshots/Video_demos/demo_upscale_video.mp4` — source video demonstration.
+
 Do not maintain a separate edited screenshot set inside the website repo.
 
 ## Sync target

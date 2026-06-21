@@ -144,6 +144,10 @@ public sealed class ActionRegistry
             new RemoveBackgroundAction(),
             new RemoveObjectAction(),
             new UpscaleImageAction(),
+            new UpscaleVideoAction(
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
             new SeparateAudioAction(),
             new RemoveNoiseAction(ffmpegRunner, ffprobeRunner, toolLocator),
             new RemoveNoiseVideoAction(

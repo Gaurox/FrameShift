@@ -10,8 +10,10 @@ Documentation centrale du projet FrameShift.
 - [BiRefNet High Resolution Decision Note](BIREFNET_HIGH_RESOLUTION_DECISION.md)
 - [Migration Plan](MIGRATION_PLAN.md)
 - [Changelog](CHANGELOG.md)
+- [Release Checklist and Versioning](RELEASE_CHECKLIST.md)
 - [Code File Index](CODE_FILE_INDEX.md)
 - [RIFE Interpolation Notes](RIFE_INTERPOLATION_NOTES.md)
+- [Upscale Video Implementation](UPSCALE_VIDEO_PLAN.md)
 
 ## Scope
 

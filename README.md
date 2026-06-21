@@ -1,25 +1,52 @@
 # FrameShift
 
-Official website: https://gaurox.dev/frameshift/
-
 <p align="center">
-  Windows-first offline media processing built for fast right-click workflows.
+  <strong>Free, open-source FFmpeg GUI for Windows — local media utility with Explorer right-click integration and local AI.</strong>
 </p>
 
 <p align="center">
-  FFmpeg and FFprobe powered. Local only. Lightweight WinForms UI. Clean output handling.
+  <a href="https://gaurox.dev/frameshift/"><img src="https://img.shields.io/badge/Website-gaurox.dev-4D79B4?style=flat-square" alt="Website" /></a>
+  <a href="https://github.com/gaurox/FrameShift/releases"><img src="https://img.shields.io/github/v/release/gaurox/FrameShift?style=flat-square&label=Latest%20release&color=4D79B4" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL%20v3-blue?style=flat-square" alt="License: GPL v3" /></a>
+  <img src="https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D4?style=flat-square&logo=windows" alt="Platform: Windows 10/11" />
+  <img src="https://img.shields.io/badge/.NET-8%20LTS-512BD4?style=flat-square&logo=dotnet" alt=".NET 8 LTS" />
 </p>
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="FrameShift context menu workflow demo" width="900" />
 </p>
 
+---
+
+## Table of Contents
+
+- [Download](#download)
+- [Overview](#overview)
+- [Why FrameShift](#why-frameshift)
+- [Quick Workflow](#quick-workflow)
+- [Actions](#actions)
+- [Technology](#technology)
+- [Documentation](#documentation)
+
+---
+
+## Download
+
+**[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
+
+Current version: **1.14.0** · Windows 10 / 11 · self-contained · no extra install required.
+
+Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
+the final number (`1.14.1`, `1.14.2`, etc.).
+
+---
+
 ## Overview
 
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-Remove backgrounds, remove objects from images, upscale images, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
+Remove backgrounds, remove objects from images, upscale images and videos, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
 RIFE interpolation is also available as a dedicated local AI workflow for smoother motion on supported video clips.
 
 <p align="center">
@@ -30,6 +57,14 @@ Upscale images with a local AI model picked from a simple dropdown: Real-ESRGAN 
 
 <p align="center">
   <img src="screenshots/AI_actions/Upscaler.png" alt="FrameShift upscale image model picker" width="900" />
+</p>
+
+Upscale videos locally with Real-ESRGAN General v3, AnimeVideo v3, or x4plus Quality. FrameShift keeps
+the source frame rate and audio, supports ×2 / ×3 / ×4 and custom sizes, and uses DirectML with CPU
+and encoder fallbacks. Image and video upscale models remain isolated in their own verified folders.
+
+<p align="center">
+  <img src="screenshots/Gif_demos/demo_upscale_video.gif" alt="FrameShift Upscale Video original and x4 comparison" width="900" />
 </p>
 
 Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
@@ -112,6 +147,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Interpolate Video (RIFE) | Generate smoother motion with the local RIFE workflow, model preflight, and adjacent unique outputs. | <img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate Video RIFE" width="320" /> |
 | Remove Object (Image) | Paint a mask over any object and let the local inpainting AI reconstruct the background. Two models available: LaMa FP32 (Quality) and LaMa 2025 (Fast). | <img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" width="320" /> |
 | Upscale Image | Enlarge an image with a local AI model, chosen from a dropdown picker: **Real-ESRGAN x4plus** (general, default), **Real-ESRGAN Anime 6B** (anime / illustration), and **Swin2SR** (restoration / quality). Pick **×2 / ×3 / ×4** or a **custom target size** (aspect-locked width/height). Runs on GPU via DirectML with CPU fallback, automatic invisible tiling for large images, and the result saved as a new PNG next to the source. Models are downloaded on demand and integrity-checked. | <img src="screenshots/AI_actions/Upscaler.png" alt="Upscale Image" width="320" /> |
+| Upscale Video | Enlarge a video **×2 / ×3 / ×4** (or to an aspect-locked target size) with **Real-ESRGAN General v3**, **AnimeVideo v3**, or x4plus Quality. Uses DirectML with CPU fallback and shared adaptive tiling; preserves FPS and audio, with safe encoding fallbacks, batch progress, cancellation, and adjacent unique output. Image and video models use separate hosted/local folders, each with dedicated documentation and licences; downloads are SHA256-verified. | <img src="screenshots/Gif_demos/demo_upscale_video.gif" alt="Upscale Video original and x4 comparison" width="320" /> |
 
 ## Built For
 
@@ -147,8 +183,36 @@ tests/
 - [Architecture Freeze](docs/ARCHITECTURE_FREEZE.md)
 - [Migration Plan](docs/MIGRATION_PLAN.md)
 - [Changelog](docs/CHANGELOG.md)
+- [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)
 - [Code File Index](docs/CODE_FILE_INDEX.md)
 - [RIFE Interpolation Notes](docs/RIFE_INTERPOLATION_NOTES.md)
+- [Upscale Video Implementation](docs/UPSCALE_VIDEO_PLAN.md)
+- [Third-Party Model Licences](THIRD_PARTY_NOTICES.md)
+
+## FAQ
+
+**Is FrameShift free?**  
+Yes. Completely free, no subscription, no trial period.
+
+**Is it open source?**  
+Yes. GNU GPL v3.0. Source code is available in this repository.
+
+**Does it send my files anywhere?**  
+No. All processing happens locally on your machine. No upload, no cloud, no telemetry.
+
+**Does it require FFmpeg to be installed separately?**  
+No. FFmpeg and FFprobe are bundled — nothing to install manually.
+
+**Does it work without an internet connection?**  
+Yes. FrameShift is fully offline. An internet connection is only used the first time you download an optional AI model.
+
+**What Windows versions are supported?**  
+Windows 10 and Windows 11 (x64).
+
+**Is it a replacement for HandBrake or Shutter Encoder?**  
+It is an alternative for quick, everyday media tasks from the Windows right-click menu. HandBrake and Shutter Encoder are more complete converters; FrameShift is faster to reach (no app to open) and adds local AI features like background removal, upscaling, stem separation and denoising.
+
+---
 
 ## Notes
 
@@ -161,3 +225,9 @@ tests/
 ```powershell
 .\build_installer.ps1
 ```
+
+---
+
+## Related / Keywords
+
+FFmpeg GUI · FFmpeg frontend · FFmpeg interface · free video converter Windows · batch media converter · Windows right-click media tools · HandBrake alternative · Shutter Encoder alternative · Format Factory alternative · local AI media tools · remove background offline Windows · RIFE GUI · RIFE interpolation Windows · Demucs GUI · audio stem splitter free · DeepFilterNet GUI · noise removal audio Windows · image upscaler Windows · Real-ESRGAN GUI · LaMa inpainting Windows · offline AI tools Windows · privacy-friendly media converter

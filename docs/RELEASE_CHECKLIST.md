@@ -2,6 +2,14 @@
 
 Use this checklist before pushing a release-oriented update or publishing a new installer.
 
+## Version Numbering
+
+FrameShift uses `1.<feature release>.<patch>` starting with `1.14.0`:
+
+- increment the middle number for a feature release, resetting the final number to `0`;
+- increment only the final number for small fixes and hotfixes (`1.14.1`, `1.14.2`, etc.);
+- keep `<Version>` in `src/FrameShift/FrameShift.csproj`, `installer/FrameShift.iss`, and the changelog synchronized.
+
 ## Scope Check
 
 - Confirm the change belongs to the active FrameShift project tree.

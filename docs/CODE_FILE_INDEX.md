@@ -177,8 +177,12 @@ Media Info :
 - `src/FrameShift/Core/AI/Upscale/ModelDownloader.cs`
 - `src/FrameShift/Core/AI/Upscale/IUpscaleEngine.cs`
 - `src/FrameShift/Core/AI/Upscale/UpscaleTiler.cs`
+- `src/FrameShift/Core/AI/Upscale/UpscaleFrameProcessor.cs`
 - `src/FrameShift/Core/AI/Upscale/UpscaleEngine.cs`
 - `src/FrameShift/Core/AI/Upscale/UpscaleImageAction.cs`
+- `src/FrameShift/Core/AI/VideoUpscale/VideoUpscaleEngine.cs`
+- `src/FrameShift/Core/Actions/UpscaleVideoAction.cs`
+- `src/FrameShift/Core/Actions/UpscaleVideoSettings.cs`
 
 Helpers core utiles :
 - `src/FrameShift/Core/Helpers/ImageAutoCropDetector.cs`
@@ -198,6 +202,7 @@ IA :
 - `src/FrameShift/Windows/AI/RemoveObjectEditorForm.cs`
 - `src/FrameShift/Windows/AI/BriaModelNoticeForm.cs`
 - `src/FrameShift/Windows/AI/UpscaleImagePickerForm.cs`
+- `src/FrameShift/Windows/AI/UpscaleVideoPickerForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
@@ -258,6 +263,7 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/ImageAutoCropDetectorTests.cs`
 - `tests/FrameShift.Tests/OutputPathHelperTests.cs`
 - `tests/FrameShift.Tests/RifeInterpolateVideoSettingsTests.cs`
+- `tests/FrameShift.Tests/UpscaleVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 
@@ -282,10 +288,12 @@ Assets de test utiles :
 - Le catalogue `RemoveBackground` inclut aussi deux modèles **fournis par l'utilisateur** BRIA RMBG-2.0 (`bria-balanced`, `bria-high-quality`) marqués `ManualOnly` : aucun téléchargement/redistribution par FrameShift. Le préflight (`ProgramAiPreflight.EnsureBriaManualModelReady`) vérifie la présence + le SHA256 officiel et affiche `BriaModelNoticeForm` (Open BRIA page / Open folder / Re-check / Cancel, + Use anyway sur mismatch ; dialog adaptatif piloté par un délégué `Func<BriaModelStatus>`, Re-check revalide en place et enchaîne sur l'action) au lieu d'ouvrir `DownloadModelForm`.
 - `ConversionBatchSession.cs` et `ProgressForm.cs` gèrent désormais une identité de queue distincte par invocation batch, ce qui permet d’empiler plusieurs relances du même fichier dans la fenêtre ouverte sans perte silencieuse.
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
+- Les assets upscale dédiés sont `Assets\Icons\ai\upscale_image.(ico|png)` et `upscale_video.(ico|png)` ; les démonstrations vidéo sont dans `screenshots\Gif_demos\demo_upscale_video.gif` et `screenshots\Video_demos\demo_upscale_video.mp4`.
 - `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
 - `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle.
 - `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.
 - `OnnxProviderHelper.cs` centralise la création de session ONNX (DML → CPU), la détection d'échec DML à l'inférence et les messages utilisateur propres (sans chemins internes ONNX Runtime).
+- `Upscale/ModelLocator.cs` sépare le stockage `upscale-image-onnx` / `upscale-video-onnx` et copie à la demande les anciens modèles valides depuis `upscale-onnx`.
 - `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.
 - La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.

@@ -18,4 +18,7 @@ internal sealed record UpscaleModelDefinition(
     // The engine pads each tile to that multiple (edge-replicated) and crops the result back.
     int WindowMultiple = 0,
     // Short one-line description shown in the model picker.
-    string Summary = "");
+    string Summary = "",
+    bool RecommendedForImage = true,
+    bool RecommendedForVideo = false,
+    string? LegacyFolder = null);

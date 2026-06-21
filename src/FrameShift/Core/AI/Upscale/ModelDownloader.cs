@@ -16,9 +16,7 @@ internal static class ModelDownloader
         IProgress<AiModelDownloadProgress> progress,
         CancellationToken cancellationToken)
     {
-        // Hard guard: refuse any network download while the SHA256 is still the placeholder. Integrity
-        // cannot be verified, so a silent download is not allowed. A model already present locally is
-        // still usable (see IsModelFileValid) — only the auto-download path is blocked here.
+        // Hard guard: refuse any network download while the SHA256 is still the placeholder.
         if (UpscaleModelCatalog.IsSha256Placeholder(def.ExpectedSha256))
         {
             AppLogger.LogStatic(
@@ -26,7 +24,7 @@ internal static class ModelDownloader
             throw new InvalidOperationException(
                 "This AI model is not finalized yet: its integrity checksum (SHA256) is missing, so the " +
                 "download cannot be verified and has been blocked. The model still needs to be uploaded to " +
-                "the FrameShift model host. To test now, place the model file manually in the model folder.");
+                "the FrameShift model host.");
         }
 
         await AiModelFileDownloader.DownloadAsync(
@@ -42,15 +40,12 @@ internal static class ModelDownloader
     {
         if (!File.Exists(modelPath)) return false;
 
-        // Pre-release: while the SHA256 is still the placeholder (model not yet hosted on Gaurox),
-        // we cannot verify integrity. Accept a present file so local testing works, but log loudly.
-        // This path MUST NOT survive into a release build with the real hash in place.
         if (UpscaleModelCatalog.IsSha256Placeholder(def.ExpectedSha256))
         {
-            var message = $"{LogPrefix}: SHA256 is a PLACEHOLDER — integrity NOT verified (pre-release). modelId={def.Id}.";
+            var message = $"{LogPrefix}: SHA256 is a PLACEHOLDER — model validation rejected. modelId={def.Id}.";
             if (logger is not null) logger.Log(message);
             else AppLogger.LogStatic(message);
-            return true;
+            return false;
         }
 
         return AiModelFileDownloader.VerifySha256File(modelPath, def.ExpectedSha256, logger, LogPrefix);

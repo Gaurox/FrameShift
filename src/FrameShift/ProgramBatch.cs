@@ -17,7 +17,7 @@ internal static partial class Program
     // Single authoritative lists — all action-ID dispatch reads from here.
     private static readonly HashSet<string> s_aiBatchActions = new(StringComparer.OrdinalIgnoreCase)
     {
-        "remove-background", "separate-audio", "remove-noise", "remove-noise-video", "upscale-image"
+        "remove-background", "separate-audio", "remove-noise", "remove-noise-video", "upscale-image", "upscale-video"
     };
 
     private static readonly HashSet<string> s_conversionBatchActions = new(StringComparer.OrdinalIgnoreCase)
@@ -165,6 +165,12 @@ internal static partial class Program
         {
             return EnsureUpscaleOptions(inputPaths, effectiveOptions, logger)
                 && EnsureUpscaleModelReady(logger, effectiveOptions);
+        }
+
+        if (actionId.Equals("upscale-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return EnsureUpscaleVideoOptions(inputPaths, effectiveOptions, logger)
+                && EnsureUpscaleModelReady(logger, effectiveOptions, "Upscale Video", videoMode: true);
         }
 
         if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
@@ -495,6 +501,11 @@ internal static partial class Program
         if (actionId.Equals("upscale-image", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateUpscaleImageDefinition();
+        }
+
+        if (actionId.Equals("upscale-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateUpscaleVideoDefinition();
         }
 
         return null;

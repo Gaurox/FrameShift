@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.14.0
+
+Released 2026-06-21.
+
+- **Version numbering change.** FrameShift now uses `1.<feature release>.<patch>`. Feature releases increment the middle number and start at patch `0`; small corrections then increment the final number (`1.14.1`, `1.14.2`, etc.). The previous public version was `1.0.13`.
+
+- **Upscale Video (new AI action).** Added `upscale-video` with a DPI-aware model/scale picker, common batch progress, Explorer integration and installer component. Video frames use the FFmpeg runner and the same tiled ONNX core as Upscale Image; output preserves FPS and audio with NVENC → CPU and compatible-audio fallbacks. Cancellation removes partial output and temporary frames.
+- Added video-tuned **Real-ESRGAN General v3** (default) and **Real-ESRGAN AnimeVideo v3** ONNX models to `Gaurox/frameshift-models/upscale-video-onnx/`. Both were exported from official weights, validated on CPU and DirectML, and pinned with real SHA256 checksums.
+- Split hosted and local upscale artifacts by action: `upscale-image-onnx/` contains the three image models with its own README and Real-ESRGAN/Swin2SR licences; `upscale-video-onnx/` contains General v3, AnimeVideo v3 and a dedicated x4plus quality copy with its own README and BSD-3-Clause licence. Current builds use only these paths; the former `upscale-onnx/` URLs remain as legacy download compatibility for released versions, and valid local files are copied automatically into the new folders.
+- Refactored per-frame image upscale work into `UpscaleFrameProcessor`; `upscale-image` retains its original three-model picker, x4plus default, naming and x2/x3/x4/custom behavior.
+- Added distinct Upscale Image and Upscale Video icon assets for WinForms chrome and Explorer menus, plus the Upscale Video GIF/MP4 demonstration media used by the README.
+
 ## 1.0.13
 
 - **Upscale Image — scale options.** The model picker now offers **x2 / x3 / x4** plus a **Custom size** mode with linked width/height fields (aspect locked to the source — editing one updates the other). Internally the model always runs at its native x4, then the result is resampled down (Lanczos) to the requested factor or size, so x2/x3 keep AI-grade detail. Everything is clamped to the model's reach (x1 … x4); a custom size larger than x4 is reduced to fit. Output naming reflects the choice (`_upscaled_2x`, `_upscaled_3x`, `_upscaled_4x`, or `_upscaled_<W>x<H>`). Headless flags: `--upscale-scale 2|3|4` and `--upscale-target <W>x<H>`. Custom size requires a single image; the presets apply to every selected file.
@@ -7,7 +19,7 @@
 ## 1.0.12
 
 - **Upscale Image 4x (new AI action).** Added `upscale-image`, a local AI upscaler. Image → image x4, output PNG `_upscaled_4x` next to the source, downloaded on demand. Runs on GPU via DirectML with automatic CPU fallback; tiling is automatic and invisible (512 px tiles with overlap, adaptive 512→256→128 on out-of-memory). New module under `Core/AI/Upscale/`, optional installer component `ai\upscale_image`, Explorer entry `FrameShift AI → Upscale Image 4x`.
-  - **Model picker.** A single Explorer entry opens a compact model picker (one exclusive choice per catalog model); `--upscale-model <id>` skips the picker for headless use. Three models, all hosted on `Gaurox/frameshift-models/upscale-onnx/` with pinned SHA256 (verified on download) and bundled README + license texts:
+  - **Model picker.** A single Explorer entry opens a compact model picker (one exclusive choice per catalog model); `--upscale-model <id>` skips the picker for headless use. Three models, now hosted on `Gaurox/frameshift-models/upscale-image-onnx/` with pinned SHA256 (verified on download) and dedicated README + license texts:
     - **Real-ESRGAN x4plus** (default) — general photos/screenshots/AI images. BSD-3-Clause.
     - **Real-ESRGAN Anime 6B** — anime / illustration / line art. BSD-3-Clause.
     - **Swin2SR (Quality)** — restoration / anti-JPEG, highest fidelity, slower (transformer). Apache-2.0.

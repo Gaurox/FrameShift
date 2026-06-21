@@ -187,16 +187,32 @@ These models are not stored in the repository and are downloaded on demand into 
 
 ---
 
-## Upscale Image Models
+## Upscale Image and Video Models
 
-FrameShift's optional `Upscale Image` feature downloads one of the following models at runtime
-(user choice via the model picker). All are hosted under
-`https://huggingface.co/Gaurox/frameshift-models/resolve/main/upscale-onnx/` with a `README.md` and
-the corresponding license texts; none are bundled in the installer or repository.
+FrameShift's optional `Upscale Image` and `Upscale Video` features download models at runtime. Image
+models are hosted under `upscale-image-onnx/`; video models are hosted separately under
+`upscale-video-onnx/`. Each directory contains its own README, checksums, provenance and applicable
+license texts. The former `upscale-onnx/` folder is retained only for old-release URL compatibility;
+current FrameShift builds do not reference it. No model is bundled in the installer or source repository.
 
-### Real-ESRGAN x4plus (general, default)
+### Real-ESRGAN General v3 (video default)
+
+- Model: `realesr_general_x4v3.onnx` (4,867,430 bytes, FP32)
+- Exported from the official `realesr-general-x4v3.pth` weights (SRVGGNetCompact, 32 convolution blocks).
+- SHA256: `DBB0561758E0727C76B7BF6B539A988D3B3050D51F01DCF60C842DE6E6ADD349`
+- Upstream: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
+
+### Real-ESRGAN AnimeVideo v3
+
+- Model: `realesr_animevideov3.onnx` (2,493,430 bytes, FP32)
+- Exported from the official `realesr-animevideov3.pth` weights (SRVGGNetCompact, 16 convolution blocks).
+- SHA256: `6CB9454787F6B0948CB1C25BE0C7DA797AD83EC2696FC005CA4C967217B9CD77`
+- Upstream: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
+
+### Real-ESRGAN x4plus (image default; video quality option)
 
 - Model: `realesrgan_x4plus_fp16.onnx` (~34 MB, FP16 weights with float32 I/O)
+- Hosted as byte-identical copies in both action-specific folders; each copy has the same pinned SHA256.
 - Upstream project: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
 - License: **BSD-3-Clause** (covers the model weights, not just the code)
 

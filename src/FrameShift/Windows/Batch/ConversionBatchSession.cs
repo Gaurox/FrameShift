@@ -328,6 +328,29 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Upscale");
 
+    public static BatchDefinition CreateUpscaleVideoDefinition() => new(
+        ActionId: "upscale-video",
+        DisplayName: "Upscale Video",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: ".mp4, .mkv, .avi, .mov, .webm, .m4v",
+        MutexName: @"Local\FrameShift_UpscaleVideoBatch",
+        PipeName: "FrameShift_UpscaleVideoBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: static extension =>
+            extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mkv", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".avi", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".mov", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".webm", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".m4v", StringComparison.OrdinalIgnoreCase),
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Upscale");
+
     public static BatchDefinition CreateSeparateAudioDefinition() => new(
         ActionId: "separate-audio",
         DisplayName: "Audio Separation",
