@@ -122,5 +122,44 @@ public sealed class UpscaleVideoSettingsTests
         Assert.DoesNotContain(
             UpscaleModelCatalog.GetVideoModels(),
             model => model.Id == "realesrgan-x4plus");
+
+        Assert.NotNull(UpscaleModelCatalog.GetById("realesr-animevideov3-x2"));
+        Assert.NotNull(UpscaleModelCatalog.GetById("realesr-animevideov3-x3"));
+    }
+
+    [Theory]
+    [InlineData(2, "realesr-animevideov3-x2")]
+    [InlineData(3, "realesr-animevideov3-x3")]
+    [InlineData(4, "realesr-animevideov3")]
+    public void ResolveVideoExecutionModel_SelectsAnimeVariantForPresetScale(int requestedScale, string expectedModelId)
+    {
+        var selected = UpscaleModelCatalog.GetById("realesr-animevideov3");
+        Assert.NotNull(selected);
+
+        var resolved = UpscaleModelCatalog.ResolveVideoExecutionModel(
+            selected!,
+            new UpscaleRequest(Factor: requestedScale),
+            1280,
+            720);
+
+        Assert.Equal(expectedModelId, resolved.Id);
+    }
+
+    [Theory]
+    [InlineData(1920, 1080, "realesr-animevideov3-x2")]
+    [InlineData(3200, 1800, "realesr-animevideov3-x3")]
+    [InlineData(3840, 2160, "realesr-animevideov3-x3")]
+    public void ResolveVideoExecutionModel_SelectsAnimeVariantForCustomTarget(int targetWidth, int targetHeight, string expectedModelId)
+    {
+        var selected = UpscaleModelCatalog.GetById("realesr-animevideov3");
+        Assert.NotNull(selected);
+
+        var resolved = UpscaleModelCatalog.ResolveVideoExecutionModel(
+            selected!,
+            new UpscaleRequest(TargetWidth: targetWidth, TargetHeight: targetHeight),
+            1280,
+            720);
+
+        Assert.Equal(expectedModelId, resolved.Id);
     }
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.15.0
+
+Released 2026-06-21.
+
+- **Create Subtitle File (new AI actions).** Added `create-subtitles-audio` and `create-subtitles-video`, both visible separately in the installer and under Explorer with the label **Create Subtitle File**, but backed by one shared subtitle pipeline. Audio and video now converge to the same mono 16 kHz Whisper input; video adds only a discreet FFmpeg audio-extraction step before the common path. Output is an adjacent unique `.srt` with no overwrite.
+- **Three Whisper models with DirectML GPU acceleration.** The subtitle pipeline ships with three selectable models through sherpa-onnx: **Whisper Base — Fast** (~280 MB), **Whisper Small — Recommended** (~925 MB, default), and **Whisper Large-v3 Turbo — Quality** (~3.1 GB). Each model is downloaded on demand, SHA256-pinned, and verified before use. The Turbo encoder uses ONNX external data format (graph file + separate weights file). The worker runs on GPU via DirectML with automatic CPU fallback (both init-level and inference-level); four native DML DLLs (sherpa-onnx 1.13.3 DML build, ORT 1.24.4 DirectML, DirectML 1.15.4) are bundled and SHA256-documented. A three-model radio picker (`CreateSubtitlesPickerForm`) lets the user choose before each run; headless selection via `--subtitles-model <id>`.
+- **Worker isolation for Whisper.** Because FrameShift already ships a different ONNX Runtime stack for its existing AI features, Whisper inference now runs in a dedicated `FrameShift.SubtitlesWorker` process. This avoids native `onnxruntime.dll` collisions without changing the global ONNX runtime used by the rest of the app.
+- **Long-media handling and cancellation.** Subtitle transcription now processes long media through overlapping windows under 30 seconds, merges duplicated boundary words, rebuilds readable SRT cues, and supports cancellation between windows with cleanup of temporary files and partial outputs.
+- **Upscale Video optimization.** `upscale-video` now prefers an in-memory FFmpeg `rawvideo` pipeline instead of mandatory BMP frame extraction, while keeping the previous BMP pipeline as an automatic fallback. `UpscaleFrameProcessor` also reuses ONNX inputs and frame buffers to cut per-frame allocations and disk I/O without changing models, output naming, DirectML → CPU fallback, or encoding safety fallbacks.
+- **AnimeVideo x2/x3 routing.** The visible `Real-ESRGAN AnimeVideo v3` option now auto-resolves to dedicated x2/x3 ONNX execution variants for anime requests at x2/x3, instead of always running the x4 graph and resizing back on CPU afterward. The picker, CLI surface and output naming stay unchanged.
+
 ## 1.14.0
 
 Released 2026-06-21.

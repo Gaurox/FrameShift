@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version active : `1.14.0`.
+- version active : `1.15.0`.
 
 ## Stack figée
 
@@ -149,6 +149,8 @@ Modules IA actifs :
 - `remove-object`
 - `upscale-image`
 - `upscale-video`
+- `create-subtitles-audio`
+- `create-subtitles-video`
 
 Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
@@ -159,7 +161,8 @@ Règles stables :
 - la file batch WinForms doit accepter les relances tardives d’une action déjà ouverte comme des requêtes indépendantes, même quand plusieurs invocations ciblent exactement le même chemin source ;
 - `upscale-image` (Upscale Image 4x) : mini-catalogue de 3 modèles (Real-ESRGAN x4plus défaut / Real-ESRGAN Anime 6B / Swin2SR Quality) choisis via un picker UI-first (`UpscaleImagePickerForm`), `--upscale-model <id>` en headless ; `DirectML` avec fallback CPU, tiling automatique (tuile 512, overlap, réduction adaptative 512→256→128 en OOM) ; le moteur gère par-modèle les noms de tenseurs et la contrainte multiple-de-fenêtre (Swin2SR = pad multiple de 8 + crop) ; échelle paramétrable x2/x3/x4 + taille cible (aspect verrouillé) via passe x4 native puis rééchantillonnage Lanczos clampé à ≤ x4 ; sortie PNG `_upscaled_<facteur ou WxH>` ; modèles hébergés sur Gaurox/frameshift-models avec SHA256 pinné/vérifié + README/licences ; l'auto-download est bloqué net si un checksum est laissé en placeholder ;
 - les artefacts upscale sont séparés par action : `upscale-image-onnx/` (x4plus, Anime 6B, Swin2SR) et `upscale-video-onnx/` (General v3, AnimeVideo v3, copie x4plus Quality), chacun avec README et licences autonomes sur Hugging Face et dans le stockage local. `ModelLocator` copie les anciens fichiers valides depuis `upscale-onnx/` pour compatibilité ;
-- `upscale-video` partage `UpscaleModelCatalog`, `ModelDownloader`, `UpscaleFrameProcessor` et le tuilage avec `upscale-image`, mais pas son dossier d'artefacts. Le pipeline FFmpeg suit RIFE : extraction BMP, traitement frame par frame avec session ONNX réutilisée, réencodage au FPS source, audio copié puis transcodé si nécessaire, fallback NVENC → CPU, progression, annulation et nettoyage ;
+- `upscale-video` partage `UpscaleModelCatalog`, `ModelDownloader`, `UpscaleFrameProcessor` et le tuilage avec `upscale-image`, mais pas son dossier d'artefacts. Par défaut, le pipeline FFmpeg suit désormais une voie mémoire `rawvideo` proche de RIFE : décodage direct en mémoire, traitement frame par frame avec session ONNX + buffers réutilisés, puis réencodage au FPS source. L'ancien pipeline extraction BMP → traitement → réencodage reste disponible comme fallback automatique si le mode mémoire échoue ; audio copié puis transcodé si nécessaire, fallback NVENC → CPU, progression, annulation et nettoyage. Pour `realesr-animevideov3`, FrameShift conserve une seule entrée utilisateur mais choisit en interne la variante d'exécution x2 / x3 / x4 selon la demande ;
+- `create-subtitles-audio` / `create-subtitles-video` (libellé utilisateur : **Create Subtitle File**) : CPU only, trois modèles sélectionnables via `CreateSubtitlesPickerForm` (radio buttons) ou `--subtitles-model <id>` : `whisper-base` (~280 MB, 3 artefacts), `whisper-small` (~925 MB, 3 artefacts, **défaut**), `whisper-turbo` (~3,1 GB, 4 artefacts dont `turbo-encoder.weights` en ONNX external data). Catalog dans `CreateSubtitlesModelCatalog`, `Artifacts[0..2]` = chemins sherpa, `Artifacts[3+]` = fichiers extra copiés par le workaround ASCII. Les deux actions restent séparées dans l’installateur et l’Explorer mais partagent strictement le même fenêtrage `< 30 s`, la même fusion, la même segmentation SRT et le même downloader. Inférence Whisper isolée dans `FrameShift.SubtitlesWorker` (worker process CPU dédié) pour éviter la collision native `onnxruntime.dll`.
 - intégration Explorer dédiée sous `FrameShift AI` ;
 - barre de titre des fenêtres IA fixée sur l’icône `FrameShift AI` ;
 - icônes de fonction IA dédiées centralisées dans `Assets\Icons\ai` pour les bandeaux internes et les menus Explorer.

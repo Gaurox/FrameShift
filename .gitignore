@@ -7,6 +7,7 @@ builds/
 
 # Installer artifacts
 installer/*.exe
+installer/*.log
 
 # Local tooling state
 .claude/
@@ -20,6 +21,15 @@ references/
 
 # Large local test media not needed for unit tests
 tests/input/
+
+# Local development scratch folder
+scratch/
+
+# Whisper model caches at project root (local dev copies, models are on HF)
+whisper-*-onnx/
+
+# Raw source video for demo GIF creation
+screenshots/Gif_demos/*.mp4
 
 # OS noise
 Thumbs.db

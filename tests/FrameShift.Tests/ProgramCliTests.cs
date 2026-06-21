@@ -46,6 +46,17 @@ public sealed class ProgramCliTests
     }
 
     [Fact]
+    public void TryParseArguments_WithUpscalePipeline_ParsesOption()
+    {
+        var args = new[] { "--action", "upscale-video", "--upscale-pipeline", "bmp", @"C:\test\video.mp4" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal("bmp", options[ActionOptionKeys.UpscalePipeline]);
+    }
+
+    [Fact]
     public void TryParseArguments_WithStartAndEnd_ParsesTimingOptions()
     {
         var args = new[] { "--action", "cut-audio", "--start", "00:00:05", "--end", "00:00:30", @"C:\test\audio.mp3" };

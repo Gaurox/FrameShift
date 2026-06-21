@@ -209,6 +209,16 @@ current FrameShift builds do not reference it. No model is bundled in the instal
 - SHA256: `6CB9454787F6B0948CB1C25BE0C7DA797AD83EC2696FC005CA4C967217B9CD77`
 - Upstream: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
 
+### Real-ESRGAN AnimeVideo v3 — FrameShift x2/x3 execution variants
+
+- Models: `realesr_animevideov3_x2.onnx` and `realesr_animevideov3_x3.onnx` (2,493,683 bytes each, FP32)
+- Derived from the same official `realesr-animevideov3.pth` ONNX export by appending a final in-graph
+  x0.5 / x0.75 linear resize, so FrameShift can keep one visible AnimeVideo v3 option while avoiding
+  the previous CPU-side downscale step for anime x2/x3 requests.
+- SHA256 x2: `B3C1B93492C7BE8CA2C7B2EEADCA311BF1ADC709C296AA3AD14ABFA7890E4A44`
+- SHA256 x3: `D3268B927AD1AEA8DBE24790CB6044714FFE3CA7D70C3A1D204063CDBA994B92`
+- Upstream: https://github.com/xinntao/Real-ESRGAN — **BSD-3-Clause**, Copyright © 2021 Xintao Wang
+
 ### Real-ESRGAN x4plus (image default; video quality option)
 
 - Model: `realesrgan_x4plus_fp16.onnx` (~34 MB, FP16 weights with float32 I/O)
@@ -230,6 +240,64 @@ current FrameShift builds do not reference it. No model is bundled in the instal
   https://huggingface.co/caidas/swin2SR-realworld-sr-x4-64-bsrgan-psnr
 - ONNX from https://huggingface.co/onnx-community/swin2SR-realworld-sr-x4-64-bsrgan-psnr-ONNX
 - License: **Apache-2.0**
+
+These models are not stored in the repository and are downloaded on demand into the local user profile.
+
+---
+
+---
+
+## Create Subtitle File — sherpa-onnx
+
+FrameShift's optional `Create Subtitle File` feature uses the sherpa-onnx library for local Whisper inference.
+
+### sherpa-onnx NuGet package
+
+- NuGet package: `org.k2fsa.sherpa.onnx` version 1.13.3
+- Source: https://github.com/k2-fsa/sherpa-onnx
+- License: **Apache License 2.0**
+- Copyright: Copyright 2022-2025 Next-gen kaldi authors
+
+### sherpa-onnx-c-api.dll (bundled native DLL, DirectML build)
+
+The worker process bundles a custom build of `sherpa-onnx-c-api.dll` compiled from sherpa-onnx 1.13.3
+source with `-DSHERPA_ONNX_ENABLE_DIRECTML=ON` to enable GPU acceleration on Windows.
+
+- Source: https://github.com/k2-fsa/sherpa-onnx (tag v1.13.3)
+- License: **Apache License 2.0**
+- SHA-256: `BD41BDD1EE47766B11DB2D84174637F6725C8C0894004AF9880176BB93F2B0D8`
+- Full notice: `src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt`
+
+### onnxruntime.dll + onnxruntime_providers_shared.dll (bundled native DLLs, DirectML build)
+
+The worker process bundles the ORT 1.24.4 DirectML binaries directly (rather than via the NuGet
+package already used by the main app) to keep the two ORT stacks isolated.
+
+- Source: Microsoft.ML.OnnxRuntime.DirectML 1.24.4 (win-x64)
+- License: **MIT License** — Copyright © Microsoft Corporation
+- SHA-256 (onnxruntime.dll): `E7EEDEC6A6F26DC39DC948276A75EF6D2BEE3FFF944D874CEED0BBD3B97BFF40`
+- SHA-256 (onnxruntime_providers_shared.dll): `265C8DAF29637CB259CAC8BE9F08F2CD45F3883F0F0E4949CBFDDD5B4CBEC3B6`
+- Full notice: `src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt`
+
+### DirectML.dll (bundled native DLL)
+
+- Source: Microsoft.AI.DirectML 1.15.4 (bin/x64-win)
+- License: **Microsoft DirectML License** (see NuGet package `Microsoft.AI.DirectML` for full terms)
+- SHA-256: `9C9E6D822561C6C41B90E6994B3E8857CF1D66DBFB1E0C4C799C7C89B4E92DA1`
+- Full notice: `src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt`
+
+---
+
+## Create Subtitle File — Whisper Models
+
+FrameShift's optional `Create Subtitle File` feature downloads OpenAI Whisper ONNX models at runtime.
+
+- Models: Whisper Base, Whisper Small, Whisper Large-v3 Turbo (ONNX exports, FP32)
+- Hosted at: `https://huggingface.co/Gaurox/frameshift-models/` (subfolders `whisper-base-onnx/`,
+  `whisper-small-onnx/`, `whisper-large-v3-turbo-onnx/`)
+- Upstream project: https://github.com/openai/whisper
+- License: **MIT License** — Copyright © 2022 OpenAI
+- ONNX export toolchain: sherpa-onnx export scripts (Apache 2.0)
 
 These models are not stored in the repository and are downloaded on demand into the local user profile.
 

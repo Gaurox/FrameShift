@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current version: **1.14.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current version: **1.15.0** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -147,7 +147,8 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Interpolate Video (RIFE) | Generate smoother motion with the local RIFE workflow, model preflight, and adjacent unique outputs. | <img src="screenshots/AI_actions/Interpolate_RIFE.png" alt="Interpolate Video RIFE" width="320" /> |
 | Remove Object (Image) | Paint a mask over any object and let the local inpainting AI reconstruct the background. Two models available: LaMa FP32 (Quality) and LaMa 2025 (Fast). | <img src="screenshots/AI_actions/Remove_object.png" alt="Remove Object" width="320" /> |
 | Upscale Image | Enlarge an image with a local AI model, chosen from a dropdown picker: **Real-ESRGAN x4plus** (general, default), **Real-ESRGAN Anime 6B** (anime / illustration), and **Swin2SR** (restoration / quality). Pick **×2 / ×3 / ×4** or a **custom target size** (aspect-locked width/height). Runs on GPU via DirectML with CPU fallback, automatic invisible tiling for large images, and the result saved as a new PNG next to the source. Models are downloaded on demand and integrity-checked. | <img src="screenshots/AI_actions/Upscaler.png" alt="Upscale Image" width="320" /> |
-| Upscale Video | Enlarge a video **×2 / ×3 / ×4** (or to an aspect-locked target size) with **Real-ESRGAN General v3**, **AnimeVideo v3**, or x4plus Quality. Uses DirectML with CPU fallback and shared adaptive tiling; preserves FPS and audio, with safe encoding fallbacks, batch progress, cancellation, and adjacent unique output. Image and video models use separate hosted/local folders, each with dedicated documentation and licences; downloads are SHA256-verified. | <img src="screenshots/Gif_demos/demo_upscale_video.gif" alt="Upscale Video original and x4 comparison" width="320" /> |
+| Upscale Video | Enlarge a video **×2 / ×3 / ×4** (or to an aspect-locked target size) with **Real-ESRGAN General v3**, **AnimeVideo v3**, or x4plus Quality. Uses DirectML with CPU fallback and shared adaptive tiling; the default path now runs through a faster in-memory FFmpeg `rawvideo` pipeline, with the previous BMP workflow kept as fallback. For **AnimeVideo v3**, FrameShift now auto-selects dedicated x2/x3 execution variants internally instead of always running the x4 path then resizing on CPU. FPS and audio are preserved, encoding fallbacks stay safe, and batch progress/cancellation/adjacent unique output remain unchanged. Image and video models use separate hosted/local folders, each with dedicated documentation and licences; downloads are SHA256-verified. | <img src="screenshots/Gif_demos/demo_upscale_video.gif" alt="Upscale Video original and x4 comparison" width="320" /> |
+| Create Subtitle File | Transcribe audio or video to an adjacent `.srt` file using local Whisper AI. Three models available: **Whisper Base** (fast), **Whisper Small** (recommended, default), and **Whisper Large-v3 Turbo** (highest accuracy). Runs on GPU via DirectML with automatic CPU fallback. The Whisper engine runs in an isolated worker process to avoid ONNX Runtime conflicts with other AI actions. | |
 
 ## Built For
 
@@ -223,8 +224,10 @@ It is an alternative for quick, everyday media tasks from the Windows right-clic
 - Before rebuilding the installer, publish the app so the setup packs the latest release payload.
 
 ```powershell
-.\build_installer.ps1
+.\build_publish.ps1
 ```
+
+`build_publish.ps1` publishes to `publish\FrameShift-win-x64\` and runs Inno Setup automatically if found. Pass `-RunTests` to run the test suite first.
 
 ---
 

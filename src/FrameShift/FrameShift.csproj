@@ -2,15 +2,16 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets\Icons\app\app.ico</ApplicationIcon>
-    <Version>1.14.0</Version>
-    <AssemblyVersion>1.14.0.0</AssemblyVersion>
-    <FileVersion>1.14.0.0</FileVersion>
-    <InformationalVersion>1.14.0</InformationalVersion>
+    <Version>1.15.0</Version>
+    <AssemblyVersion>1.15.0.0</AssemblyVersion>
+    <FileVersion>1.15.0.0</FileVersion>
+    <InformationalVersion>1.15.0</InformationalVersion>
     <Product>FrameShift</Product>
     <Company>FrameShift</Company>
     <Description>Windows-first offline multimedia processing utility.</Description>
@@ -45,4 +46,41 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
+  <Target Name="CopyCreateSubtitlesWorkerForBuild" AfterTargets="Build">
+    <PropertyGroup>
+      <_CreateSubtitlesWorkerProject>$(MSBuildThisFileDirectory)..\FrameShift.SubtitlesWorker\FrameShift.SubtitlesWorker.csproj</_CreateSubtitlesWorkerProject>
+      <_CreateSubtitlesWorkerBuildOutput>$(MSBuildThisFileDirectory)..\FrameShift.SubtitlesWorker\bin\$(Configuration)\net8.0-windows\win-x64\</_CreateSubtitlesWorkerBuildOutput>
+      <_CreateSubtitlesWorkerBuildTarget>$(OutDir)Workers\CreateSubtitlesWorker\</_CreateSubtitlesWorkerBuildTarget>
+    </PropertyGroup>
+
+    <MSBuild
+      Projects="$(_CreateSubtitlesWorkerProject)"
+      Targets="Build"
+      Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64" />
+
+    <MakeDir Directories="$(_CreateSubtitlesWorkerBuildTarget)" />
+
+    <ItemGroup>
+      <_CreateSubtitlesWorkerBuildFiles Include="$(_CreateSubtitlesWorkerBuildOutput)**\*" Condition="Exists('$(_CreateSubtitlesWorkerBuildOutput)')" />
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="@(_CreateSubtitlesWorkerBuildFiles)"
+      DestinationFiles="@(_CreateSubtitlesWorkerBuildFiles->'$(_CreateSubtitlesWorkerBuildTarget)%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+      Condition="'@(_CreateSubtitlesWorkerBuildFiles)' != ''" />
+  </Target>
+
+  <Target Name="PublishCreateSubtitlesWorker" AfterTargets="Publish">
+    <PropertyGroup>
+      <_CreateSubtitlesWorkerProject>$(MSBuildThisFileDirectory)..\FrameShift.SubtitlesWorker\FrameShift.SubtitlesWorker.csproj</_CreateSubtitlesWorkerProject>
+      <_CreateSubtitlesWorkerPublishTarget>$([System.IO.Path]::GetFullPath('$(PublishDir)Workers\CreateSubtitlesWorker\'))</_CreateSubtitlesWorkerPublishTarget>
+    </PropertyGroup>
+
+    <MSBuild
+      Projects="..\FrameShift.SubtitlesWorker\FrameShift.SubtitlesWorker.csproj"
+      Targets="Publish"
+      Properties="Configuration=$(Configuration);RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=false;PublishDir=$(_CreateSubtitlesWorkerPublishTarget)" />
+  </Target>
 </Project>

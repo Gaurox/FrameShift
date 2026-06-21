@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FrameShift.Core.Helpers;
@@ -26,10 +27,14 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     private readonly UpscaleModelDefinition _definition;
     private readonly SemaphoreSlim _initGate = new(1, 1);
     private InferenceSession? _session;
+    private DenseTensor<float>? _inputTensor;
+    private IReadOnlyList<NamedOnnxValue>? _reusableInputs;
     private string _providerName = "None";
     private bool _sessionReady;
     private bool _sessionForcedCpu;
     private bool _runtimeForceCpu;
+    private int _bufferedInputWidth;
+    private int _bufferedInputHeight;
 
     public UpscaleFrameProcessor(UpscaleModelDefinition definition)
     {
@@ -43,10 +48,38 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         Image<Rgba32> source,
         UpscaleRequest request,
         IProgress<UpscaleProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) =>
+        UpscaleCore(
+            source.Width,
+            source.Height,
+            request,
+            progress,
+            cancellationToken,
+            (tile, input, padWidth, padHeight) => FillInputFromRgba32(source, tile, input, padWidth, padHeight));
+
+    public Image<Rgba32> Upscale(
+        Image<Rgb24> source,
+        UpscaleRequest request,
+        IProgress<UpscaleProgress>? progress,
+        CancellationToken cancellationToken) =>
+        UpscaleCore(
+            source.Width,
+            source.Height,
+            request,
+            progress,
+            cancellationToken,
+            (tile, input, padWidth, padHeight) => FillInputFromRgb24(source, tile, input, padWidth, padHeight));
+
+    private Image<Rgba32> UpscaleCore(
+        int sourceWidth,
+        int sourceHeight,
+        UpscaleRequest request,
+        IProgress<UpscaleProgress>? progress,
+        CancellationToken cancellationToken,
+        FillTileDelegate fillTile)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        ValidateSourceSize(source.Width, source.Height);
+        ValidateSourceSize(sourceWidth, sourceHeight);
 
         int tileIndex = 0;
         while (true)
@@ -57,8 +90,8 @@ internal sealed class UpscaleFrameProcessor : IDisposable
             try
             {
                 EnsureSession(_runtimeForceCpu, progress, cancellationToken);
-                using var nativeOutput = RunTiled(source, tileSize, progress, cancellationToken);
-                var target = ResolveFinalSize(source.Width, source.Height, request, _definition.ScaleFactor);
+                using var nativeOutput = RunTiled(sourceWidth, sourceHeight, tileSize, progress, cancellationToken, fillTile);
+                var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
 
                 if (target.Width == nativeOutput.Width && target.Height == nativeOutput.Height)
                     return nativeOutput.Clone();
@@ -139,24 +172,26 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     }
 
     private Image<Rgba32> RunTiled(
-        Image<Rgba32> source,
+        int sourceWidth,
+        int sourceHeight,
         int tileSize,
         IProgress<UpscaleProgress>? progress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        FillTileDelegate fillTile)
     {
         int scale = _definition.ScaleFactor;
-        var tiles = UpscaleTiler.Plan(source.Width, source.Height, tileSize, TileMargin);
+        var tiles = UpscaleTiler.Plan(sourceWidth, sourceHeight, tileSize, TileMargin);
         AppLogger.LogStatic(
             $"UpscaleFrameProcessor: tiling. tileSize={tileSize}, margin={TileMargin}, tiles={tiles.Count}, provider={_providerName}");
 
-        var output = new Image<Rgba32>(source.Width * scale, source.Height * scale);
+        var output = new Image<Rgba32>(sourceWidth * scale, sourceHeight * scale);
         try
         {
             int done = 0;
             foreach (var tile in tiles)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                RunTileToOutput(source, tile, scale, output);
+                RunTileToOutput(tile, scale, output, fillTile);
                 done++;
                 int percent = 10 + (int)(80L * done / Math.Max(1, tiles.Count));
                 progress?.Report(new UpscaleProgress(
@@ -174,29 +209,17 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     }
 
     private void RunTileToOutput(
-        Image<Rgba32> source,
         UpscaleTiler.TilePlan tile,
         int scale,
-        Image<Rgba32> output)
+        Image<Rgba32> output,
+        FillTileDelegate fillTile)
     {
         int padWidth = RoundUpToMultiple(tile.ReadW, _definition.WindowMultiple);
         int padHeight = RoundUpToMultiple(tile.ReadH, _definition.WindowMultiple);
-        var input = new DenseTensor<float>([1, 3, padHeight, padWidth]);
+        EnsureReusableInputBuffer(padWidth, padHeight);
+        fillTile(tile, _inputTensor!, padWidth, padHeight);
 
-        for (int y = 0; y < padHeight; y++)
-        {
-            int sourceY = tile.ReadY + Math.Min(y, tile.ReadH - 1);
-            for (int x = 0; x < padWidth; x++)
-            {
-                var pixel = source[tile.ReadX + Math.Min(x, tile.ReadW - 1), sourceY];
-                input[0, 0, y, x] = pixel.R / 255f;
-                input[0, 1, y, x] = pixel.G / 255f;
-                input[0, 2, y, x] = pixel.B / 255f;
-            }
-        }
-
-        var inputs = new[] { NamedOnnxValue.CreateFromTensor(_definition.InputTensorName, input) };
-        using var results = _session!.Run(inputs);
+        using var results = _session!.Run(_reusableInputs!);
         var outputTensor = results.First().AsTensor<float>();
         int sourceOffsetX = (tile.CoreX - tile.ReadX) * scale;
         int sourceOffsetY = (tile.CoreY - tile.ReadY) * scale;
@@ -205,20 +228,31 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         int destinationX = tile.CoreX * scale;
         int destinationY = tile.CoreY * scale;
 
-        for (int y = 0; y < coreHeight; y++)
+        if (outputTensor is DenseTensor<float> denseOutputTensor)
         {
-            int sourceTensorY = sourceOffsetY + y;
-            int outputY = destinationY + y;
-            for (int x = 0; x < coreWidth; x++)
-            {
-                int sourceTensorX = sourceOffsetX + x;
-                output[destinationX + x, outputY] = new Rgba32(
-                    ToByte(outputTensor[0, 0, sourceTensorY, sourceTensorX]),
-                    ToByte(outputTensor[0, 1, sourceTensorY, sourceTensorX]),
-                    ToByte(outputTensor[0, 2, sourceTensorY, sourceTensorX]),
-                    255);
-            }
+            WriteDenseTensorToImage(
+                output,
+                denseOutputTensor.Buffer,
+                padWidth * scale,
+                padHeight * scale,
+                sourceOffsetX,
+                sourceOffsetY,
+                coreWidth,
+                coreHeight,
+                destinationX,
+                destinationY);
+            return;
         }
+
+        WriteTensorToImage(
+            output,
+            outputTensor,
+            sourceOffsetX,
+            sourceOffsetY,
+            coreWidth,
+            coreHeight,
+            destinationX,
+            destinationY);
     }
 
     private void EnsureSession(
@@ -261,9 +295,174 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     {
         _session?.Dispose();
         _session = null;
+        DisposeReusableInputBuffer();
         _sessionReady = false;
         _providerName = "None";
     }
+
+    private void EnsureReusableInputBuffer(int padWidth, int padHeight)
+    {
+        if (_inputTensor is not null &&
+            _reusableInputs is not null &&
+            _bufferedInputWidth == padWidth &&
+            _bufferedInputHeight == padHeight)
+        {
+            return;
+        }
+
+        DisposeReusableInputBuffer();
+        _inputTensor = new DenseTensor<float>([1, 3, padHeight, padWidth]);
+        _reusableInputs =
+        [
+            NamedOnnxValue.CreateFromTensor(_definition.InputTensorName, _inputTensor)
+        ];
+        _bufferedInputWidth = padWidth;
+        _bufferedInputHeight = padHeight;
+    }
+
+    private void DisposeReusableInputBuffer()
+    {
+        _reusableInputs = null;
+        _inputTensor = null;
+        _bufferedInputWidth = 0;
+        _bufferedInputHeight = 0;
+    }
+
+    private static void FillInputFromRgba32(
+        Image<Rgba32> source,
+        UpscaleTiler.TilePlan tile,
+        DenseTensor<float> input,
+        int padWidth,
+        int padHeight)
+    {
+        const float normalizationScale = 1f / 255f;
+        source.ProcessPixelRows(accessor =>
+        {
+            var inputBuffer = input.Buffer.Span;
+            int planeSize = padWidth * padHeight;
+            for (int y = 0; y < padHeight; y++)
+            {
+                int sourceY = tile.ReadY + Math.Min(y, tile.ReadH - 1);
+                var sourceRow = accessor.GetRowSpan(sourceY);
+                int rowOffset = y * padWidth;
+                int redOffset = rowOffset;
+                int greenOffset = planeSize + rowOffset;
+                int blueOffset = (planeSize * 2) + rowOffset;
+                for (int x = 0; x < padWidth; x++)
+                {
+                    var pixel = sourceRow[tile.ReadX + Math.Min(x, tile.ReadW - 1)];
+                    inputBuffer[redOffset + x] = pixel.R * normalizationScale;
+                    inputBuffer[greenOffset + x] = pixel.G * normalizationScale;
+                    inputBuffer[blueOffset + x] = pixel.B * normalizationScale;
+                }
+            }
+        });
+    }
+
+    private static void FillInputFromRgb24(
+        Image<Rgb24> source,
+        UpscaleTiler.TilePlan tile,
+        DenseTensor<float> input,
+        int padWidth,
+        int padHeight)
+    {
+        const float normalizationScale = 1f / 255f;
+        source.ProcessPixelRows(accessor =>
+        {
+            var inputBuffer = input.Buffer.Span;
+            int planeSize = padWidth * padHeight;
+            for (int y = 0; y < padHeight; y++)
+            {
+                int sourceY = tile.ReadY + Math.Min(y, tile.ReadH - 1);
+                var sourceRow = accessor.GetRowSpan(sourceY);
+                int rowOffset = y * padWidth;
+                int redOffset = rowOffset;
+                int greenOffset = planeSize + rowOffset;
+                int blueOffset = (planeSize * 2) + rowOffset;
+                for (int x = 0; x < padWidth; x++)
+                {
+                    var pixel = sourceRow[tile.ReadX + Math.Min(x, tile.ReadW - 1)];
+                    inputBuffer[redOffset + x] = pixel.R * normalizationScale;
+                    inputBuffer[greenOffset + x] = pixel.G * normalizationScale;
+                    inputBuffer[blueOffset + x] = pixel.B * normalizationScale;
+                }
+            }
+        });
+    }
+
+    private static void WriteDenseTensorToImage(
+        Image<Rgba32> output,
+        Memory<float> outputBuffer,
+        int tensorWidth,
+        int tensorHeight,
+        int sourceOffsetX,
+        int sourceOffsetY,
+        int coreWidth,
+        int coreHeight,
+        int destinationX,
+        int destinationY)
+    {
+        int planeSize = tensorWidth * tensorHeight;
+        output.ProcessPixelRows(accessor =>
+        {
+            var outputBufferSpan = outputBuffer.Span;
+            for (int y = 0; y < coreHeight; y++)
+            {
+                int sourceTensorY = sourceOffsetY + y;
+                int outputY = destinationY + y;
+                var row = accessor.GetRowSpan(outputY).Slice(destinationX, coreWidth);
+                int rowOffset = sourceTensorY * tensorWidth;
+                int redOffset = rowOffset;
+                int greenOffset = planeSize + rowOffset;
+                int blueOffset = (planeSize * 2) + rowOffset;
+                for (int x = 0; x < coreWidth; x++)
+                {
+                    int sourceTensorX = sourceOffsetX + x;
+                    row[x] = new Rgba32(
+                        ToByte(outputBufferSpan[redOffset + sourceTensorX]),
+                        ToByte(outputBufferSpan[greenOffset + sourceTensorX]),
+                        ToByte(outputBufferSpan[blueOffset + sourceTensorX]),
+                        255);
+                }
+            }
+        });
+    }
+
+    private static void WriteTensorToImage(
+        Image<Rgba32> output,
+        Tensor<float> outputTensor,
+        int sourceOffsetX,
+        int sourceOffsetY,
+        int coreWidth,
+        int coreHeight,
+        int destinationX,
+        int destinationY)
+    {
+        output.ProcessPixelRows(accessor =>
+        {
+            for (int y = 0; y < coreHeight; y++)
+            {
+                int sourceTensorY = sourceOffsetY + y;
+                int outputY = destinationY + y;
+                var row = accessor.GetRowSpan(outputY).Slice(destinationX, coreWidth);
+                for (int x = 0; x < coreWidth; x++)
+                {
+                    int sourceTensorX = sourceOffsetX + x;
+                    row[x] = new Rgba32(
+                        ToByte(outputTensor[0, 0, sourceTensorY, sourceTensorX]),
+                        ToByte(outputTensor[0, 1, sourceTensorY, sourceTensorX]),
+                        ToByte(outputTensor[0, 2, sourceTensorY, sourceTensorX]),
+                        255);
+                }
+            }
+        });
+    }
+
+    private delegate void FillTileDelegate(
+        UpscaleTiler.TilePlan tile,
+        DenseTensor<float> input,
+        int padWidth,
+        int padHeight);
 
     private static int RoundUpToMultiple(int value, int multiple)
     {

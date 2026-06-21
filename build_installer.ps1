@@ -69,8 +69,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host "All tests passed." -ForegroundColor Green
 
+$publishDir = Join-Path $repoRoot 'publish\FrameShift-win-x64'
+
 Write-Host "Publishing FrameShift release payload v$appVersion..." -ForegroundColor Cyan
-dotnet publish $projectFile -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=false
+dotnet publish $projectFile -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=false -o $publishDir
 if ($LASTEXITCODE -ne 0) {
     throw 'dotnet publish failed.'
 }

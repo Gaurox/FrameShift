@@ -1,11 +1,13 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.14.0"
+#define MyAppVersion "1.15.0"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
-#define PublishOutputDir "..\src\FrameShift\bin\Release\net8.0-windows\win-x64\publish"
+#ifndef PublishOutputDir
+#define PublishOutputDir "..\publish\FrameShift-win-x64"
+#endif
 #define AppPayloadDir PublishOutputDir
 #define AssetsDir "..\src\FrameShift\Assets"
 #define ToolsDir "..\src\FrameShift\Tools"
@@ -56,6 +58,8 @@ Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Type
 Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
 Name: "ai\upscale_image"; Description: "Upscale image (4x)"; Types: complete custom
 Name: "ai\upscale_video"; Description: "Upscale video (2x / 3x / 4x)"; Types: complete custom
+Name: "ai\create_subtitles_audio"; Description: "Create subtitle file (audio)"; Types: complete custom
+Name: "ai\create_subtitles_video"; Description: "Create subtitle file (video)"; Types: complete custom
 Name: "video"; Description: "Video actions"; Types: complete custom
 Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
@@ -88,9 +92,10 @@ Name: "tools"; Description: "Outils"; Types: complete custom
 Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
 
 [Files]
-Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image ai\interpolate_video_rife ai\upscale_video
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio ai\interpolate_video_rife ai\upscale_video tools\media_info
+Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,Workers\CreateSubtitlesWorker\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
+Source: "{#AppPayloadDir}\Workers\CreateSubtitlesWorker\*"; DestDir: "{app}\Workers\CreateSubtitlesWorker"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: ai\create_subtitles_audio ai\create_subtitles_video
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video tools\media_info
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
@@ -387,6 +392,10 @@ begin
   else if MenuKey = 'upscale_video' then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\upscale_video.ico');
+  end
+  else if (MenuKey = 'create_subtitles_audio') or (MenuKey = 'create_subtitles_video') then
+  begin
+    IconPath := ExpandConstant('{app}\Assets\Icons\ai\create_subtitles.ico');
   end
   else
   begin
@@ -990,6 +999,26 @@ begin
       'upscale-video',
       '');
   end;
+
+  if WizardIsComponentSelected('ai\create_subtitles_audio') then
+  begin
+    ApplyAIActionMenuList(
+      AudioExtensions,
+      'create_subtitles_audio',
+      'Create Subtitle File',
+      'create-subtitles-audio',
+      '');
+  end;
+
+  if WizardIsComponentSelected('ai\create_subtitles_video') then
+  begin
+    ApplyAIActionMenuList(
+      VideoExtensions,
+      'create_subtitles_video',
+      'Create Subtitle File',
+      'create-subtitles-video',
+      '');
+  end;
 end;
 
 function GetDefaultModelsDir(): string;
@@ -1028,8 +1057,8 @@ begin
   DescLabel.AutoSize := False;
   DescLabel.WordWrap := True;
   DescLabel.Caption :=
-    'Models are downloaded on first use and never included in the installer.' + #13#10 +
-    'Leave the default to use ' + GetDefaultModelsDir() + '.';
+    'AI models are downloaded on first use and are never included in the installer.' + #13#10 +
+    'Runtime components such as the subtitle worker are bundled with FrameShift.';
 
   DirLabel := TNewStaticText.Create(AiModelsPage);
   DirLabel.Parent := AiModelsPage.Surface;
@@ -1067,14 +1096,17 @@ var
   I: Integer;
   C: Char;
 begin
-  if (ModelsDir = '') or (ModelsDir = GetDefaultModelsDir()) then
-    exit;
-
   ConfigDir := ExpandConstant('{localappdata}\FrameShift\config');
   ConfigFile := ConfigDir + '\settings.json';
 
   if not ForceDirectories(ConfigDir) then
     exit;
+
+  if (ModelsDir = '') or (ModelsDir = GetDefaultModelsDir()) then
+  begin
+    SaveStringToFile(ConfigFile, '{}' + #13#10, False);
+    exit;
+  end;
 
   // Minimal JSON escaping for the path (backslash → \\)
   EscapedDir := '';

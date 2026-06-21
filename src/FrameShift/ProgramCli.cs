@@ -76,9 +76,21 @@ internal static partial class Program
                 continue;
             }
 
+            if (string.Equals(token, "--subtitles-model", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitlesModel] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--upscale-scale", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.UpscaleScale] = args[++index].TrimStart('x', 'X');
+                continue;
+            }
+
+            if (string.Equals(token, "--upscale-pipeline", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.UpscalePipeline] = args[++index];
                 continue;
             }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FrameShift.Core.AI.CreateSubtitles;
 using FrameShift.Core.AI.RemoveBackground;
 using FrameShift.Core.AI.RemoveNoise;
 using FrameShift.Core.AI.RemoveObject;
@@ -142,6 +143,16 @@ public sealed class ActionRegistry
                 ffprobeRunner,
                 toolLocator),
             new RemoveBackgroundAction(),
+            new CreateSubtitlesAction(
+                CreateSubtitlesSourceKind.Audio,
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
+            new CreateSubtitlesAction(
+                CreateSubtitlesSourceKind.Video,
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
             new RemoveObjectAction(),
             new UpscaleImageAction(),
             new UpscaleVideoAction(

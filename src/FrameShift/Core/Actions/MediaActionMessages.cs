@@ -319,4 +319,13 @@ public static class MediaActionMessages
 
     public static string RifeInterpolateVideoModelMissing() =>
         "The selected RIFE model is not available.";
+
+    public static string CreateSubtitlesModelMissing() =>
+        "The Whisper Base subtitle model is not available.";
+
+    public static string CreateSubtitlesNoSpeechRecognized() =>
+        "No speech could be recognized in this media.";
+
+    public static string SubtitleFileWriteFailed() =>
+        "FrameShift could not write the subtitle file next to the source media.";
 }

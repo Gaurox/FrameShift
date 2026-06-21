@@ -19,6 +19,8 @@ public static class IconPaths
     public static string UpscaleImageAiPng => Combine("ai", "upscale_image.png");
     public static string UpscaleVideoAiIcon => Combine("ai", "upscale_video.ico");
     public static string UpscaleVideoAiPng => Combine("ai", "upscale_video.png");
+    public static string CreateSubtitlesAiIcon => Combine("ai", "create_subtitles.ico");
+    public static string CreateSubtitlesAiPng => Combine("ai", "create_subtitles.png");
     public static string CompressVideoIcon => Combine("menus", "context", "ico", "compress-video-image-audio-icon.ico");
     public static string ConvertVideoIcon => Combine("menus", "context", "ico", "convert-audio-video-image-icon.ico");
     public static string MediaInfoIcon => Combine("menus", "context", "ico", "media-info-video-image-audio-icon.ico");

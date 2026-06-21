@@ -1,0 +1,93 @@
+THIRD-PARTY NOTICES — FrameShift.SubtitlesWorker native DirectML DLLs
+======================================================================
+
+These DLL files ship with FrameShift.SubtitlesWorker to enable GPU-accelerated
+Whisper transcription via DirectML.  They replace the CPU-only DLLs that the
+NuGet package org.k2fsa.sherpa.onnx 1.13.3 would otherwise provide.
+
+----------------------------------------------------------------------
+1. sherpa-onnx-c-api.dll
+----------------------------------------------------------------------
+Source   : sherpa-onnx v1.13.3 (https://github.com/k2-fsa/sherpa-onnx)
+Build    : Recompiled from source with -DSHERPA_ONNX_ENABLE_DIRECTML=ON,
+           -DBUILD_SHARED_LIBS=ON, targeting win-x64 (MSVC 14.29, CMake 4.x)
+License  : Apache License 2.0
+           https://github.com/k2-fsa/sherpa-onnx/blob/master/LICENSE
+SHA-256  : BD41BDD1EE47766B11DB2D84174637F6725C8C0894004AF9880176BB93F2B0D8
+Size     : 4,469,248 bytes (4.26 MB)
+
+----------------------------------------------------------------------
+2. onnxruntime.dll
+----------------------------------------------------------------------
+Source   : Microsoft.ML.OnnxRuntime.DirectML 1.24.4 (win-x64)
+           https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML/1.24.4
+License  : MIT License
+           https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+SHA-256  : E7EEDEC6A6F26DC39DC948276A75EF6D2BEE3FFF944D874CEED0BBD3B97BFF40
+Size     : 17,334,784 bytes (16.53 MB)
+
+----------------------------------------------------------------------
+3. onnxruntime_providers_shared.dll
+----------------------------------------------------------------------
+Source   : Microsoft.ML.OnnxRuntime.DirectML 1.24.4 (win-x64)
+           https://www.nuget.org/packages/Microsoft.ML.OnnxRuntime.DirectML/1.24.4
+License  : MIT License
+           https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+SHA-256  : 265C8DAF29637CB259CAC8BE9F08F2CD45F3883F0F0E4949CBFDDD5B4CBEC3B6
+Size     : 22,528 bytes (0.02 MB)
+
+----------------------------------------------------------------------
+4. DirectML.dll
+----------------------------------------------------------------------
+Source   : Microsoft.AI.DirectML 1.15.4 (bin/x64-win)
+           https://www.nuget.org/packages/Microsoft.AI.DirectML/1.15.4
+License  : Microsoft DirectML License (see below)
+SHA-256  : 9C9E6D822561C6C41B90E6994B3E8857CF1D66DBFB1E0C4C799C7C89B4E92DA1
+Size     : 18,526,208 bytes (17.67 MB)
+
+DirectML is redistributable under the terms of the Microsoft.AI.DirectML NuGet
+package license.  The full license text is included in the NuGet package at:
+  LICENSE-CODE.txt  (MIT, for sample code)
+  LICENSE.txt       (Microsoft Software License Terms for DirectML)
+
+----------------------------------------------------------------------
+ORT MIT License (applies to onnxruntime.dll and onnxruntime_providers_shared.dll)
+----------------------------------------------------------------------
+MIT License
+
+Copyright (c) Microsoft Corporation. All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+----------------------------------------------------------------------
+sherpa-onnx Apache 2.0 License (applies to sherpa-onnx-c-api.dll)
+----------------------------------------------------------------------
+Copyright 2022-2025 Next-gen kaldi authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

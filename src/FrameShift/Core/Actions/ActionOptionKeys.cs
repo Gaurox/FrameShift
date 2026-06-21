@@ -48,4 +48,6 @@ public static class ActionOptionKeys
     public const string UpscaleScale = "upscale-scale";
     public const string UpscaleTargetWidth = "upscale-target-width";
     public const string UpscaleTargetHeight = "upscale-target-height";
+    public const string UpscalePipeline = "upscale-pipeline";
+    public const string SubtitlesModel = "subtitles-model";
 }

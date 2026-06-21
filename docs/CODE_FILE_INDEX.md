@@ -22,6 +22,9 @@ Règles de lecture :
 - `src/FrameShift/ProgramPickersResizeCompress.cs`
 - `src/FrameShift/ProgramPickersTiming.cs`
 - `src/FrameShift/FrameShift.csproj`
+- `src/FrameShift.SubtitlesWorker/FrameShift.SubtitlesWorker.csproj`
+- `src/FrameShift.SubtitlesWorker/Program.cs`
+- `src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt`
 - `tests/FrameShift.Tests/FrameShift.Tests.csproj`
 - `installer/FrameShift.iss`
 - `build_installer.ps1`
@@ -137,6 +140,13 @@ Media Info :
 - `src/FrameShift/Core/AI/AiModelFileDownloader.cs`
 - `src/FrameShift/Core/AI/AiModelSettings.cs`
 - `src/FrameShift/Core/AI/OnnxProviderHelper.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesAction.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelCatalog.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelLocator.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelDownloader.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesProtocol.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesSrt.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesWorkerRunner.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelCatalog.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelDefinition.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalEngine.cs`
@@ -181,6 +191,7 @@ Media Info :
 - `src/FrameShift/Core/AI/Upscale/UpscaleEngine.cs`
 - `src/FrameShift/Core/AI/Upscale/UpscaleImageAction.cs`
 - `src/FrameShift/Core/AI/VideoUpscale/VideoUpscaleEngine.cs`
+- `src/FrameShift/Core/AI/VideoUpscale/UpscaleRawVideoPipeline.cs`
 - `src/FrameShift/Core/Actions/UpscaleVideoAction.cs`
 - `src/FrameShift/Core/Actions/UpscaleVideoSettings.cs`
 
@@ -203,6 +214,7 @@ IA :
 - `src/FrameShift/Windows/AI/BriaModelNoticeForm.cs`
 - `src/FrameShift/Windows/AI/UpscaleImagePickerForm.cs`
 - `src/FrameShift/Windows/AI/UpscaleVideoPickerForm.cs`
+- `src/FrameShift/Windows/AI/CreateSubtitlesPickerForm.cs`
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
@@ -264,6 +276,7 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/OutputPathHelperTests.cs`
 - `tests/FrameShift.Tests/RifeInterpolateVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/UpscaleVideoSettingsTests.cs`
+- `tests/FrameShift.Tests/CreateSubtitlesTests.cs`
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 
@@ -290,10 +303,12 @@ Assets de test utiles :
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
 - Les assets upscale dédiés sont `Assets\Icons\ai\upscale_image.(ico|png)` et `upscale_video.(ico|png)` ; les démonstrations vidéo sont dans `screenshots\Gif_demos\demo_upscale_video.gif` et `screenshots\Video_demos\demo_upscale_video.mp4`.
 - `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
+- **Create Subtitle File** (`create-subtitles-audio` / `create-subtitles-video`) isole sherpa-onnx dans `FrameShift.SubtitlesWorker` pour éviter les collisions de `onnxruntime.dll` avec le runtime ONNX principal. Worker publié en dossier (pas PublishSingleFile) pour que `DirectML.dll` soit trouvé par `LoadLibrary`. Exécution GPU via DirectML avec fallback CPU automatique (init et inférence) ; 4 DLL natives DML dans `native-dml/` (sherpa-onnx 1.13.3 DML, ORT 1.24.4 DirectML, DirectML 1.15.4). FeatureDim par modèle : Base/Small=80, Turbo=128. Trois modèles : `whisper-base`, `whisper-small` (défaut), `whisper-turbo` (~3,1 GB, encodeur ONNX external data). `CreateSubtitlesPickerForm` affiche un sélecteur radio 3 modèles. Voir `docs/CREATE_SUBTITLES.md` pour les détails complets.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
 - `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle.
 - `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.
 - `OnnxProviderHelper.cs` centralise la création de session ONNX (DML → CPU), la détection d'échec DML à l'inférence et les messages utilisateur propres (sans chemins internes ONNX Runtime).
 - `Upscale/ModelLocator.cs` sépare le stockage `upscale-image-onnx` / `upscale-video-onnx` et copie à la demande les anciens modèles valides depuis `upscale-onnx`.
+- `UpscaleRawVideoPipeline.cs` porte le chemin rapide par défaut de `upscale-video` : FFmpeg décode/encode en `rawvideo` mémoire, `UpscaleVideoAction` garde un fallback automatique vers le pipeline BMP historique, et `UpscaleFrameProcessor.cs` réutilise maintenant ses buffers/tensors pour réduire les allocations par frame.
 - `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.
 - La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.

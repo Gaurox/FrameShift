@@ -17,7 +17,8 @@ internal static partial class Program
     // Single authoritative lists — all action-ID dispatch reads from here.
     private static readonly HashSet<string> s_aiBatchActions = new(StringComparer.OrdinalIgnoreCase)
     {
-        "remove-background", "separate-audio", "remove-noise", "remove-noise-video", "upscale-image", "upscale-video"
+        "remove-background", "separate-audio", "remove-noise", "remove-noise-video", "upscale-image", "upscale-video",
+        "create-subtitles-audio", "create-subtitles-video"
     };
 
     private static readonly HashSet<string> s_conversionBatchActions = new(StringComparer.OrdinalIgnoreCase)
@@ -164,13 +165,25 @@ internal static partial class Program
         if (actionId.Equals("upscale-image", StringComparison.OrdinalIgnoreCase))
         {
             return EnsureUpscaleOptions(inputPaths, effectiveOptions, logger)
-                && EnsureUpscaleModelReady(logger, effectiveOptions);
+                && EnsureUpscaleModelReady(logger, effectiveOptions, inputPaths: inputPaths);
         }
 
         if (actionId.Equals("upscale-video", StringComparison.OrdinalIgnoreCase))
         {
             return EnsureUpscaleVideoOptions(inputPaths, effectiveOptions, logger)
-                && EnsureUpscaleModelReady(logger, effectiveOptions, "Upscale Video", videoMode: true);
+                && EnsureUpscaleModelReady(logger, effectiveOptions, "Upscale Video", videoMode: true, inputPaths: inputPaths);
+        }
+
+        if (actionId.Equals("create-subtitles-audio", StringComparison.OrdinalIgnoreCase))
+        {
+            return EnsureCreateSubtitlesOptions(inputPaths, effectiveOptions, logger, videoMode: false)
+                && EnsureCreateSubtitlesModelReady(logger, effectiveOptions);
+        }
+
+        if (actionId.Equals("create-subtitles-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return EnsureCreateSubtitlesOptions(inputPaths, effectiveOptions, logger, videoMode: true)
+                && EnsureCreateSubtitlesModelReady(logger, effectiveOptions);
         }
 
         if (actionId.Equals("separate-audio", StringComparison.OrdinalIgnoreCase))
@@ -506,6 +519,16 @@ internal static partial class Program
         if (actionId.Equals("upscale-video", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateUpscaleVideoDefinition();
+        }
+
+        if (actionId.Equals("create-subtitles-audio", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateCreateSubtitlesAudioDefinition();
+        }
+
+        if (actionId.Equals("create-subtitles-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateCreateSubtitlesVideoDefinition();
         }
 
         return null;

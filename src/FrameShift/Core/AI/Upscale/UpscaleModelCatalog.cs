@@ -48,6 +48,38 @@ internal static class UpscaleModelCatalog
             LegacyFolder: "upscale-onnx"),
 
         new(
+            "realesr-animevideov3-x2",
+            "Real-ESRGAN AnimeVideo v3",
+            "upscale-video-onnx",
+            "realesr_animevideov3_x2.onnx",
+            "https://huggingface.co/Gaurox/frameshift-models/resolve/main/upscale-video-onnx/realesr_animevideov3_x2.onnx",
+            "B3C1B93492C7BE8CA2C7B2EEADCA311BF1ADC709C296AA3AD14ABFA7890E4A44",
+            2_493_683L,
+            "BSD-3-Clause (Real-ESRGAN, © Xintao Wang)",
+            ScaleFactor: 2,
+            ForceCpu: false,
+            Summary: "Internal x2 execution variant for AnimeVideo v3.",
+            RecommendedForImage: false,
+            RecommendedForVideo: false,
+            LegacyFolder: "upscale-onnx"),
+
+        new(
+            "realesr-animevideov3-x3",
+            "Real-ESRGAN AnimeVideo v3",
+            "upscale-video-onnx",
+            "realesr_animevideov3_x3.onnx",
+            "https://huggingface.co/Gaurox/frameshift-models/resolve/main/upscale-video-onnx/realesr_animevideov3_x3.onnx",
+            "D3268B927AD1AEA8DBE24790CB6044714FFE3CA7D70C3A1D204063CDBA994B92",
+            2_493_683L,
+            "BSD-3-Clause (Real-ESRGAN, © Xintao Wang)",
+            ScaleFactor: 3,
+            ForceCpu: false,
+            Summary: "Internal x3 execution variant for AnimeVideo v3.",
+            RecommendedForImage: false,
+            RecommendedForVideo: false,
+            LegacyFolder: "upscale-onnx"),
+
+        new(
             "realesrgan-x4plus",
             "Real-ESRGAN x4plus",
             "upscale-image-onnx",
@@ -132,5 +164,32 @@ internal static class UpscaleModelCatalog
         if (string.IsNullOrWhiteSpace(modelId)) return null;
         return s_models.FirstOrDefault(m =>
             string.Equals(m.Id, modelId, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static UpscaleModelDefinition ResolveVideoExecutionModel(
+        UpscaleModelDefinition selectedModel,
+        UpscaleRequest request,
+        int sourceWidth,
+        int sourceHeight)
+    {
+        if (!string.Equals(selectedModel.Id, "realesr-animevideov3", StringComparison.OrdinalIgnoreCase))
+            return selectedModel;
+
+        var target = UpscaleFrameProcessor.ResolveFinalSize(
+            sourceWidth,
+            sourceHeight,
+            request,
+            selectedModel.ScaleFactor);
+        double factorX = target.Width / (double)Math.Max(1, sourceWidth);
+        double factorY = target.Height / (double)Math.Max(1, sourceHeight);
+        double factor = Math.Max(factorX, factorY);
+
+        string resolvedId = factor <= 2d
+            ? "realesr-animevideov3-x2"
+            : factor <= 3d
+                ? "realesr-animevideov3-x3"
+                : selectedModel.Id;
+
+        return GetById(resolvedId) ?? selectedModel;
     }
 }

@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <AssemblyName>FrameShift.SubtitlesWorker</AssemblyName>
+    <RootNamespace>FrameShift.SubtitlesWorker</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
+  </ItemGroup>
+
+  <!-- DML-enabled native DLLs — override the CPU DLLs placed by the sherpa-onnx NuGet package.
+       sherpa-onnx-c-api.dll: sherpa-onnx 1.13.3 recompiled with SHERPA_ONNX_ENABLE_DIRECTML=ON
+       onnxruntime.dll: Microsoft.ML.OnnxRuntime.DirectML 1.24.4 (win-x64)
+       onnxruntime_providers_shared.dll: Microsoft.ML.OnnxRuntime.DirectML 1.24.4 (win-x64)
+       DirectML.dll: Microsoft.AI.DirectML 1.15.4 (bin/x64-win)
+       SHA256 documented in src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt -->
+  <ItemGroup>
+    <DmlNativeDll Include="$(MSBuildThisFileDirectory)native-dml\sherpa-onnx-c-api.dll" />
+    <DmlNativeDll Include="$(MSBuildThisFileDirectory)native-dml\onnxruntime.dll" />
+    <DmlNativeDll Include="$(MSBuildThisFileDirectory)native-dml\onnxruntime_providers_shared.dll" />
+    <DmlNativeDll Include="$(MSBuildThisFileDirectory)native-dml\DirectML.dll" />
+  </ItemGroup>
+
+  <Target Name="CopyDmlDllsAfterBuild" AfterTargets="Build">
+    <Copy SourceFiles="@(DmlNativeDll)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CopyDmlDllsAfterPublish" AfterTargets="Publish">
+    <Copy SourceFiles="@(DmlNativeDll)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

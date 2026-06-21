@@ -10,6 +10,7 @@ using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
 using FrameShift.Windows.AI;
 using FrameShift.Windows.Helpers;
+using CreateSubtitles = FrameShift.Core.AI.CreateSubtitles;
 using RemoveBackground = FrameShift.Core.AI.RemoveBackground;
 using RemoveNoise = FrameShift.Core.AI.RemoveNoise;
 using SeparateAudio = FrameShift.Core.AI.SeparateAudio;
@@ -216,9 +217,14 @@ internal static partial class Program
         AppLogger logger,
         IReadOnlyDictionary<string, string>? options = null,
         string featureName = "Upscale Image",
-        bool videoMode = false)
+        bool videoMode = false,
+        IReadOnlyList<string>? inputPaths = null)
     {
         var model = ResolveUpscaleModel(options, logger, videoMode);
+        if (videoMode)
+        {
+            model = ResolveUpscaleVideoExecutionModel(model, options, inputPaths, logger);
+        }
 
         var modelPath = Upscale.ModelLocator.GetModelPath(model);
         if (File.Exists(modelPath) &&
@@ -382,6 +388,157 @@ internal static partial class Program
         }
 
         return model;
+    }
+
+    private static Upscale.UpscaleModelDefinition ResolveUpscaleVideoExecutionModel(
+        Upscale.UpscaleModelDefinition selectedModel,
+        IReadOnlyDictionary<string, string>? options,
+        IReadOnlyList<string>? inputPaths,
+        AppLogger logger)
+    {
+        if (!string.Equals(selectedModel.Id, "realesr-animevideov3", StringComparison.OrdinalIgnoreCase))
+            return selectedModel;
+        if (!UpscaleVideoSettings.TryFromOptions(options, out var settings, out _) || settings is null)
+            return selectedModel;
+
+        int sourceWidth = 1;
+        int sourceHeight = 1;
+        if (settings.TargetWidth.HasValue || settings.TargetHeight.HasValue)
+        {
+            if (inputPaths is null || inputPaths.Count != 1)
+                return selectedModel;
+
+            try
+            {
+                var locator = new ToolLocator();
+                var runner = new FfprobeRunner(logger);
+                var probeAttempt = runner.TryProbeMediaAsync(
+                        locator.ResolveFfprobePath(),
+                        inputPaths[0],
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                if (probeAttempt.Probe is not { HasVideo: true, VideoWidth: > 0, VideoHeight: > 0 } probe)
+                    return selectedModel;
+
+                sourceWidth = probe.VideoWidth;
+                sourceHeight = probe.VideoHeight;
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"Program: failed to resolve anime upscale execution model via ffprobe. {ex.Message}");
+                return selectedModel;
+            }
+        }
+
+        return Upscale.UpscaleModelCatalog.ResolveVideoExecutionModel(
+            selectedModel,
+            settings.Request,
+            sourceWidth,
+            sourceHeight);
+    }
+
+    private static bool EnsureCreateSubtitlesOptions(
+        IReadOnlyList<string> inputPaths,
+        Dictionary<string, string> options,
+        AppLogger logger,
+        bool videoMode)
+    {
+        if (options.ContainsKey(ActionOptionKeys.SubtitlesModel))
+        {
+            return true;
+        }
+
+        if (inputPaths.Count == 0)
+        {
+            ShowCliError(MediaActionMessages.InputPathRequired());
+            return false;
+        }
+
+        var supported = videoMode
+            ? CreateSubtitles.CreateSubtitlesAction.GetSupportedVideoExtensionsText()
+            : CreateSubtitles.CreateSubtitlesAction.GetSupportedAudioExtensionsText();
+
+        foreach (var inputPath in inputPaths)
+        {
+            var extension = Path.GetExtension(inputPath).ToLowerInvariant();
+            var isSupported = videoMode
+                ? CreateSubtitles.CreateSubtitlesAction.IsSupportedVideoExtension(extension)
+                : CreateSubtitles.CreateSubtitlesAction.IsSupportedAudioExtension(extension);
+            if (!isSupported)
+            {
+                ShowCliError(MediaActionMessages.UnsupportedSourceFormat(extension, supported));
+                return false;
+            }
+        }
+
+        try
+        {
+            using var picker = new CreateSubtitlesPickerForm(
+                "Create Subtitle File",
+                CreateSubtitlesPickerForm.BuildSourceLabel(inputPaths));
+            if (picker.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(picker.SelectedModelId))
+            {
+                return false;
+            }
+
+            options[ActionOptionKeys.SubtitlesModel] = picker.SelectedModelId;
+            logger.Log($"Program: Create Subtitles model selected via picker. modelId={picker.SelectedModelId}, videoMode={videoMode}.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Create Subtitles")));
+            return false;
+        }
+    }
+
+    private static bool EnsureCreateSubtitlesModelReady(
+        AppLogger logger,
+        IReadOnlyDictionary<string, string>? options = null)
+    {
+        string? requestedModelId = null;
+        if (options is not null &&
+            options.TryGetValue(ActionOptionKeys.SubtitlesModel, out var value) &&
+            !string.IsNullOrWhiteSpace(value))
+        {
+            requestedModelId = value;
+        }
+
+        var model = CreateSubtitles.CreateSubtitlesModelCatalog.GetById(requestedModelId) ??
+            CreateSubtitles.CreateSubtitlesModelCatalog.GetDefault();
+        var modelFiles = CreateSubtitles.CreateSubtitlesModelLocator.GetModelFiles(model);
+
+        if (CreateSubtitles.CreateSubtitlesModelDownloader.IsModelReady(model, logger))
+        {
+            logger.Log($"Program: Create Subtitles model already present and verified. modelId={model.Id}.");
+            return true;
+        }
+
+        CreateSubtitles.CreateSubtitlesModelDownloader.RemoveInvalidFiles(model, logger);
+
+        logger.Log($"Program: Create Subtitles model missing. Opening DownloadModelForm. modelId={model.Id}.");
+        using var downloadForm = new DownloadModelForm(
+            "FrameShift AI - Create Subtitles",
+            $"Download {model.DisplayName} to enable local subtitle creation",
+            IconPaths.CreateSubtitlesAiIcon,
+            model.DisplayName,
+            model.License,
+            model.ExpectedTotalSizeBytes,
+            async (progress, ct) =>
+            {
+                CreateSubtitles.CreateSubtitlesModelLocator.EnsureDirectoryExists(model);
+                await CreateSubtitles.CreateSubtitlesModelDownloader.DownloadAsync(model, progress, ct).ConfigureAwait(false);
+            });
+
+        var dialogResult = downloadForm.ShowDialog();
+        var ready = dialogResult == DialogResult.OK &&
+            File.Exists(modelFiles.EncoderPath) &&
+            File.Exists(modelFiles.DecoderPath) &&
+            File.Exists(modelFiles.TokensPath) &&
+            CreateSubtitles.CreateSubtitlesModelDownloader.IsModelReady(model, logger);
+        logger.Log($"Program: Create Subtitles preflight completed. dialogResult={dialogResult}, ready={ready}, modelId={model.Id}.");
+        return ready;
     }
 
     private static RemoveBackground.BackgroundRemovalModelDefinition? ResolveBackgroundRemovalModel(

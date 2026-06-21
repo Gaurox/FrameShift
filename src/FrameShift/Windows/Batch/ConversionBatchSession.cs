@@ -351,6 +351,40 @@ internal sealed class ConversionBatchSession
         KeepWindowOpenOnFailure: true,
         PrimaryButtonText: "Upscale");
 
+    public static BatchDefinition CreateCreateSubtitlesAudioDefinition() => new(
+        ActionId: "create-subtitles-audio",
+        DisplayName: "Create Subtitle File",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: FrameShift.Core.AI.CreateSubtitles.CreateSubtitlesAction.GetSupportedAudioExtensionsText(),
+        MutexName: @"Local\FrameShift_CreateSubtitlesAudioBatch",
+        PipeName: "FrameShift_CreateSubtitlesAudioBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: FrameShift.Core.AI.CreateSubtitles.CreateSubtitlesAction.IsSupportedAudioExtension,
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Create SRT");
+
+    public static BatchDefinition CreateCreateSubtitlesVideoDefinition() => new(
+        ActionId: "create-subtitles-video",
+        DisplayName: "Create Subtitle File",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: FrameShift.Core.AI.CreateSubtitles.CreateSubtitlesAction.GetSupportedVideoExtensionsText(),
+        MutexName: @"Local\FrameShift_CreateSubtitlesVideoBatch",
+        PipeName: "FrameShift_CreateSubtitlesVideoBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: FrameShift.Core.AI.CreateSubtitles.CreateSubtitlesAction.IsSupportedVideoExtension,
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Create SRT");
+
     public static BatchDefinition CreateSeparateAudioDefinition() => new(
         ActionId: "separate-audio",
         DisplayName: "Audio Separation",
