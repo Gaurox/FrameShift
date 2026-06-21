@@ -53,18 +53,18 @@ RIFE interpolation is also available as a dedicated local AI workflow for smooth
   <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="FrameShift remove background demo" width="900" />
 </p>
 
-Upscale images with a local AI model picked from a simple dropdown: Real-ESRGAN x4plus for general photos, screenshots and AI images, Real-ESRGAN Anime 6B for illustrations and line art, and Swin2SR for restoration-grade quality. Choose ×2, ×3, ×4 or a custom target size (aspect-locked). It runs on the GPU via DirectML with CPU fallback, tiles large images automatically, and saves the result next to the source.
-
-<p align="center">
-  <img src="screenshots/AI_actions/Upscaler.png" alt="FrameShift upscale image model picker" width="900" />
-</p>
-
 Upscale videos locally with Real-ESRGAN General v3, AnimeVideo v3, or x4plus Quality. FrameShift keeps
 the source frame rate and audio, supports ×2 / ×3 / ×4 and custom sizes, and uses DirectML with CPU
 and encoder fallbacks. Image and video upscale models remain isolated in their own verified folders.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_upscale_video.gif" alt="FrameShift Upscale Video original and x4 comparison" width="900" />
+</p>
+
+Upscale images with a local AI model picked from a simple dropdown: Real-ESRGAN x4plus for general photos, screenshots and AI images, Real-ESRGAN Anime 6B for illustrations and line art, and Swin2SR for restoration-grade quality. Choose ×2, ×3, ×4 or a custom target size (aspect-locked). It runs on the GPU via DirectML with CPU fallback, tiles large images automatically, and saves the result next to the source.
+
+<p align="center">
+  <img src="screenshots/AI_actions/Upscaler.png" alt="FrameShift upscale image model picker" width="900" />
 </p>
 
 Build image-based PDF documents with a visual layout workflow designed for quick adjustments.
