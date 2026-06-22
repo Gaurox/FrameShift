@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.15.0"
+#define MyAppVersion "1.16.0"
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -65,6 +65,7 @@ Name: "video\convert_video"; Description: "Convert video"; Types: complete custo
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
 Name: "video\extract_frames"; Description: "Extract frames"; Types: complete custom
 Name: "video\create_gif"; Description: "Create GIF"; Types: complete custom
+Name: "video\add_subtitles_video"; Description: "Add subtitles to video"; Types: complete custom
 Name: "video\extract_audio"; Description: "Extract audio"; Types: complete custom
 Name: "video\cut_video"; Description: "Cut video"; Types: complete custom
 Name: "video\crop_video"; Description: "Crop video"; Types: complete custom
@@ -94,8 +95,8 @@ Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,Workers\CreateSubtitlesWorker\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
 Source: "{#AppPayloadDir}\Workers\CreateSubtitlesWorker\*"; DestDir: "{app}\Workers\CreateSubtitlesWorker"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: ai\create_subtitles_audio ai\create_subtitles_video
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video
-Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video tools\media_info
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\add_subtitles_video video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed image\image_to_pdf image\convert_image image\compress_image image\convert_icon image\crop_image image\resize_image image\rotate_flip_image ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video
+Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: video\convert_video video\remove_audio video\extract_frames video\create_gif video\add_subtitles_video video\extract_audio video\cut_video video\crop_video video\rotate_flip_video video\resize_video video\compress_video video\change_video_speed video\interpolate_video image\resize_image audio\cut_audio audio\convert_audio audio\reverse_audio audio\compress_audio audio\change_pitch audio\change_audio_speed ai\separate_audio ai\interpolate_video_rife ai\upscale_video ai\create_subtitles_audio ai\create_subtitles_video tools\media_info
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
@@ -129,7 +130,6 @@ var
   AiModelsPage: TWizardPage;
   AiModelsDirEdit: TEdit;
   AiModelsDirBrowseButton: TButton;
-  AiModelsSelectedDir: string;
 
 function GetListItem(var List: string): string;
 var
@@ -494,6 +494,10 @@ begin
   begin
     Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\create-gif-video-icon.ico');
   end;
+  if MenuKey = 'add_subtitles_video' then
+  begin
+    Result := ExpandConstant('{app}\Assets\Icons\ai\add_subtitles_video.ico');
+  end;
   if MenuKey = 'image_to_pdf' then
   begin
     Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\image-to-pdf-image-icon.ico');
@@ -712,6 +716,16 @@ begin
       'create_gif',
       'Create GIF',
       'create-gif',
+      '');
+  end;
+
+  if WizardIsComponentSelected('video\add_subtitles_video') then
+  begin
+    ApplyActionMenuList(
+      VideoExtensions,
+      'add_subtitles_video',
+      'Add subtitles to video',
+      'add-subtitles-video',
       '');
   end;
 
@@ -1026,13 +1040,44 @@ begin
   Result := ExpandConstant('{localappdata}\FrameShift\AI\Models');
 end;
 
+function ReadModelsDirectoryFromSettings(): string; forward;
+
+function GetSuggestedModelsDir(): string;
+var
+  DefaultModelsDir: string;
+  CustomModelsDir: string;
+begin
+  DefaultModelsDir := GetDefaultModelsDir();
+  CustomModelsDir := ReadModelsDirectoryFromSettings();
+
+  if (CustomModelsDir <> '') and DirExists(CustomModelsDir) then
+  begin
+    Result := CustomModelsDir;
+    exit;
+  end;
+
+  if DirExists(DefaultModelsDir) then
+  begin
+    Result := DefaultModelsDir;
+    exit;
+  end;
+
+  if CustomModelsDir <> '' then
+  begin
+    Result := CustomModelsDir;
+    exit;
+  end;
+
+  Result := DefaultModelsDir;
+end;
+
 procedure AiModelsBrowseClick(Sender: TObject);
 var
   Dir: string;
 begin
   Dir := AiModelsDirEdit.Text;
   if Dir = '' then
-    Dir := GetDefaultModelsDir();
+    Dir := GetSuggestedModelsDir();
   if BrowseForFolder('Select AI models folder', Dir, False) then
     AiModelsDirEdit.Text := Dir;
 end;
@@ -1041,7 +1086,6 @@ procedure CreateAiModelsPage();
 var
   DescLabel: TNewStaticText;
   DirLabel: TNewStaticText;
-  EditPanel: TPanel;
 begin
   AiModelsPage := CreateCustomPage(
     wpSelectComponents,
@@ -1075,7 +1119,7 @@ begin
   AiModelsDirEdit.Top := DirLabel.Top + DirLabel.Height + ScaleY(4);
   AiModelsDirEdit.Width := AiModelsPage.SurfaceWidth - ScaleX(90);
   AiModelsDirEdit.Height := ScaleY(22);
-  AiModelsDirEdit.Text := GetDefaultModelsDir();
+  AiModelsDirEdit.Text := GetSuggestedModelsDir();
 
   AiModelsDirBrowseButton := TButton.Create(AiModelsPage);
   AiModelsDirBrowseButton.Parent := AiModelsPage.Surface;

@@ -57,6 +57,92 @@ public sealed class ProgramCliTests
     }
 
     [Fact]
+    public void TryParseArguments_WithSubtitlesOutputFormat_ParsesOption()
+    {
+        var args = new[] { "--action", "create-subtitles-audio", "--subtitles-format", "ass", @"C:\test\audio.wav" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal("ass", options[ActionOptionKeys.SubtitlesOutputFormat]);
+    }
+
+    [Fact]
+    public void TryParseArguments_WithSubtitlesAssPreset_ParsesOption()
+    {
+        var args = new[] { "--action", "create-subtitles-audio", "--ass-preset", "word-highlight", @"C:\test\audio.wav" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal("word-highlight", options[ActionOptionKeys.SubtitlesAssPreset]);
+    }
+
+    [Fact]
+    public void TryParseArguments_WithSubtitleFile_ParsesOption()
+    {
+        var args = new[] { "--action", "add-subtitles-video", "--subtitle-file", @"C:\test\track.srt", @"C:\test\video.mp4" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal(@"C:\test\track.srt", options[ActionOptionKeys.SubtitleFilePath]);
+    }
+
+    [Fact]
+    public void TryParseArguments_WithSubtitleMode_ParsesOption()
+    {
+        var args = new[] { "--action", "add-subtitles-video", "--subtitle-mode", "burn", @"C:\test\video.mp4" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal("burn", options[ActionOptionKeys.SubtitleMode]);
+    }
+
+    [Fact]
+    public void TryParseArguments_WithSubtitleAliases_ParsesOptions()
+    {
+        var args = new[]
+        {
+            "--action", "add-subtitles-video",
+            "--subtitle-path", @"C:\test\track.ass",
+            "--subtitles-mode", "burn-into-video",
+            @"C:\test\video.mp4"
+        };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal(@"C:\test\track.ass", options[ActionOptionKeys.SubtitleFilePath]);
+        Assert.Equal("burn-into-video", options[ActionOptionKeys.SubtitleMode]);
+    }
+
+    [Fact]
+    public void TryParseArguments_WithSubtitleVisualOptions_ParsesOptions()
+    {
+        var args = new[]
+        {
+            "--action", "add-subtitles-video",
+            "--subtitle-font", "Tahoma",
+            "--subtitle-size", "42",
+            "--subtitle-color", "#FFEECC",
+            "--subtitle-position", "top",
+            "--subtitle-margin-v", "96",
+            @"C:\test\video.mp4"
+        };
+
+        var result = Program.TryParseArguments(args, out _, out _, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal("Tahoma", options[ActionOptionKeys.SubtitleFontName]);
+        Assert.Equal("42", options[ActionOptionKeys.SubtitleFontSize]);
+        Assert.Equal("#FFEECC", options[ActionOptionKeys.SubtitlePrimaryColor]);
+        Assert.Equal("top", options[ActionOptionKeys.SubtitleVerticalAlignment]);
+        Assert.Equal("96", options[ActionOptionKeys.SubtitleMarginVertical]);
+    }
+
+    [Fact]
     public void TryParseArguments_WithStartAndEnd_ParsesTimingOptions()
     {
         var args = new[] { "--action", "cut-audio", "--start", "00:00:05", "--end", "00:00:30", @"C:\test\audio.mp3" };

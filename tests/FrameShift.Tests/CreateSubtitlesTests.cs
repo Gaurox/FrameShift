@@ -12,6 +12,7 @@ using FrameShift.Core.FFmpeg;
 using FrameShift.Core.FFprobe;
 using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
+using FrameShift.Windows.AI;
 using Xunit;
 
 namespace FrameShift.Tests;
@@ -23,19 +24,439 @@ public sealed class CreateSubtitlesTests
     {
         var words = new[]
         {
-            new CreateSubtitlesWordTiming("Hello", "hello", 0.00d),
-            new CreateSubtitlesWordTiming("world.", "world.", 0.42d),
-            new CreateSubtitlesWordTiming("This", "this", 1.95d),
-            new CreateSubtitlesWordTiming("is", "is", 2.20d),
-            new CreateSubtitlesWordTiming("FrameShift!", "frameshift!", 2.48d)
+            new SubtitleWord("Hello", "hello", 0.00d, 0.00d, false),
+            new SubtitleWord("world.", "world.", 0.42d, 0.42d, false),
+            new SubtitleWord("This", "this", 1.95d, 1.95d, false),
+            new SubtitleWord("is", "is", 2.20d, 2.20d, false),
+            new SubtitleWord("FrameShift!", "frameshift!", 2.48d, 2.48d, false)
         };
 
-        var cues = CreateSubtitlesSegmenter.BuildCues(words, TimeSpan.FromSeconds(4));
+        var segments = CreateSubtitlesSegmenter.BuildSegments(words, TimeSpan.FromSeconds(4));
 
-        Assert.Equal(2, cues.Count);
-        Assert.Equal("Hello world.", cues[0].Text);
-        Assert.Equal("This is FrameShift!", cues[1].Text);
-        Assert.True(cues[0].End < cues[1].Start);
+        Assert.Equal(2, segments.Count);
+        Assert.Equal("Hello world.", segments[0].Text);
+        Assert.Equal("This is FrameShift!", segments[1].Text);
+        Assert.True(segments[0].End < segments[1].Start);
+        Assert.True(segments[0].HasReliableWordAlignment);
+        Assert.All(segments[0].Words, word => Assert.True(word.IsTimingReliable));
+    }
+
+    [Fact]
+    public void ProjectBuilder_Preserves_Word_Timestamps_Inside_Segments()
+    {
+        var workerWords = new[]
+        {
+            new CreateSubtitlesWorkerWord { Text = " Hello", StartSeconds = 0.10d },
+            new CreateSubtitlesWorkerWord { Text = " world.", StartSeconds = 0.42d },
+            new CreateSubtitlesWorkerWord { Text = " This", StartSeconds = 1.95d },
+            new CreateSubtitlesWorkerWord { Text = " is", StartSeconds = 2.20d },
+            new CreateSubtitlesWorkerWord { Text = " FrameShift!", StartSeconds = 2.48d }
+        };
+
+        var project = CreateSubtitlesProjectBuilder.Build(workerWords, TimeSpan.FromSeconds(4));
+
+        Assert.Equal(2, project.Segments.Count);
+        Assert.True(project.Segments[0].HasReliableWordAlignment);
+        Assert.Collection(
+            project.Segments[0].Words,
+            word =>
+            {
+                Assert.Equal("Hello", word.Text);
+                Assert.Equal(0.10d, word.StartSeconds, 3);
+                Assert.Equal(0.42d, word.EndSeconds, 3);
+                Assert.True(word.IsTimingReliable);
+            },
+            word =>
+            {
+                Assert.Equal("world.", word.Text);
+                Assert.Equal(0.42d, word.StartSeconds, 3);
+                Assert.True(word.EndSeconds > word.StartSeconds);
+                Assert.True(word.IsTimingReliable);
+            });
+        Assert.Collection(
+            project.Segments[1].Words,
+            word => Assert.Equal(1.95d, word.StartSeconds, 3),
+            word => Assert.Equal(2.20d, word.StartSeconds, 3),
+            word => Assert.Equal(2.48d, word.StartSeconds, 3));
+    }
+
+    [Fact]
+    public void ProjectBuilder_Falls_Back_When_Word_Timings_Are_Not_Reliable()
+    {
+        var workerWords = new[]
+        {
+            new CreateSubtitlesWorkerWord { Text = " Bonjour", StartSeconds = 0.00d },
+            new CreateSubtitlesWorkerWord { Text = " encore", StartSeconds = 0.00d },
+            new CreateSubtitlesWorkerWord { Text = " maintenant.", StartSeconds = 0.00d }
+        };
+
+        var project = CreateSubtitlesProjectBuilder.Build(workerWords, TimeSpan.FromSeconds(2));
+        var segment = Assert.Single(project.Segments);
+
+        Assert.False(segment.HasReliableWordAlignment);
+        Assert.Equal(3, segment.Words.Count);
+        Assert.All(segment.Words, word => Assert.False(word.IsTimingReliable));
+        Assert.True(segment.Words[0].StartSeconds >= segment.Start.TotalSeconds);
+        Assert.True(segment.Words[0].EndSeconds <= segment.Words[1].StartSeconds);
+        Assert.True(segment.Words[1].EndSeconds <= segment.Words[2].StartSeconds);
+        Assert.True(segment.Words[2].EndSeconds <= segment.End.TotalSeconds + 0.001d);
+    }
+
+    [Fact]
+    public void SrtFormatter_Formats_Subtitle_Project_Without_Changing_Output()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(4),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Hello world.",
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromMilliseconds(740),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Hello", "hello", 0.00d, 0.42d, true),
+                        new SubtitleWord("world.", "world.", 0.42d, 0.74d, true)
+                    }),
+                new SubtitleSegment(
+                    2,
+                    "This is FrameShift!",
+                    TimeSpan.FromMilliseconds(1950),
+                    TimeSpan.FromMilliseconds(3860),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("This", "this", 1.95d, 2.20d, true),
+                        new SubtitleWord("is", "is", 2.20d, 2.48d, true),
+                        new SubtitleWord("FrameShift!", "frameshift!", 2.48d, 3.86d, true)
+                    })
+            });
+
+        var srt = CreateSubtitlesSrtFormatter.Format(project);
+
+        Assert.Equal(
+            "1\r\n00:00:00,000 --> 00:00:00,740\r\nHello world.\r\n\r\n2\r\n00:00:01,950 --> 00:00:03,860\r\nThis is FrameShift!\r\n\r\n",
+            srt);
+    }
+
+    [Fact]
+    public void ProjectSerializer_RoundTrips_Unicode_And_Timing_Metadata()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(5.2d),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Bonjour 世界 !",
+                    TimeSpan.FromSeconds(0.1d),
+                    TimeSpan.FromSeconds(2.0d),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Bonjour", "bonjour", 0.10d, 0.85d, true),
+                        new SubtitleWord("世界", "世界", 0.85d, 1.45d, true),
+                        new SubtitleWord("!", "!", 1.45d, 2.00d, true)
+                    }),
+                new SubtitleSegment(
+                    2,
+                    "Ligne sans alignement fiable.",
+                    TimeSpan.FromSeconds(2.2d),
+                    TimeSpan.FromSeconds(4.0d),
+                    false,
+                    new[]
+                    {
+                        new SubtitleWord("Ligne", "ligne", 2.20d, 2.80d, false),
+                        new SubtitleWord("sans", "sans", 2.80d, 3.30d, false),
+                        new SubtitleWord("alignement", "alignement", 3.30d, 3.65d, false),
+                        new SubtitleWord("fiable.", "fiable.", 3.65d, 4.00d, false)
+                    })
+            });
+
+        var json = CreateSubtitlesProjectSerializer.Serialize(project);
+        var roundTrip = CreateSubtitlesProjectSerializer.Deserialize(json);
+
+        Assert.Contains("\"format\": \"frameshift-subtitle-project\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"version\": 1", json, StringComparison.Ordinal);
+        Assert.Equal(project.TotalDuration, roundTrip.TotalDuration);
+        Assert.Equal(2, roundTrip.Segments.Count);
+        Assert.Equal("Bonjour 世界 !", roundTrip.Segments[0].Text);
+        Assert.True(roundTrip.Segments[0].HasReliableWordAlignment);
+        Assert.False(roundTrip.Segments[1].HasReliableWordAlignment);
+        Assert.Equal("世界", roundTrip.Segments[0].Words[1].Text);
+        Assert.Equal(0.85d, roundTrip.Segments[0].Words[1].StartSeconds, 3);
+        Assert.False(roundTrip.Segments[1].Words[0].IsTimingReliable);
+    }
+
+    [Fact]
+    public void ProjectSerializer_Rejects_Unsupported_Version()
+    {
+        var project = BuildSimpleSubtitleProject();
+        var json = CreateSubtitlesProjectSerializer.Serialize(project)
+            .Replace("\"version\": 1", "\"version\": 99", StringComparison.Ordinal);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CreateSubtitlesProjectSerializer.Deserialize(json));
+
+        Assert.Contains("Unsupported subtitle project version", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssFormatter_Escapes_Unicode_Braces_Backslashes_And_NewLines()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(2),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Bonjour {世界}\r\nC:\\clips\\test!",
+                    TimeSpan.Zero,
+                    TimeSpan.FromSeconds(1.23d),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Bonjour", "bonjour", 0.00d, 0.60d, true),
+                        new SubtitleWord("{世界}", "世界", 0.60d, 1.23d, true)
+                    })
+            });
+
+        var ass = CreateSubtitlesAssFormatter.Format(project);
+
+        Assert.Contains("[Script Info]", ass, StringComparison.Ordinal);
+        Assert.Contains("[V4+ Styles]", ass, StringComparison.Ordinal);
+        Assert.Contains("[Events]", ass, StringComparison.Ordinal);
+        Assert.Contains("Dialogue: 0,0:00:00.00,0:00:01.23,Default,,0,0,0,,Bonjour \\{世界\\}\\NC:\\\\clips\\\\test!", ass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssFormatter_Exports_Plain_Text_For_Segments_Without_Reliable_Alignment()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(2),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Texte simple, sans effet dynamique.",
+                    TimeSpan.FromSeconds(0.5d),
+                    TimeSpan.FromSeconds(1.5d),
+                    false,
+                    new[]
+                    {
+                        new SubtitleWord("Texte", "texte", 0.50d, 0.80d, false),
+                        new SubtitleWord("simple,", "simple,", 0.80d, 1.10d, false),
+                        new SubtitleWord("sans", "sans", 1.10d, 1.30d, false),
+                        new SubtitleWord("effet", "effet", 1.30d, 1.40d, false),
+                        new SubtitleWord("dynamique.", "dynamique.", 1.40d, 1.50d, false)
+                    })
+            });
+
+        var ass = CreateSubtitlesAssFormatter.Format(project);
+
+        Assert.Contains("Texte simple, sans effet dynamique.", ass, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\k", ass, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\kf", ass, StringComparison.Ordinal);
+        Assert.DoesNotContain("\\ko", ass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssFormatter_WordHighlight_Uses_Word_Timings_When_Reliable()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(1),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Hello world.",
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromMilliseconds(740),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Hello", "hello", 0.00d, 0.42d, true),
+                        new SubtitleWord("world.", "world.", 0.42d, 0.74d, true)
+                    })
+            });
+
+        var ass = CreateSubtitlesAssFormatter.Format(project, CreateSubtitlesAssPreset.WordHighlight);
+
+        Assert.Contains("Dialogue: 0,0:00:00.00,0:00:00.42,Default,,0,0,0,,{\\c&H0000FFFF&\\b1}Hello{\\r} world.", ass, StringComparison.Ordinal);
+        Assert.Contains("Dialogue: 0,0:00:00.42,0:00:00.74,Default,,0,0,0,,Hello {\\c&H0000FFFF&\\b1}world.{\\r}", ass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssFormatter_ProgressiveReveal_Reveals_Words_Progressively_When_Reliable()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(1),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Hello world.",
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromMilliseconds(740),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Hello", "hello", 0.00d, 0.42d, true),
+                        new SubtitleWord("world.", "world.", 0.42d, 0.74d, true)
+                    })
+            });
+
+        var ass = CreateSubtitlesAssFormatter.Format(project, CreateSubtitlesAssPreset.ProgressiveReveal);
+
+        Assert.Contains("Dialogue: 0,0:00:00.00,0:00:00.42,Default,,0,0,0,,Hello", ass, StringComparison.Ordinal);
+        Assert.Contains("Dialogue: 0,0:00:00.42,0:00:00.74,Default,,0,0,0,,Hello world.", ass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssFormatter_Dynamic_Presets_Fall_Back_To_Classic_When_Segment_Is_Not_Reliable()
+    {
+        var project = new SubtitleProject(
+            TimeSpan.FromSeconds(2),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Texte simple, sans effet dynamique.",
+                    TimeSpan.FromSeconds(0.5d),
+                    TimeSpan.FromSeconds(1.5d),
+                    false,
+                    new[]
+                    {
+                        new SubtitleWord("Texte", "texte", 0.50d, 0.80d, false),
+                        new SubtitleWord("simple,", "simple,", 0.80d, 1.10d, false),
+                        new SubtitleWord("sans", "sans", 1.10d, 1.30d, false),
+                        new SubtitleWord("effet", "effet", 1.30d, 1.40d, false),
+                        new SubtitleWord("dynamique.", "dynamique.", 1.40d, 1.50d, false)
+                    })
+            });
+
+        var ass = CreateSubtitlesAssFormatter.Format(project, CreateSubtitlesAssPreset.WordHighlight);
+
+        Assert.Contains("Dialogue: 0,0:00:00.50,0:00:01.50,Default,,0,0,0,,Texte simple, sans effet dynamique.", ass, StringComparison.Ordinal);
+        Assert.DoesNotContain("{\\c&H0000FFFF&\\b1}", ass, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OutputFormats_Default_To_StandardSrt_And_Expose_Expected_Extensions()
+    {
+        Assert.Equal(CreateSubtitlesOutputFormat.StandardSrt, CreateSubtitlesOutputFormats.Default);
+        Assert.Equal(".srt", CreateSubtitlesOutputFormats.Default.GetOutputExtension());
+        Assert.Equal(".ass", CreateSubtitlesOutputFormat.AdvancedAss.GetOutputExtension());
+        Assert.Equal(".frameshift-subtitles.json", CreateSubtitlesOutputFormat.FrameShiftSubtitleProject.GetOutputExtension());
+    }
+
+    [Fact]
+    public void Picker_Defaults_To_StandardSrt_Output()
+    {
+        using var form = new CreateSubtitlesPickerForm("Create Subtitle File", "sample.wav");
+
+        Assert.Equal(CreateSubtitlesOutputFormat.StandardSrt, form.SelectedOutputFormat);
+        Assert.Equal(CreateSubtitlesAssPreset.Classic, form.SelectedAssPreset);
+        Assert.False(form.IsAssPresetSectionVisible);
+    }
+
+    [Fact]
+    public void Picker_Shows_Ass_Preset_Only_When_AdvancedAss_Is_Selected()
+    {
+        using var form = new CreateSubtitlesPickerForm(
+            "Create Subtitle File",
+            "sample.wav",
+            CreateSubtitlesOutputFormat.AdvancedAss,
+            CreateSubtitlesAssPreset.WordHighlight);
+
+        Assert.Equal(CreateSubtitlesOutputFormat.AdvancedAss, form.SelectedOutputFormat);
+        Assert.Equal(CreateSubtitlesAssPreset.WordHighlight, form.SelectedAssPreset);
+        Assert.True(form.IsAssPresetSectionVisible);
+    }
+
+    [Fact]
+    public async Task Alternative_Output_Formats_Are_Written_With_Expected_Extensions()
+    {
+        var repoRoot = GetRepositoryRoot();
+        var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_16k.wav");
+        var modelSourceDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control");
+
+        if (!File.Exists(sampleAudio) || !File.Exists(Path.Combine(modelSourceDir, "base-encoder.onnx")))
+            return;
+
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_alt_formats_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+
+        var modelsRoot = Path.Combine(tempRoot, "models");
+        var modelTargetDir = Path.Combine(modelsRoot, "whisper-base-onnx");
+        Directory.CreateDirectory(modelTargetDir);
+        foreach (var fileName in new[] { "base-encoder.onnx", "base-decoder.onnx", "base-tokens.txt" })
+        {
+            File.Copy(Path.Combine(modelSourceDir, fileName), Path.Combine(modelTargetDir, fileName), overwrite: true);
+        }
+
+        var previousSettings = File.Exists(AiModelSettings.ConfigFilePath)
+            ? File.ReadAllText(AiModelSettings.ConfigFilePath)
+            : null;
+
+        try
+        {
+            new AiModelSettings { ModelsDirectory = modelsRoot }.Save();
+            AiModelStorage.InvalidateCache();
+
+            var audioCopy = Path.Combine(tempRoot, "alt formats.wav");
+            File.Copy(sampleAudio, audioCopy, overwrite: true);
+
+            var logger = new AppLogger();
+            var action = new CreateSubtitlesAction(
+                CreateSubtitlesSourceKind.Audio,
+                new FfmpegRunner(logger),
+                new FfprobeRunner(logger),
+                new ToolLocator());
+
+            var assResult = await action.ExecuteAsync(
+                new ActionRequest(
+                    audioCopy,
+                    logger,
+                    null,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [ActionOptionKeys.SubtitlesModel] = "whisper-base",
+                        [ActionOptionKeys.SubtitlesOutputFormat] = "ass",
+                        [ActionOptionKeys.SubtitlesAssPreset] = "word-highlight"
+                    }),
+                CancellationToken.None);
+
+            var projectResult = await action.ExecuteAsync(
+                new ActionRequest(
+                    audioCopy,
+                    logger,
+                    null,
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        [ActionOptionKeys.SubtitlesModel] = "whisper-base",
+                        [ActionOptionKeys.SubtitlesOutputFormat] = "project"
+                    }),
+                CancellationToken.None);
+
+            Assert.True(assResult.Success, assResult.Message);
+            Assert.True(projectResult.Success, projectResult.Message);
+            Assert.EndsWith(".ass", assResult.OutputPath, StringComparison.OrdinalIgnoreCase);
+            Assert.EndsWith(".frameshift-subtitles.json", projectResult.OutputPath, StringComparison.OrdinalIgnoreCase);
+            var assText = await File.ReadAllTextAsync(assResult.OutputPath!);
+            Assert.Contains("[Script Info]", assText, StringComparison.Ordinal);
+            Assert.Contains("{\\c&H0000FFFF&\\b1}", assText, StringComparison.Ordinal);
+            Assert.Contains("\"format\": \"frameshift-subtitle-project\"", await File.ReadAllTextAsync(projectResult.OutputPath!), StringComparison.Ordinal);
+        }
+        finally
+        {
+            RestoreSettings(previousSettings);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -516,6 +937,36 @@ public sealed class CreateSubtitlesTests
             .Replace("  ", " ", StringComparison.Ordinal)
             .Trim();
     }
+
+    private static SubtitleProject BuildSimpleSubtitleProject() =>
+        new(
+            TimeSpan.FromSeconds(4),
+            new[]
+            {
+                new SubtitleSegment(
+                    1,
+                    "Hello world.",
+                    TimeSpan.FromSeconds(0),
+                    TimeSpan.FromMilliseconds(740),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("Hello", "hello", 0.00d, 0.42d, true),
+                        new SubtitleWord("world.", "world.", 0.42d, 0.74d, true)
+                    }),
+                new SubtitleSegment(
+                    2,
+                    "This is FrameShift!",
+                    TimeSpan.FromMilliseconds(1950),
+                    TimeSpan.FromMilliseconds(3860),
+                    true,
+                    new[]
+                    {
+                        new SubtitleWord("This", "this", 1.95d, 2.20d, true),
+                        new SubtitleWord("is", "is", 2.20d, 2.48d, true),
+                        new SubtitleWord("FrameShift!", "frameshift!", 2.48d, 3.86d, true)
+                    })
+            });
 
     private static string GetRepositoryRoot()
     {

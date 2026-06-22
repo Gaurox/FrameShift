@@ -49,6 +49,10 @@ public sealed class ActionRegistry
                 ffmpegRunner,
                 ffprobeRunner,
                 toolLocator),
+            new AddSubtitlesToVideoAction(
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
             new ExtractFramesAction(
                 ffmpegRunner,
                 ffprobeRunner,

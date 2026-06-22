@@ -12,6 +12,7 @@ Documentation centrale du projet FrameShift.
 - [Changelog](CHANGELOG.md)
 - [Release Checklist and Versioning](RELEASE_CHECKLIST.md)
 - [Code File Index](CODE_FILE_INDEX.md)
+- [Add Subtitles to Video Notes](ADD_SUBTITLES_TO_VIDEO.md)
 - [Create Subtitle File Notes](CREATE_SUBTITLES.md)
 - [RIFE Interpolation Notes](RIFE_INTERPOLATION_NOTES.md)
 - [Upscale Video Implementation](UPSCALE_VIDEO_PLAN.md)

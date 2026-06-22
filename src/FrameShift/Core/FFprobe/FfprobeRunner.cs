@@ -48,7 +48,7 @@ public sealed class FfprobeRunner
         var arguments = new[]
         {
             "-v", "error",
-            "-show_entries", "format=duration:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,nb_frames,duration,sample_rate,channels",
+            "-show_entries", "format=duration:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,nb_frames,duration,sample_rate,channels,pix_fmt,color_space,color_transfer,color_primaries,profile,bits_per_raw_sample:stream_tags=rotate:stream_side_data=rotation",
             "-of", "json",
             inputPath
         };
@@ -78,6 +78,13 @@ public sealed class FfprobeRunner
             double? videoStreamDurationSeconds = null;
             var primaryAudioSampleRate = 0;
             var primaryAudioChannels = 0;
+            var rotationDegrees = 0;
+            var videoPixelFormat = default(string);
+            var videoColorSpace = default(string);
+            var videoColorTransfer = default(string);
+            var videoColorPrimaries = default(string);
+            var videoProfile = default(string);
+            int? videoBitDepth = null;
 
             foreach (var streamElement in streamsElement.EnumerateArray())
             {
@@ -120,6 +127,14 @@ public sealed class FfprobeRunner
                 else if (string.Equals(codecType, "video", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(videoCodec))
                 {
                     videoCodec = codecName?.ToLowerInvariant();
+                    videoPixelFormat = GetStringValue(streamElement, "pix_fmt");
+                    videoColorSpace = GetStringValue(streamElement, "color_space");
+                    videoColorTransfer = GetStringValue(streamElement, "color_transfer");
+                    videoColorPrimaries = GetStringValue(streamElement, "color_primaries");
+                    videoProfile = GetStringValue(streamElement, "profile");
+                    videoBitDepth = TryParseBitDepth(GetStringValue(streamElement, "bits_per_raw_sample"));
+                    rotationDegrees = TryGetRotationDegrees(streamElement);
+
                     if (streamElement.TryGetProperty("width", out var widthElement))
                     {
                         videoWidth = widthElement.GetInt32();
@@ -197,7 +212,14 @@ public sealed class FfprobeRunner
                 streams)
             {
                 PrimaryAudioSampleRate = primaryAudioSampleRate,
-                PrimaryAudioChannels = primaryAudioChannels
+                PrimaryAudioChannels = primaryAudioChannels,
+                RotationDegrees = rotationDegrees,
+                VideoPixelFormat = videoPixelFormat,
+                VideoColorSpace = videoColorSpace,
+                VideoColorTransfer = videoColorTransfer,
+                VideoColorPrimaries = videoColorPrimaries,
+                VideoProfile = videoProfile,
+                VideoBitDepth = videoBitDepth
             }, null);
         }
         catch (Exception ex)
@@ -407,6 +429,68 @@ public sealed class FfprobeRunner
         }
 
         return null;
+    }
+
+    private static string? GetStringValue(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value))
+        {
+            return null;
+        }
+
+        return value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : value.ValueKind == JsonValueKind.Number
+                ? value.GetRawText()
+                : null;
+    }
+
+    private static int? TryParseBitDepth(string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value) &&
+            int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedBitDepth) &&
+            parsedBitDepth > 0)
+        {
+            return parsedBitDepth;
+        }
+
+        return null;
+    }
+
+    private static int TryGetRotationDegrees(JsonElement streamElement)
+    {
+        if (streamElement.TryGetProperty("side_data_list", out var sideDataList) &&
+            sideDataList.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var sideData in sideDataList.EnumerateArray())
+            {
+                if (sideData.TryGetProperty("rotation", out var rotationElement) &&
+                    TryParseRotationDegrees(rotationElement, out var rotationFromSideData))
+                {
+                    return rotationFromSideData;
+                }
+            }
+        }
+
+        if (streamElement.TryGetProperty("tags", out var tagsElement) &&
+            tagsElement.TryGetProperty("rotate", out var rotateElement) &&
+            TryParseRotationDegrees(rotateElement, out var rotationFromTags))
+        {
+            return rotationFromTags;
+        }
+
+        return 0;
+    }
+
+    private static bool TryParseRotationDegrees(JsonElement rotationElement, out int rotationDegrees)
+    {
+        rotationDegrees = 0;
+        return rotationElement.ValueKind switch
+        {
+            JsonValueKind.Number => rotationElement.TryGetInt32(out rotationDegrees),
+            JsonValueKind.String => int.TryParse(rotationElement.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out rotationDegrees),
+            _ => false
+        };
     }
 
     public async Task<TimeSpan?> TryGetDurationAsync(

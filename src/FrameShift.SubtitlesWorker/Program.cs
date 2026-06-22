@@ -47,12 +47,13 @@ internal static class Program
             response.ProviderUsed = providerUsed;
 
             List<CreateSubtitlesWorkerWord> words = [];
+            List<CreateSubtitlesWorkerToken> tokens = [];
             try
             {
                 using (recognizer)
                 {
                     EmitProgress(20, $"Whisper recognizer ready ({(providerUsed == "directml" ? "DirectML" : "CPU")}).");
-                    words = TranscribeAllWindows(request, recognizer, wave);
+                    (words, tokens) = TranscribeAllWindows(request, recognizer, wave);
                 }
             }
             catch (OperationCanceledException) { throw; }
@@ -64,10 +65,11 @@ internal static class Program
                 using var cpuRecognizer = BuildRecognizer(request, "cpu");
                 EmitProgress(20, "Whisper recognizer ready (CPU).");
                 response.ProviderUsed = "cpu";
-                words = TranscribeAllWindows(request, cpuRecognizer, wave);
+                (words, tokens) = TranscribeAllWindows(request, cpuRecognizer, wave);
             }
 
             response.Words = words;
+            response.Tokens = tokens;
 
             if (IsCancellationRequested(request.CancelSignalPath))
             {
@@ -167,7 +169,7 @@ internal static class Program
             MaxActivePaths = 4
         });
 
-    private static List<CreateSubtitlesWorkerWord> TranscribeAllWindows(
+    private static (List<CreateSubtitlesWorkerWord> Words, List<CreateSubtitlesWorkerToken> Tokens) TranscribeAllWindows(
         CreateSubtitlesWorkerRequest request,
         OfflineRecognizer recognizer,
         LoadedWave wave)
@@ -178,6 +180,7 @@ internal static class Program
             request.WindowMilliseconds,
             request.OverlapMilliseconds);
         var mergedWords = new List<WordTiming>();
+        var mergedTokens = new List<TokenTiming>();
 
         for (var index = 0; index < windows.Count; index++)
         {
@@ -199,22 +202,39 @@ internal static class Program
             recognizer.Decode(stream);
 
             var result = stream.Result;
+            var localTokens = WhisperTokenBuilder.BuildTokens(
+                result.Tokens ?? Array.Empty<string>(),
+                result.Timestamps ?? Array.Empty<float>(),
+                window.StartSeconds);
             var localWords = WhisperWordBuilder.BuildWords(
                 result.Tokens ?? Array.Empty<string>(),
                 result.Timestamps ?? Array.Empty<float>(),
                 window.StartSeconds);
 
+            TokenMerger.Merge(mergedTokens, localTokens);
             WordMerger.Merge(mergedWords, localWords);
         }
 
         EmitProgress(96, "Finalizing merged timestamps...");
-        return mergedWords
-            .Select(word => new CreateSubtitlesWorkerWord
-            {
-                Text = word.Text,
-                StartSeconds = word.StartSeconds
-            })
-            .ToList();
+        return (
+            mergedWords
+                .Select(word => new CreateSubtitlesWorkerWord
+                {
+                    Text = word.Text,
+                    StartSeconds = word.StartSeconds
+                })
+                .ToList(),
+            mergedTokens
+                .Select(token => new CreateSubtitlesWorkerToken
+                {
+                    RawText = token.RawText,
+                    TrimmedText = token.TrimmedText,
+                    StartSeconds = token.StartSeconds,
+                    StartsNewWord = token.StartsNewWord,
+                    IsWhitespaceOnly = token.IsWhitespaceOnly,
+                    IsPunctuationOnly = token.IsPunctuationOnly
+                })
+                .ToList());
     }
 
     private static void EmitProgress(int percent, string message)
@@ -288,6 +308,7 @@ internal static class Program
         public string? DetectedLanguage { get; set; }
         public double AudioDurationSeconds { get; set; }
         public List<CreateSubtitlesWorkerWord> Words { get; set; } = [];
+        public List<CreateSubtitlesWorkerToken> Tokens { get; set; } = [];
         public string? ProviderUsed { get; set; }
     }
 
@@ -295,6 +316,16 @@ internal static class Program
     {
         public string Text { get; set; } = string.Empty;
         public double StartSeconds { get; set; }
+    }
+
+    private sealed class CreateSubtitlesWorkerToken
+    {
+        public string RawText { get; set; } = string.Empty;
+        public string TrimmedText { get; set; } = string.Empty;
+        public double StartSeconds { get; set; }
+        public bool StartsNewWord { get; set; }
+        public bool IsWhitespaceOnly { get; set; }
+        public bool IsPunctuationOnly { get; set; }
     }
 
     private sealed class CreateSubtitlesWorkerProgressEvent
@@ -312,6 +343,15 @@ internal static class Program
     private sealed record WaveWindow(int StartSample, int LengthSamples, double StartSeconds);
 
     private sealed record WordTiming(string Text, string NormalizedText, double StartSeconds);
+
+    private sealed record TokenTiming(
+        string RawText,
+        string TrimmedText,
+        string ComparableText,
+        double StartSeconds,
+        bool StartsNewWord,
+        bool IsWhitespaceOnly,
+        bool IsPunctuationOnly);
 
     private static class WaveLoader
     {
@@ -455,10 +495,10 @@ internal static class Program
             return words;
         }
 
-        private static bool IsPunctuationOnly(string token) =>
+        internal static bool IsPunctuationOnly(string token) =>
             token.All(static character => char.IsPunctuation(character) || char.IsSymbol(character));
 
-        private static string NormalizeForComparison(string text)
+        internal static string NormalizeForComparison(string text)
         {
             var builder = new StringBuilder(text.Length);
             foreach (var character in text)
@@ -494,6 +534,54 @@ internal static class Program
                 var text = Text.ToString();
                 return new WordTiming(text, NormalizeForComparison(text), StartSeconds);
             }
+        }
+    }
+
+    private static class WhisperTokenBuilder
+    {
+        public static List<TokenTiming> BuildTokens(IReadOnlyList<string> tokens, IReadOnlyList<float> timestamps, double globalOffsetSeconds)
+        {
+            var resolved = new List<TokenTiming>(Math.Min(tokens.Count, timestamps.Count));
+            var comparableCount = Math.Min(tokens.Count, timestamps.Count);
+            for (var index = 0; index < comparableCount; index++)
+            {
+                var rawToken = tokens[index] ?? string.Empty;
+                var trimmedToken = rawToken.Trim();
+                var isWhitespaceOnly = string.IsNullOrWhiteSpace(rawToken);
+                var isPunctuationOnly = !isWhitespaceOnly && WhisperWordBuilder.IsPunctuationOnly(trimmedToken);
+                var startsNewWord = rawToken.Length > 0 &&
+                                    (rawToken[0] == ' ' || rawToken[0] == '\t' || rawToken[0] == '\n');
+                var comparableText = BuildComparableText(trimmedToken, isWhitespaceOnly, isPunctuationOnly);
+
+                resolved.Add(new TokenTiming(
+                    rawToken,
+                    trimmedToken,
+                    comparableText,
+                    globalOffsetSeconds + timestamps[index],
+                    startsNewWord,
+                    isWhitespaceOnly,
+                    isPunctuationOnly));
+            }
+
+            return resolved;
+        }
+
+        private static string BuildComparableText(string trimmedToken, bool isWhitespaceOnly, bool isPunctuationOnly)
+        {
+            if (isWhitespaceOnly)
+            {
+                return "<whitespace>";
+            }
+
+            if (isPunctuationOnly)
+            {
+                return $"<punct:{trimmedToken}>";
+            }
+
+            var normalized = WhisperWordBuilder.NormalizeForComparison(trimmedToken);
+            return string.IsNullOrWhiteSpace(normalized)
+                ? trimmedToken
+                : normalized;
         }
     }
 
@@ -557,6 +645,69 @@ internal static class Program
         {
             return string.Equals(previous.NormalizedText, current.NormalizedText, StringComparison.Ordinal) &&
                    Math.Abs(previous.StartSeconds - current.StartSeconds) <= 0.35d;
+        }
+    }
+
+    private static class TokenMerger
+    {
+        public static void Merge(List<TokenTiming> mergedTokens, IReadOnlyList<TokenTiming> incomingTokens)
+        {
+            if (incomingTokens.Count == 0)
+            {
+                return;
+            }
+
+            if (mergedTokens.Count == 0)
+            {
+                mergedTokens.AddRange(incomingTokens);
+                return;
+            }
+
+            var skipCount = FindOverlapTokenCount(mergedTokens, incomingTokens);
+            for (var index = skipCount; index < incomingTokens.Count; index++)
+            {
+                var token = incomingTokens[index];
+                if (mergedTokens.Count > 0 && IsNearDuplicate(mergedTokens[^1], token))
+                {
+                    continue;
+                }
+
+                mergedTokens.Add(token);
+            }
+        }
+
+        private static int FindOverlapTokenCount(IReadOnlyList<TokenTiming> mergedTokens, IReadOnlyList<TokenTiming> incomingTokens)
+        {
+            var maxComparable = Math.Min(24, Math.Min(mergedTokens.Count, incomingTokens.Count));
+            for (var candidate = maxComparable; candidate >= 1; candidate--)
+            {
+                var mergedStart = mergedTokens.Count - candidate;
+                var matches = true;
+                for (var index = 0; index < candidate; index++)
+                {
+                    var left = mergedTokens[mergedStart + index];
+                    var right = incomingTokens[index];
+                    if (!string.Equals(left.ComparableText, right.ComparableText, StringComparison.Ordinal) ||
+                        Math.Abs(left.StartSeconds - right.StartSeconds) > 0.80d)
+                    {
+                        matches = false;
+                        break;
+                    }
+                }
+
+                if (matches)
+                {
+                    return candidate;
+                }
+            }
+
+            return 0;
+        }
+
+        private static bool IsNearDuplicate(TokenTiming previous, TokenTiming current)
+        {
+            return string.Equals(previous.ComparableText, current.ComparableText, StringComparison.Ordinal) &&
+                   Math.Abs(previous.StartSeconds - current.StartSeconds) <= 0.30d;
         }
     }
 }

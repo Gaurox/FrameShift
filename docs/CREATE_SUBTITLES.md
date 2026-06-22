@@ -7,7 +7,10 @@ Active V1 notes for `create-subtitles-audio` and `create-subtitles-video`.
 - local/offline only
 - GPU via DirectML (Windows), automatic CPU fallback
 - three selectable models: Whisper Base, Whisper Small (default), Whisper Large-v3 Turbo
-- adjacent unique `.srt` output, UTF-8 no BOM
+- adjacent unique subtitle output, UTF-8 no BOM
+- default export: `.srt`
+- alternate exports: `.ass`, `.frameshift-subtitles.json`
+- `Advanced ASS Subtitle` presets: `Classic`, `Word Highlight`, `Progressive Reveal`
 - no overwrite
 
 ## Supported extensions
@@ -31,7 +34,7 @@ But the business pipeline is shared:
 - same windowing (29 s / overlap 1.5 s)
 - same overlap / dedup logic
 - same SRT segmentation
-- same final writer
+- same internal subtitle project
 
 Video adds only one pre-step:
 
@@ -87,7 +90,7 @@ The main process keeps:
 - model preflight and download
 - progress wiring
 - cancellation signaling
-- SRT assembly and output naming
+- subtitle project assembly and output naming
 - temp cleanup
 
 **Hang guard**: the runner kills the worker after 6 hours if it has not exited. Safety net for
@@ -168,9 +171,18 @@ Checksums are pinned in `CreateSubtitlesModelCatalog.cs` and verified before use
 
 1. `EnsureCreateSubtitlesOptions` in `ProgramAiPreflight.cs`:
    - validates extension
-   - opens `CreateSubtitlesPickerForm` (3-model radio picker, Small selected by default)
-     unless `--subtitles-model` was passed headlessly
+   - opens `CreateSubtitlesPickerForm`
+   - model section: 3 radio choices, Small selected by default
+   - output section: `Standard SRT` / `Advanced ASS Subtitle` / `FrameShift Customization Project`
+   - `Advanced ASS Subtitle`: `Creates a finished subtitle file with the selected style and dynamic effect already applied.`
+   - `FrameShift Customization Project`: `Saves all word timings so you can later customize font, size, colors, position and effects when adding subtitles to a video.`
+   - default output remains `Standard SRT`
+   - ASS preset section appears only when `Advanced ASS Subtitle` is selected
+   - ASS preset default remains `Classic`
+   - picker is skipped if `--subtitles-model` was already supplied headlessly
    - writes `options[SubtitlesModel] = <selected-id>`
+   - writes `options[SubtitlesOutputFormat] = <selected-format>`
+   - writes `options[SubtitlesAssPreset] = <selected-ass-preset>`
 
 2. `EnsureCreateSubtitlesModelReady` in `ProgramAiPreflight.cs`:
    - checks all artifacts via SHA256
@@ -195,11 +207,181 @@ Constants in `CreateSubtitlesSegmenter` (from `CreateSubtitlesSrt.cs`):
 Cue end is estimated from last word start + letter-count tail (0.38–1.10 s), capped 40 ms before
 the next cue start and clamped to total duration.
 
+## Internal subtitle model
+
+Lot 1 keeps the current `.srt` output and UI unchanged, but the export no longer jumps directly
+from `workerResponse.Words` to ad-hoc SRT cues.
+
+The active core model is now:
+
+- `SubtitleProject`
+- `SubtitleSegment`
+- `SubtitleWord`
+
+Current state of the word timing data:
+
+- the worker already returns a per-word **start timestamp** in `CreateSubtitlesWorkerWord.StartSeconds`
+- these start timestamps are produced window by window in `FrameShift.SubtitlesWorker`
+- they were previously consumed immediately by the SRT segmentation path
+- they are now preserved in `SubtitleProject -> SubtitleSegment -> SubtitleWord`
+- SRT export still derives segment end times from the same heuristics as before
+
+This means the app now keeps word-level timing data in memory for future subtitle integration work,
+without changing the `.srt` result of this lot.
+
+## Lot 2 additions
+
+Lot 2 keeps the current visible behavior:
+
+- `.srt` export remains the active output written by the action
+- no UI change
+- no dynamic subtitle effects yet
+
+The core now also provides:
+
+- a **versioned FrameShift subtitle project** JSON serializer
+- a **classic ASS exporter** built from the same `SubtitleProject`
+- explicit `SubtitleWord.EndSeconds`
+- `HasReliableWordAlignment` on `SubtitleSegment`
+- `IsTimingReliable` on each `SubtitleWord`
+
+These additions are intentionally not wired to the UI in this lot.
+
+## Word end timing rules
+
+The worker still provides only word start timestamps.
+
+FrameShift now derives word ends inside each subtitle segment with two paths:
+
+1. reliable path
+   - each word end = next word start
+   - last word end = segment end
+   - accepted only if starts are finite, ordered, and remain inside the segment with small tolerance
+
+2. fallback path
+   - if the timing sequence is invalid or unreliable, the segment is marked as not reliably aligned
+   - words are redistributed monotonically across the segment duration
+   - this keeps the project valid for later reuse without inventing fake “reliable” alignment
+
+This gives usable word ranges while preserving a clear distinction between trustworthy and fallback timing.
+
+## FrameShift project format
+
+Serializer:
+
+- `CreateSubtitlesProjectSerializer`
+- format id: `frameshift-subtitle-project`
+- version: `1`
+- suggested extension: `.frameshift-subtitles.json`
+
+Serialized payload includes:
+
+- total project duration
+- every segment
+- segment text and start/end
+- segment alignment reliability flag
+- every word
+- normalized text
+- word start/end
+- word timing reliability flag
+
+The serializer validates:
+
+- format id
+- version number
+- non-empty JSON payload
+
+Unknown versions are rejected explicitly instead of being guessed.
+
+## ASS export
+
+Exporter:
+
+- `CreateSubtitlesAssFormatter`
+
+Current ASS scope:
+
+- valid `Script Info`, `V4+ Styles`, and `Events` sections
+- three presets from the same `SubtitleProject`
+- `Classic` = one classic `Dialogue` line per subtitle segment
+- `Word Highlight` = no subtitle before the refined cue start; at the first useful word, the full sentence appears and the current word is highlighted
+- `Progressive Reveal` = words appear progressively over reliable word intervals
+- Unicode text preserved
+- escaped braces, backslashes, and line breaks
+- automatic fallback to `Classic` for segments without reliable word alignment
+- no advanced subtitle editor in this lot
+- no new ASS effect families beyond these presets
+
+Segments without reliable word alignment still export clean classic dialogue text even when a dynamic preset was requested.
+
+## Lot 3 additions
+
+Lot 3 wires the export choices to the real action output without changing subtitle styling rules yet.
+
+Available output choices:
+
+- `Standard SRT`
+- `Advanced ASS Subtitle`
+- `FrameShift Customization Project`
+
+Current behavior:
+
+- default remains `Standard SRT`
+- the picker now exposes the 3 output choices with short descriptions
+- the action writes the selected format next to the source file
+- `Standard SRT` keeps the current result and naming behavior
+- `Advanced ASS Subtitle` writes a classic `.ass` file from the same `SubtitleProject`
+- `FrameShift Customization Project` writes `.frameshift-subtitles.json`
+- the actual ASS rendering rules are still defined centrally from the same internal model
+
+## Lot 4 additions
+
+Lot 4 keeps the same three output formats and adds preset selection only for `Advanced ASS Subtitle`.
+
+Available ASS presets:
+
+- `Classic`
+- `Word Highlight`
+- `Progressive Reveal`
+
+Current behavior:
+
+- default ASS preset remains `Classic`
+- the preset choice is visible only when `Advanced ASS Subtitle` is selected in the picker
+- CLI can request the same preset explicitly
+- `Word Highlight` and `Progressive Reveal` use the reliable word timings already stored in `SubtitleProject`
+- dynamic presets may delay the visible cue start conservatively through the shared refined display start when the local audio onset is clearly later than the Whisper word timestamp
+- `Word Highlight` starts with the full sentence visible at that refined start; `Progressive Reveal` keeps progressive word appearance
+- segments without reliable alignment automatically fall back to `Classic`
+- no new editor surface and no extra ASS effect families are introduced in this lot
+
+CLI:
+
+- `--subtitles-model <id>`
+- `--subtitles-format <srt|ass|project>`
+- alias: `--subtitles-output-format <srt|ass|project>`
+- `--subtitles-ass-preset <classic|word-highlight|progressive-reveal>`
+- alias: `--ass-preset <classic|word-highlight|progressive-reveal>`
+
 ## Tests
 
-`tests/FrameShift.Tests/CreateSubtitlesTests.cs` — 9 tests:
+`tests/FrameShift.Tests/CreateSubtitlesTests.cs` — 23 tests:
 
 - `Segmenter_BreaksOnPunctuationAndSilence` — unit, no model required
+- `ProjectBuilder_Preserves_Word_Timestamps_Inside_Segments` — unit, verifies word-level timestamps remain available after segmentation
+- `ProjectBuilder_Falls_Back_When_Word_Timings_Are_Not_Reliable` — unit, verifies invalid timings are downgraded cleanly
+- `SrtFormatter_Formats_Subtitle_Project_Without_Changing_Output` — unit, verifies the SRT export still matches the current format
+- `ProjectSerializer_RoundTrips_Unicode_And_Timing_Metadata` — unit, verifies the versioned project format preserves Unicode and timing metadata
+- `ProjectSerializer_Rejects_Unsupported_Version` — unit, verifies strict version validation
+- `AssFormatter_Escapes_Unicode_Braces_Backslashes_And_NewLines` — unit, verifies classic ASS escaping
+- `AssFormatter_Exports_Plain_Text_For_Segments_Without_Reliable_Alignment` — unit, verifies ASS export remains valid when alignment is fallback-only
+- `AssFormatter_WordHighlight_Uses_Word_Timings_When_Reliable` — unit, verifies the highlighted word follows reliable timings
+- `AssFormatter_ProgressiveReveal_Reveals_Words_Progressively_When_Reliable` — unit, verifies progressive reveal follows reliable timings
+- `AssFormatter_Dynamic_Presets_Fall_Back_To_Classic_When_Segment_Is_Not_Reliable` — unit, verifies unreliable segments do not emit dynamic ASS lines
+- `OutputFormats_Default_To_StandardSrt_And_Expose_Expected_Extensions` — unit, verifies the export catalog defaults and extensions
+- `Picker_Defaults_To_StandardSrt_Output` — unit, verifies the UI default stays on SRT and keeps ASS preset hidden
+- `Picker_Shows_Ass_Preset_Only_When_AdvancedAss_Is_Selected` — unit, verifies the ASS preset section appears only for `Advanced ASS Subtitle`
+- `Alternative_Output_Formats_Are_Written_With_Expected_Extensions` — integration, verifies the action writes `.ass` and `.frameshift-subtitles.json`
 - `Default_Model_Is_Whisper_Small` — catalog unit test
 - `Turbo_Model_Has_Four_Artifacts_Including_Weights_File` — catalog unit test
 - `Audio_And_Video_Actions_Produce_Equivalent_Subtitle_Text` — end-to-end, requires Base model

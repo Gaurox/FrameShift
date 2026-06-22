@@ -251,10 +251,10 @@ public sealed class MainForm : Form
 
         var tiles = new[]
         {
-            ("Video",    "Convert · Cut · Crop · GIF · Resize · Extract · Rotate · Interpolate"),
+            ("Video",    "Convert · Cut · Crop · GIF · Resize · Extract · Rotate · Interpolate · Subtitles"),
             ("Audio",    "Convert · Cut · Reverse · Pitch · Speed · Compress · Separate"),
             ("Image",    "Convert · Crop · Resize · Rotate · Compress · PDF · Icon"),
-            ("AI tools", "Remove Background · Remove Noise · Separate Audio · RIFE Interpolate"),
+            ("AI tools", "Remove Background · Remove Noise · Separate Audio · RIFE Interpolate · Create Subtitle File"),
         };
 
         for (var i = 0; i < tiles.Length; i++)

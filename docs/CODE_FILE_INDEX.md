@@ -19,6 +19,7 @@ Règles de lecture :
 - `src/FrameShift/ProgramPickersConversion.cs`
 - `src/FrameShift/ProgramPickersCut.cs`
 - `src/FrameShift/ProgramPickersImage.cs`
+- `src/FrameShift/ProgramPickersSubtitles.cs`
 - `src/FrameShift/ProgramPickersResizeCompress.cs`
 - `src/FrameShift/ProgramPickersTiming.cs`
 - `src/FrameShift/FrameShift.csproj`
@@ -39,6 +40,12 @@ Infrastructure :
 - `src/FrameShift/Core/Actions/ActionQueueRunner.cs`
 - `src/FrameShift/Core/Actions/ActionRegistry.cs`
 - `src/FrameShift/Core/Actions/ActionRequest.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoAction.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoMode.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoPlanner.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoBurnAppearance.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoSettings.cs`
+- `src/FrameShift/Core/Actions/AddSubtitlesToVideoSubtitleSourceLoader.cs`
 - `src/FrameShift/Core/Actions/CancellationScope.cs`
 - `src/FrameShift/Core/Actions/ConversionActionHelper.cs`
 - `src/FrameShift/Core/Actions/IConversionChoice.cs`
@@ -144,8 +151,14 @@ Media Info :
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelCatalog.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelLocator.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesModelDownloader.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesAssPreset.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesAssDiagnostic.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesOutputFormat.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesProtocol.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesAss.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesProjectSerialization.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesSrt.cs`
+- `src/FrameShift/Core/AI/CreateSubtitles/SubtitleProject.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesWorkerRunner.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelCatalog.cs`
 - `src/FrameShift/Core/AI/RemoveBackground/BackgroundRemovalModelDefinition.cs`
@@ -255,6 +268,8 @@ Helpers UI :
 - `src/FrameShift/Windows/Helpers/IconPaths.cs`
 - `src/FrameShift/Windows/Helpers/ImageBitmapHelper.cs`
 - `src/FrameShift/Windows/Helpers/PreviewFrameHelper.cs`
+- `src/FrameShift/Windows/Forms/AddSubtitlesToVideoPickerForm.cs`
+- `src/FrameShift/Windows/Forms/AddSubtitlesToVideoBurnEditorForm.cs`
 - `src/FrameShift/Windows/Helpers/PreviewLayoutHelper.cs`
 
 Responsabilités UI partagées :
@@ -268,6 +283,10 @@ Responsabilités UI partagées :
 
 Unit tests actifs :
 - `tests/FrameShift.Tests/ChangePitchSettingsTests.cs`
+- `tests/FrameShift.Tests/AddSubtitlesToVideoPlannerTests.cs`
+- `tests/FrameShift.Tests/AddSubtitlesToVideoBurnTests.cs`
+- `tests/FrameShift.Tests/AddSubtitlesToVideoBurnEditorFormTests.cs`
+- `tests/FrameShift.Tests/AddSubtitlesToVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/ConvertToIconSettingsTests.cs`
 - `tests/FrameShift.Tests/CreateGifSettingsTests.cs`
 - `tests/FrameShift.Tests/CutAudioSettingsTests.cs`
@@ -291,9 +310,13 @@ Assets de test utiles :
 - `ProgramBatch.cs` = batch, progression, annulation ;
 - `ProgramAiPreflight.cs` = préflight IA ;
 - `ProgramImageToPdf.cs` = flux single-instance `Image to PDF` ;
-- `ProgramPickers*.cs` = fallback UI et collecte d'options par familles d'actions.
+- `ProgramPickers*.cs` = fallback UI et collecte d'options par familles d'actions, y compris le picker mode + fichier de `add-subtitles-video`.
 - `Image to PDF` reste un module interactif lancé par ce launcher `Program`, pas un exécutable séparé.
 - `CropImageForm` et `CropVideoForm` partagent maintenant une base UI proche via `FrameShiftCropEditorUi.cs`, avec auto-crop visuel et navigation de preview.
+- `Add Subtitles to Video` (`add-subtitles-video`) reste une seule action produit : `SelectableTrack` conserve le planner conteneur léger du lot 1, tandis que `BurnIntoVideo` charge `.srt` / `.ass` / `.frameshift-subtitles.json`, génère au besoin un ASS temporaire dimensionné sur la vidéo, réencode la vidéo via FFmpeg et copie l’audio quand le conteneur de sortie le permet.
+- Le lot 3 ajoute `AddSubtitlesToVideoBurnAppearance`, des overrides de style burn sérialisables, et un éditeur WinForms `AddSubtitlesToVideoBurnEditorForm` avec aperçu frame par frame. Le même générateur ASS temporaire sert à la prévisualisation comme à l’incrustation finale ; les `.ass` externes restent en passthrough avec les contrôles visuels désactivés.
+- Le lot 4 étend ce flux avec un aperçu animé court basé sur un clip burn temporaire, des copies de travail `.ass` pour fiabiliser les chemins Windows complexes, un probe enrichi (`MediaProbeResult`) pour rotation/HDR, et des nettoyages complets des previews temporaires à chaque annulation ou refresh obsolète.
+- Le lot 5 ferme l’intégration produit : `ActionRegistry` l’enregistre définitivement, `Program` / `ProgramCli` / `ProgramPickersSubtitles` gardent le routage UI-first/CLI, `installer/FrameShift.iss` ajoute le composant vidéo dédié, dépendances `ffmpeg` / `ffprobe` et l’entrée Explorer vidéo `Add subtitles to video`, et la doc produit/architecture est alignée sur cette surface réelle.
 - `Media Info` passe par `FfprobeRunner.TryProbeMediaInfoAsync(...)` puis `MediaInfoFormatter`.
 - `DownloadModelForm` est maintenant un downloader IA partagé entre `remove-background` et `separate-audio`.
 - `DownloadModelForm` est maintenant le downloader IA partagé des modules `remove-background`, `remove-noise`, `separate-audio` et `interpolate-video-rife`.
@@ -303,7 +326,12 @@ Assets de test utiles :
 - `IconPaths.cs` centralise aussi les icônes IA actives du dossier `Assets\Icons\ai`.
 - Les assets upscale dédiés sont `Assets\Icons\ai\upscale_image.(ico|png)` et `upscale_video.(ico|png)` ; les démonstrations vidéo sont dans `screenshots\Gif_demos\demo_upscale_video.gif` et `screenshots\Video_demos\demo_upscale_video.mp4`.
 - `ProgramRemoveObject.cs` gère le flux UI-first de `remove-object` (validation extension, ouverture `RemoveObjectEditorForm`), intercepté avant la file dans `Program.cs`.
-- **Create Subtitle File** (`create-subtitles-audio` / `create-subtitles-video`) isole sherpa-onnx dans `FrameShift.SubtitlesWorker` pour éviter les collisions de `onnxruntime.dll` avec le runtime ONNX principal. Worker publié en dossier (pas PublishSingleFile) pour que `DirectML.dll` soit trouvé par `LoadLibrary`. Exécution GPU via DirectML avec fallback CPU automatique (init et inférence) ; 4 DLL natives DML dans `native-dml/` (sherpa-onnx 1.13.3 DML, ORT 1.24.4 DirectML, DirectML 1.15.4). FeatureDim par modèle : Base/Small=80, Turbo=128. Trois modèles : `whisper-base`, `whisper-small` (défaut), `whisper-turbo` (~3,1 GB, encodeur ONNX external data). `CreateSubtitlesPickerForm` affiche un sélecteur radio 3 modèles. Voir `docs/CREATE_SUBTITLES.md` pour les détails complets.
+- **Create Subtitle File** (`create-subtitles-audio` / `create-subtitles-video`) isole sherpa-onnx dans `FrameShift.SubtitlesWorker` pour éviter les collisions de `onnxruntime.dll` avec le runtime ONNX principal. Worker publié en dossier (pas PublishSingleFile) pour que `DirectML.dll` soit trouvé par `LoadLibrary`. Exécution GPU via DirectML avec fallback CPU automatique (init et inférence) ; 4 DLL natives DML dans `native-dml/` (sherpa-onnx 1.13.3 DML, ORT 1.24.4 DirectML, DirectML 1.15.4). FeatureDim par modèle : Base/Small=80, Turbo=128. Trois modèles : `whisper-base`, `whisper-small` (défaut), `whisper-turbo` (~3,1 GB, encodeur ONNX external data). `CreateSubtitlesPickerForm` affiche désormais un sélecteur radio 3 modèles et 3 formats de sortie exclusifs : `Standard SRT` (défaut), `Advanced ASS Subtitle`, `FrameShift Customization Project`. Quand `Advanced ASS Subtitle` est choisi, le formulaire révèle aussi 3 presets exclusifs : `Classic` (défaut), `Word Highlight`, `Progressive Reveal`. Voir `docs/CREATE_SUBTITLES.md` pour les détails complets.
+- Le pipeline SRT `CreateSubtitles` passe désormais par un modèle interne `SubtitleProject` / `SubtitleSegment` / `SubtitleWord` pour conserver les timestamps mot par mot déjà fournis par le worker avant formatage `.srt`.
+- Lot 2 ajoute un sérialiseur projet versionné `CreateSubtitlesProjectSerializer` (`frameshift-subtitle-project`, v1, extension suggérée `.frameshift-subtitles.json`) et un exporteur `CreateSubtitlesAssFormatter` pour un ASS classique valide.
+- Lot 3 branche réellement ces sorties via `CreateSubtitlesOutputFormats`, `ProgramAiPreflight`, `ProgramCli` et `CreateSubtitlesPickerForm`, tout en gardant `Standard SRT` sélectionné par défaut et sans activer d'effets dynamiques ASS.
+- Lot 4 ajoute `CreateSubtitlesAssPreset`, `CreateSubtitlesAssDiagnostic`, le câblage UI/CLI du preset ASS et deux rendus dynamiques limités (`Word Highlight`, `Progressive Reveal`) avec fallback automatique vers `Classic` pour les segments dont l'alignement mot à mot n'est pas fiable.
+- L’état 1.16.0 garde un `RefinedDisplayStart` partagé entre `ASS`, `SRT`, projet sérialisé et burn vidéo ; en `Word Highlight`, la phrase complète apparaît dès ce début raffiné, tandis que `Progressive Reveal` reste progressif.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
 - `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle.
 - `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.

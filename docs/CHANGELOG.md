@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.16.0
+
+Prepared for later publication.
+
+- **Create Subtitle File — internal subtitle model.** Subtitle generation now keeps a shared `SubtitleProject` / `SubtitleSegment` / `SubtitleWord` model with preserved word timings from the worker.
+- **Create Subtitle File — new export targets.** The same subtitle model now feeds `Standard SRT`, `Advanced ASS Subtitle`, and `FrameShift Customization Project` (`.frameshift-subtitles.json`) without changing the default SRT behavior.
+- **Create Subtitle File — versioned project format.** Added full `SubtitleProject` serialization in the FrameShift project format (`frameshift-subtitle-project`, v1) for later editing or re-export.
+- **Create Subtitle File — ASS presets.** `Advanced ASS Subtitle` now supports `Classic`, `Word Highlight`, and `Progressive Reveal`. Dynamic presets use reliable word timings and automatically fall back to `Classic` when a segment alignment is not reliable.
+- **Create Subtitle File — refined display start.** Dynamic ASS exports now keep the Whisper word timings as source of truth while allowing a conservative delayed cue display start when local audio onset clearly happens later. `SRT`, `ASS`, the serialized project, and `Add Subtitles to Video` all reuse the same shared display start.
+- **Create Subtitle File — `Word Highlight` semantics.** No subtitle is shown during the preceding silence. At the refined start of the first spoken word, the full sentence appears immediately and the current word is highlighted; `Progressive Reveal` remains progressive.
+- **Create Subtitle File — UI / CLI wiring.** The picker keeps `Standard SRT` as default, shows the ASS preset choice only when `Advanced ASS Subtitle` is selected, and the CLI now supports `--subtitles-format` plus `--subtitles-ass-preset` / `--ass-preset`.
+- **Add Subtitles to Video — selectable track lot.** Added `add-subtitles-video` as a product action that muxes an external `.srt` subtitle file into a video as a selectable track. `MKV` keeps a native `subrip` subtitle track; `MP4/MOV/M4V` keep their container with `mov_text` when existing streams stay compatible; otherwise the action falls back to `MKV` to preserve streams more cleanly. The normal path copies existing video/audio streams without re-encoding, uses adjacent unique naming, and removes partial outputs on failure or cancellation. Minimal launcher wiring accepts `--subtitle-file` / `--subtitle-path` / `--srt-file` or opens a simple file picker when the option is missing.
+- **Add Subtitles to Video — burn lot.** `add-subtitles-video` now also supports `Burn Subtitles Into Video` via `--subtitle-mode burn`. It accepts `.srt`, `.ass`, and `.frameshift-subtitles.json`, converts `.srt` / FrameShift projects to a temporary resolution-aware `.ass`, burns through FFmpeg, copies audio when compatible with the output container, and removes both partial outputs and temporary `.ass` files after failure, cancellation, or success.
+- **Add Subtitles to Video — burn editor lot.** The burn workflow now opens a shared-helper WinForms editor with a real frame preview, simple time navigation, font / size / color / outline / shadow / position controls, shared ASS preset selection for `SRT` / FrameShift project inputs, and debounced FFmpeg/libass preview rendering with cancellation of obsolete refreshes. External `.ass` files stay in style passthrough mode and clearly disable non-applicable controls.
+- **Add Subtitles to Video — animated preview and hardening lot.** The burn editor now adds a short animated preview loop generated from a temporary burn clip around the current position, then displayed as a lightweight looping preview without adding a new playback dependency. Burn preparation now uses display-aware subtitle layout for rotated videos, copies external `.ass` files to temporary working paths for safer Windows path handling, reads `.srt` text with a UTF-8 then Windows-codepage fallback, cleans preview clip / GIF artifacts on cancellation or refresh, and surfaces a clear HDR warning when subtitle burn-in may alter colorimetry.
+- **Add Subtitles to Video — product integration lot.** The action is now finalized as a product surface: definitively registered in `ActionRegistry`, routed through the standard launcher/UI/CLI flow, listed in the active docs, and integrated into the Inno Setup packaging with its own video component, bundled `ffmpeg` / `ffprobe` dependencies, and an Explorer video context-menu entry labeled `Add subtitles to video`.
+
 ## 1.15.0
 
 Released 2026-06-21.

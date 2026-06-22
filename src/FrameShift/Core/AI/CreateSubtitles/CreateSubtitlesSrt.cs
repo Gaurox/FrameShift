@@ -6,15 +6,11 @@ using System.Text;
 
 namespace FrameShift.Core.AI.CreateSubtitles;
 
-internal sealed record CreateSubtitlesWordTiming(string Text, string NormalizedText, double StartSeconds);
-
-internal sealed record CreateSubtitlesCue(int Index, string Text, TimeSpan Start, TimeSpan End);
-
 internal static class CreateSubtitlesWordNormalizer
 {
-    public static IReadOnlyList<CreateSubtitlesWordTiming> Normalize(IReadOnlyList<CreateSubtitlesWorkerWord> words)
+    public static IReadOnlyList<SubtitleWord> Normalize(IReadOnlyList<CreateSubtitlesWorkerWord> words)
     {
-        var normalized = new List<CreateSubtitlesWordTiming>(words.Count);
+        var normalized = new List<SubtitleWord>(words.Count);
         foreach (var word in words)
         {
             var text = NormalizeText(word.Text);
@@ -23,10 +19,13 @@ internal static class CreateSubtitlesWordNormalizer
                 continue;
             }
 
-            normalized.Add(new CreateSubtitlesWordTiming(
+            var startSeconds = Math.Max(0d, word.StartSeconds);
+            normalized.Add(new SubtitleWord(
                 text,
                 NormalizeForComparison(text),
-                Math.Max(0d, word.StartSeconds)));
+                startSeconds,
+                startSeconds,
+                false));
         }
 
         return normalized;
@@ -68,6 +67,16 @@ internal static class CreateSubtitlesWordNormalizer
     }
 }
 
+internal static class CreateSubtitlesProjectBuilder
+{
+    public static SubtitleProject Build(IReadOnlyList<CreateSubtitlesWorkerWord> words, TimeSpan totalDuration)
+    {
+        var normalizedWords = CreateSubtitlesWordNormalizer.Normalize(words);
+        var segments = CreateSubtitlesSegmenter.BuildSegments(normalizedWords, totalDuration);
+        return new SubtitleProject(totalDuration, segments);
+    }
+}
+
 internal static class CreateSubtitlesSegmenter
 {
     private const int MaxCueCharacters = 84;
@@ -75,8 +84,8 @@ internal static class CreateSubtitlesSegmenter
     private const double MaxCueSeconds = 5.8d;
     private const double SilenceBreakSeconds = 0.85d;
 
-    public static IReadOnlyList<CreateSubtitlesCue> BuildCues(
-        IReadOnlyList<CreateSubtitlesWordTiming> words,
+    public static IReadOnlyList<SubtitleSegment> BuildSegments(
+        IReadOnlyList<SubtitleWord> words,
         TimeSpan totalDuration)
     {
         if (words.Count == 0)
@@ -120,7 +129,7 @@ internal static class CreateSubtitlesSegmenter
             index = cueEndIndex + 1;
         }
 
-        var cues = new List<CreateSubtitlesCue>(spans.Count);
+        var segments = new List<SubtitleSegment>(spans.Count);
         for (var cueIndex = 0; cueIndex < spans.Count; cueIndex++)
         {
             var span = spans[cueIndex];
@@ -130,15 +139,19 @@ internal static class CreateSubtitlesSegmenter
                 ? words[spans[cueIndex + 1].StartIndex].StartSeconds
                 : totalDuration.TotalSeconds;
             var cueEnd = ComputeCueEnd(cueStart, lastWordStart, nextCueStart, totalDuration.TotalSeconds, words[span.EndIndex].Text);
+            var rawSegmentWords = words.Skip(span.StartIndex).Take(span.EndIndex - span.StartIndex + 1).ToArray();
+            var resolvedSegmentWords = SubtitleWordTimingResolver.Resolve(rawSegmentWords, cueStart, cueEnd, out var hasReliableWordAlignment);
 
-            cues.Add(new CreateSubtitlesCue(
+            segments.Add(new SubtitleSegment(
                 cueIndex + 1,
                 BreakIntoLines(JoinWords(words, span.StartIndex, span.EndIndex)),
                 TimeSpan.FromSeconds(cueStart),
-                TimeSpan.FromSeconds(cueEnd)));
+                TimeSpan.FromSeconds(cueEnd),
+                hasReliableWordAlignment,
+                resolvedSegmentWords));
         }
 
-        return cues;
+        return segments;
     }
 
     private static double ComputeCueEnd(
@@ -194,7 +207,7 @@ internal static class CreateSubtitlesSegmenter
         text.EndsWith(";", StringComparison.Ordinal) ||
         text.EndsWith(":", StringComparison.Ordinal);
 
-    private static string JoinWords(IReadOnlyList<CreateSubtitlesWordTiming> words, int startIndex, int endIndex)
+    private static string JoinWords(IReadOnlyList<SubtitleWord> words, int startIndex, int endIndex)
     {
         var builder = new StringBuilder();
         for (var index = startIndex; index <= endIndex; index++)
@@ -244,23 +257,140 @@ internal static class CreateSubtitlesSegmenter
 
         return $"{text[..bestBreak].Trim()}{Environment.NewLine}{text[(bestBreak + 1)..].Trim()}";
     }
+
+    private static class SubtitleWordTimingResolver
+    {
+        private const double MinimumValidGapSeconds = 0.001d;
+        private const double SegmentToleranceSeconds = 0.050d;
+
+        public static IReadOnlyList<SubtitleWord> Resolve(
+            IReadOnlyList<SubtitleWord> words,
+            double segmentStartSeconds,
+            double segmentEndSeconds,
+            out bool hasReliableWordAlignment)
+        {
+            if (words.Count == 0)
+            {
+                hasReliableWordAlignment = false;
+                return [];
+            }
+
+            if (TryResolveReliable(words, segmentStartSeconds, segmentEndSeconds, out var resolvedWords))
+            {
+                hasReliableWordAlignment = true;
+                return resolvedWords;
+            }
+
+            hasReliableWordAlignment = false;
+            return BuildFallback(words, segmentStartSeconds, segmentEndSeconds);
+        }
+
+        private static bool TryResolveReliable(
+            IReadOnlyList<SubtitleWord> words,
+            double segmentStartSeconds,
+            double segmentEndSeconds,
+            out SubtitleWord[] resolvedWords)
+        {
+            resolvedWords = new SubtitleWord[words.Count];
+
+            if (!IsFinite(segmentStartSeconds) ||
+                !IsFinite(segmentEndSeconds) ||
+                segmentEndSeconds <= segmentStartSeconds + MinimumValidGapSeconds)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < words.Count; index++)
+            {
+                var word = words[index];
+                var startSeconds = word.StartSeconds;
+                if (!IsFinite(startSeconds))
+                {
+                    return false;
+                }
+
+                if (startSeconds < segmentStartSeconds - SegmentToleranceSeconds ||
+                    startSeconds >= segmentEndSeconds - MinimumValidGapSeconds)
+                {
+                    return false;
+                }
+
+                if (index > 0 && startSeconds <= resolvedWords[index - 1].StartSeconds + MinimumValidGapSeconds)
+                {
+                    return false;
+                }
+
+                var endSeconds = index < words.Count - 1
+                    ? words[index + 1].StartSeconds
+                    : segmentEndSeconds;
+
+                if (!IsFinite(endSeconds) ||
+                    endSeconds > segmentEndSeconds + SegmentToleranceSeconds ||
+                    endSeconds <= startSeconds + MinimumValidGapSeconds)
+                {
+                    return false;
+                }
+
+                resolvedWords[index] = word with
+                {
+                    EndSeconds = Math.Min(endSeconds, segmentEndSeconds),
+                    IsTimingReliable = true
+                };
+            }
+
+            return true;
+        }
+
+        private static IReadOnlyList<SubtitleWord> BuildFallback(
+            IReadOnlyList<SubtitleWord> words,
+            double segmentStartSeconds,
+            double segmentEndSeconds)
+        {
+            var safeStartSeconds = IsFinite(segmentStartSeconds) ? Math.Max(0d, segmentStartSeconds) : 0d;
+            var safeEndSeconds = IsFinite(segmentEndSeconds)
+                ? Math.Max(safeStartSeconds + 0.01d, segmentEndSeconds)
+                : safeStartSeconds + Math.Max(0.35d, words.Count * 0.20d);
+            var segmentDurationSeconds = safeEndSeconds - safeStartSeconds;
+            var stepSeconds = segmentDurationSeconds / words.Count;
+
+            var resolvedWords = new SubtitleWord[words.Count];
+            for (var index = 0; index < words.Count; index++)
+            {
+                var startSeconds = safeStartSeconds + (stepSeconds * index);
+                var endSeconds = index == words.Count - 1
+                    ? safeEndSeconds
+                    : safeStartSeconds + (stepSeconds * (index + 1));
+
+                resolvedWords[index] = words[index] with
+                {
+                    StartSeconds = startSeconds,
+                    EndSeconds = endSeconds,
+                    IsTimingReliable = false
+                };
+            }
+
+            return resolvedWords;
+        }
+
+        private static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
+    }
 }
 
 internal static class CreateSubtitlesSrtFormatter
 {
-    public static string Format(IReadOnlyList<CreateSubtitlesCue> cues)
+    public static string Format(SubtitleProject project)
     {
-        var builder = new StringBuilder(cues.Count * 48);
-        foreach (var cue in cues)
+        var builder = new StringBuilder(project.Segments.Count * 48);
+        foreach (var segment in project.Segments)
         {
             builder
-                .Append(cue.Index.ToString(CultureInfo.InvariantCulture))
+                .Append(segment.Index.ToString(CultureInfo.InvariantCulture))
                 .AppendLine()
-                .Append(FormatTimestamp(cue.Start))
+                .Append(FormatTimestamp(segment.DisplayStart))
                 .Append(" --> ")
-                .Append(FormatTimestamp(cue.End))
+                .Append(FormatTimestamp(segment.End))
                 .AppendLine()
-                .Append(cue.Text)
+                .Append(segment.Text)
                 .AppendLine()
                 .AppendLine();
         }

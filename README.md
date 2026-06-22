@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current version: **1.15.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.16.0** · latest published release: **1.15.0** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -101,6 +101,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Remove Audio | Create a silent video version without changing the basic workflow. | <img src="screenshots/Video_actions/convert_video.png" alt="Remove Audio" width="320" /> |
 | Extract Frames | Export video frames as image sequences for review, editing, or assets. | <img src="screenshots/Video_actions/Create_gif.png" alt="Extract Frames" width="320" /> |
 | Create GIF | Turn a video segment into a GIF with preview-oriented controls. | <img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" width="320" /> |
+| Add Subtitles to Video | Add a selectable subtitle track or burn subtitles into the video with a visual editor. | <img src="screenshots/Video_actions/Burn_subtitles.png" alt="Add Subtitles to Video" width="320" /> |
 | Extract Audio | Pull the audio track from a video into a standalone file. | <img src="screenshots/Video_actions/Extract_audio.png" alt="Extract Audio" width="320" /> |
 | Cut Video | Trim a video to the exact segment you want. | <img src="screenshots/Video_actions/Cut_video.png" alt="Cut Video" width="320" /> |
 | Crop Video | Remove unwanted borders or focus on a specific video area with visual controls, frame-based auto crop, zoom, and drag navigation. | <img src="screenshots/Video_actions/Crop_video.png" alt="Crop Video" width="320" /> |

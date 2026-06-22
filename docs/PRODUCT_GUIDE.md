@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version active : **1.15.0**.
+Version active : **1.16.0**.
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).
@@ -39,6 +39,7 @@ Actions vidéo :
 - `change-video-speed`
 - `interpolate-video`
 - `interpolate-video-rife`
+- `add-subtitles-video`
 - `upscale-video`
 - `remove-noise-video`
 - `create-subtitles-video`
@@ -120,6 +121,7 @@ Mono-fichier interactif :
 - `change-video-speed`
 - `interpolate-video`
 - `interpolate-video-rife`
+- `add-subtitles-video`
 - `remove-noise`
 - `remove-noise-video`
 - `image-to-pdf`
@@ -153,7 +155,8 @@ En pratique :
 - `remove-object` est un éditeur visuel UI-first (canvas + masque) : préflight et téléchargement du modèle gérés dans l'éditeur, sortie `_cleaned.png` adjacente à la source ; catalogue extensible avec deux modèles disponibles : **LaMa FP32 (Quality)** (~208 MB) et **LaMa 2025 (Fast)** (~93 MB, opencv/inpainting_lama Jan 2025) ;
 - `upscale-image` agrandit une image **x4** ; une seule entrée Explorer ouvre un **picker de modèle** (choix exclusif, style FrameShift), `--upscale-model <id>` court-circuite le picker en headless. Trois modèles hébergés dans le dossier dédié `Gaurox/frameshift-models/upscale-image-onnx/` (SHA256 vérifié, README et licences BSD-3/Apache-2.0 propres au dossier) : **Real-ESRGAN x4plus** (général, défaut), **Real-ESRGAN Anime 6B** et **Swin2SR (Quality)**. Le picker propose x2/x3/x4 et une taille cible ; passe x4 native puis Lanczos, nommage unique, DirectML → CPU et tuilage adaptatif restent inchangés ;
 - `upscale-video` partage le moteur et le downloader, mais utilise exclusivement `Gaurox/frameshift-models/upscale-video-onnx/` et son dossier local homonyme. Le picker propose **Real-ESRGAN General v3** (défaut), **AnimeVideo v3** et l'entrée distincte **x4plus Quality** (`realesrgan-x4plus-video`), en x2/x3/x4 ou taille cible. Le chemin principal passe maintenant par un pipeline FFmpeg `rawvideo` en mémoire ; si nécessaire, FrameShift retombe automatiquement sur l'ancien pipeline BMP. Pour **AnimeVideo v3**, FrameShift garde une seule entrée visible mais route automatiquement les demandes x2/x3 vers des variantes ONNX dédiées afin d’éviter le downscale CPU précédent. FPS et audio sont conservés ; DirectML retombe sur CPU, NVENC sur libx264, et un audio incompatible est transcodé. Les modèles valides de l'ancien dossier local `upscale-onnx` sont copiés automatiquement vers le nouveau dossier pour éviter un nouveau téléchargement. Le traitement image par image peut laisser un léger scintillement temporel sur certaines sources bruitées ;
-- `create-subtitles-audio` et `create-subtitles-video` partagent le même pipeline Whisper via un worker isolé (`FrameShift.SubtitlesWorker`) ; DirectML avec fallback CPU automatique (init et inférence) ; trois modèles : `whisper-base`, `whisper-small` (défaut), `whisper-turbo` (~3,1 GB). Headless : `--subtitles-model <id>`. Limitation Turbo connue : détection langue renvoie vide (mel 80 vs 128), transcription correcte ;
+- `create-subtitles-audio` et `create-subtitles-video` partagent le même pipeline Whisper via un worker isolé (`FrameShift.SubtitlesWorker`) ; DirectML avec fallback CPU automatique (init et inférence) ; trois modèles : `whisper-base`, `whisper-small` (défaut), `whisper-turbo` (~3,1 GB). Le picker expose trois formats de sortie exclusifs : `Standard SRT` (défaut), `Advanced ASS Subtitle`, `FrameShift Customization Project`. Quand `Advanced ASS Subtitle` est choisi, un preset exclusif apparaît : `Classic` (défaut), `Word Highlight`, `Progressive Reveal`. Headless : `--subtitles-model <id>`, `--subtitles-format <srt|ass|project>` et `--subtitles-ass-preset <classic|word-highlight|progressive-reveal>`. Les presets dynamiques utilisent les timings mot à mot fiables du `SubtitleProject`, appliquent au besoin un début d’affichage raffiné conservateur, et retombent automatiquement sur `Classic` si l’alignement du segment n’est pas fiable. En `Word Highlight`, la phrase complète apparaît dès le premier mot utile ; `Progressive Reveal` reste progressif. Limitation Turbo connue : détection langue renvoie vide (mel 80 vs 128), transcription correcte ;
+- `add-subtitles-video` supporte maintenant deux modes. `Selectable Subtitle Track` ajoute un `.srt` externe comme piste activable : `MKV` garde une piste native `subrip`, `MP4/MOV/M4V` utilisent `mov_text` quand les flux existants restent compatibles, sinon le flux retombe sur `MKV`. `Burn Subtitles Into Video` accepte `.srt`, `.ass` et `.frameshift-subtitles.json`, génère au besoin un `.ass` temporaire adapté à la résolution vidéo, réencode la vidéo et copie l’audio quand le conteneur le permet. Ce mode ouvre un éditeur visuel DPI-safe avec aperçu d’une frame réelle, navigation temporelle simple, réglages de style principaux, aperçu animé court et rendu d’aperçu debouncé via `FFmpeg/libass`. Les presets ASS partagés gardent le même comportement que `Create Subtitle File` : aucun affichage pendant le silence précédent, `Word Highlight` montre immédiatement la phrase complète au début utile, et `Progressive Reveal` reste progressif. Les `.ass` externes restent en passthrough avec leurs réglages désactivés. L’action est câblée comme action vidéo produit complète : registre, launcher, CLI, menu Explorer vidéo et composant installateur dédié.
 - plusieurs actions de géométrie ou de vitesse ont un modèle `CLI entry + UI fallback`, pas une couverture CLI complète documentable comme “headless garanti”.
 
 ## Règles produit qui restent vraies

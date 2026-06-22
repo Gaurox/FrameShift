@@ -50,4 +50,18 @@ public static class ActionOptionKeys
     public const string UpscaleTargetHeight = "upscale-target-height";
     public const string UpscalePipeline = "upscale-pipeline";
     public const string SubtitlesModel = "subtitles-model";
+    public const string SubtitlesOutputFormat = "subtitles-output-format";
+    public const string SubtitlesAssPreset = "subtitles-ass-preset";
+    public const string SubtitleFilePath = "subtitle-file";
+    public const string SubtitleMode = "subtitle-mode";
+    public const string SubtitleFontName = "subtitle-font-name";
+    public const string SubtitleFontSize = "subtitle-font-size";
+    public const string SubtitlePrimaryColor = "subtitle-primary-color";
+    public const string SubtitleHighlightColor = "subtitle-highlight-color";
+    public const string SubtitleOutlineColor = "subtitle-outline-color";
+    public const string SubtitleShadowColor = "subtitle-shadow-color";
+    public const string SubtitleOutlineThickness = "subtitle-outline-thickness";
+    public const string SubtitleShadowDepth = "subtitle-shadow-depth";
+    public const string SubtitleVerticalAlignment = "subtitle-vertical-alignment";
+    public const string SubtitleMarginVertical = "subtitle-margin-vertical";
 }

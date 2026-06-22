@@ -328,4 +328,25 @@ public static class MediaActionMessages
 
     public static string SubtitleFileWriteFailed() =>
         "FrameShift could not write the subtitle file next to the source media.";
+
+    public static string AddSubtitlesToVideoSettingsMissing() =>
+        "Subtitle file path is missing.";
+
+    public static string AddSubtitlesToVideoModeInvalid() =>
+        "Subtitle mode is invalid.";
+
+    public static string AddSubtitlesToVideoBurnSettingsInvalid() =>
+        "Burn subtitle settings are invalid.";
+
+    public static string AddSubtitlesToVideoSelectableSubtitleFormatInvalid() =>
+        "Selectable subtitle track supports only external .srt subtitle files.";
+
+    public static string AddSubtitlesToVideoBurnSubtitleFormatInvalid() =>
+        "Burn Subtitles Into Video supports .srt, .ass and .frameshift-subtitles.json files.";
+
+    public static string AddSubtitlesToVideoFailed() =>
+        "FFmpeg failed while adding the subtitle track to this video.";
+
+    public static string BurnSubtitlesToVideoFailed() =>
+        "FFmpeg failed while burning subtitles into this video.";
 }

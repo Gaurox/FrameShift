@@ -29,6 +29,16 @@ internal sealed class CreateSubtitlesWorkerWord
     public double StartSeconds { get; set; }
 }
 
+internal sealed class CreateSubtitlesWorkerToken
+{
+    public string RawText { get; set; } = string.Empty;
+    public string TrimmedText { get; set; } = string.Empty;
+    public double StartSeconds { get; set; }
+    public bool StartsNewWord { get; set; }
+    public bool IsWhitespaceOnly { get; set; }
+    public bool IsPunctuationOnly { get; set; }
+}
+
 internal sealed class CreateSubtitlesWorkerResponse
 {
     public bool Success { get; set; }
@@ -37,5 +47,6 @@ internal sealed class CreateSubtitlesWorkerResponse
     public string? DetectedLanguage { get; set; }
     public double AudioDurationSeconds { get; set; }
     public List<CreateSubtitlesWorkerWord> Words { get; set; } = [];
+    public List<CreateSubtitlesWorkerToken> Tokens { get; set; } = [];
     public string? ProviderUsed { get; set; }
 }

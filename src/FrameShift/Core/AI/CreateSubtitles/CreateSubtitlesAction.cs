@@ -43,11 +43,11 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             CreateSubtitlesSourceKind.Audio => new ActionDescriptor(
                 "create-subtitles-audio",
                 "Create Subtitle File",
-                "Creates local SRT subtitles from an audio file with Whisper ONNX."),
+                "Creates a local subtitle file from an audio file with Whisper ONNX."),
             _ => new ActionDescriptor(
                 "create-subtitles-video",
                 "Create Subtitle File",
-                "Extracts audio from a video, then creates local SRT subtitles with Whisper ONNX.")
+                "Extracts audio from a video, then creates a local subtitle file with Whisper ONNX.")
         };
     }
 
@@ -92,14 +92,16 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
                 "Whisper model is not ready. Run FrameShift from Explorer to verify and download the subtitles model first.");
         }
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, string.Empty, ".srt");
+        var outputFormat = ResolveOutputFormat(request.Options, request.Logger);
+        var assPreset = ResolveAssPreset(request.Options, request.Logger);
+        var outputPath = CreateSubtitlesOutputFormats.CreateOutputPath(request.InputPath, outputFormat);
         var tempRoot = Path.Combine(Path.GetTempPath(), "FrameShift", "CreateSubtitles", Guid.NewGuid().ToString("N"));
         var extractedAudioPath = Path.Combine(tempRoot, "extracted.wav");
         var normalizedAudioPath = Path.Combine(tempRoot, "normalized.wav");
         var workerModelRoot = Path.Combine(tempRoot, "worker-model");
         var responsePath = Path.Combine(tempRoot, "worker-response.json");
         var cancelSignalPath = Path.Combine(tempRoot, "cancel.signal");
-        var tempOutputPath = Path.Combine(tempRoot, "output.srt");
+        var tempOutputPath = Path.Combine(tempRoot, $"output{outputFormat.GetOutputExtension()}");
 
         using var itemCancellationSource = new CancellationTokenSource();
         using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, itemCancellationSource.Token);
@@ -209,22 +211,39 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
 
             request.Logger.Log($"CreateSubtitlesAction: worker completed. ProviderUsed={workerResponse.ProviderUsed ?? "unknown"}. DetectedLanguage={workerResponse.DetectedLanguage ?? "auto"}.");
 
-            var normalizedWords = CreateSubtitlesWordNormalizer.Normalize(workerResponse.Words);
-            if (normalizedWords.Count == 0)
+            var fallbackDurationSeconds = workerResponse.Words.Count > 0
+                ? workerResponse.Words[^1].StartSeconds + 1d
+                : 1d;
+            var totalDuration = TimeSpan.FromSeconds(workerResponse.AudioDurationSeconds > 0
+                ? workerResponse.AudioDurationSeconds
+                : probe.Duration?.TotalSeconds ?? fallbackDurationSeconds);
+            var rawProject = CreateSubtitlesProjectBuilder.Build(workerResponse.Words, totalDuration);
+            if (rawProject.Segments.Count == 0)
             {
                 return new ActionExecutionResult(false, "No speech could be recognized in this media.");
             }
 
-            request.ProgressReporter?.ReportState("processing", "Building SRT subtitles...");
-            var cues = CreateSubtitlesSegmenter.BuildCues(
-                normalizedWords,
-                TimeSpan.FromSeconds(workerResponse.AudioDurationSeconds > 0
-                    ? workerResponse.AudioDurationSeconds
-                    : probe.Duration?.TotalSeconds ?? normalizedWords[^1].StartSeconds + 1d));
-            var srtText = CreateSubtitlesSrtFormatter.Format(cues);
+            var displayTimingAnalysis = CreateSubtitlesAssDiagnosticWriter
+                .AnalyzeProject(rawProject, workerResponse, normalizedAudioPath, request.Logger);
+            var project = CreateSubtitlesAssDiagnosticWriter.ApplyRefinedDisplayStarts(rawProject, displayTimingAnalysis);
 
-            await File.WriteAllTextAsync(tempOutputPath, srtText, new UTF8Encoding(false), linkedCancellationSource.Token).ConfigureAwait(false);
+            request.ProgressReporter?.ReportState("processing", outputFormat.GetBuildMessage());
+            var outputText = CreateSubtitlesOutputFormats.FormatProject(project, outputFormat, assPreset);
+
+            await File.WriteAllTextAsync(tempOutputPath, outputText, new UTF8Encoding(false), linkedCancellationSource.Token).ConfigureAwait(false);
             File.Move(tempOutputPath, outputPath, overwrite: false);
+
+            await CreateSubtitlesAssDiagnosticWriter
+                .WriteReportIfNeededAsync(
+                    outputFormat,
+                    request.InputPath,
+                    outputPath,
+                    project,
+                    displayTimingAnalysis,
+                    assPreset,
+                    request.Logger,
+                    linkedCancellationSource.Token)
+                .ConfigureAwait(false);
 
             request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
             request.ProgressReporter?.ReportState("done", $"Completed. Language: {workerResponse.DetectedLanguage ?? "auto"}");
@@ -300,6 +319,46 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
         }
 
         return model;
+    }
+
+    private static CreateSubtitlesOutputFormat ResolveOutputFormat(
+        IReadOnlyDictionary<string, string>? options,
+        Logging.AppLogger logger)
+    {
+        options ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        options.TryGetValue(ActionOptionKeys.SubtitlesOutputFormat, out var requestedOutputFormat);
+
+        if (CreateSubtitlesOutputFormats.TryParse(requestedOutputFormat, out var format))
+        {
+            return format;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestedOutputFormat))
+        {
+            logger.Log($"CreateSubtitlesAction: unknown subtitles output format requested '{requestedOutputFormat}', using '{CreateSubtitlesOutputFormats.ToOptionValue(CreateSubtitlesOutputFormats.Default)}'.");
+        }
+
+        return CreateSubtitlesOutputFormats.Default;
+    }
+
+    private static CreateSubtitlesAssPreset ResolveAssPreset(
+        IReadOnlyDictionary<string, string>? options,
+        Logging.AppLogger logger)
+    {
+        options ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        options.TryGetValue(ActionOptionKeys.SubtitlesAssPreset, out var requestedPreset);
+
+        if (CreateSubtitlesAssPresets.TryParse(requestedPreset, out var preset))
+        {
+            return preset;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestedPreset))
+        {
+            logger.Log($"CreateSubtitlesAction: unknown subtitles ASS preset requested '{requestedPreset}', using '{CreateSubtitlesAssPresets.ToOptionValue(CreateSubtitlesAssPresets.Default)}'.");
+        }
+
+        return CreateSubtitlesAssPresets.Default;
     }
 
     private static IReadOnlyCollection<string> BuildVideoExtractionArguments(string inputPath, string outputPath) =>

@@ -82,6 +82,102 @@ internal static partial class Program
                 continue;
             }
 
+            if ((string.Equals(token, "--subtitles-output-format", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitles-format", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitlesOutputFormat] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitles-ass-preset", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--ass-preset", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitlesAssPreset] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-file", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-path", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--srt-file", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleFilePath] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-mode", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitles-mode", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleMode] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-font", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-font-name", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleFontName] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-size", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-font-size", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleFontSize] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-color", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-primary-color", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitlePrimaryColor] = args[++index];
+                continue;
+            }
+
+            if (string.Equals(token, "--subtitle-highlight-color", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleHighlightColor] = args[++index];
+                continue;
+            }
+
+            if (string.Equals(token, "--subtitle-outline-color", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleOutlineColor] = args[++index];
+                continue;
+            }
+
+            if (string.Equals(token, "--subtitle-shadow-color", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleShadowColor] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-outline", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-outline-thickness", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleOutlineThickness] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-shadow", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-shadow-depth", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleShadowDepth] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-position", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-vertical-alignment", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleVerticalAlignment] = args[++index];
+                continue;
+            }
+
+            if ((string.Equals(token, "--subtitle-margin-v", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(token, "--subtitle-margin-vertical", StringComparison.OrdinalIgnoreCase)) && index + 1 < args.Length)
+            {
+                options[ActionOptionKeys.SubtitleMarginVertical] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--upscale-scale", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.UpscaleScale] = args[++index].TrimStart('x', 'X');

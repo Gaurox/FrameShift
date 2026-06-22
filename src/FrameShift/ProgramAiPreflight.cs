@@ -474,16 +474,36 @@ internal static partial class Program
 
         try
         {
+            var initialOutputFormat = CreateSubtitles.CreateSubtitlesOutputFormats.Default;
+            if (options.TryGetValue(ActionOptionKeys.SubtitlesOutputFormat, out var requestedOutputFormat) &&
+                CreateSubtitles.CreateSubtitlesOutputFormats.TryParse(requestedOutputFormat, out var parsedOutputFormat))
+            {
+                initialOutputFormat = parsedOutputFormat;
+            }
+
+            var initialAssPreset = CreateSubtitles.CreateSubtitlesAssPresets.Default;
+            if (options.TryGetValue(ActionOptionKeys.SubtitlesAssPreset, out var requestedAssPreset) &&
+                CreateSubtitles.CreateSubtitlesAssPresets.TryParse(requestedAssPreset, out var parsedAssPreset))
+            {
+                initialAssPreset = parsedAssPreset;
+            }
+
             using var picker = new CreateSubtitlesPickerForm(
                 "Create Subtitle File",
-                CreateSubtitlesPickerForm.BuildSourceLabel(inputPaths));
+                CreateSubtitlesPickerForm.BuildSourceLabel(inputPaths),
+                initialOutputFormat,
+                initialAssPreset);
             if (picker.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(picker.SelectedModelId))
             {
                 return false;
             }
 
             options[ActionOptionKeys.SubtitlesModel] = picker.SelectedModelId;
-            logger.Log($"Program: Create Subtitles model selected via picker. modelId={picker.SelectedModelId}, videoMode={videoMode}.");
+            var outputFormatId = CreateSubtitles.CreateSubtitlesOutputFormats.ToOptionValue(picker.SelectedOutputFormat);
+            var assPresetId = CreateSubtitles.CreateSubtitlesAssPresets.ToOptionValue(picker.SelectedAssPreset);
+            options[ActionOptionKeys.SubtitlesOutputFormat] = outputFormatId;
+            options[ActionOptionKeys.SubtitlesAssPreset] = assPresetId;
+            logger.Log($"Program: Create Subtitles options selected via picker. modelId={picker.SelectedModelId}, outputFormat={outputFormatId}, assPreset={assPresetId}, videoMode={videoMode}.");
             return true;
         }
         catch (Exception ex)

@@ -114,6 +114,14 @@ internal static partial class Program
             }
         }
 
+        if (actionId.Equals("add-subtitles-video", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!EnsureAddSubtitlesToVideoOptions(inputPaths, options, logger))
+            {
+                return 0;
+            }
+        }
+
         if (actionId.Equals("cut-audio", StringComparison.OrdinalIgnoreCase))
         {
             if (!EnsureCutAudioOptions(inputPaths, options, logger))

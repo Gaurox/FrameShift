@@ -366,7 +366,7 @@ internal sealed class ConversionBatchSession
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Create SRT");
+        PrimaryButtonText: "Create File");
 
     public static BatchDefinition CreateCreateSubtitlesVideoDefinition() => new(
         ActionId: "create-subtitles-video",
@@ -383,7 +383,7 @@ internal sealed class ConversionBatchSession
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Create SRT");
+        PrimaryButtonText: "Create File");
 
     public static BatchDefinition CreateSeparateAudioDefinition() => new(
         ActionId: "separate-audio",
