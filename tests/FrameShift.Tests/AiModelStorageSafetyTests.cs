@@ -90,7 +90,7 @@ public sealed class AiModelStorageSafetyTests
     }
 
     [Fact]
-    public void Installer_UninstallCodeNeverDeletesModelsRootAndRequiresOwnershipMarker()
+    public void Installer_UninstallCodeNeverDeletesModelsRootOrRecursivelyDeletesModelDirectories()
     {
         var installerPath = FindRepositoryFile(Path.Combine("installer", "FrameShift.iss"));
         var installerSource = File.ReadAllText(installerPath);
@@ -100,7 +100,11 @@ public sealed class AiModelStorageSafetyTests
         Assert.Contains("ContainsOnlyExpectedModelFiles", installerSource, StringComparison.Ordinal);
         Assert.Contains("HasReparsePointInPath", installerSource, StringComparison.Ordinal);
         Assert.Contains("ModelDirectoryMarkerFileName", installerSource, StringComparison.Ordinal);
+        Assert.Contains("DeleteOwnedModelDirectoryFiles", installerSource, StringComparison.Ordinal);
+        Assert.Contains("DeleteFile(FilePath)", installerSource, StringComparison.Ordinal);
+        Assert.Contains("RemoveDir(DirectoryName)", installerSource, StringComparison.Ordinal);
         Assert.False(installerSource.Contains("DelTree(ModelsDir", StringComparison.OrdinalIgnoreCase));
+        Assert.False(installerSource.Contains("DelTree(Candidate", StringComparison.OrdinalIgnoreCase));
 
         foreach (var relativePath in AiModelStorage.KnownModelDirectoryRelativePaths)
         {

@@ -1590,44 +1590,50 @@ begin
   end;
 end;
 
+function GetExpectedModelFileList(const RelativePath: string): string;
+begin
+  Result := '';
+  if CompareText(RelativePath, 'birefnet_lite-onnx') = 0 then
+    Result := 'model_fp16.onnx'
+  else if CompareText(RelativePath, 'birefnet_hr-matting-onnx') = 0 then
+    Result := 'BiRefNet_HR-matting-epoch_135.onnx'
+  else if CompareText(RelativePath, 'birefnet_hr-general-onnx') = 0 then
+    Result := 'BiRefNet_HR-general-epoch_130.onnx'
+  else if CompareText(RelativePath, 'RemoveBackground\BriaBalanced') = 0 then
+    Result := 'model_fp16.onnx,README.txt,LICENSE_NOTICE.txt'
+  else if CompareText(RelativePath, 'RemoveBackground\BriaHighQuality') = 0 then
+    Result := 'model.onnx,README.txt,LICENSE_NOTICE.txt'
+  else if CompareText(RelativePath, 'htdemucs') = 0 then
+    Result := 'htdemucs.onnx'
+  else if CompareText(RelativePath, 'htdemucs-split') = 0 then
+    Result := 'htdemucs_split.onnx'
+  else if CompareText(RelativePath, 'deepfilternet3_onnx') = 0 then
+    Result := 'config.ini,enc.onnx,erb_dec.onnx,df_dec.onnx'
+  else if CompareText(RelativePath, 'rife') = 0 then
+    Result := 'rife_v425_lite.onnx,rife_v426_x2.onnx'
+  else if CompareText(RelativePath, 'lama-onnx') = 0 then
+    Result := 'lama_fp32.onnx'
+  else if CompareText(RelativePath, 'lama-opencv-onnx') = 0 then
+    Result := 'inpainting_lama_2025jan.onnx'
+  else if CompareText(RelativePath, 'upscale-image-onnx') = 0 then
+    Result := 'realesrgan_x4plus_fp16.onnx,realesrgan_x4plus_anime_6b.onnx,swin2sr_realworld_x4.onnx'
+  else if CompareText(RelativePath, 'upscale-video-onnx') = 0 then
+    Result := 'realesr_general_x4v3.onnx,realesr_animevideov3.onnx,realesr_animevideov3_x2.onnx,realesr_animevideov3_x3.onnx,realesrgan_x4plus_fp16.onnx'
+  else if CompareText(RelativePath, 'whisper-base-onnx') = 0 then
+    Result := 'base-encoder.onnx,base-decoder.onnx,base-tokens.txt'
+  else if CompareText(RelativePath, 'whisper-small-onnx') = 0 then
+    Result := 'small-encoder.onnx,small-decoder.onnx,small-tokens.txt'
+  else if CompareText(RelativePath, 'whisper-large-v3-turbo-onnx') = 0 then
+    Result := 'turbo-encoder.onnx,turbo-decoder.onnx,turbo-tokens.txt,turbo-encoder.weights';
+end;
+
 function IsExpectedModelFile(const RelativePath, FileName: string): Boolean;
 begin
   Result := CompareText(FileName, ModelDirectoryMarkerFileName) = 0;
   if Result then
     exit;
 
-  if CompareText(RelativePath, 'birefnet_lite-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'model_fp16.onnx')
-  else if CompareText(RelativePath, 'birefnet_hr-matting-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'BiRefNet_HR-matting-epoch_135.onnx')
-  else if CompareText(RelativePath, 'birefnet_hr-general-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'BiRefNet_HR-general-epoch_130.onnx')
-  else if CompareText(RelativePath, 'RemoveBackground\BriaBalanced') = 0 then
-    Result := IsFileNameInList(FileName, 'model_fp16.onnx,README.txt,LICENSE_NOTICE.txt')
-  else if CompareText(RelativePath, 'RemoveBackground\BriaHighQuality') = 0 then
-    Result := IsFileNameInList(FileName, 'model.onnx,README.txt,LICENSE_NOTICE.txt')
-  else if CompareText(RelativePath, 'htdemucs') = 0 then
-    Result := IsFileNameInList(FileName, 'htdemucs.onnx')
-  else if CompareText(RelativePath, 'htdemucs-split') = 0 then
-    Result := IsFileNameInList(FileName, 'htdemucs_split.onnx')
-  else if CompareText(RelativePath, 'deepfilternet3_onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'config.ini,enc.onnx,erb_dec.onnx,df_dec.onnx')
-  else if CompareText(RelativePath, 'rife') = 0 then
-    Result := IsFileNameInList(FileName, 'rife_v425_lite.onnx,rife_v426_x2.onnx')
-  else if CompareText(RelativePath, 'lama-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'lama_fp32.onnx')
-  else if CompareText(RelativePath, 'lama-opencv-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'inpainting_lama_2025jan.onnx')
-  else if CompareText(RelativePath, 'upscale-image-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'realesrgan_x4plus_fp16.onnx,realesrgan_x4plus_anime_6b.onnx,swin2sr_realworld_x4.onnx')
-  else if CompareText(RelativePath, 'upscale-video-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'realesr_general_x4v3.onnx,realesr_animevideov3.onnx,realesr_animevideov3_x2.onnx,realesr_animevideov3_x3.onnx,realesrgan_x4plus_fp16.onnx')
-  else if CompareText(RelativePath, 'whisper-base-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'base-encoder.onnx,base-decoder.onnx,base-tokens.txt')
-  else if CompareText(RelativePath, 'whisper-small-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'small-encoder.onnx,small-decoder.onnx,small-tokens.txt')
-  else if CompareText(RelativePath, 'whisper-large-v3-turbo-onnx') = 0 then
-    Result := IsFileNameInList(FileName, 'turbo-encoder.onnx,turbo-decoder.onnx,turbo-tokens.txt,turbo-encoder.weights');
+  Result := IsFileNameInList(FileName, GetExpectedModelFileList(RelativePath));
 end;
 
 function ContainsOnlyExpectedModelFiles(const DirectoryName, RelativePath: string): Boolean;
@@ -1662,6 +1668,46 @@ begin
   Result := not HasReparsePointInPath(DirectoryName, ModelsDir) and
             IsOwnedModelDirectory(DirectoryName) and
             ContainsOnlyExpectedModelFiles(DirectoryName, RelativePath);
+end;
+
+function DeleteOwnedModelDirectoryFiles(
+  const ModelsDir, DirectoryName, RelativePath: string): Boolean;
+var
+  RemainingFiles: string;
+  FileName: string;
+  FilePath: string;
+begin
+  // Do not call DelTree here. A file or subdirectory added after the safety check
+  // must remain in place rather than becoming part of a recursive deletion.
+  Result := False;
+  RemainingFiles := GetExpectedModelFileList(RelativePath);
+  if (RemainingFiles = '') or
+     not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+    exit;
+
+  while RemainingFiles <> '' do
+  begin
+    if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+      exit;
+
+    FileName := GetListItem(RemainingFiles);
+    FilePath := AddBackslash(DirectoryName) + FileName;
+    if FileExists(FilePath) and not DeleteFile(FilePath) then
+      exit;
+    if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then
+      exit;
+  end;
+
+  if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+    exit;
+
+  FilePath := AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName;
+  if FileExists(FilePath) and not DeleteFile(FilePath) then
+    exit;
+
+  // RemoveDir is non-recursive. If any foreign content appeared while uninstalling,
+  // this call fails closed and the remaining directory is preserved.
+  Result := (not DirExists(DirectoryName)) or RemoveDir(DirectoryName);
 end;
 
 function GetKnownModelDirectories(): string;
@@ -1706,7 +1752,7 @@ begin
     RelativePath := GetListItem(Directories);
     Candidate := AddBackslash(ModelsDir) + RelativePath;
     if CanDeleteOwnedModelDirectory(ModelsDir, Candidate, RelativePath) then
-      DelTree(Candidate, True, True, True);
+      DeleteOwnedModelDirectoryFiles(ModelsDir, Candidate, RelativePath);
   end;
 end;
 

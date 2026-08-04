@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version active : `1.17.1`.
+- version active : `1.16.1`.
 
 ## Stack figée
 
@@ -157,7 +157,7 @@ Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
 - téléchargement du modèle au moment utile, pas à l’ouverture simple d’une UI ;
 - vérification d’intégrité du modèle dans le flux de préflight ou de téléchargement quand le module le prévoit ;
-- le dossier de modèles personnalisé reste pris en charge, mais une racine de volume, un profil, Windows, Program Files, `{app}` ou l’un de leurs parents est refusé ; à la désinstallation, FrameShift ne supprime jamais cette racine et ne retire que les dossiers de modèles connus, marqués comme créés par FrameShift et ne contenant aucun artefact inconnu ;
+- le dossier de modèles personnalisé reste pris en charge, mais une racine de volume, un profil, Windows, Program Files, `{app}` ou l’un de leurs parents est refusé ; à la désinstallation, FrameShift ne supprime jamais cette racine ni récursivement un dossier de modèles : il retire seulement les fichiers explicitement connus dans un dossier marqué comme créé par FrameShift, puis ne retire ce dossier que s’il est vide ;
 - `remove-background` conserve `fast` comme comportement par défaut et expose trois modèles via option CLI / menu Explorer sans dupliquer l’action ;
 - dans l’état figé de `1.0.11`, les deux modèles `high-resolution` tournent volontairement en **CPU only** ; seul `fast` reste en `DirectML` avec fallback CPU ;
 - les boucles CPU pré/post de `BackgroundRemovalEngine` utilisent `ProcessPixelRows` + accès direct aux buffers de `DenseTensor` (construction tenseur d’entrée, construction masque, composite) ; gain mesuré ×5–×22 sur ces phases pour les grandes images via le chemin `fast`/Bria ; les chemins `high-resolution` restent bornés par l’inférence CPU, le gain pré/post y est négligeable ; sortie vérifiée bit-à-bit identique ;

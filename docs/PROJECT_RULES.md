@@ -197,7 +197,7 @@ Chaque action migrée doit valider :
 - pas de console visible ;
 - logs lisibles.
 
-Les dossiers de modèles IA configurables doivent rester des emplacements dédiés : refuser les racines et emplacements système/profil dangereux. À la désinstallation, ne jamais supprimer une racine configurable ; supprimer uniquement les dossiers dont l’appartenance à FrameShift est vérifiable.
+Les dossiers de modèles IA configurables doivent rester des emplacements dédiés : refuser les racines et emplacements système/profil dangereux. À la désinstallation, ne jamais supprimer une racine configurable ni lancer de suppression récursive dans un dossier de modèles ; supprimer seulement les fichiers explicitement autorisés dans un dossier dont l’appartenance à FrameShift est vérifiable, puis le retirer uniquement s’il est vide.
 
 ## Completion Rule
 

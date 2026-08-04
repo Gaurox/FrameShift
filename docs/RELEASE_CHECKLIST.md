@@ -38,7 +38,7 @@ Manual steps after the script completes:
 - Run `.\build_installer.ps1`
 - Confirm the expected installer is produced in `installer/`
 - Confirm the publish payload and installer do not include unnecessary debug files
-- For AI-model uninstall safety: install with a shared custom models folder containing a foreign file, then confirm uninstall removes only FrameShift-owned marked model folders and preserves the shared root and foreign content.
+- For AI-model uninstall safety: install with a shared custom models folder containing a foreign file and a FrameShift-marked model folder containing an extra foreign file. Confirm uninstall removes only explicitly known FrameShift artifacts, preserves the shared root and foreign content, and leaves the marked folder in place when it is not empty.
 
 ### Inno Setup compiler (ISCC) location
 

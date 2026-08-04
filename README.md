@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.17.1** · latest published release: **1.15.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.16.1** · latest published release: **1.16.1** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,7 +46,7 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-**New in 1.17.0 — a main application window.** Alongside the Explorer right-click menu, FrameShift now opens a simple drop-driven window: drag in as many files as you want and it shows only the actions that fit them, grouped by type. Each action runs on the whole selection in one pass, so large batches are no longer limited by Explorer's multi-file context-menu cap.
+**New in 1.16.1 — a main application window.** Alongside the Explorer right-click menu, FrameShift now opens a simple drop-driven window: drag in as many files as you want and it shows only the actions that fit them, grouped by type. Each action runs on the whole selection in one pass, so large batches are no longer limited by Explorer's multi-file context-menu cap.
 
 Remove backgrounds, remove objects from images, upscale images and videos, remove noise, and separate audio locally with focused AI workflows launched directly from Explorer.
 RIFE interpolation is also available as a dedicated local AI workflow for smoother motion on supported video clips.

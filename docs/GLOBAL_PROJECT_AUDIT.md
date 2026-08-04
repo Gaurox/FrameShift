@@ -3,7 +3,7 @@
 Date de l'audit : 4 août 2026  
 Projet audité : `E:\AI\FrameShift_V1`  
 Base Git : branche `main`, commit `614c896`, avec les modifications locales présentes au moment de l'audit  
-Version applicative active observée : `1.17.0`  
+Version applicative active observée lors de l’audit : `1.17.0` ; version de préparation actuelle : `1.16.1`
 
 ## 0. Portée, méthode et état de référence
 
@@ -92,7 +92,7 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 
 **Traitement pragmatique.** Ne jamais supprimer la racine libre. Supprimer uniquement une liste de sous-dossiers FrameShift connus ou un dossier portant un marqueur d'appartenance créé par FrameShift. Canonicaliser et refuser au minimum racines de volume, profils, répertoires Windows/Program Files, `{app}` et chemins parents de ces emplacements. Tester avec un dossier contenant des fichiers étrangers.
 
-**Statut — corrigé dans 1.17.1.** L’uninstallateur ne transmet plus la racine `ModelsDir` à `DelTree`. Il valide le chemin lu dans `settings.json`, cible seulement les sous-dossiers connus portant le marqueur créé par FrameShift, refuse les jonctions dans tout le chemin avant suppression et exige que le dossier ne contienne aucun artefact inconnu. La racine et tout dossier non marqué ou contenant un fichier externe sont conservés. Les répertoires de modèles historiques non marqués restent volontairement en place.
+**Statut — corrigé dans 1.16.1.** L’uninstallateur ne transmet plus la racine `ModelsDir` à `DelTree` et n’utilise plus de suppression récursive pour les dossiers de modèles. Il valide le chemin lu dans `settings.json`, cible seulement les sous-dossiers connus portant le marqueur créé par FrameShift, refuse les jonctions dans tout le chemin avant suppression et exige que le dossier ne contienne aucun artefact inconnu. Il retire uniquement les fichiers explicitement autorisés, puis le dossier par une opération non récursive seulement s’il est vide. La racine et tout dossier non marqué ou contenant un fichier externe sont conservés. Les répertoires de modèles historiques non marqués restent volontairement en place.
 
 ### Élevée
 
