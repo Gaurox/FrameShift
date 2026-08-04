@@ -90,21 +90,29 @@ internal sealed class UpscaleFrameProcessor : IDisposable
             try
             {
                 EnsureSession(_runtimeForceCpu, progress, cancellationToken);
-                using var nativeOutput = RunTiled(sourceWidth, sourceHeight, tileSize, progress, cancellationToken, fillTile);
-                var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
-
-                if (target.Width == nativeOutput.Width && target.Height == nativeOutput.Height)
-                    return nativeOutput.Clone();
-
-                progress?.Report(new UpscaleProgress(93, "Resizing to target..."));
-                var result = nativeOutput.Clone();
-                result.Mutate(ctx => ctx.Resize(new ResizeOptions
+                var nativeOutput = RunTiled(sourceWidth, sourceHeight, tileSize, progress, cancellationToken, fillTile);
+                try
                 {
-                    Size = new SixLabors.ImageSharp.Size(target.Width, target.Height),
-                    Sampler = KnownResamplers.Lanczos3,
-                    Mode = ResizeMode.Stretch
-                }));
-                return result;
+                    var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
+
+                    // Hand the freshly-built image straight to the caller; no per-frame clone.
+                    if (target.Width == nativeOutput.Width && target.Height == nativeOutput.Height)
+                        return nativeOutput;
+
+                    progress?.Report(new UpscaleProgress(93, "Resizing to target..."));
+                    nativeOutput.Mutate(ctx => ctx.Resize(new ResizeOptions
+                    {
+                        Size = new SixLabors.ImageSharp.Size(target.Width, target.Height),
+                        Sampler = KnownResamplers.Lanczos3,
+                        Mode = ResizeMode.Stretch
+                    }));
+                    return nativeOutput;
+                }
+                catch
+                {
+                    nativeOutput.Dispose();
+                    throw;
+                }
             }
             catch (OperationCanceledException)
             {

@@ -21,6 +21,8 @@ public sealed class AiModelSettings
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "FrameShift", "AI", "Models");
 
+    internal static string DefaultModelsDirectoryPath => DefaultModelsDirectory;
+
     // Null/empty means "use default"
     public string? ModelsDirectory { get; set; }
 
@@ -64,12 +66,14 @@ public sealed class AiModelSettings
     {
         if (!string.IsNullOrWhiteSpace(ModelsDirectory))
         {
-            var candidate = ModelsDirectory.Trim();
-            if (IsDirectoryUsable(candidate))
+            if (AiModelDirectorySafety.TryNormalizeCustomDirectory(ModelsDirectory, out var candidate) &&
+                IsDirectoryUsable(candidate))
+            {
                 return candidate;
+            }
 
             AppLogger.LogStatic(
-                $"AiModelSettings: custom ModelsDirectory '{candidate}' is not usable, falling back to default.");
+                $"AiModelSettings: custom ModelsDirectory is unsafe or not usable, falling back to default.");
         }
 
         return DefaultModelsDirectory;

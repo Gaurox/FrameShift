@@ -8,10 +8,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets\Icons\app\app.ico</ApplicationIcon>
-    <Version>1.15.0</Version>
-    <AssemblyVersion>1.15.0.0</AssemblyVersion>
-    <FileVersion>1.15.0.0</FileVersion>
-    <InformationalVersion>1.15.0</InformationalVersion>
+    <Version>1.17.1</Version>
+    <AssemblyVersion>1.17.1.0</AssemblyVersion>
+    <FileVersion>1.17.1.0</FileVersion>
+    <InformationalVersion>1.17.1</InformationalVersion>
     <Product>FrameShift</Product>
     <Company>FrameShift</Company>
     <Description>Windows-first offline multimedia processing utility.</Description>
@@ -20,6 +20,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
   <ItemGroup>

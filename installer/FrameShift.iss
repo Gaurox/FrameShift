@@ -1,7 +1,7 @@
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
-#define MyAppVersion "1.16.0"
+#error MyAppVersion must be passed via /DMyAppVersion=x.y.z — run build_installer.ps1 instead of compiling directly
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
@@ -116,6 +116,11 @@ const
   ExistingInstallStateOlder = -1;
   ExistingInstallStateSame = 0;
   ExistingInstallStateNewer = 1;
+  ModelDirectoryMarkerFileName = '.frameshift-ai-model-directory';
+  ModelDirectoryMarkerContent = 'FrameShift AI model directory v1';
+  FileAttributeReparsePoint = $00000400;
+  FileAttributeDirectory = $00000010;
+  InvalidFileAttributes = $FFFFFFFF;
 
 var
   InstalledVersion: string;
@@ -1042,17 +1047,122 @@ end;
 
 function ReadModelsDirectoryFromSettings(): string; forward;
 
+function IsAbsoluteWindowsPath(const Value: string): Boolean;
+begin
+  Result :=
+    ((Length(Value) >= 3) and (Value[2] = ':') and (Value[3] = '\')) or
+    (Copy(Value, 1, 2) = '\\');
+end;
+
+function IsDriveRoot(const Value: string): Boolean;
+begin
+  Result := (Length(Value) = 3) and (Value[2] = ':') and (Value[3] = '\');
+end;
+
+function IsUncShareRoot(const Value: string): Boolean;
+var
+  Remainder: string;
+  ServerSeparator: Integer;
+  ShareSeparator: Integer;
+begin
+  Result := False;
+  if Copy(Value, 1, 2) <> '\\' then
+    exit;
+
+  Remainder := Copy(Value, 3, MaxInt);
+  ServerSeparator := Pos('\', Remainder);
+  if ServerSeparator = 0 then
+  begin
+    Result := True;
+    exit;
+  end;
+
+  Remainder := Copy(Remainder, ServerSeparator + 1, MaxInt);
+  ShareSeparator := Pos('\', Remainder);
+  if ShareSeparator = 0 then
+  begin
+    Result := True;
+    exit;
+  end;
+
+  Result := Trim(Copy(Remainder, ShareSeparator + 1, MaxInt)) = '';
+end;
+
+function PathIsSameOrChild(const Candidate, Parent: string): Boolean;
+var
+  ParentWithSlash: string;
+begin
+  Result := CompareText(Candidate, Parent) = 0;
+  if Result then
+    exit;
+
+  ParentWithSlash := AddBackslash(Parent);
+  Result := CompareText(
+    Copy(Candidate, 1, Length(ParentWithSlash)),
+    ParentWithSlash) = 0;
+end;
+
+function TryNormalizeSafeModelsDir(const Value: string; var Normalized: string): Boolean;
+var
+  Candidate: string;
+  DefaultModelsDir: string;
+  UserProfileDir: string;
+  WindowsDir: string;
+  ProgramFilesDir: string;
+  ProgramFilesX86Dir: string;
+  AppDir: string;
+begin
+  Result := False;
+  Normalized := '';
+  if not IsAbsoluteWindowsPath(Trim(Value)) then
+    exit;
+
+  Candidate := RemoveBackslashUnlessRoot(ExpandFileName(Trim(Value)));
+  if IsDriveRoot(Candidate) or IsUncShareRoot(Candidate) then
+    exit;
+
+  DefaultModelsDir := RemoveBackslashUnlessRoot(ExpandFileName(GetDefaultModelsDir()));
+  if CompareText(Candidate, DefaultModelsDir) = 0 then
+  begin
+    Normalized := Candidate;
+    Result := True;
+    exit;
+  end;
+
+  UserProfileDir := RemoveBackslashUnlessRoot(ExpandConstant('{userprofile}'));
+  WindowsDir := RemoveBackslashUnlessRoot(ExpandConstant('{win}'));
+  ProgramFilesDir := RemoveBackslashUnlessRoot(ExpandConstant('{autopf}'));
+  ProgramFilesX86Dir := RemoveBackslashUnlessRoot(ExpandConstant('{autopf32}'));
+  AppDir := RemoveBackslashUnlessRoot(ExpandConstant('{app}'));
+
+  if PathIsSameOrChild(DefaultModelsDir, Candidate) or
+     PathIsSameOrChild(UserProfileDir, Candidate) or
+     PathIsSameOrChild(Candidate, WindowsDir) or
+     PathIsSameOrChild(WindowsDir, Candidate) or
+     PathIsSameOrChild(Candidate, ProgramFilesDir) or
+     PathIsSameOrChild(ProgramFilesDir, Candidate) or
+     PathIsSameOrChild(Candidate, ProgramFilesX86Dir) or
+     PathIsSameOrChild(ProgramFilesX86Dir, Candidate) or
+     PathIsSameOrChild(Candidate, AppDir) or
+     PathIsSameOrChild(AppDir, Candidate) then
+    exit;
+
+  Normalized := Candidate;
+  Result := True;
+end;
+
 function GetSuggestedModelsDir(): string;
 var
   DefaultModelsDir: string;
   CustomModelsDir: string;
+  SafeCustomModelsDir: string;
 begin
   DefaultModelsDir := GetDefaultModelsDir();
   CustomModelsDir := ReadModelsDirectoryFromSettings();
 
-  if (CustomModelsDir <> '') and DirExists(CustomModelsDir) then
+  if TryNormalizeSafeModelsDir(CustomModelsDir, SafeCustomModelsDir) and DirExists(SafeCustomModelsDir) then
   begin
-    Result := CustomModelsDir;
+    Result := SafeCustomModelsDir;
     exit;
   end;
 
@@ -1062,9 +1172,9 @@ begin
     exit;
   end;
 
-  if CustomModelsDir <> '' then
+  if TryNormalizeSafeModelsDir(CustomModelsDir, SafeCustomModelsDir) then
   begin
-    Result := CustomModelsDir;
+    Result := SafeCustomModelsDir;
     exit;
   end;
 
@@ -1139,6 +1249,7 @@ var
   EscapedDir: string;
   I: Integer;
   C: Char;
+  SafeModelsDir: string;
 begin
   ConfigDir := ExpandConstant('{localappdata}\FrameShift\config');
   ConfigFile := ConfigDir + '\settings.json';
@@ -1146,7 +1257,8 @@ begin
   if not ForceDirectories(ConfigDir) then
     exit;
 
-  if (ModelsDir = '') or (ModelsDir = GetDefaultModelsDir()) then
+  if not TryNormalizeSafeModelsDir(ModelsDir, SafeModelsDir) or
+     (SafeModelsDir = GetDefaultModelsDir()) then
   begin
     SaveStringToFile(ConfigFile, '{}' + #13#10, False);
     exit;
@@ -1154,9 +1266,9 @@ begin
 
   // Minimal JSON escaping for the path (backslash → \\)
   EscapedDir := '';
-  for I := 1 to Length(ModelsDir) do
+  for I := 1 to Length(SafeModelsDir) do
   begin
-    C := ModelsDir[I];
+    C := SafeModelsDir[I];
     if C = '\' then
       EscapedDir := EscapedDir + '\\'
     else
@@ -1172,13 +1284,17 @@ begin
 end;
 
 function GetEffectiveModelsDir(): string;
+var
+  SafeModelsDir: string;
 begin
   if AiModelsPage <> nil then
     Result := Trim(AiModelsDirEdit.Text)
   else
     Result := '';
-  if Result = '' then
+  if not TryNormalizeSafeModelsDir(Result, SafeModelsDir) then
     Result := GetDefaultModelsDir();
+  if SafeModelsDir <> '' then
+    Result := SafeModelsDir;
 end;
 
 procedure CreateBriaModelAssets(
@@ -1187,10 +1303,18 @@ var
   Dir: string;
   Readme: string;
   License: string;
+  DirectoryAlreadyExisted: Boolean;
 begin
   Dir := ModelsDir + '\RemoveBackground\' + SubFolder;
+  DirectoryAlreadyExisted := DirExists(Dir);
   if not ForceDirectories(Dir) then
     exit;
+
+  if not DirectoryAlreadyExisted then
+    SaveStringToFile(
+      AddBackslash(Dir) + ModelDirectoryMarkerFileName,
+      ModelDirectoryMarkerContent + #13#10,
+      False);
 
   Readme :=
     ModelDisplayName + #13#10 +
@@ -1301,8 +1425,25 @@ begin
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  SafeModelsDir: string;
 begin
   Result := True;
+
+  if (AiModelsPage <> nil) and (CurPageID = AiModelsPage.ID) then
+  begin
+    if not TryNormalizeSafeModelsDir(AiModelsDirEdit.Text, SafeModelsDir) then
+    begin
+      MsgBox(
+        'Choose a dedicated AI models folder. Drive roots, user-profile roots, Windows, Program Files, the FrameShift install folder and their parents are not allowed.',
+        mbError,
+        MB_OK);
+      Result := False;
+      exit;
+    end;
+
+    AiModelsDirEdit.Text := SafeModelsDir;
+  end;
 
   if (ExistingInstallPage <> nil) and (CurPageID = ExistingInstallPage.ID) then
   begin
@@ -1375,11 +1516,205 @@ begin
   Result := StringChangeEx(Result, '\\', '\', True);
 end;
 
+function GetFileAttributes(const FileName: string): Cardinal;
+  external 'GetFileAttributesW@kernel32.dll stdcall';
+
+function IsReparsePoint(const DirectoryName: string): Boolean;
+var
+  Attributes: Cardinal;
+begin
+  Attributes := GetFileAttributes(DirectoryName);
+  Result := (Attributes <> InvalidFileAttributes) and
+            ((Attributes and FileAttributeReparsePoint) <> 0);
+end;
+
+function HasReparsePointInPath(const DirectoryName, ModelsDir: string): Boolean;
+var
+  CurrentDirectory: string;
+  ParentDirectory: string;
+begin
+  // Fail closed if the generated candidate ever falls outside the configured root.
+  Result := True;
+  CurrentDirectory := RemoveBackslashUnlessRoot(ExpandFileName(DirectoryName));
+
+  while PathIsSameOrChild(CurrentDirectory, ModelsDir) do
+  begin
+    if IsReparsePoint(CurrentDirectory) then
+      exit;
+
+    if CompareText(CurrentDirectory, ModelsDir) = 0 then
+    begin
+      Result := False;
+      exit;
+    end;
+
+    ParentDirectory := RemoveBackslashUnlessRoot(ExtractFileDir(CurrentDirectory));
+    if CompareText(ParentDirectory, CurrentDirectory) = 0 then
+      exit;
+
+    CurrentDirectory := ParentDirectory;
+  end;
+end;
+
+function IsOwnedModelDirectory(const DirectoryName: string): Boolean;
+var
+  MarkerContent: AnsiString;
+begin
+  Result := False;
+  if IsReparsePoint(DirectoryName) then
+    exit;
+  if not LoadStringFromFile(
+    AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName,
+    MarkerContent) then
+    exit;
+
+  Result := CompareText(Trim(String(MarkerContent)), ModelDirectoryMarkerContent) = 0;
+end;
+
+function IsFileNameInList(const FileName, FileList: string): Boolean;
+var
+  Remaining: string;
+  ExpectedName: string;
+begin
+  Result := False;
+  Remaining := FileList;
+  while Remaining <> '' do
+  begin
+    ExpectedName := GetListItem(Remaining);
+    if (CompareText(FileName, ExpectedName) = 0) or
+       (CompareText(FileName, ExpectedName + '.tmp') = 0) then
+    begin
+      Result := True;
+      exit;
+    end;
+  end;
+end;
+
+function IsExpectedModelFile(const RelativePath, FileName: string): Boolean;
+begin
+  Result := CompareText(FileName, ModelDirectoryMarkerFileName) = 0;
+  if Result then
+    exit;
+
+  if CompareText(RelativePath, 'birefnet_lite-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'model_fp16.onnx')
+  else if CompareText(RelativePath, 'birefnet_hr-matting-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'BiRefNet_HR-matting-epoch_135.onnx')
+  else if CompareText(RelativePath, 'birefnet_hr-general-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'BiRefNet_HR-general-epoch_130.onnx')
+  else if CompareText(RelativePath, 'RemoveBackground\BriaBalanced') = 0 then
+    Result := IsFileNameInList(FileName, 'model_fp16.onnx,README.txt,LICENSE_NOTICE.txt')
+  else if CompareText(RelativePath, 'RemoveBackground\BriaHighQuality') = 0 then
+    Result := IsFileNameInList(FileName, 'model.onnx,README.txt,LICENSE_NOTICE.txt')
+  else if CompareText(RelativePath, 'htdemucs') = 0 then
+    Result := IsFileNameInList(FileName, 'htdemucs.onnx')
+  else if CompareText(RelativePath, 'htdemucs-split') = 0 then
+    Result := IsFileNameInList(FileName, 'htdemucs_split.onnx')
+  else if CompareText(RelativePath, 'deepfilternet3_onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'config.ini,enc.onnx,erb_dec.onnx,df_dec.onnx')
+  else if CompareText(RelativePath, 'rife') = 0 then
+    Result := IsFileNameInList(FileName, 'rife_v425_lite.onnx,rife_v426_x2.onnx')
+  else if CompareText(RelativePath, 'lama-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'lama_fp32.onnx')
+  else if CompareText(RelativePath, 'lama-opencv-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'inpainting_lama_2025jan.onnx')
+  else if CompareText(RelativePath, 'upscale-image-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'realesrgan_x4plus_fp16.onnx,realesrgan_x4plus_anime_6b.onnx,swin2sr_realworld_x4.onnx')
+  else if CompareText(RelativePath, 'upscale-video-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'realesr_general_x4v3.onnx,realesr_animevideov3.onnx,realesr_animevideov3_x2.onnx,realesr_animevideov3_x3.onnx,realesrgan_x4plus_fp16.onnx')
+  else if CompareText(RelativePath, 'whisper-base-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'base-encoder.onnx,base-decoder.onnx,base-tokens.txt')
+  else if CompareText(RelativePath, 'whisper-small-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'small-encoder.onnx,small-decoder.onnx,small-tokens.txt')
+  else if CompareText(RelativePath, 'whisper-large-v3-turbo-onnx') = 0 then
+    Result := IsFileNameInList(FileName, 'turbo-encoder.onnx,turbo-decoder.onnx,turbo-tokens.txt,turbo-encoder.weights');
+end;
+
+function ContainsOnlyExpectedModelFiles(const DirectoryName, RelativePath: string): Boolean;
+var
+  FindRec: TFindRec;
+begin
+  Result := False;
+  if not FindFirst(AddBackslash(DirectoryName) + '*', FindRec) then
+  begin
+    Result := True;
+    exit;
+  end;
+
+  try
+    repeat
+      if (FindRec.Name <> '.') and (FindRec.Name <> '..') then
+      begin
+        if ((FindRec.Attributes and FileAttributeDirectory) <> 0) or
+           not IsExpectedModelFile(RelativePath, FindRec.Name) then
+          exit;
+      end;
+    until not FindNext(FindRec);
+    Result := True;
+  finally
+    FindClose(FindRec);
+  end;
+end;
+
+function CanDeleteOwnedModelDirectory(
+  const ModelsDir, DirectoryName, RelativePath: string): Boolean;
+begin
+  Result := not HasReparsePointInPath(DirectoryName, ModelsDir) and
+            IsOwnedModelDirectory(DirectoryName) and
+            ContainsOnlyExpectedModelFiles(DirectoryName, RelativePath);
+end;
+
+function GetKnownModelDirectories(): string;
+begin
+  Result :=
+    'birefnet_lite-onnx,birefnet_hr-matting-onnx,birefnet_hr-general-onnx,' +
+    'RemoveBackground\BriaBalanced,RemoveBackground\BriaHighQuality,' +
+    'htdemucs,htdemucs-split,deepfilternet3_onnx,rife,lama-onnx,lama-opencv-onnx,' +
+    'upscale-image-onnx,upscale-video-onnx,whisper-base-onnx,whisper-small-onnx,' +
+    'whisper-large-v3-turbo-onnx';
+end;
+
+function HasOwnedModelDirectories(const ModelsDir: string): Boolean;
+var
+  Directories: string;
+  RelativePath: string;
+  Candidate: string;
+begin
+  Result := False;
+  Directories := GetKnownModelDirectories();
+  while Directories <> '' do
+  begin
+    RelativePath := GetListItem(Directories);
+    Candidate := AddBackslash(ModelsDir) + RelativePath;
+    if CanDeleteOwnedModelDirectory(ModelsDir, Candidate, RelativePath) then
+    begin
+      Result := True;
+      exit;
+    end;
+  end;
+end;
+
+procedure DeleteOwnedModelDirectories(const ModelsDir: string);
+var
+  Directories: string;
+  RelativePath: string;
+  Candidate: string;
+begin
+  Directories := GetKnownModelDirectories();
+  while Directories <> '' do
+  begin
+    RelativePath := GetListItem(Directories);
+    Candidate := AddBackslash(ModelsDir) + RelativePath;
+    if CanDeleteOwnedModelDirectory(ModelsDir, Candidate, RelativePath) then
+      DelTree(Candidate, True, True, True);
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ModelsDir: string;
   CustomModelsDir: string;
-  AIDir: string;
+  SafeModelsDir: string;
   LogsDir: string;
 begin
   if CurUninstallStep = usUninstall then
@@ -1388,23 +1723,23 @@ begin
     CleanupContextMenuAIKeys;
     SHChangeNotify($08000000, $0000, 0, 0);
 
-    // Use custom models dir from settings if present, otherwise the default
-    ModelsDir := ExpandConstant('{localappdata}\FrameShift\AI\Models');
+    // settings.json is user-controlled. An unsafe custom path is ignored and never
+    // becomes a deletion target.
+    ModelsDir := GetDefaultModelsDir();
     CustomModelsDir := ReadModelsDirectoryFromSettings();
-    if (CustomModelsDir <> '') and (CustomModelsDir <> ModelsDir) then
-      ModelsDir := CustomModelsDir;
+    if TryNormalizeSafeModelsDir(CustomModelsDir, SafeModelsDir) then
+      ModelsDir := SafeModelsDir;
 
-    if DirExists(ModelsDir) then
+    if DirExists(ModelsDir) and HasOwnedModelDirectories(ModelsDir) then
     begin
       if MsgBox(
-        'Do you also want to delete downloaded AI models?' + #13#10#13#10 +
+        'Do you also want to remove downloaded AI models created by FrameShift?' + #13#10#13#10 +
+        'FrameShift will delete only marked model folders that it created. The selected models root and any other files will be kept.' + #13#10#13#10 +
         'Location: ' + ModelsDir,
         mbConfirmation,
         MB_YESNO) = IDYES then
       begin
-        DelTree(ModelsDir, True, True, True);
-        AIDir := ExpandConstant('{localappdata}\FrameShift\AI');
-        RemoveDir(AIDir);
+        DeleteOwnedModelDirectories(ModelsDir);
       end;
     end;
 

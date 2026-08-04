@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -215,6 +216,7 @@ internal readonly record struct FfmpegProgressSnapshot(int DisplayedPermille, Ff
 public sealed class FfmpegRunner
 {
     private readonly AppLogger _logger;
+    private readonly ConcurrentDictionary<(string ExecutablePath, string EncoderName), bool> _encoderCache = new();
 
     public FfmpegRunner(AppLogger logger)
     {
@@ -387,17 +389,21 @@ public sealed class FfmpegRunner
         string encoderName,
         CancellationToken cancellationToken)
     {
+        var key = (executablePath, encoderName);
+        if (_encoderCache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+
         var result = await RunCaptureAsync(
             executablePath,
             new[] { "-hide_banner", "-encoders" },
             cancellationToken).ConfigureAwait(false);
 
-        if (!result.Success)
-        {
-            return false;
-        }
-
-        return result.StandardOutput.Contains(encoderName, StringComparison.OrdinalIgnoreCase);
+        var available = result.Success &&
+                        result.StandardOutput.Contains(encoderName, StringComparison.OrdinalIgnoreCase);
+        _encoderCache[key] = available;
+        return available;
     }
 
     public async Task<CaptureResult> RunCaptureAsync(

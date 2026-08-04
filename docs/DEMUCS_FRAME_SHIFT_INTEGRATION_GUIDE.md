@@ -162,7 +162,7 @@ DML inference (GPU) :  47.6 ms / chunk  →  14.7 s total  (goulot secondaire)
 iSTFT host (CPU)    : 183.5 ms / chunk  →  56.7 s total  (goulot principal = 63 %)
 ```
 
-L'iSTFT host est le goulot — voir §7.4 pour optimisations futures.
+> **Mesures d'origine (host mono-thread).** Depuis la 1.16.0, `HostSpectro` parallélise STFT et iSTFT sur leurs unités indépendantes (frames ; les 8 couples stem·canal) avec des buffers de travail réutilisés, et le marshalling `DenseTensor` passe par l'accès direct au buffer contigu. L'iSTFT host n'est donc plus le goulot dominant montré ci-dessus — voir §7.3. Le pipeline GPU split est inchangé fonctionnellement et les sorties audio restent bit-à-bit identiques.
 
 ### 3.5 Projections machine utilisateur
 
@@ -178,7 +178,7 @@ L'iSTFT host est le goulot — voir §7.4 pour optimisations futures.
 |---|---|---|
 | Segment fixe 7.8 s | Aucun (chunking transparent) | V1 + V2 |
 | fp32 uniquement | RAM ORT 1.6 GB (V1) | V1 uniquement |
-| iSTFT host lent (~184 ms/chunk) | Wall time limité à ~20× RT | V2 (voir §7.4) |
+| iSTFT host (~184 ms/chunk à l'origine, mono-thread) | Parallélisé avec buffers réutilisés depuis 1.16.0 — voir §7.3 | V2 |
 | VRAM résiduelle +180 MB post-dispose | Potentiel cumul multi-morceaux | V2 — surveiller |
 | Diff vs `apply_model` Demucs ~1e-2 | Quelques dB de SDR vs référence torch | V1 + V2 |
 
@@ -457,20 +457,20 @@ Annulation : `CancellationToken` vérifié **entre chunks uniquement** — un ch
 |---|---|---|
 | `AudioChunkReader` charge le fichier entier en RAM | Acceptable jusqu'à ~20 min ; problématique au-delà de 1 h | V1 + V2 |
 | PCM_16 : `× 32767f` au lieu de `× 32768f` | Off-by-1 LSB au pic négatif — inaudible | V1 + V2 |
-| Allocations par chunk (DenseTensor, buffer spec) | Pression GC, pas un problème de correction | V2 |
+| Allocations par chunk (objets DenseTensor, buffer spec) | Pression GC, pas un problème de correction ; depuis 1.16.0 le marshalling lit/écrit via le buffer contigu (plus d'indexeurs par élément) | V2 |
 | +180 MB VRAM résiduel après dispose V2 | Surveillance recommandée en multi-morceaux longs | V2 |
 
-### 7.3 Optimisations V2.1 (non bloquantes)
+### 7.3 Optimisations V2.1
 
-L'iSTFT host (torch ConvTranspose1d CPU) représente **63 % du wall time V2** (57 s / 90 s). Pistes :
+**Implémenté en 1.16.0 — parallélisation host + marshalling direct.** `HostSpectro` exécute désormais STFT et iSTFT en parallèle sur leurs unités indépendantes (frames pour la STFT, les 8 couples stem·canal pour l'iSTFT), avec des buffers de travail réutilisés et l'enveloppe OLA précalculée ; le marshalling `DenseTensor` passe par l'accès direct au buffer contigu au lieu des indexeurs multi-dimensionnels. Le pipeline GPU split reste inchangé fonctionnellement (mêmes modèle, stems, fallback DML → CPU) et les sorties audio sont **bit-à-bit identiques**. Sur un benchmark représentatif, le temps host par chunk passe de ~365 ms à ~95 ms (~×3,8) ; le gain réel varie selon le fichier et le matériel. La RAM augmente légèrement (buffers réutilisés) ; la VRAM est inchangée.
+
+**Pistes restantes (non bloquantes) :**
 
 | Optimisation | Gain estimé | Effort |
 |---|---|---|
-| Réimplémenter iSTFT via `numpy.fft.irfft` | −40 s wall → ~50 s total | faible |
-| Recouvrement async (iSTFT chunk k pendant que DML traite k+1) | −30 s wall → ~60 s | moyen |
-| Mini-graphe ONNX DML pour STFT/iSTFT (FFT native DirectML) | −50 s wall → ~40 s | R&D |
-
-Objectif V2.1 : wall time < 60 s sur 30 min, soit **30× RT**.
+| iSTFT via iFFT réel (RFFT N/2) au lieu du FFT complexe | ~2× sur l'iSTFT | moyen (risque numérique) |
+| Recouvrement async (iSTFT chunk k pendant que DML traite k+1) | wall time réduit | moyen |
+| Mini-graphe ONNX DML pour STFT/iSTFT (FFT native DirectML) | host quasi nul | R&D |
 
 ---
 

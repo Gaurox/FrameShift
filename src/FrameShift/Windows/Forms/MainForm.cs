@@ -1,24 +1,31 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using FrameShift.Core.AI;
+using FrameShift.Core.Actions;
 using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.Forms;
 
+/// <summary>
+/// Drop-driven hub: a file queue on the left and the actions applicable to what is
+/// queued/selected on the right. Files arrive via drag-and-drop, "Add…", or a launch
+/// selection. Clicking an action launches a child FrameShift.exe on the whole scope
+/// (no 15-file Explorer cap). Shows a centered drop zone while the queue is empty.
+/// </summary>
 public sealed class MainForm : Form
 {
-    private static readonly Font s_titleFont     = new("Segoe UI Semibold", 20F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_subtitleFont  = new("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_tileTitleFont = new("Segoe UI Semibold", 11F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_tileBodyFont  = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_hintFont      = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private readonly string[] _startupPaths;
+    private static readonly Font s_titleFont = new("Segoe UI Semibold", 15F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_emptyTitleFont = new("Segoe UI Semibold", 15F, FontStyle.Regular, GraphicsUnit.Point);
+    private static readonly Font s_bodyFont = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
 
-    private Label? _pathLabel;
+    private readonly FileQueuePanel _queuePanel;
+    private readonly ActionsPanel _actionsPanel;
+    private readonly SplitContainer _split;
+    private readonly Panel _emptyState;
 
     public MainForm()
         : this(Array.Empty<string>())
@@ -27,329 +34,328 @@ public sealed class MainForm : Form
 
     public MainForm(IEnumerable<string> startupPaths)
     {
-        _startupPaths = startupPaths?
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .ToArray() ?? [];
-
         FrameShiftWindowChrome.Apply(this, "FrameShift");
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(640, 540);
-        Size = new Size(680, 580);
+        MinimumSize = new Size(780, 540);
+        Size = new Size(920, 620);
         BackColor = FrameShiftTheme.PageBackground;
+        AllowDrop = true;
+        DragEnter += OnDragEnter;
+        DragDrop += OnDragDrop;
 
-        var root = new TableLayoutPanel
+        _queuePanel = new FileQueuePanel { Dock = DockStyle.Fill };
+        _queuePanel.QueueChanged += (_, _) => OnQueueChanged();
+        _queuePanel.SelectionChanged += (_, _) => RefreshActions();
+
+        _actionsPanel = new ActionsPanel { Dock = DockStyle.Fill };
+        _actionsPanel.ActionInvoked += OnActionInvoked;
+
+        // Note: Panel1MinSize/Panel2MinSize are deliberately left at their small defaults.
+        // Setting large min sizes before the control is realized throws during layout
+        // ("SplitterDistance must be between Panel1MinSize and Width - Panel2MinSize").
+        _split = new SplitContainer
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(24),
-            ColumnCount = 1,
-            RowCount = 4,
-            BackColor = FrameShiftTheme.PageBackground
+            Orientation = Orientation.Vertical,
+            BackColor = FrameShiftTheme.SurfaceBorder,
+            SplitterWidth = 1,
+            Visible = false
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 68F));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 110F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
+        _split.Panel1.BackColor = FrameShiftTheme.Surface;
+        _split.Panel2.BackColor = FrameShiftTheme.Surface;
+        _split.Panel1.Controls.Add(_queuePanel);
+        _split.Panel2.Controls.Add(_actionsPanel);
 
-        root.Controls.Add(BuildHeader(_startupPaths), 0, 0);
-        root.Controls.Add(BuildTileGrid(), 0, 1);
-        root.Controls.Add(BuildModelsSection(), 0, 2);
-        root.Controls.Add(BuildHint(_startupPaths), 0, 3);
+        _emptyState = BuildEmptyState();
 
-        Controls.Add(root);
+        var body = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = FrameShiftTheme.PageBackground,
+            Padding = new Padding(16, 8, 16, 8)
+        };
+        body.Controls.Add(_split);
+        body.Controls.Add(_emptyState);
+
+        Controls.Add(BuildTitleBar());
+        Controls.Add(BuildFooter());
+        Controls.Add(body);
+        // Fill must be behind the docked title/footer; re-add body last keeps it filling.
+        body.BringToFront();
+        _split.BringToFront();
+
+        Load += (_, _) => UpdateState();
+
+        var initial = ExpandPaths(startupPaths);
+        if (initial.Count > 0)
+        {
+            _queuePanel.AddFiles(initial);
+        }
     }
 
-    private Panel BuildModelsSection()
+    private void OnQueueChanged()
     {
-        var section = FrameShiftUiFactory.CreateFramedPanel(
-            FrameShiftTheme.Surface,
-            FrameShiftTheme.PrimaryBlue,
-            FrameShiftUiMetrics.PanelCornerRadius);
-        section.Dock = DockStyle.Fill;
-        section.Padding = new Padding(12, 10, 12, 10);
-
-        var titleLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = FrameShiftUiMetrics.SectionTitleHeight,
-            Text = "AI models folder",
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            ForeColor = FrameShiftTheme.SecondaryBlue,
-            Margin = Padding.Empty
-        };
-
-        var settings = AiModelSettings.Load();
-        var effectivePath = settings.GetEffectiveModelsDirectory();
-
-        _pathLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 18,
-            Text = effectivePath,
-            Font = s_hintFont,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true,
-            Margin = new Padding(0, 2, 0, 6)
-        };
-
-        var buttonPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 34,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = Padding.Empty,
-            Margin = Padding.Empty
-        };
-
-        var btnBrowse = CreateSecondaryButton("Browse...");
-        var btnReset  = CreateSecondaryButton("Reset to default");
-        var btnOpen   = CreateSecondaryButton("Open folder");
-
-        btnBrowse.Click += (_, _) => BrowseModelsFolder();
-        btnReset.Click  += (_, _) => ResetModelsFolder();
-        btnOpen.Click   += (_, _) => OpenModelsFolder();
-
-        buttonPanel.Controls.Add(btnBrowse);
-        buttonPanel.Controls.Add(btnReset);
-        buttonPanel.Controls.Add(btnOpen);
-
-        section.Controls.Add(buttonPanel);
-        section.Controls.Add(_pathLabel);
-        section.Controls.Add(titleLabel);
-
-        return section;
+        UpdateState();
+        RefreshActions();
     }
 
-    private void BrowseModelsFolder()
+    private void RefreshActions()
     {
-        using var dlg = new FolderBrowserDialog
+        _actionsPanel.SetFiles(_queuePanel.Items, _queuePanel.SelectedPaths);
+    }
+
+    private void UpdateState()
+    {
+        var hasFiles = _queuePanel.Items.Count > 0;
+        _split.Visible = hasFiles;
+        _emptyState.Visible = !hasFiles;
+
+        if (hasFiles)
         {
-            Description = "Select AI models folder",
-            UseDescriptionForTitle = true,
-            ShowNewFolderButton = true
-        };
+            SetSplitterDistance();
+        }
+    }
 
-        var settings = AiModelSettings.Load();
-        var current = settings.GetEffectiveModelsDirectory();
-        if (Directory.Exists(current))
-            dlg.InitialDirectory = current;
-
-        if (dlg.ShowDialog(this) != DialogResult.OK)
+    private void SetSplitterDistance()
+    {
+        if (_split.Width <= 0)
+        {
             return;
+        }
 
-        settings.ModelsDirectory = dlg.SelectedPath;
-        settings.Save();
-        AiModelStorage.InvalidateCache();
+        const int leftMin = 200;
+        const int rightMin = 280;
+        var target = (int)(_split.Width * 0.4);
+        var max = _split.Width - rightMin - _split.SplitterWidth;
+        if (max < leftMin)
+        {
+            return;
+        }
 
-        UpdatePathLabel(dlg.SelectedPath);
+        _split.SplitterDistance = Math.Clamp(target, leftMin, max);
     }
 
-    private void ResetModelsFolder()
+    private void OnActionInvoked(object? sender, ActionInvokedEventArgs e)
     {
-        var settings = AiModelSettings.Load();
-        settings.ModelsDirectory = null;
-        settings.Save();
-        AiModelStorage.InvalidateCache();
-
-        var effective = settings.GetEffectiveModelsDirectory();
-        UpdatePathLabel(effective);
-    }
-
-    private void OpenModelsFolder()
-    {
-        var settings = AiModelSettings.Load();
-        var path = settings.GetEffectiveModelsDirectory();
         try
         {
-            Directory.CreateDirectory(path);
-            Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
+            ActionLauncher.Launch(e.Entry, e.Files);
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Could not open folder:\n{ex.Message}",
+                $"Could not start the action:\n{ex.Message}",
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
         }
     }
 
-    private void UpdatePathLabel(string path)
+    private void OnDragEnter(object? sender, DragEventArgs e)
     {
-        if (_pathLabel is not null)
-            _pathLabel.Text = path;
+        e.Effect = e.Data is not null && e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
     }
 
-    private static Button CreateSecondaryButton(string text)
+    private void OnDragDrop(object? sender, DragEventArgs e)
     {
-        var btn = new Button
+        if (e.Data?.GetData(DataFormats.FileDrop) is string[] dropped)
         {
-            Text = text,
-            Height = 30,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
-            Cursor = Cursors.Hand,
-            Margin = new Padding(0, 0, 8, 0),
-            Padding = new Padding(10, 4, 10, 4)
-        };
-        btn.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        btn.FlatAppearance.BorderSize  = 1;
-        btn.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-        btn.Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        return btn;
+            _queuePanel.AddFiles(ExpandPaths(dropped));
+        }
     }
 
-    private static Panel BuildHeader(IReadOnlyList<string> startupPaths)
+    // Dropped directories are flattened one level to their immediate files; other paths pass through.
+    private static IReadOnlyList<string> ExpandPaths(IEnumerable<string>? paths)
+    {
+        var result = new List<string>();
+        if (paths is null)
+        {
+            return result;
+        }
+
+        foreach (var path in paths)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                if (Directory.Exists(path))
+                {
+                    result.AddRange(Directory.GetFiles(path));
+                }
+                else
+                {
+                    result.Add(path);
+                }
+            }
+            catch
+            {
+                // Ignore unreadable paths.
+            }
+        }
+
+        return result;
+    }
+
+    private Panel BuildTitleBar()
     {
         var panel = new Panel
         {
-            Dock = DockStyle.Fill,
-            BackColor = FrameShiftTheme.PageBackground
+            Dock = DockStyle.Top,
+            Height = 48,
+            BackColor = FrameShiftTheme.Surface,
+            Padding = new Padding(16, 0, 12, 0)
         };
 
         var title = new Label
         {
             AutoSize = true,
-            Location = new Point(0, 0),
+            Location = new Point(16, 12),
             Text = "FrameShift",
             Font = s_titleFont,
             ForeColor = FrameShiftTheme.TextPrimary
         };
 
-        var subtitle = new Label
+        var version = new Label
         {
             AutoSize = true,
-            Location = new Point(2, 36),
-            Text = BuildSubtitle(startupPaths),
-            Font = s_subtitleFont,
+            Location = new Point(title.Right + 120, 18),
+            Text = $"v{Application.ProductVersion}",
+            Font = s_bodyFont,
             ForeColor = FrameShiftTheme.TextMuted
         };
 
+        var settings = new Button
+        {
+            Text = "Settings",
+            Dock = DockStyle.Right,
+            Width = 96,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.SecondaryBlue,
+            Cursor = Cursors.Hand,
+            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        settings.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
+        settings.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
+        settings.Click += (_, _) =>
+        {
+            using var dialog = new SettingsForm();
+            dialog.ShowDialog(this);
+        };
+
+        var separator = new Panel
+        {
+            Dock = DockStyle.Bottom,
+            Height = 1,
+            BackColor = FrameShiftTheme.SurfaceBorder
+        };
+
         panel.Controls.Add(title);
-        panel.Controls.Add(subtitle);
+        panel.Controls.Add(version);
+        panel.Controls.Add(settings);
+        panel.Controls.Add(separator);
         return panel;
     }
 
-    private static TableLayoutPanel BuildTileGrid()
+    private static Panel BuildFooter()
     {
-        var grid = new TableLayoutPanel
+        var panel = new Panel
         {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 2,
-            BackColor = FrameShiftTheme.PageBackground,
-            Padding = new Padding(0, 8, 0, 8)
-        };
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-
-        var tiles = new[]
-        {
-            ("Video",    "Convert · Cut · Crop · GIF · Resize · Extract · Rotate · Interpolate · Subtitles"),
-            ("Audio",    "Convert · Cut · Reverse · Pitch · Speed · Compress · Separate"),
-            ("Image",    "Convert · Crop · Resize · Rotate · Compress · PDF · Icon"),
-            ("AI tools", "Remove Background · Remove Noise · Separate Audio · RIFE Interpolate · Create Subtitle File"),
-        };
-
-        for (var i = 0; i < tiles.Length; i++)
-        {
-            var (name, actions) = tiles[i];
-            var col = i % 2;
-            var row = i / 2;
-            var tile = BuildTile(name, actions);
-            tile.Margin = new Padding(
-                col == 1 ? 6 : 0,
-                row == 1 ? 6 : 0,
-                col == 0 ? 6 : 0,
-                0);
-            grid.Controls.Add(tile, col, row);
-        }
-
-        return grid;
-    }
-
-    private static Panel BuildTile(string title, string actionsText)
-    {
-        var panel = FrameShiftUiFactory.CreateFramedPanel(
-            FrameShiftTheme.Surface,
-            FrameShiftTheme.PrimaryBlue,
-            FrameShiftUiMetrics.PanelCornerRadius);
-        panel.Dock = DockStyle.Fill;
-        panel.Padding = new Padding(20, 14, 20, 14);
-
-        var titleLabel = new Label
-        {
-            Dock = DockStyle.Top,
+            Dock = DockStyle.Bottom,
             Height = 26,
-            Text = title,
-            Font = s_tileTitleFont,
-            ForeColor = FrameShiftTheme.TextPrimary
+            BackColor = FrameShiftTheme.PageBackground,
+            Padding = new Padding(18, 0, 18, 0)
         };
 
-        var actionsLabel = new Label
+        panel.Controls.Add(new Label
         {
             Dock = DockStyle.Fill,
-            Text = actionsText,
-            Font = s_tileBodyFont,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true
-        };
-
-        panel.Controls.Add(actionsLabel);
-        panel.Controls.Add(titleLabel);
-
-        void SetHover(bool hovered)
-            => panel.BackColor = hovered ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface;
-
-        panel.MouseEnter       += (_, _) => SetHover(true);
-        panel.MouseLeave       += (_, _) => SetHover(false);
-        titleLabel.MouseEnter  += (_, _) => SetHover(true);
-        titleLabel.MouseLeave  += (_, _) => SetHover(false);
-        actionsLabel.MouseEnter += (_, _) => SetHover(true);
-        actionsLabel.MouseLeave += (_, _) => SetHover(false);
-
-        return panel;
-    }
-
-    private static Label BuildHint(IReadOnlyList<string> startupPaths)
-    {
-        return new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = BuildHintText(startupPaths),
-            Font = s_hintFont,
+            Text = "Outputs are saved next to each source file · nothing is uploaded",
+            Font = s_bodyFont,
             ForeColor = FrameShiftTheme.TextMuted,
             TextAlign = ContentAlignment.MiddleLeft
+        });
+
+        return panel;
+    }
+
+    private Panel BuildEmptyState()
+    {
+        var host = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            BackColor = FrameShiftTheme.PageBackground
         };
-    }
+        host.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+        host.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        host.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
 
-    private static string BuildSubtitle(IReadOnlyList<string> startupPaths)
-    {
-        if (startupPaths.Count == 0)
-            return $"Local multimedia processing for Windows  ·  v{Application.ProductVersion}";
+        var box = new FlowLayoutPanel
+        {
+            Anchor = AnchorStyles.None,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            FlowDirection = FlowDirection.TopDown,
+            WrapContents = false,
+            BackColor = FrameShiftTheme.Surface,
+            Padding = new Padding(48, 34, 48, 34)
+        };
+        box.Paint += (_, e) =>
+        {
+            var rect = new Rectangle(0, 0, box.Width - 1, box.Height - 1);
+            using var pen = new Pen(FrameShiftTheme.PrimaryBlue) { DashStyle = DashStyle.Dash };
+            e.Graphics.DrawRectangle(pen, rect);
+        };
 
-        return $"{FormatSelectionLabel(startupPaths)}  ·  v{Application.ProductVersion}";
-    }
+        var title = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.None,
+            Text = "Drop files here",
+            Font = s_emptyTitleFont,
+            ForeColor = FrameShiftTheme.TextPrimary,
+            Margin = new Padding(0, 0, 0, 6)
+        };
 
-    private static string BuildHintText(IReadOnlyList<string> startupPaths)
-    {
-        if (startupPaths.Count == 0)
-            return "Right-click files in Windows Explorer to use FrameShift.";
+        var subtitle = new Label
+        {
+            AutoSize = true,
+            Anchor = AnchorStyles.None,
+            Text = "or use Browse — videos, audio, images",
+            Font = s_bodyFont,
+            ForeColor = FrameShiftTheme.TextMuted,
+            Margin = new Padding(0, 0, 0, 14)
+        };
 
-        return "UI launched from a file selection. Action routing is not wired here yet.";
-    }
+        var browse = new Button
+        {
+            Text = "Browse…",
+            Anchor = AnchorStyles.None,
+            Width = FrameShiftUiMetrics.PrimaryButtonWidth,
+            Height = FrameShiftUiMetrics.FooterButtonHeight,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = Color.White,
+            Cursor = Cursors.Hand,
+            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        browse.FlatAppearance.BorderColor = FrameShiftTheme.SecondaryBlue;
+        browse.FlatAppearance.MouseOverBackColor = FrameShiftTheme.PrimaryBlue;
+        browse.Click += (_, _) => _queuePanel.PromptForFiles();
 
-    private static string FormatSelectionLabel(IReadOnlyList<string> startupPaths)
-    {
-        if (startupPaths.Count == 1)
-            return $"Selected: {Path.GetFileName(startupPaths[0])}";
+        box.Controls.Add(title);
+        box.Controls.Add(subtitle);
+        box.Controls.Add(browse);
 
-        return $"{startupPaths.Count} selected items";
+        host.Controls.Add(box, 0, 1);
+        return host;
     }
 }

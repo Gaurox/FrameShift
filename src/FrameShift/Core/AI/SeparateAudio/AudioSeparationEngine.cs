@@ -248,10 +248,14 @@ internal sealed class AudioSeparationEngine : IDisposable
     private NamedOnnxValue BuildMixInput(float[] mixChunk)
     {
         var tensor = new DenseTensor<float>(new[] { 1, 2, OverlapAddRing.ChunkLen });
-        for (var sample = 0; sample < OverlapAddRing.ChunkLen; sample++)
+        // DenseTensor buffer is contiguous row-major: [ch0[ChunkLen], ch1[ChunkLen]].
+        // Deinterleave straight into the backing span — bypasses the slow multi-dim indexer.
+        var span = tensor.Buffer.Span;
+        var len = OverlapAddRing.ChunkLen;
+        for (var sample = 0; sample < len; sample++)
         {
-            tensor[0, 0, sample] = mixChunk[sample * 2];
-            tensor[0, 1, sample] = mixChunk[sample * 2 + 1];
+            span[sample] = mixChunk[sample * 2];
+            span[len + sample] = mixChunk[sample * 2 + 1];
         }
 
         return NamedOnnxValue.CreateFromTensor(_mixInputName, tensor);
@@ -259,60 +263,33 @@ internal sealed class AudioSeparationEngine : IDisposable
 
     private NamedOnnxValue BuildSpecInput(float[] spec)
     {
+        // spec is already laid out [channel, freq, time, complex] row-major, which is
+        // exactly the [1, 2, FKeep, Le, 2] tensor buffer order → a direct copy.
         var tensor = new DenseTensor<float>(new[] { 1, 2, HostSpectro.FKeep, HostSpectro.Le, 2 });
-        var index = 0;
-        for (var channel = 0; channel < 2; channel++)
-        {
-            for (var freq = 0; freq < HostSpectro.FKeep; freq++)
-            {
-                for (var time = 0; time < HostSpectro.Le; time++)
-                {
-                    tensor[0, channel, freq, time, 0] = spec[index++];
-                    tensor[0, channel, freq, time, 1] = spec[index++];
-                }
-            }
-        }
-
+        spec.AsSpan(0, tensor.Buffer.Length).CopyTo(tensor.Buffer.Span);
         return NamedOnnxValue.CreateFromTensor(_specInputName, tensor);
     }
 
     private static float[] ExtractStems(Tensor<float> tensor)
     {
+        // Tensor [1, 4, 2, ChunkLen] row-major == target layout [stem, channel, sample] → memcpy.
         var stemData = new float[StemCount * 2 * OverlapAddRing.ChunkLen];
-        for (var stem = 0; stem < StemCount; stem++)
-        {
-            var stemBase = stem * 2 * OverlapAddRing.ChunkLen;
-            for (var sample = 0; sample < OverlapAddRing.ChunkLen; sample++)
-            {
-                stemData[stemBase + sample] = tensor[0, stem, 0, sample];
-                stemData[stemBase + OverlapAddRing.ChunkLen + sample] = tensor[0, stem, 1, sample];
-            }
-        }
-
+        AsSpan(tensor).CopyTo(stemData);
         return stemData;
     }
 
     private static float[] ExtractMaskSpec(Tensor<float> tensor)
     {
+        // Tensor [1, 4, 2, FKeep, Le, 2] row-major == target layout [stem, channel, freq, time, complex] → memcpy.
         var result = new float[StemCount * 2 * HostSpectro.FKeep * HostSpectro.Le * 2];
-        var index = 0;
-        for (var stem = 0; stem < StemCount; stem++)
-        {
-            for (var channel = 0; channel < 2; channel++)
-            {
-                for (var freq = 0; freq < HostSpectro.FKeep; freq++)
-                {
-                    for (var time = 0; time < HostSpectro.Le; time++)
-                    {
-                        result[index++] = tensor[0, stem, channel, freq, time, 0];
-                        result[index++] = tensor[0, stem, channel, freq, time, 1];
-                    }
-                }
-            }
-        }
-
+        AsSpan(tensor).CopyTo(result);
         return result;
     }
+
+    // ONNX Runtime returns DenseTensor<float> for float outputs; use its contiguous buffer
+    // directly. Falls back to ToArray() only if a non-dense tensor is ever encountered.
+    private static ReadOnlySpan<float> AsSpan(Tensor<float> tensor)
+        => tensor is DenseTensor<float> dense ? dense.Buffer.Span : tensor.ToArray();
 
     private static void WriteOutputs(
         OverlapAddRing.DrainedChunk drained,

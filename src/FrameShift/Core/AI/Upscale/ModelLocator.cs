@@ -33,7 +33,7 @@ internal static class ModelLocator
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+            AiModelStorage.EnsureDirectory(Path.GetDirectoryName(targetPath)!);
             File.Copy(legacyPath, targetPath, overwrite: false);
             AppLogger.LogStatic($"UpscaleModelLocator: copied legacy model to {targetPath}");
         }

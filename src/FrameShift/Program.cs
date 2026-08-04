@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
@@ -17,6 +18,7 @@ internal static partial class Program
     {
         AppLogger.LogStatic($"DIAG BUILD ACTIVE - log path = {AppLogger.LogPath}");
         AppLogger.LogStatic($"Program: Main entered. baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}, argsCount={args.Length}.");
+        TryCleanOrphanedTempDirectories();
         var logger = new AppLogger();
         var registry = ActionRegistry.CreateDefault();
 
@@ -35,6 +37,65 @@ internal static partial class Program
 
         Application.Run(new MainForm());
         return 0;
+    }
+
+    private static void TryCleanOrphanedTempDirectories()
+    {
+        // Guard: if another FrameShift instance is running it may own active temp dirs — skip entirely.
+        try
+        {
+            if (Process.GetProcessesByName("FrameShift").Any(p => p.Id != Environment.ProcessId))
+            {
+                return;
+            }
+        }
+        catch
+        {
+            return;
+        }
+
+        var cutoff = DateTime.UtcNow.AddHours(-24);
+        var temp = Path.GetTempPath();
+
+        // Explicit GUID-level session roots for each known action type.
+        // Each root contains one subdirectory per run (named by Guid), not arbitrary content.
+        var sessionRoots = new[]
+        {
+            Path.Combine(temp, "FrameShift", "CreateSubtitles"),
+            Path.Combine(temp, "FrameShift", "RifeInterpolation"),
+            Path.Combine(temp, "FrameShift", "UpscaleVideo"),
+            Path.Combine(temp, "FrameShiftCutAudio"),
+        };
+
+        foreach (var root in sessionRoots)
+        {
+            try
+            {
+                if (!Directory.Exists(root))
+                {
+                    continue;
+                }
+
+                foreach (var dir in Directory.GetDirectories(root, "*", SearchOption.TopDirectoryOnly))
+                {
+                    try
+                    {
+                        if (Directory.GetLastWriteTimeUtc(dir) < cutoff)
+                        {
+                            Directory.Delete(dir, recursive: true);
+                        }
+                    }
+                    catch
+                    {
+                        // best-effort: skip if inaccessible
+                    }
+                }
+            }
+            catch
+            {
+                // best-effort: do not disrupt startup on any I/O failure
+            }
+        }
     }
 
     private static bool TryGetUiStartupPaths(string[] args, out List<string> startupPaths)

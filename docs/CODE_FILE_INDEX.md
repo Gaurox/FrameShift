@@ -145,6 +145,7 @@ Media Info :
 
 - `src/FrameShift/Core/AI/AiModelDownloadProgress.cs`
 - `src/FrameShift/Core/AI/AiModelFileDownloader.cs`
+- `src/FrameShift/Core/AI/AiModelDirectorySafety.cs`
 - `src/FrameShift/Core/AI/AiModelSettings.cs`
 - `src/FrameShift/Core/AI/OnnxProviderHelper.cs`
 - `src/FrameShift/Core/AI/CreateSubtitles/CreateSubtitlesAction.cs`
@@ -333,10 +334,12 @@ Assets de test utiles :
 - Lot 4 ajoute `CreateSubtitlesAssPreset`, `CreateSubtitlesAssDiagnostic`, le câblage UI/CLI du preset ASS et deux rendus dynamiques limités (`Word Highlight`, `Progressive Reveal`) avec fallback automatique vers `Classic` pour les segments dont l'alignement mot à mot n'est pas fiable.
 - L’état 1.16.0 garde un `RefinedDisplayStart` partagé entre `ASS`, `SRT`, projet sérialisé et burn vidéo ; en `Word Highlight`, la phrase complète apparaît dès ce début raffiné, tandis que `Progressive Reveal` reste progressif.
 - `build_installer.ps1` est le script canonique ; `build_all.ps1` délègue vers lui.
-- `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle.
-- `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` (avec fallback automatique sur le chemin par défaut) ; `InvalidateCache()` à appeler après un changement de dossier.
+- `AiModelDirectorySafety.cs` canonicalise les choix de dossier de modèles et refuse les racines / emplacements protégés ; l’ISS applique les mêmes règles avant installation et désinstallation.
+- `AiModelSettings.cs` gère les préférences utilisateur IA persistées dans `%LOCALAPPDATA%\FrameShift\config\settings.json` ; clé `ModelsDirectory` optionnelle et repli sur le dossier par défaut si la valeur est dangereuse ou inutilisable.
+- `AiModelStorage.RootDirectory` est désormais résolu dynamiquement depuis `AiModelSettings` ; les nouveaux dossiers de modèles créés par FrameShift reçoivent un marqueur d’appartenance, utilisé par l’uninstallateur pour ne jamais supprimer la racine configurable ni les dossiers non marqués.
 - `OnnxProviderHelper.cs` centralise la création de session ONNX (DML → CPU), la détection d'échec DML à l'inférence et les messages utilisateur propres (sans chemins internes ONNX Runtime).
 - `Upscale/ModelLocator.cs` sépare le stockage `upscale-image-onnx` / `upscale-video-onnx` et copie à la demande les anciens modèles valides depuis `upscale-onnx`.
-- `UpscaleRawVideoPipeline.cs` porte le chemin rapide par défaut de `upscale-video` : FFmpeg décode/encode en `rawvideo` mémoire, `UpscaleVideoAction` garde un fallback automatique vers le pipeline BMP historique, et `UpscaleFrameProcessor.cs` réutilise maintenant ses buffers/tensors pour réduire les allocations par frame.
+- `UpscaleRawVideoPipeline.cs` porte le chemin rapide par défaut de `upscale-video` : FFmpeg décode/encode en `rawvideo` mémoire, `UpscaleVideoAction` garde un fallback automatique vers le pipeline BMP historique, et `UpscaleFrameProcessor.cs` réutilise maintenant ses buffers/tensors pour réduire les allocations par frame. Le profilage (juin 2026) a montré ce pipeline borné par l'inférence ONNX DirectML (copies/conversions/I/O négligeables) ; `UpscaleFrameProcessor` retourne désormais l'image upscalée sans `.Clone()` plein-frame redondant (resize in-place sur le chemin target≠natif), réduisant le pic mémoire sans changer la sortie.
+- `BackgroundRemovalEngine.cs` utilise désormais `ProcessPixelRows` + accès direct aux buffers `DenseTensor` (au lieu des indexeurs pixel `image[x,y]` / `tensor[0,c,y,x]`) pour la construction du tenseur d'entrée, la construction du masque et le composite final ; gain mesuré ×5–×22 sur ces phases CPU pour les grandes images via le chemin `fast`/Bria ; les chemins `high-resolution` restent bornés par l'inférence CPU ; sortie bit-à-bit identique.
 - `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.
 - La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.

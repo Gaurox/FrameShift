@@ -204,18 +204,24 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
     {
         var size = resized.Width;
         var tensor = new DenseTensor<float>(new[] { 1, 3, size, size });
-
-        for (int y = 0; y < size; y++)
+        Memory<float> buffer = tensor.Buffer;
+        int plane = size * size;
+        resized.ProcessPixelRows(acc =>
         {
-            for (int x = 0; x < size; x++)
+            Span<float> buf = buffer.Span;
+            for (int y = 0; y < size; y++)
             {
-                var (r, g, b) = GetNormalizedPixel(resized[x, y]);
-                tensor[0, 0, y, x] = r;
-                tensor[0, 1, y, x] = g;
-                tensor[0, 2, y, x] = b;
+                Span<Rgba32> row = acc.GetRowSpan(y);
+                int rowOff = y * size;
+                for (int x = 0; x < size; x++)
+                {
+                    var (r, g, b) = GetNormalizedPixel(row[x]);
+                    buf[rowOff + x] = r;
+                    buf[plane + rowOff + x] = g;
+                    buf[2 * plane + rowOff + x] = b;
+                }
             }
-        }
-
+        });
         return NamedOnnxValue.CreateFromTensor(inputName, tensor);
     }
 
@@ -223,18 +229,24 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
     {
         var size = resized.Width;
         var tensor = new DenseTensor<Float16>(new[] { 1, 3, size, size });
-
-        for (int y = 0; y < size; y++)
+        Memory<Float16> buffer = tensor.Buffer;
+        int plane = size * size;
+        resized.ProcessPixelRows(acc =>
         {
-            for (int x = 0; x < size; x++)
+            Span<Float16> buf = buffer.Span;
+            for (int y = 0; y < size; y++)
             {
-                var (r, g, b) = GetNormalizedPixel(resized[x, y]);
-                tensor[0, 0, y, x] = (Float16)r;
-                tensor[0, 1, y, x] = (Float16)g;
-                tensor[0, 2, y, x] = (Float16)b;
+                Span<Rgba32> row = acc.GetRowSpan(y);
+                int rowOff = y * size;
+                for (int x = 0; x < size; x++)
+                {
+                    var (r, g, b) = GetNormalizedPixel(row[x]);
+                    buf[rowOff + x] = (Float16)r;
+                    buf[plane + rowOff + x] = (Float16)g;
+                    buf[2 * plane + rowOff + x] = (Float16)b;
+                }
             }
-        }
-
+        });
         return NamedOnnxValue.CreateFromTensor(inputName, tensor);
     }
 
@@ -262,12 +274,15 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             var sizeY = output.Dimensions[^2];
             var sizeX = output.Dimensions[^1];
             var mask = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8>(sizeX, sizeY);
-            for (int y = 0; y < sizeY; y++)
-                for (int x = 0; x < sizeX; x++)
+            mask.ProcessPixelRows(acc =>
+            {
+                for (int y = 0; y < sizeY; y++)
                 {
-                    mask[x, y] = new L8(MaskByte((float)output[0, 0, y, x]));
+                    Span<L8> row = acc.GetRowSpan(y);
+                    for (int x = 0; x < sizeX; x++)
+                        row[x] = new L8(MaskByte((float)output[0, 0, y, x]));
                 }
-
+            });
             return mask;
         }
 
@@ -275,12 +290,15 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         var outputSizeY = outputF32.Dimensions[^2];
         var outputSizeX = outputF32.Dimensions[^1];
         var outputMask = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8>(outputSizeX, outputSizeY);
-        for (int y = 0; y < outputSizeY; y++)
-            for (int x = 0; x < outputSizeX; x++)
+        outputMask.ProcessPixelRows(acc =>
+        {
+            for (int y = 0; y < outputSizeY; y++)
             {
-                outputMask[x, y] = new L8(MaskByte(outputF32[0, 0, y, x]));
+                Span<L8> row = acc.GetRowSpan(y);
+                for (int x = 0; x < outputSizeX; x++)
+                    row[x] = new L8(MaskByte(outputF32[0, 0, y, x]));
             }
-
+        });
         return outputMask;
     }
 
@@ -369,17 +387,23 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         SixLabors.ImageSharp.Image<Rgba32> original,
         SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8> mask)
     {
-        var result = new SixLabors.ImageSharp.Image<Rgba32>(original.Width, original.Height);
-        for (int y = 0; y < original.Height; y++)
+        int w = original.Width;
+        int h = original.Height;
+        var result = new SixLabors.ImageSharp.Image<Rgba32>(w, h);
+        original.ProcessPixelRows(result, mask, (srcAcc, dstAcc, maskAcc) =>
         {
-            for (int x = 0; x < original.Width; x++)
+            for (int y = 0; y < h; y++)
             {
-                var src = original[x, y];
-                byte alpha = mask[x, y].PackedValue;
-                result[x, y] = new Rgba32(src.R, src.G, src.B, alpha);
+                Span<Rgba32> srcRow = srcAcc.GetRowSpan(y);
+                Span<Rgba32> dstRow = dstAcc.GetRowSpan(y);
+                Span<L8> mskRow = maskAcc.GetRowSpan(y);
+                for (int x = 0; x < w; x++)
+                {
+                    var s = srcRow[x];
+                    dstRow[x] = new Rgba32(s.R, s.G, s.B, mskRow[x].PackedValue);
+                }
             }
-        }
-
+        });
         return result;
     }
 

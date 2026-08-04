@@ -19,7 +19,7 @@ internal static class AiModelFileDownloader
         string logPrefix)
     {
         var directory = Path.GetDirectoryName(destinationPath)!;
-        Directory.CreateDirectory(directory);
+        AiModelStorage.EnsureDirectory(directory);
 
         var tempPath = destinationPath + ".tmp";
 

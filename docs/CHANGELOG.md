@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.17.1
+
+Prepared for release.
+
+- **C-01 — safe AI-model uninstall.** The uninstaller never deletes the configured models root. It now validates configured paths, rejects dangerous roots and protected locations, and removes only known FrameShift model directories carrying an ownership marker created when FrameShift created that directory. A marked directory is removed only when it contains expected FrameShift artifacts; any unknown file or subfolder blocks its removal. Shared-folder neighbours, unmarked legacy model directories, and the selected root itself are preserved. Existing model folders from earlier versions without a marker remain untouched intentionally and can be removed manually by the user if desired.
+
+## 1.17.0
+
+Prepared for later publication.
+
+- **Main application window (new drop-driven hub).** FrameShift now opens a real main window in addition to the Explorer right-click menu. Drag files in (or use `Add…`, or launch FrameShift with a file selection) and they collect into a left-hand queue; the right-hand panel shows only the actions that apply to what is queued or selected, grouped by type, with a per-action count of the files each would process. Actions are shown by union across the present file types (never an empty intersection), and each runs only on the subset it accepts. Single-file editors (crop, cut, rotate, resize, change speed, interpolate, remove object, etc.) enable only when exactly one compatible file is selected, while batch actions (convert, compress, remove background, upscale, separate audio, denoise, create subtitles, …) run on the whole matching selection. Each launch reuses the existing processing flow on the full selection in one pass, so batches are no longer limited by Windows Explorer's multi-file context-menu cap (the ~15-file limit on right-click actions). Type chips and a search box narrow what is shown.
+- **Settings dialog.** The AI models folder controls that previously sat on the main window surface now live in a dedicated Settings dialog opened from the window's title bar. No change to behavior or the settings themselves.
+
+## 1.16.1
+
+Prepared for later publication.
+
+- **Audio Separation — faster GPU pipeline.** The GPU (split) audio separation path now parallelizes the host-side STFT/iSTFT across independent units with reused work buffers, and moves ONNX tensors through their contiguous buffer instead of per-element indexers. The model, stem outputs, and DirectML → CPU fallback are unchanged, and separated audio is bit-for-bit identical. On a representative benchmark the host time per chunk dropped from ~365 ms to ~95 ms (about ×3.8); real-world gains vary by file and hardware. Memory use rises slightly from the reused buffers; VRAM is unchanged.
+- **Remove Background — faster CPU pre/post processing.** The pixel-indexer loops in `BackgroundRemovalEngine` (tensor build, mask build, composite) have been replaced with `ProcessPixelRows` row-span access and direct `DenseTensor` buffer writes. Gains are significant on large images via the `fast` and BRIA paths (×5–×22 on those CPU phases); the `high-resolution` models remain CPU-inference-bound and are unaffected. No change to models, providers, quality, output naming, or behavior; output verified bit-for-bit identical.
+- **Upscale Video — profiling and a small memory cleanup.** Per-phase profiling confirmed the `upscale-video` rawvideo pipeline is overwhelmingly bound by ONNX (DirectML) inference; frame copies, conversions, and FFmpeg I/O are a negligible share of total time, so no CPU-side change can meaningfully move wall-clock. Removed a redundant per-frame full-frame `.Clone()` in `UpscaleFrameProcessor` (the image is now handed to the caller directly, with an in-place resize on the target≠native path), lowering peak memory by ~23 MB on a representative clip. No change to models, quality, output naming, or behavior; upscaled output verified bit-for-bit identical.
+- **Create Subtitle File — smaller subtitle worker.** `FrameShift.SubtitlesWorker` now references `NAudio.Core` instead of the full `NAudio` package, dropping the unused WinForms/WPF (`Microsoft.WindowsDesktop.App`) dependencies that `NAudio.WinForms` pulled in transitively. This trims about 90 MB from the installed worker footprint with no functional change; audio and video subtitle generation were validated after the migration.
+
 ## 1.16.0
 
 Prepared for later publication.
