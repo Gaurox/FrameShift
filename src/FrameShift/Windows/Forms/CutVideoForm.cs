@@ -411,8 +411,8 @@ public sealed class CutVideoForm : Form
             Cursor = Cursors.Hand,
             Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
             UseVisualStyleBackColor = false,
-            BackColor = Color.White,
-            ForeColor = FrameShiftTheme.SecondaryBlue
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.AccentText
         };
         button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
         button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;

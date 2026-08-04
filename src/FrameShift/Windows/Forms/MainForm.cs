@@ -237,7 +237,7 @@ public sealed class MainForm : Form
             Width = 96,
             FlatStyle = FlatStyle.Flat,
             BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Cursor = Cursors.Hand,
             Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
         };

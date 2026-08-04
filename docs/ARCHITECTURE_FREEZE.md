@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version active : `1.16.1`.
+- version active : `1.17.0`.
 
 ## Stack figée
 

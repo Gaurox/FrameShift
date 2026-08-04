@@ -265,7 +265,7 @@ public sealed class RotateFlipImageForm : Form
     private static void UpdateButtonActiveState(Button button, bool active)
     {
         button.BackColor = active ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface;
-        button.ForeColor = active ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.TextPrimary;
+        button.ForeColor = active ? FrameShiftTheme.AccentText : FrameShiftTheme.TextPrimary;
         button.FlatAppearance.BorderColor = active ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.PrimaryBlue;
     }
 

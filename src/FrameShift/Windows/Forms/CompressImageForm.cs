@@ -58,7 +58,7 @@ public sealed class CompressImageForm : Form
             AutoSize = false,
             Location = new Point(18, 92),
             Size = new Size(500, 18),
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Text = "PNG stays lossless. JPG and WEBP usually give the strongest file size reduction."
         });
 
@@ -121,7 +121,7 @@ public sealed class CompressImageForm : Form
         {
             Location = new Point(332, 31),
             Size = new Size(188, 18),
-            ForeColor = FrameShiftTheme.SecondaryBlue
+            ForeColor = FrameShiftTheme.AccentText
         };
         targetSection.Controls.Add(_targetHint);
 

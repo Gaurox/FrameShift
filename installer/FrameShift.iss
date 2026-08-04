@@ -1110,7 +1110,6 @@ var
   WindowsDir: string;
   ProgramFilesDir: string;
   ProgramFilesX86Dir: string;
-  AppDir: string;
 begin
   Result := False;
   Normalized := '';
@@ -1129,26 +1128,33 @@ begin
     exit;
   end;
 
-  UserProfileDir := RemoveBackslashUnlessRoot(ExpandConstant('{userprofile}'));
+  UserProfileDir := RemoveBackslashUnlessRoot(GetEnv('USERPROFILE'));
   WindowsDir := RemoveBackslashUnlessRoot(ExpandConstant('{win}'));
   ProgramFilesDir := RemoveBackslashUnlessRoot(ExpandConstant('{autopf}'));
   ProgramFilesX86Dir := RemoveBackslashUnlessRoot(ExpandConstant('{autopf32}'));
-  AppDir := RemoveBackslashUnlessRoot(ExpandConstant('{app}'));
 
   if PathIsSameOrChild(DefaultModelsDir, Candidate) or
-     PathIsSameOrChild(UserProfileDir, Candidate) or
+     ((UserProfileDir <> '') and PathIsSameOrChild(UserProfileDir, Candidate)) or
      PathIsSameOrChild(Candidate, WindowsDir) or
      PathIsSameOrChild(WindowsDir, Candidate) or
      PathIsSameOrChild(Candidate, ProgramFilesDir) or
      PathIsSameOrChild(ProgramFilesDir, Candidate) or
      PathIsSameOrChild(Candidate, ProgramFilesX86Dir) or
-     PathIsSameOrChild(ProgramFilesX86Dir, Candidate) or
-     PathIsSameOrChild(Candidate, AppDir) or
-     PathIsSameOrChild(AppDir, Candidate) then
+     PathIsSameOrChild(ProgramFilesX86Dir, Candidate) then
     exit;
 
   Normalized := Candidate;
   Result := True;
+end;
+
+function IsModelsDirOutsideSelectedAppDir(const Candidate: string): Boolean;
+var
+  SelectedAppDir: string;
+begin
+  SelectedAppDir := RemoveBackslashUnlessRoot(Trim(WizardDirValue));
+  Result := (SelectedAppDir = '') or
+    (not PathIsSameOrChild(Candidate, SelectedAppDir) and
+     not PathIsSameOrChild(SelectedAppDir, Candidate));
 end;
 
 function GetSuggestedModelsDir(): string;
@@ -1432,7 +1438,8 @@ begin
 
   if (AiModelsPage <> nil) and (CurPageID = AiModelsPage.ID) then
   begin
-    if not TryNormalizeSafeModelsDir(AiModelsDirEdit.Text, SafeModelsDir) then
+    if not TryNormalizeSafeModelsDir(AiModelsDirEdit.Text, SafeModelsDir) or
+       not IsModelsDirOutsideSelectedAppDir(SafeModelsDir) then
     begin
       MsgBox(
         'Choose a dedicated AI models folder. Drive roots, user-profile roots, Windows, Program Files, the FrameShift install folder and their parents are not allowed.',

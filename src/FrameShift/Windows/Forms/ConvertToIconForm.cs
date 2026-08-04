@@ -380,7 +380,7 @@ public sealed class ConvertToIconForm : Form
             Margin = Padding.Empty,
             Text = "i",
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI Semibold", 10F, FontStyle.Regular, GraphicsUnit.Point)
         };
 
@@ -388,7 +388,7 @@ public sealed class ConvertToIconForm : Form
         {
             Dock = DockStyle.Fill,
             Margin = new Padding(6, 0, 0, 0),
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
             Text = "The ICO file will be created next to the original image.",
             TextAlign = ContentAlignment.MiddleLeft
@@ -504,7 +504,7 @@ public sealed class ConvertToIconForm : Form
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 2),
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Regular, GraphicsUnit.Point)
         };
 
@@ -541,9 +541,9 @@ public sealed class ConvertToIconForm : Form
             tile.PictureBox.Image = CreatePreviewBitmap(_sourceImage, tile.Size, fitMode, background, isChecked);
             previousImage?.Dispose();
 
-            tile.Panel.BackColor = isChecked ? FrameShiftTheme.Surface : Color.FromArgb(247, 248, 251);
+            tile.Panel.BackColor = isChecked ? FrameShiftTheme.Surface : FrameShiftTheme.PageBackground;
             tile.SizeLabel.ForeColor = isChecked ? FrameShiftTheme.TextPrimary : FrameShiftTheme.TextMuted;
-            tile.StateLabel.ForeColor = isChecked ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.TextMuted;
+            tile.StateLabel.ForeColor = isChecked ? FrameShiftTheme.AccentText : FrameShiftTheme.TextMuted;
             tile.StateLabel.Text = isChecked ? "Included" : "Skipped";
         }
     }
@@ -702,7 +702,7 @@ public sealed class ConvertToIconForm : Form
             Margin = Padding.Empty,
             TextAlign = ContentAlignment.MiddleLeft,
             Text = text,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
         };
     }

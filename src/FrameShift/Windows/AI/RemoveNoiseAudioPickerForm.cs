@@ -86,7 +86,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
             AutoSize = false,
             Location = new Point(18, 102),
             Size = new Size(500, 18),
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Text = "Higher strength removes more noise. Maximum may affect natural audio characteristics."
         };
         strengthSection.Controls.Add(hintLabel);

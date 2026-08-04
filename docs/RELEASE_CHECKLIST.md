@@ -8,7 +8,7 @@ FrameShift uses `1.<feature release>.<patch>` starting with `1.14.0`:
 
 - increment the middle number for a feature release, resetting the final number to `0`;
 - increment only the final number for small fixes and hotfixes (`1.14.1`, `1.14.2`, etc.);
-- keep `<Version>` in `src/FrameShift/FrameShift.csproj`, `installer/FrameShift.iss`, and the changelog synchronized.
+- keep `<Version>` in `src/FrameShift/FrameShift.csproj` and the changelog synchronized; `build_installer.ps1` reads that version and injects it into `installer/FrameShift.iss` as `MyAppVersion`.
 
 ## Scope Check
 
@@ -22,7 +22,8 @@ FrameShift uses `1.<feature release>.<patch>` starting with `1.14.0`:
 - Ensure `docs/CHANGELOG.md` has a `## {version}` section matching the version in `src/FrameShift/FrameShift.csproj`.
 - Re-check version consistency across:
   - `src/FrameShift/FrameShift.csproj`
-  - `installer/FrameShift.iss`
+  - installer compilation argument `/DMyAppVersion=<csproj Version>`
+  - generated `installer/FrameShift_<version>_Setup.exe`
   - `docs/CHANGELOG.md`
 
 ## Release Build

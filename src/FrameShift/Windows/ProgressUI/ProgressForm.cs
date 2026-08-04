@@ -18,13 +18,13 @@ public sealed class ProgressForm : Form, IProgressReporter
 
     public delegate void QueueItemRemoveRequestedEventHandler(object? sender, string queueItemId);
 
-    private static readonly Color PageBackgroundColor = FrameShiftTheme.PageBackground;
-    private static readonly Color SurfaceColor = FrameShiftTheme.Surface;
-    private static readonly Color DividerColor = FrameShiftTheme.SurfaceBorder;
-    private static readonly Color TitleColor = FrameShiftTheme.TextPrimary;
-    private static readonly Color BodyColor = FrameShiftTheme.TextSecondary;
-    private static readonly Color MutedColor = FrameShiftTheme.TextMuted;
-    private static readonly Color AccentColor = FrameShiftTheme.SecondaryBlue;
+    private static Color PageBackgroundColor => FrameShiftTheme.PageBackground;
+    private static Color SurfaceColor => FrameShiftTheme.Surface;
+    private static Color DividerColor => FrameShiftTheme.SurfaceBorder;
+    private static Color TitleColor => FrameShiftTheme.TextPrimary;
+    private static Color BodyColor => FrameShiftTheme.TextSecondary;
+    private static Color MutedColor => FrameShiftTheme.TextMuted;
+    private static Color AccentColor => FrameShiftTheme.AccentText;
     private static readonly Color DangerColor = Color.FromArgb(198, 40, 40);
 
     private static readonly Font s_font9 = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
@@ -61,17 +61,12 @@ public sealed class ProgressForm : Form, IProgressReporter
 
     public ProgressForm()
     {
-        Text = "FrameShift Progress";
+        FrameShiftWindowChrome.Apply(this, "FrameShift Progress");
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(920, 560);
         Size = new Size(1060, 640);
         Font = s_font9;
         BackColor = PageBackgroundColor;
-
-        if (File.Exists(IconPaths.AppIcon))
-        {
-            Icon = new Icon(IconPaths.AppIcon);
-        }
 
         var rootLayout = new TableLayoutPanel
         {
@@ -697,7 +692,14 @@ public sealed class ProgressForm : Form, IProgressReporter
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
             Text = "×",
             UseColumnTextForButtonValue = true,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            DefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = SurfaceColor,
+                ForeColor = FrameShiftTheme.AccentText,
+                SelectionBackColor = FrameShiftTheme.AccentSoft,
+                SelectionForeColor = FrameShiftTheme.AccentText
+            }
         });
 
         return grid;

@@ -503,7 +503,9 @@ public sealed class CreateGifForm : Form
             Dock = DockStyle.Fill,
             Margin = Padding.Empty,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            FormattingEnabled = true
+            FormattingEnabled = true,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
 
         foreach (var item in items)

@@ -3,7 +3,7 @@
 Date de l'audit : 4 août 2026  
 Projet audité : `E:\AI\FrameShift_V1`  
 Base Git : branche `main`, commit `614c896`, avec les modifications locales présentes au moment de l'audit  
-Version applicative active observée lors de l’audit : `1.17.0` ; version de préparation actuelle : `1.16.1`
+Version applicative active observée lors de l’audit : `1.17.0` ; version de préparation actuelle : `1.17.0`
 
 ## 0. Portée, méthode et état de référence
 
@@ -264,15 +264,11 @@ Les pipes nommés de batch/compression/Image-to-PDF n'activent pas `PipeOptions.
 
 `ConversionActionHelper.DeleteIfExists` retente dix fois puis laisse remonter la dernière exception (`ConversionActionHelper.cs:31-58`). `ActionQueueRunner` n'a aucune frontière d'exception par élément autour de `ExecuteAsync` (`ActionQueueRunner.cs:43-47`). Un fichier partiel toujours verrouillé peut donc masquer l'erreur initiale et empêcher les éléments suivants d'être traités. Le cleanup doit journaliser sans remplacer l'erreur principale ; le runner doit convertir toute exception non gérée en résultat d'échec pour l'élément courant et continuer, sauf annulation globale.
 
-#### M-10 — Code, documentation et version active ont dérivé
+#### M-10 — Versions et documentation de release synchronisées pour 1.17.0
 
-- `FrameShift.csproj:11-14`, README et changelog ciblent `1.17.0`, mais `ARCHITECTURE_FREEZE.md:10` et `PRODUCT_GUIDE.md:3` annoncent encore `1.16.0`.
-- `CODE_FILE_INDEX.md` omet notamment `ProgramCompressBatch`, `AiModelStorage`, `DeepFilterNetModelDownloader`, `ActionCatalog`, `ActionLauncher`, `ActionScopeResolver`, `FileQueueModel`, `ActionsPanel`, `FileQueuePanel`, `SettingsForm` et de nombreux tests 1.17. Sa ligne 342 place encore le réglage du dossier modèles dans MainForm.
-- `SECURITY.md:7` ne mentionne que `1.0.x` comme supporté ; ses affirmations générales de validation ne reflètent pas les trois familles vérifiées par existence seule.
-- `DEMUCS_FRAME_SHIFT_INTEGRATION_GUIDE.md:3-12`, `250-280` emploie des chemins/classes ou SHA anciens alors qu'il se présente comme état production.
-- `RELEASE_CHECKLIST.md` demande de synchroniser une version dans l'ISS, alors que la source unique actuelle est correctement passée par `/DMyAppVersion`.
+Les écarts de release relevés lors de l'audit ont été corrigés pour `1.17.0` : les versions du projet, du README, du changelog, de `ARCHITECTURE_FREEZE.md` et du guide produit sont alignées ; l'index inclut `SettingsForm` et les helpers de thème ; la checklist décrit la version injectée dans l'ISS via `/DMyAppVersion`.
 
-Ces écarts augmentent le risque de mauvais release gate et de correction au mauvais endroit. Mettre à jour après stabilisation du code, pas avant.
+Deux guides historiques restent à revoir séparément, sans bloquer cette release : `SECURITY.md` doit définir les versions réellement supportées et `DEMUCS_FRAME_SHIFT_INTEGRATION_GUIDE.md` doit être présenté comme document d'intégration historique ou remis à jour.
 
 #### M-11 — Menus Explorer, licences de modèles et catalogue ne partagent pas la même vérité
 

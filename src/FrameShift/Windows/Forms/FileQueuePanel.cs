@@ -32,6 +32,7 @@ public sealed class FileQueuePanel : UserControl
     public FileQueuePanel()
     {
         BackColor = FrameShiftTheme.Surface;
+        ForeColor = FrameShiftTheme.TextPrimary;
         AllowDrop = true;
 
         _grid = CreateGrid();
@@ -327,7 +328,7 @@ public sealed class FileQueuePanel : UserControl
             Height = 26,
             FlatStyle = FlatStyle.Flat,
             BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Cursor = Cursors.Hand,
             Margin = new Padding(6, 0, 0, 0),
             Padding = new Padding(10, 3, 10, 3),
@@ -437,7 +438,14 @@ public sealed class FileQueuePanel : UserControl
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
             Text = "×",
             UseColumnTextForButtonValue = true,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            DefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = FrameShiftTheme.Surface,
+                ForeColor = FrameShiftTheme.AccentText,
+                SelectionBackColor = FrameShiftTheme.AccentSoft,
+                SelectionForeColor = FrameShiftTheme.AccentText
+            }
         });
 
         return grid;

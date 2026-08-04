@@ -235,6 +235,7 @@ Contrôles :
 
 Formulaires :
 - `src/FrameShift/Windows/Forms/MainForm.cs`
+- `src/FrameShift/Windows/Forms/SettingsForm.cs`
 - `src/FrameShift/Windows/Forms/MediaInfoForm.cs`
 - `src/FrameShift/Windows/Forms/ConversionPickerForm.cs`
 - `src/FrameShift/Windows/Forms/ChangePitchForm.cs`
@@ -261,6 +262,10 @@ Helpers UI :
 - `src/FrameShift/Windows/Helpers/FrameShiftCropEditorUi.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftEditorShellUi.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftTheme.cs`
+- `src/FrameShift/Windows/Helpers/FrameShiftThemePreference.cs`
+- `src/FrameShift/Windows/Helpers/FrameShiftUiSettings.cs`
+- `src/FrameShift/Windows/Helpers/WindowsThemeDetector.cs`
+- `src/FrameShift/Windows/Helpers/FrameShiftMenuRenderer.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiFactory.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiLayout.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiMetrics.cs`
@@ -278,6 +283,8 @@ Responsabilités UI partagées :
 - `FrameShiftUiLayout.cs` centralise les placements réutilisables sensibles à la largeur utile : sections titrées, footer, rangées de boutons.
 - `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` portent les shells communs des écrans riches avec `TableLayoutPanel`, spacer explicite et hiérarchie stable.
 - `FrameShiftWindowChrome.cs` reste le point d’entrée commun pour la barre de titre, `ShowIcon` et la sélection d’icône FrameShift / FrameShift AI.
+- `FrameShiftTheme.cs` résout une seule fois la palette effective `System` / `Light` / `Dark` avant la première fenêtre ; `FrameShiftUiSettings.cs` persiste ce choix séparément des réglages IA.
+- `FrameShiftMenuRenderer.cs` applique les couleurs de la palette aux menus WinForms appartenant à FrameShift.
 - La stratégie DPI visible dans le code actif repose aujourd’hui sur `AutoScaleMode = AutoScaleMode.Dpi` sur les dialogues concernés, l’usage de métriques partagées et des `MinimumSize` explicites sur les écrans riches.
 
 ## Tests
@@ -299,6 +306,7 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/CreateSubtitlesTests.cs`
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
+- `tests/FrameShift.Tests/FrameShiftThemeTests.cs`
 
 Assets de test utiles :
 - `tests/input/`

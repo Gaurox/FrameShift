@@ -263,7 +263,9 @@ public sealed class RemoveObjectEditorForm : Form
             Location = new Point(166, 2),
             Size = new Size(60, 24),
             Font = new Font("Segoe UI", 9F),
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
         _brushSizeNum.ValueChanged += (_, _) =>
         {
@@ -334,7 +336,9 @@ public sealed class RemoveObjectEditorForm : Form
             DropDownStyle = ComboBoxStyle.DropDownList,
             Location = new Point(0, 0),
             Size = new Size(230, 28),
-            Font = new Font("Segoe UI", 9F)
+            Font = new Font("Segoe UI", 9F),
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
         foreach (var def in ObjectRemovalModelCatalog.GetAll())
             _modelCombo.Items.Add(new ModelComboItem(def));

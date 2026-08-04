@@ -136,8 +136,8 @@ public static class FrameShiftUiFactory
         }
         else
         {
-            button.BackColor = Color.White;
-            button.ForeColor = FrameShiftTheme.SecondaryBlue;
+            button.BackColor = FrameShiftTheme.Surface;
+            button.ForeColor = FrameShiftTheme.AccentText;
             button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
             button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
             button.FlatAppearance.MouseDownBackColor = FrameShiftTheme.AccentSoftHover;
@@ -216,7 +216,9 @@ public static class FrameShiftUiFactory
             Location = location,
             Size = size,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            FlatStyle = FlatStyle.Standard
+            FlatStyle = FlatStyle.Standard,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
     }
 
@@ -227,7 +229,7 @@ public static class FrameShiftUiFactory
             AutoSize = true,
             Location = new Point(0, 0),
             Text = text,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
         };
     }
@@ -285,7 +287,7 @@ public static class FrameShiftUiFactory
                 Text = fallbackGlyph,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = new Font("Segoe UI Semibold", 14F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = FrameShiftTheme.SecondaryBlue
+                ForeColor = FrameShiftTheme.AccentText
             });
         }
 
@@ -316,7 +318,7 @@ public static class FrameShiftUiFactory
             AutoSize = true,
             Location = new Point(12, 10),
             Text = title,
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
         };
     }

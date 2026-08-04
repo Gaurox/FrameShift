@@ -58,7 +58,7 @@ public sealed class CompressVideoForm : Form
             AutoSize = false,
             Location = new Point(18, 92),
             Size = new Size(490, 18),
-            ForeColor = FrameShiftTheme.SecondaryBlue,
+            ForeColor = FrameShiftTheme.AccentText,
             Text = "High quality preserves more detail. Small file reduces size more aggressively."
         };
         presetSection.Controls.Add(presetHint);
@@ -95,7 +95,7 @@ public sealed class CompressVideoForm : Form
             Location = new Point(332, 31),
             Size = new Size(188, 18),
             Text = "Best-effort target",
-            ForeColor = FrameShiftTheme.SecondaryBlue
+            ForeColor = FrameShiftTheme.AccentText
         };
         targetSection.Controls.Add(targetHint);
 

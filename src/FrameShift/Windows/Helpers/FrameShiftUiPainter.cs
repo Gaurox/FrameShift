@@ -9,8 +9,13 @@ public static class FrameShiftUiPainter
 {
     public static void AttachRoundedBorder(Panel panel, Color borderColor, int radius, float penWidth = 1F)
     {
+        AttachRoundedBorder(panel, () => FrameShiftTheme.ResolveCurrentBackgroundColor(borderColor), radius, penWidth);
+    }
+
+    public static void AttachRoundedBorder(Panel panel, Func<Color> borderColorProvider, int radius, float penWidth = 1F)
+    {
         panel.SizeChanged += (_, _) => panel.Invalidate();
-        panel.Paint += (_, e) => DrawRoundedBorder(panel, e.Graphics, borderColor, radius, penWidth);
+        panel.Paint += (_, e) => DrawRoundedBorder(panel, e.Graphics, borderColorProvider(), radius, penWidth);
     }
 
     public static void DrawRoundedBorder(Control control, Graphics graphics, Color borderColor, int radius, float penWidth = 1F)

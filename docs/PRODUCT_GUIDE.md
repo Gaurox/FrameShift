@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version active : **1.16.1**.
+Version active : **1.17.0**.
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).
@@ -134,6 +134,8 @@ Recadrage visuel actuel :
 UI commune :
 - la fenêtre de progression partagée affiche aussi un bandeau donation discret avec bouton `Donate` ;
 - ce bandeau n'interrompt jamais le traitement et peut être fermé pour la session.
+- `Settings` expose l'apparence `System`, `Light` ou `Dark` ; le choix est persisté dans `%LOCALAPPDATA%\FrameShift\config\ui-settings.json` et s'applique immédiatement aux fenêtres ouvertes ; `System` suit le thème actuel des applications Windows ;
+- les previews média, pages PDF, masks/crops et couleurs explicitement choisies par l'utilisateur ne sont pas recolorés par l'apparence.
 
 ## Réalité CLI actuelle
 

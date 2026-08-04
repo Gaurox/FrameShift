@@ -8,6 +8,7 @@ using FrameShift.Core.FFprobe;
 using FrameShift.Core.Helpers;
 using FrameShift.Core.Logging;
 using FrameShift.Windows.Forms;
+using FrameShift.Windows.Helpers;
 
 namespace FrameShift;
 
@@ -20,9 +21,10 @@ internal static partial class Program
         AppLogger.LogStatic($"Program: Main entered. baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}, argsCount={args.Length}.");
         TryCleanOrphanedTempDirectories();
         var logger = new AppLogger();
-        var registry = ActionRegistry.CreateDefault();
-
         ApplicationConfiguration.Initialize();
+        FrameShiftTheme.Initialize();
+
+        var registry = ActionRegistry.CreateDefault();
 
         if (TryGetUiStartupPaths(args, out var startupPaths))
         {

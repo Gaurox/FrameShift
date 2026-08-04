@@ -1086,7 +1086,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             Minimum = minimum,
             Maximum = maximum,
             Increment = increment,
-            Height = 26
+            Height = 26,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
     }
 
@@ -1101,7 +1103,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             Maximum = maximum,
             DecimalPlaces = decimalPlaces,
             Increment = increment,
-            Height = 26
+            Height = 26,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
     }
 

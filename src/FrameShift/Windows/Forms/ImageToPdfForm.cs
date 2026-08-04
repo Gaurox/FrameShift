@@ -303,7 +303,9 @@ public sealed class ImageToPdfForm : Form
         {
             Dock = DockStyle.Fill,
             DropDownStyle = ComboBoxStyle.DropDownList,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = FlatStyle.Flat,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
         _customPageWidthUpDown = CreateCentimeterNumericUpDown();
         _customPageHeightUpDown = CreateCentimeterNumericUpDown();
@@ -1960,10 +1962,10 @@ public sealed class ImageToPdfForm : Form
         var (majorStepCentimeters, showHalfCentimeters) = GetRulerSpacing(pixelsPerCentimeter);
         var halfStepCentimeters = showHalfCentimeters ? majorStepCentimeters / 2.0 : 0.0;
 
-        using var backgroundBrush = new SolidBrush(Color.FromArgb(244, 248, 252));
-        using var borderPen = new Pen(Color.FromArgb(198, 210, 222), 1f);
-        using var tickPen = new Pen(Color.FromArgb(156, 170, 184), 1f);
-        using var textBrush = new SolidBrush(Color.FromArgb(98, 108, 118));
+        using var backgroundBrush = new SolidBrush(FrameShiftTheme.Surface);
+        using var borderPen = new Pen(FrameShiftTheme.SurfaceBorder, 1f);
+        using var tickPen = new Pen(FrameShiftTheme.TextMuted, 1f);
+        using var textBrush = new SolidBrush(FrameShiftTheme.TextSecondary);
         using var font = new Font("Segoe UI", 6.5F, FontStyle.Regular, GraphicsUnit.Point);
         using var textFormat = new StringFormat
         {
@@ -4483,6 +4485,35 @@ public sealed class ImageToPdfForm : Form
         button.Padding = new Padding(1, 1, 1, 0);
         button.Font = new Font("Segoe UI", 7F, FontStyle.Regular, GraphicsUnit.Point);
         button.TextAlign = ContentAlignment.TopCenter;
+        button.Paint += (_, e) => PaintDisabledOrderTileText(button, e);
+    }
+
+    private static void PaintDisabledOrderTileText(Button button, PaintEventArgs e)
+    {
+        if (button.Enabled)
+        {
+            return;
+        }
+
+        // WinForms can use the system GrayText color for disabled flat buttons,
+        // which is nearly black when the application opts into Windows dark mode.
+        // Redraw only the text area so the icon and the native disabled semantics remain intact.
+        var textHeight = TextRenderer.MeasureText(button.Text, button.Font).Height;
+        var textBounds = new Rectangle(
+            1,
+            Math.Max(1, button.ClientSize.Height - (textHeight * 2)),
+            Math.Max(0, button.ClientSize.Width - 2),
+            Math.Min(button.ClientSize.Height - 1, textHeight * 2));
+
+        using var backgroundBrush = new SolidBrush(button.BackColor);
+        e.Graphics.FillRectangle(backgroundBrush, textBounds);
+        TextRenderer.DrawText(
+            e.Graphics,
+            button.Text,
+            button.Font,
+            textBounds,
+            FrameShiftTheme.TextSecondary,
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
     }
 
     private static TableLayoutPanel CreateTileGrid(int columns, int rows)
@@ -4638,7 +4669,9 @@ public sealed class ImageToPdfForm : Form
             DecimalPlaces = 1,
             Increment = 1M,
             ThousandsSeparator = false,
-            TextAlign = HorizontalAlignment.Right
+            TextAlign = HorizontalAlignment.Right,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
     }
 
@@ -4652,7 +4685,9 @@ public sealed class ImageToPdfForm : Form
             DecimalPlaces = 1,
             Increment = 0.1M,
             ThousandsSeparator = false,
-            TextAlign = HorizontalAlignment.Right
+            TextAlign = HorizontalAlignment.Right,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary
         };
     }
 

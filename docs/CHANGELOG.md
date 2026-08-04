@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.17.0
+
+Prepared for release.
+
+- **System / Light / Dark appearance.** FrameShift now stores an independent UI preference in `%LOCALAPPDATA%\FrameShift\config\ui-settings.json`. `System` is the default and follows the current Windows apps theme; `Light` and `Dark` force the selected palette immediately. Invalid or unreadable UI settings safely fall back to `System`.
+- **Shared WinForms theme.** The central palette, UI factory, painter, Windows title-bar chrome, menus, main-window controls, progress window, action forms, pickers, AI screens, and rich editors use the same effective palette. The standard DWM title bar follows the requested dark mode when Windows supports it, with a safe fallback otherwise.
+- **Functional canvases preserved.** Video/image previews, PDF pages, crop masks and handles, transparency indicators, media overlays, and user-selected subtitle colors keep their functional rendering instead of being recolored by the UI theme.
+- **Dark-mode readability.** Corrected the disabled Image to PDF ordering tiles, whose WinForms system text could be nearly black in dark mode. Native controls that remain readable with Windows-provided rendering, notably some ComboBox edit areas, stay native.
+- **Installer startup.** Replaced the unsupported Inno Setup `{userprofile}` constant used by the AI-model folder safety check with the Windows `USERPROFILE` environment variable. The check of the selected FrameShift installation directory now runs only after that directory is initialized, preventing startup runtime errors.
+
 ## 1.16.1
 
 Prepared for release.

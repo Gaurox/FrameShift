@@ -30,12 +30,14 @@ La standardisation UI FrameShift repose désormais sur une petite couche commune
 
 Niveaux actifs :
 - `FrameShiftTheme.cs` : palette et couleurs de référence ;
+- `FrameShiftThemePreference.cs`, `FrameShiftUiSettings.cs` et `WindowsThemeDetector.cs` : préférence `System` / `Light` / `Dark`, persistance, résolution au démarrage et application immédiate aux fenêtres ouvertes ;
 - `FrameShiftUiMetrics.cs` : métriques communes (`padding`, hauteurs, largeurs de rail, rayons, gaps) ;
 - `FrameShiftUiLayout.cs` : règles de placement réutilisables ;
 - `FrameShiftUiFactory.cs` : construction des briques standard (`header`, sections, info cards, boutons, champs) ;
 - `FrameShiftEditorShellUi.cs` : shell commun pour les écrans d’édition avec bandeau + spacer + zone de travail principale ;
 - `FrameShiftCropEditorUi.cs` : shell partagé de la famille `crop`.
 - `FrameShiftWindowChrome.cs` : chrome Windows commune des fenêtres d’action (`Text`, `ShowIcon`, icône globale ou IA selon le contexte).
+- `FrameShiftMenuRenderer.cs` : rendu commun des menus `ToolStrip` / `ContextMenuStrip`.
 - `IconPaths.cs` : mapping centralisé des icônes actives, y compris les icônes IA du dossier `Assets\Icons\ai`.
 
 Règle de structure :
@@ -90,6 +92,8 @@ Couleurs neutres standard :
 | Texte atténué | `#7A8495` | aides mineures, valeur faible importance |
 | Surface accentuée | `#ECF3FF` | cadres d’information bleus, zones de rappel |
 | Surface accentuée hover | `#E4EEFE` | survol de surfaces bleues légères |
+
+Ces neutres décrivent la palette `Light`. `FrameShiftTheme` est la seule source des équivalents sombres ; une fenêtre ne doit jamais déduire ou choisir une palette localement.
 
 Règles :
 - ne pas introduire de nouvelle couleur d’accent sans validation explicite ;

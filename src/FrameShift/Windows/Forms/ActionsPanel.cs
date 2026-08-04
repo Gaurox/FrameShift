@@ -37,6 +37,7 @@ public sealed class ActionsPanel : UserControl
     public ActionsPanel()
     {
         BackColor = FrameShiftTheme.Surface;
+        ForeColor = FrameShiftTheme.TextPrimary;
 
         var root = new TableLayoutPanel
         {
@@ -55,6 +56,8 @@ public sealed class ActionsPanel : UserControl
             Dock = DockStyle.Fill,
             PlaceholderText = "Search actions",
             BorderStyle = BorderStyle.FixedSingle,
+            BackColor = FrameShiftTheme.Surface,
+            ForeColor = FrameShiftTheme.TextPrimary,
             Margin = new Padding(0, 0, 0, 8)
         };
         _searchBox.TextChanged += (_, _) =>
@@ -266,7 +269,7 @@ public sealed class ActionsPanel : UserControl
             Cursor = Cursors.Hand,
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = active ? FrameShiftTheme.AccentSoft : FrameShiftTheme.PageBackground,
-            ForeColor = active ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.TextSecondary
+            ForeColor = active ? FrameShiftTheme.AccentText : FrameShiftTheme.TextSecondary
         };
 
         chip.Click += (_, _) =>
