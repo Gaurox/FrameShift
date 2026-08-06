@@ -96,6 +96,7 @@ Vidéo :
 - `src/FrameShift/Core/Actions/ExtractAudioAction.cs`
 - `src/FrameShift/Core/Actions/ExtractAudioCatalog.cs`
 - `src/FrameShift/Core/Actions/ExtractFramesAction.cs`
+- `src/FrameShift/Core/Actions/ExtractFramesSettings.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoAction.cs`
 - `src/FrameShift/Core/Actions/RifeInterpolateVideoAction.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoSettings.cs`
@@ -299,8 +300,12 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/CreateGifSettingsTests.cs`
 - `tests/FrameShift.Tests/CutAudioSettingsTests.cs`
 - `tests/FrameShift.Tests/ExtractAudioCatalogTests.cs`
+- `tests/FrameShift.Tests/ExtractFramesSettingsTests.cs`
 - `tests/FrameShift.Tests/ImageAutoCropDetectorTests.cs`
 - `tests/FrameShift.Tests/OutputPathHelperTests.cs`
+- `tests/FrameShift.Tests/ProgramBatchTests.cs`
+- `tests/FrameShift.Tests/ProgramCliTests.cs`
+- `tests/FrameShift.Tests/ConversionBatchQueueMessageTests.cs`
 - `tests/FrameShift.Tests/RifeInterpolateVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/UpscaleVideoSettingsTests.cs`
 - `tests/FrameShift.Tests/CreateSubtitlesTests.cs`

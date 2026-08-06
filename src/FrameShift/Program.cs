@@ -145,7 +145,7 @@ internal static partial class Program
 
         if (ShouldRunConversionBatch(actionId, options))
         {
-            return RunConversionBatch(registry, actionId, logger, inputPaths);
+            return RunConversionBatch(registry, actionId, logger, inputPaths, options);
         }
 
         if (actionId.Equals("media-info", StringComparison.OrdinalIgnoreCase))

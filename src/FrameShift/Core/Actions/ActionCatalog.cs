@@ -117,7 +117,7 @@ public static class ActionCatalog
         // ---- Video ----
         Batch("convert-video", "Convert video", ActionCategory.Video, VideoExts),
         Batch("compress-video", "Compress video", ActionCategory.Video, VideoExts),
-        Batch("extract-frames", "Extract frames", ActionCategory.Video, VideoExts),
+        Batch("extract-frames", "Extract all frames", ActionCategory.Video, VideoExts),
         Batch("extract-audio", "Extract audio", ActionCategory.Video, VideoExts),
         Batch("remove-audio", "Remove audio", ActionCategory.Video, VideoExts),
         Batch("remove-noise-video", "Remove noise (video)", ActionCategory.Video, VideoExts),

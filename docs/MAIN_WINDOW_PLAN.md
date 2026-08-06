@@ -127,7 +127,7 @@ Extensions : Vidéo `.mp4 .mkv .avi .mov .webm .m4v` · Audio `.mp3 .wav .wave .
 |--------|----------|-------|--------------------------------------|
 | Convert video | `convert-video` | Lot | `ConversionPickerForm` (container + profil) |
 | Compress video | `compress-video` | Lot | `RunCompressBatch` |
-| Extract frames | `extract-frames` | Lot | aucun |
+| Extract all frames | `extract-frames` | Lot | aucun |
 | Extract audio | `extract-audio` | Lot | `ConversionPickerForm` (format) |
 | Remove audio | `remove-audio` | Lot | aucun |
 | Remove noise (video) | `remove-noise-video` | Lot (IA) | `RemoveNoiseVideoPickerForm` |

@@ -199,4 +199,13 @@ public sealed class ActionCatalogTests
     {
         Assert.False(ActionCatalog.TryGet("does-not-exist", out _));
     }
+
+    [Fact]
+    public void ExtractFrames_UsesTheAllFramesHubLabelWithoutExtraArguments()
+    {
+        Assert.True(ActionCatalog.TryGet("extract-frames", out var entry));
+
+        Assert.Equal("Extract all frames", entry.DisplayName);
+        Assert.Empty(entry.ExtraCliArgs);
+    }
 }

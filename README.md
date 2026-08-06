@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.17.0** · latest published release: **1.17.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.18.0** · latest published release: **1.17.0** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,7 +46,7 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-**New in 1.17.0 — System / Light / Dark appearance.** Open Settings from the main window to follow Windows, force the light palette, or force the dark palette. The selection is saved locally and applies immediately; `System` uses the current Windows apps theme. Media previews, PDF pages, crop overlays, and user-selected subtitle colors retain their functional colors.
+**New in 1.18.0 — Extract specific frames.** Extract the first frame, last frame, or keyframes from Explorer, while `Extract all frames` remains the one-click hub action. The CLI accepts `--frame-mode all|first|last|keyframes`; all outputs stay adjacent to the source with safe unique naming.
 
 Alongside the Explorer right-click menu, FrameShift opens a simple drop-driven window: drag in as many files as you want and it shows only the actions that fit them, grouped by type. Each action runs on the whole selection in one pass, so large batches are no longer limited by Explorer's multi-file context-menu cap.
 
@@ -103,7 +103,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | --- | --- | --- |
 | Convert Video | Convert video files to common formats with a fast, focused workflow. | <img src="screenshots/Video_actions/convert_video.png" alt="Convert Video" width="320" /> |
 | Remove Audio | Create a silent video version without changing the basic workflow. | <img src="screenshots/Video_actions/convert_video.png" alt="Remove Audio" width="320" /> |
-| Extract Frames | Export video frames as image sequences for review, editing, or assets. | <img src="screenshots/Video_actions/Create_gif.png" alt="Extract Frames" width="320" /> |
+| Extract All Frames | Export every video frame as an image sequence. Explorer also offers First frame, Last frame, and Keyframes through an `Extract specific frames` submenu. | <img src="screenshots/Video_actions/Create_gif.png" alt="Extract All Frames" width="320" /> |
 | Create GIF | Turn a video segment into a GIF with preview-oriented controls. | <img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" width="320" /> |
 | Add Subtitles to Video | Add a selectable subtitle track or burn subtitles into the video with a visual editor. | <img src="screenshots/Video_actions/Burn_subtitles.png" alt="Add Subtitles to Video" width="320" /> |
 | Extract Audio | Pull the audio track from a video into a standalone file. | <img src="screenshots/Video_actions/Extract_audio.png" alt="Extract Audio" width="320" /> |

@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version active : `1.17.0`.
+- version active : `1.18.0`.
 
 ## Stack figée
 
@@ -136,6 +136,8 @@ Actions les plus proches d’un mode batch/CLI stable :
 - `remove-audio`
 - `reverse-audio`
 - `remove-background`
+
+`extract-frames` accepte `--frame-mode all|first|last|keyframes`; l’absence de cette option conserve strictement son comportement historique `all`.
 
 La documentation ne doit donc pas promettre “compatibilité CLI complète” sans préciser ce niveau.
 

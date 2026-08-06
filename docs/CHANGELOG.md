@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.18.0
+
+Prepared for release.
+
+- **Extract specific frames.** `extract-frames` now supports `all`, `first`, `last`, and `keyframes` modes through `--frame-mode`. Omitting the option retains the historical all-frames contract exactly. First and last frames use unique adjacent PNG files; keyframes use a unique adjacent folder; partial outputs are cleaned on failure or cancellation.
+- **Reliable keyframe and last-frame extraction.** Keyframes combine FFmpeg decoder keyframe skipping with `key=1` filtering for VP9/AV1 reliability. Last-frame extraction searches progressively from the end, falls back to a bounded-memory full decode, and only publishes the final PNG after a validated temporary file is ready on the same volume.
+- **Explorer and batch integration.** The hub exposes `Extract all frames`; Explorer exposes that direct action plus `Extract specific frames` with First frame, Last frame, and Keyframes. Each queued batch item retains the mode from its own invocation.
+
 ## 1.17.0
 
 Prepared for release.

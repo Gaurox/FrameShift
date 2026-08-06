@@ -43,6 +43,22 @@ public sealed class ConversionBatchQueueMessageTests
     }
 
     [Fact]
+    public void FormatThenParse_WithFrameMode_RoundTripsModeForTheQueuedItem()
+    {
+        var options = new Dictionary<string, string>
+        {
+            [ActionOptionKeys.FrameMode] = "keyframes"
+        };
+
+        var line = ConversionBatchSession.FormatQueueMessage(@"C:\videos\clip.mp4", options);
+        var parsed = ConversionBatchSession.TryParseQueueMessage(line, out var path, out var parsedOptions);
+
+        Assert.True(parsed);
+        Assert.Equal(@"C:\videos\clip.mp4", path);
+        Assert.Equal("keyframes", parsedOptions![ActionOptionKeys.FrameMode]);
+    }
+
+    [Fact]
     public void FormatThenParse_NoOptions_ParsesPathWithNullOptions()
     {
         var line = ConversionBatchSession.FormatQueueMessage(@"C:\images\photo.png", null);
@@ -126,5 +142,22 @@ public sealed class ConversionBatchQueueMessageTests
 
         Assert.Equal("high-resolution", merged[ActionOptionKeys.BackgroundRemovalModel]);
         Assert.Equal("default", merged[ActionOptionKeys.Profile]);
+    }
+
+    [Fact]
+    public void MergeOptions_ItemFrameModeWinsOverSharedMode()
+    {
+        var shared = new Dictionary<string, string>
+        {
+            [ActionOptionKeys.FrameMode] = "first"
+        };
+        var item = new Dictionary<string, string>
+        {
+            [ActionOptionKeys.FrameMode] = "last"
+        };
+
+        var merged = ConversionBatchSession.MergeOptions(shared, item);
+
+        Assert.Equal("last", merged[ActionOptionKeys.FrameMode]);
     }
 }

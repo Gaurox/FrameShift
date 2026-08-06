@@ -2,6 +2,7 @@ namespace FrameShift.Core.Actions;
 
 public static class ActionOptionKeys
 {
+    public const string FrameMode = "frame-mode";
     public const string Target = "target";
     public const string Profile = "profile";
     public const string TargetSizeBytes = "target-size-bytes";

@@ -272,6 +272,15 @@ public static class MediaActionMessages
     public static string FrameExtractionProducedNoFiles() =>
         "FrameShift did not produce any PNG frames for this video.";
 
+    public static string FrameExtractionModeInvalid() =>
+        "Frame extraction mode must be all, first, last, or keyframes.";
+
+    public static string FrameExtractionProducedNoVideoFrame() =>
+        "FrameShift could not extract a video frame from this file.";
+
+    public static string FrameExtractionProducedNoKeyframes() =>
+        "FrameShift did not find any keyframes to extract from this video.";
+
     public static string PdfExportFailed() =>
         "FrameShift failed while exporting the PDF document.";
 

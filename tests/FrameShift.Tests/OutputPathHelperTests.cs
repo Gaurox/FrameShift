@@ -65,6 +65,26 @@ public sealed class OutputPathHelperTests
         }
     }
 
+    [Fact]
+    public void CreateUniqueOutputPath_ForFrameImage_AppendsNumericSuffixWhenFileExists()
+    {
+        var root = CreateTempDirectory();
+        try
+        {
+            var inputPath = Path.Combine(root, "Vidéo échantillon.mp4");
+            File.WriteAllText(inputPath, "x");
+            File.WriteAllText(Path.Combine(root, "Vidéo échantillon_first_frame.png"), "x");
+
+            var outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_first_frame", ".png");
+
+            Assert.Equal(Path.Combine(root, "Vidéo échantillon_first_frame_001.png"), outputPath);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), $"frameshift_tests_{Guid.NewGuid():N}");

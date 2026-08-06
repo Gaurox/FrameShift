@@ -45,6 +45,22 @@ public sealed class ProgramCliTests
         Assert.Equal("universal", options[ActionOptionKeys.Profile]);
     }
 
+    [Theory]
+    [InlineData("all")]
+    [InlineData("first")]
+    [InlineData("last")]
+    [InlineData("keyframes")]
+    public void TryParseArguments_WithFrameMode_ParsesOption(string frameMode)
+    {
+        var args = new[] { "--action", "extract-frames", "--frame-mode", frameMode, @"C:\test\video.mp4" };
+
+        var result = Program.TryParseArguments(args, out _, out var inputPaths, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal(frameMode, options[ActionOptionKeys.FrameMode]);
+        Assert.Single(inputPaths, @"C:\test\video.mp4");
+    }
+
     [Fact]
     public void TryParseArguments_WithUpscalePipeline_ParsesOption()
     {
@@ -182,6 +198,17 @@ public sealed class ProgramCliTests
     public void TryParseArguments_ActionFlagAtEnd_ReturnsFalse()
     {
         var args = new[] { "--action" };
+
+        var result = Program.TryParseArguments(args, out _, out _, out _, out var error);
+
+        Assert.False(result);
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void TryParseArguments_FrameModeWithoutValue_ReturnsFalse()
+    {
+        var args = new[] { "--action", "extract-frames", "--frame-mode" };
 
         var result = Program.TryParseArguments(args, out _, out _, out _, out var error);
 

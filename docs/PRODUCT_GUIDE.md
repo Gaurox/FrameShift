@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version active : **1.17.0**.
+Version active : **1.18.0**.
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).
@@ -147,6 +147,7 @@ En pratique :
 - `media-info` reste dépendant d’une fenêtre WinForms ;
 - `image-to-pdf` reste un éditeur interactif, même si l’action finale est exécutée côté core ;
 - `remove-background` passe par la progression commune WinForms : une seule fenêtre, file visible, erreurs dans la queue, progression régulière pendant les longues inférences CPU et préflight modèle si le modèle manque ;
+- `extract-frames` accepte `--frame-mode all|first|last|keyframes` ; sans cette option, le mode historique `all` est conservé. Le hub affiche seulement `Extract all frames`; Explorer garde cette entrée directe et propose `Extract specific frames` avec First frame, Last frame et Keyframes. Chaque élément de la file batch conserve son propre mode ;
 - `remove-background` supporte maintenant trois variantes de modèle via CLI et menus Explorer : `fast` par défaut, `high-resolution` pour le rendu HR matting, et `high-resolution-general` pour la variante HR segmentation ;
 - dans `1.0.11`, les deux variantes haute résolution sont volontairement exécutées en CPU only ; `fast` reste la variante `DirectML` quand le GPU est compatible ;
 - `remove-background` expose en plus deux variantes optionnelles **BRIA RMBG-2.0** (`bria-balanced` → `model_fp16.onnx` ~500 MB, `bria-high-quality` → `model.onnx` ~1 GB) ; ces modèles sont **fournis par l'utilisateur** : FrameShift ne les télécharge jamais, ne les héberge pas et ne les redistribue pas. L'utilisateur doit les récupérer manuellement depuis la page officielle BRIA (`https://huggingface.co/briaai/RMBG-2.0/tree/main`) et les déposer dans le dossier modèle correspondant. Composants installeur optionnels, décochés par défaut. Usage non commercial uniquement (CC BY-NC 4.0) ; si le fichier est absent ou ne correspond pas au checksum officiel, FrameShift affiche un popup dédié (Open BRIA page / Open folder / Re-check / Cancel, + Use anyway sur mismatch) au lieu de télécharger quoi que ce soit ; le bouton **Re-check** revérifie le modèle en place et enchaîne directement sur l'action si le bon fichier est désormais présent ;

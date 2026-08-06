@@ -32,6 +32,18 @@ internal static partial class Program
         for (var index = actionIndex + 2; index < args.Length; index++)
         {
             var token = args[index];
+            if (string.Equals(token, "--frame-mode", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
+                {
+                    error = "The --frame-mode option requires one of: all, first, last, keyframes.";
+                    return false;
+                }
+
+                options[ActionOptionKeys.FrameMode] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--target", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.Target] = args[++index];

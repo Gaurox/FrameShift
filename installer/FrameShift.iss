@@ -63,7 +63,7 @@ Name: "ai\create_subtitles_video"; Description: "Create subtitle file (video)"; 
 Name: "video"; Description: "Video actions"; Types: complete custom
 Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
-Name: "video\extract_frames"; Description: "Extract frames"; Types: complete custom
+Name: "video\extract_frames"; Description: "Extract all and specific frames"; Types: complete custom
 Name: "video\create_gif"; Description: "Create GIF"; Types: complete custom
 Name: "video\add_subtitles_video"; Description: "Add subtitles to video"; Types: complete custom
 Name: "video\extract_audio"; Description: "Extract audio"; Types: complete custom
@@ -588,6 +588,89 @@ begin
   RegWriteStringValue(Hive, KeyPath + '\command', '', CommandValue);
 end;
 
+procedure ConfigureSpecificExtractFrameMenuForHive(
+  const Hive: Integer;
+  const SpecificKeyPath, MenuKey, LabelText, FrameMode, IconPath: string);
+var
+  CommandValue: string;
+  KeyPath: string;
+begin
+  KeyPath := SpecificKeyPath + '\shell\' + MenuKey;
+  RegWriteStringValue(Hive, KeyPath, 'MUIVerb', LabelText);
+  if IconPath <> '' then
+  begin
+    RegWriteStringValue(Hive, KeyPath, 'Icon', IconPath);
+  end;
+
+  CommandValue :=
+    '"' + ExpandConstant('{app}\{#MyAppExeName}') + '"' +
+    ' --action extract-frames --frame-mode ' + FrameMode + ' "%1"';
+  RegWriteStringValue(Hive, KeyPath + '\command', '', CommandValue);
+end;
+
+procedure ConfigureExtractFramesMenusForHive(const Hive: Integer; const Ext: string);
+var
+  BaseKeyPath: string;
+  DirectKeyPath: string;
+  SpecificKeyPath: string;
+  CommandValue: string;
+  IconPath: string;
+begin
+  EnsureFrameShiftRootForHive(Hive, Ext);
+
+  BaseKeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShift\shell\';
+  IconPath := GetMenuIconPath('extract_frames');
+
+  DirectKeyPath := BaseKeyPath + 'extract_all_frames';
+  RegDeleteKeyIncludingSubkeys(Hive, DirectKeyPath);
+  RegWriteStringValue(Hive, DirectKeyPath, 'MUIVerb', 'Extract all frames');
+  if IconPath <> '' then
+  begin
+    RegWriteStringValue(Hive, DirectKeyPath, 'Icon', IconPath);
+  end;
+  CommandValue :=
+    '"' + ExpandConstant('{app}\{#MyAppExeName}') + '"' +
+    ' --action extract-frames --frame-mode all "%1"';
+  RegWriteStringValue(Hive, DirectKeyPath + '\command', '', CommandValue);
+
+  SpecificKeyPath := BaseKeyPath + 'extract_specific_frames';
+  RegDeleteKeyIncludingSubkeys(Hive, SpecificKeyPath);
+  RegWriteStringValue(Hive, SpecificKeyPath, 'MUIVerb', 'Extract specific frames');
+  RegWriteStringValue(
+    Hive,
+    SpecificKeyPath,
+    'ExtendedSubCommandsKey',
+    'SystemFileAssociations\' + Ext + '\shell\FrameShift\shell\extract_specific_frames');
+  if IconPath <> '' then
+  begin
+    RegWriteStringValue(Hive, SpecificKeyPath, 'Icon', IconPath);
+  end;
+
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'first_frame', 'First frame', 'first', IconPath);
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'last_frame', 'Last frame', 'last', IconPath);
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'keyframes', 'Keyframes', 'keyframes', IconPath);
+end;
+
+procedure ApplyExtractFramesMenuList(const Extensions: string);
+var
+  RemainingExtensions: string;
+  Extension: string;
+begin
+  RemainingExtensions := Extensions;
+  while RemainingExtensions <> '' do
+  begin
+    Extension := GetListItem(RemainingExtensions);
+    if IsAdminInstallMode then
+    begin
+      ConfigureExtractFramesMenusForHive(HKLM, Extension);
+    end
+    else
+    begin
+      ConfigureExtractFramesMenusForHive(HKCU, Extension);
+    end;
+  end;
+end;
+
 procedure ApplyActionMenuList(
   const Extensions, MenuKey, LabelText, ActionId, PositionValue: string);
 var
@@ -706,12 +789,7 @@ begin
 
   if WizardIsComponentSelected('video\extract_frames') then
   begin
-    ApplyActionMenuList(
-      VideoExtensions,
-      'extract_frames',
-      'Extract frames',
-      'extract-frames',
-      '');
+    ApplyExtractFramesMenuList(VideoExtensions);
   end;
 
   if WizardIsComponentSelected('video\create_gif') then

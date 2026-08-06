@@ -461,8 +461,9 @@ internal static partial class Program
         return exitCode;
     }
 
-    private static bool ShouldRunConversionBatch(string actionId, IReadOnlyDictionary<string, string> options)
-        => !options.Any() && s_conversionBatchActions.Contains(actionId);
+    internal static bool ShouldRunConversionBatch(string actionId, IReadOnlyDictionary<string, string> options)
+        => actionId.Equals("extract-frames", StringComparison.OrdinalIgnoreCase) ||
+           (!options.Any() && s_conversionBatchActions.Contains(actionId));
 
     private static ConversionBatchSession.BatchDefinition? GetConversionBatchDefinition(string actionId)
     {
