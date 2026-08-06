@@ -404,7 +404,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
         }
     }
 
-    private static IReadOnlyList<string> BuildExtractArguments(string inputPath, string outputPattern)
+    internal static IReadOnlyList<string> BuildExtractArguments(string inputPath, string outputPattern)
     {
         return
         [
@@ -425,7 +425,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
         ];
     }
 
-    private static IReadOnlyList<string> BuildEncodeArguments(
+    internal static IReadOnlyList<string> BuildEncodeArguments(
         string interpolatedFramesDirectory,
         string sourceVideoPath,
         string outputPath,
@@ -571,9 +571,9 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
         }
     }
 
-    private sealed record RifeEncodePlan(string ModeLabel, string VideoCodec, IReadOnlyList<string> VideoArgs);
+    internal sealed record RifeEncodePlan(string ModeLabel, string VideoCodec, IReadOnlyList<string> VideoArgs);
 
-    private static string ResolvePipelineMode(string requestedPipeline, int targetMultiplier)
+    internal static string ResolvePipelineMode(string requestedPipeline, int targetMultiplier)
     {
         if (string.Equals(requestedPipeline, "bmp", StringComparison.OrdinalIgnoreCase))
         {

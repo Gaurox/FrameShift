@@ -67,25 +67,27 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.InterpolateVideoFrameRateUnavailable());
         if (probe.Duration is null || probe.Duration.Value.TotalSeconds <= 0)
             return new ActionExecutionResult(false, MediaActionMessages.DurationUnavailable());
-        if (probe.VideoWidth <= 0 || probe.VideoHeight <= 0)
+        var sourceWidth = probe.DisplayVideoWidth;
+        var sourceHeight = probe.DisplayVideoHeight;
+        if (sourceWidth <= 0 || sourceHeight <= 0)
             return new ActionExecutionResult(false, "Video dimensions are unavailable.");
-        if ((long)probe.VideoWidth * probe.VideoHeight > UpscaleFrameProcessor.MaxInputPixels)
+        if ((long)sourceWidth * sourceHeight > UpscaleFrameProcessor.MaxInputPixels)
         {
             return new ActionExecutionResult(
                 false,
-                $"Video frame size {probe.VideoWidth}x{probe.VideoHeight} exceeds the {UpscaleFrameProcessor.MaxInputPixels:N0}-pixel safety limit.");
+                $"Video frame size {sourceWidth}x{sourceHeight} exceeds the {UpscaleFrameProcessor.MaxInputPixels:N0}-pixel safety limit.");
         }
 
         var target = UpscaleFrameProcessor.ResolveFinalSize(
-            probe.VideoWidth,
-            probe.VideoHeight,
+            sourceWidth,
+            sourceHeight,
             settings.Request,
             selectedModel.ScaleFactor);
         var executionModel = UpscaleModelCatalog.ResolveVideoExecutionModel(
             selectedModel,
             settings.Request,
-            probe.VideoWidth,
-            probe.VideoHeight);
+            sourceWidth,
+            sourceHeight);
         string modelPath = ModelLocator.GetModelPath(executionModel);
         if (!ModelDownloader.IsModelFileValid(modelPath, executionModel, request.Logger))
         {
@@ -337,7 +339,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         }
     }
 
-    private static IReadOnlyList<string> BuildExtractArguments(string inputPath, string outputPattern) =>
+    internal static IReadOnlyList<string> BuildExtractArguments(string inputPath, string outputPattern) =>
     [
         "-hide_banner", "-loglevel", "error", "-stats_period", "0.25",
         "-progress", "pipe:1", "-nostats", "-y",
@@ -346,7 +348,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         "-c:v", "bmp", outputPattern
     ];
 
-    private static IReadOnlyList<string> BuildEncodeArguments(
+    internal static IReadOnlyList<string> BuildEncodeArguments(
         string framesDirectory,
         string sourceVideoPath,
         string outputPath,
@@ -403,7 +405,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         return attempts;
     }
 
-    private static string ResolvePipelineMode(string requestedPipeline)
+    internal static string ResolvePipelineMode(string requestedPipeline)
     {
         if (string.Equals(requestedPipeline, "bmp", StringComparison.OrdinalIgnoreCase))
             return "bmp";
@@ -477,7 +479,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
 
     private const string SupportedFormatsText = ".mp4, .mkv, .avi, .mov, .webm, .m4v";
 
-    private sealed record VideoEncodePlan(string ModeLabel, string VideoCodec, IReadOnlyList<string> VideoArgs);
+    internal sealed record VideoEncodePlan(string ModeLabel, string VideoCodec, IReadOnlyList<string> VideoArgs);
     private sealed record EncodeAttempt(VideoEncodePlan Plan, bool TranscodeAudio);
 
     private sealed class MappedProgressReporter : IProgressReporter

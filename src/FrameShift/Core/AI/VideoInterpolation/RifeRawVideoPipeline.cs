@@ -61,8 +61,8 @@ internal sealed class RifeRawVideoPipeline
             throw new InvalidOperationException("Rawvideo RIFE pipeline requires a probed source FPS and duration.");
         }
 
-        var width = probe.VideoWidth;
-        var height = probe.VideoHeight;
+        var width = probe.DisplayVideoWidth;
+        var height = probe.DisplayVideoHeight;
         if (width <= 0 || height <= 0)
         {
             throw new InvalidOperationException("Rawvideo RIFE pipeline requires a valid source resolution.");
@@ -244,7 +244,7 @@ internal sealed class RifeRawVideoPipeline
         }
     }
 
-    private static IReadOnlyList<string> BuildDecodeArguments(string sourceVideoPath)
+    internal static IReadOnlyList<string> BuildDecodeArguments(string sourceVideoPath)
     {
         return
         [
@@ -263,7 +263,7 @@ internal sealed class RifeRawVideoPipeline
         ];
     }
 
-    private static IReadOnlyList<string> BuildEncodeArguments(
+    internal static IReadOnlyList<string> BuildEncodeArguments(
         string sourceVideoPath,
         string outputPath,
         string targetFpsText,

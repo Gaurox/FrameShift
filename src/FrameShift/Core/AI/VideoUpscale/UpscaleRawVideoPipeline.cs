@@ -49,11 +49,11 @@ internal sealed class UpscaleRawVideoPipeline
     {
         if (probe.VideoFrameRate is null || probe.VideoFrameRate <= 0 || !probe.Duration.HasValue)
             throw new InvalidOperationException("Rawvideo upscale pipeline requires a probed source FPS and duration.");
-        if (probe.VideoWidth <= 0 || probe.VideoHeight <= 0)
+        if (probe.DisplayVideoWidth <= 0 || probe.DisplayVideoHeight <= 0)
             throw new InvalidOperationException("Rawvideo upscale pipeline requires a valid source resolution.");
 
-        int sourceWidth = probe.VideoWidth;
-        int sourceHeight = probe.VideoHeight;
+        int sourceWidth = probe.DisplayVideoWidth;
+        int sourceHeight = probe.DisplayVideoHeight;
         var target = UpscaleFrameProcessor.ResolveFinalSize(sourceWidth, sourceHeight, request, model.ScaleFactor);
         int inputFrameBytes = checked(sourceWidth * sourceHeight * 3);
         int outputFrameBytes = checked(target.Width * target.Height * 3);
@@ -150,7 +150,7 @@ internal sealed class UpscaleRawVideoPipeline
         }
     }
 
-    private static IReadOnlyList<string> BuildDecodeArguments(string sourceVideoPath) =>
+    internal static IReadOnlyList<string> BuildDecodeArguments(string sourceVideoPath) =>
     [
         "-hide_banner",
         "-loglevel", "error",
@@ -166,7 +166,7 @@ internal sealed class UpscaleRawVideoPipeline
         "-"
     ];
 
-    private static IReadOnlyList<string> BuildEncodeArguments(
+    internal static IReadOnlyList<string> BuildEncodeArguments(
         string sourceVideoPath,
         string outputPath,
         double frameRate,

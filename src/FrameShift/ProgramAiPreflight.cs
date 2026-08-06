@@ -322,10 +322,10 @@ internal static partial class Program
                         CancellationToken.None)
                     .GetAwaiter()
                     .GetResult();
-                if (probeAttempt.Probe is { HasVideo: true, VideoWidth: > 0, VideoHeight: > 0 } probe)
+                if (probeAttempt.Probe is { HasVideo: true, DisplayVideoWidth: > 0, DisplayVideoHeight: > 0 } probe)
                 {
-                    sourceWidth = probe.VideoWidth;
-                    sourceHeight = probe.VideoHeight;
+                    sourceWidth = probe.DisplayVideoWidth;
+                    sourceHeight = probe.DisplayVideoHeight;
                 }
                 else
                 {
@@ -418,11 +418,11 @@ internal static partial class Program
                         CancellationToken.None)
                     .GetAwaiter()
                     .GetResult();
-                if (probeAttempt.Probe is not { HasVideo: true, VideoWidth: > 0, VideoHeight: > 0 } probe)
+                if (probeAttempt.Probe is not { HasVideo: true, DisplayVideoWidth: > 0, DisplayVideoHeight: > 0 } probe)
                     return selectedModel;
 
-                sourceWidth = probe.VideoWidth;
-                sourceHeight = probe.VideoHeight;
+                sourceWidth = probe.DisplayVideoWidth;
+                sourceHeight = probe.DisplayVideoHeight;
             }
             catch (Exception ex)
             {
