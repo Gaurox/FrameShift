@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version active : **1.18.0**.
+Version active : **1.18.1**.
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).

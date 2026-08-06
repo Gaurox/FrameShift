@@ -67,7 +67,11 @@ internal static partial class Program
 
                 try
                 {
-                    ConversionBatchSession.SendPathsToPrimaryInstance(definition, inputPaths, effectiveOptions);
+                    if (!ConversionBatchSession.SendPathsToPrimaryInstance(definition, inputPaths, effectiveOptions))
+                    {
+                        throw new InvalidOperationException("The primary batch session rejected the queued invocation.");
+                    }
+
                     logger.Log($"Program: queued paths into existing {definition.ActionId} session.");
                     return 0;
                 }
@@ -228,6 +232,7 @@ internal static partial class Program
             if (!optionResult.Success || optionResult.Options is null)
             {
                 logger.Log("Program: RunDeferredProgressConversionBatch exited before showing progress because picker was canceled or failed.");
+                session.Close();
                 return session.ExitCode;
             }
 
@@ -236,6 +241,7 @@ internal static partial class Program
         catch (OperationCanceledException)
         {
             logger.Log("Program: RunDeferredProgressConversionBatch canceled before progress window opened.");
+            session.Close();
             return session.ExitCode;
         }
         finally
@@ -259,6 +265,7 @@ internal static partial class Program
         logger.Log("Program: before Application.Run (deferred batch progress form).");
         Application.Run(progressForm);
         logger.Log("Program: after Application.Run returns (deferred batch progress form).");
+        session.Close();
         (action as IDisposable)?.Dispose();
         return session.ExitCode;
     }

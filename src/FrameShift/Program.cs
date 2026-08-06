@@ -316,14 +316,7 @@ internal static partial class Program
             actionId.Equals("compress-image", StringComparison.OrdinalIgnoreCase))
         {
             // Headless path: all required options were supplied via CLI — validate and run directly.
-            var looksHeadless = actionId switch
-            {
-                "compress-video" or "compress-audio" => options.ContainsKey(ActionOptionKeys.Profile),
-                "compress-image" => options.ContainsKey(ActionOptionKeys.Profile) ||
-                                    options.ContainsKey(ActionOptionKeys.Target) ||
-                                    options.ContainsKey(ActionOptionKeys.TargetSizeBytes),
-                _ => false
-            };
+            var looksHeadless = IsHeadlessCompressionInvocation(actionId, options);
 
             if (!looksHeadless)
             {

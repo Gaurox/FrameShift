@@ -27,4 +27,19 @@ public sealed class ProgramBatchTests
 
         Assert.False(Program.ShouldRunConversionBatch("convert-video", options));
     }
+
+    [Theory]
+    [InlineData("compress-video", ActionOptionKeys.Profile)]
+    [InlineData("compress-audio", ActionOptionKeys.Profile)]
+    [InlineData("compress-image", ActionOptionKeys.TargetSizeBytes)]
+    public void HeadlessCompressionDetection_RemainsUnchanged(string actionId, string optionKey)
+    {
+        var options = new Dictionary<string, string>
+        {
+            [optionKey] = "value"
+        };
+
+        Assert.True(Program.IsHeadlessCompressionInvocation(actionId, options));
+        Assert.False(Program.IsHeadlessCompressionInvocation(actionId, new Dictionary<string, string>()));
+    }
 }

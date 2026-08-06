@@ -17,7 +17,7 @@ using FrameShift.Windows.ProgressUI;
 
 namespace FrameShift.Windows.Batch;
 
-internal sealed class ConversionBatchSession
+internal sealed class ConversionBatchSession : IDisposable
 {
     private const int PickerDebounceMilliseconds = 700;
     private const int IdleCloseMilliseconds = 2500;
@@ -28,12 +28,15 @@ internal sealed class ConversionBatchSession
     private readonly ConcurrentQueue<BatchQueueItem> _pendingPaths = new();
     private readonly Dictionary<string, BatchQueueItem> _knownItems = new(StringComparer.Ordinal);
     private readonly HashSet<string> _removedItems = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _acceptedInvocationIds = new(StringComparer.Ordinal);
     private readonly object _sync = new();
     private readonly QueueSignalState _queueState = new();
     private long _queueItemSequence;
 
     private Dictionary<string, string>? _sharedOptions;
+    private Func<BatchQueueItemInfo, BatchOptionResult>? _lateItemOptionsProvider;
     private Thread? _pipeServerThread;
+    private NamedPipeServerStream? _activePipeServer;
     private CancellationToken _sessionCancellationToken;
     private string? _currentInputPath;
     private bool _globalCancelRequested;
@@ -42,6 +45,7 @@ internal sealed class ConversionBatchSession
     private bool _closing;
     private bool _closeModeActivated;
     private ProgressForm? _progressForm;
+    private Task? _processingTask;
 
     public ConversionBatchSession(
         BatchDefinition definition,
@@ -74,17 +78,66 @@ internal sealed class ConversionBatchSession
         _logger.Log("ConversionBatchSession: Initialize exiting.");
     }
 
-    public void StartProcessing(CancellationToken cancellationToken)
+    public Task StartProcessing(CancellationToken cancellationToken)
     {
         _logger.Log($"ConversionBatchSession: StartProcessing entered. actionId={_definition.ActionId}.");
-        _ = Task.Run(() => ProcessLoopAsync(cancellationToken), cancellationToken);
+        _processingTask = Task.Run(() => ProcessLoopAsync(cancellationToken), cancellationToken);
         _logger.Log("ConversionBatchSession: StartProcessing exiting.");
+        return _processingTask;
     }
 
     public void SetSharedOptions(IReadOnlyDictionary<string, string> options)
     {
         _sharedOptions = new Dictionary<string, string>(options, StringComparer.OrdinalIgnoreCase);
         _pickerHandled = true;
+    }
+
+    public void SetLateItemOptionsProvider(Func<BatchQueueItemInfo, BatchOptionResult>? provider)
+    {
+        _lateItemOptionsProvider = provider;
+    }
+
+    public void SetItemOptions(string queueItemId, IReadOnlyDictionary<string, string> options)
+    {
+        lock (_sync)
+        {
+            if (_removedItems.Contains(queueItemId) ||
+                !_knownItems.TryGetValue(queueItemId, out var item))
+            {
+                return;
+            }
+
+            _knownItems[queueItemId] = item with
+            {
+                Options = new Dictionary<string, string>(options, StringComparer.OrdinalIgnoreCase)
+            };
+        }
+    }
+
+    internal IReadOnlyList<BatchQueueItemInfo> GetPendingQueueItems()
+    {
+        lock (_sync)
+        {
+            return _pendingPaths
+                .ToArray()
+                .Select(item => _knownItems.TryGetValue(item.QueueItemId, out var current) ? current : item)
+                .Where(item => !_removedItems.Contains(item.QueueItemId))
+                .OrderBy(item => item.Sequence)
+                .Select(ToQueueItemInfo)
+                .ToArray();
+        }
+    }
+
+    internal Task? ProcessingTask => _processingTask;
+
+    public void Close()
+    {
+        BeginClosing();
+    }
+
+    public void Dispose()
+    {
+        Close();
     }
 
     public void AttachProgressForm(ProgressForm? progressForm)
@@ -115,28 +168,42 @@ internal sealed class ConversionBatchSession
         }
     }
 
-    public static void SendPathsToPrimaryInstance(
+    public static bool SendPathsToPrimaryInstance(
         BatchDefinition definition,
         IEnumerable<string> inputPaths,
         IReadOnlyDictionary<string, string>? options = null)
     {
-        using var pipeClient = new NamedPipeClientStream(".", definition.PipeName, PipeDirection.Out);
+        var queueItems = inputPaths
+            .Where(inputPath => !string.IsNullOrWhiteSpace(inputPath))
+            .Select(inputPath => new QueueMessage(inputPath, options is { Count: > 0 }
+                ? new Dictionary<string, string>(options)
+                : null))
+            .ToArray();
+        if (queueItems.Length == 0)
+        {
+            return false;
+        }
+
+        using var pipeClient = new NamedPipeClientStream(".", definition.PipeName, PipeDirection.InOut);
         pipeClient.Connect(5000);
 
-        using var writer = new StreamWriter(pipeClient, Encoding.UTF8)
-        {
-            AutoFlush = true
-        };
+        var invocation = new QueueInvocationMessage(Guid.NewGuid().ToString("N"), queueItems);
+        WritePipeLine(pipeClient, JsonSerializer.Serialize(invocation, s_queueMessageJsonOptions));
 
-        foreach (var inputPath in inputPaths)
+        var responseLine = ReadPipeLine(pipeClient);
+        if (string.IsNullOrWhiteSpace(responseLine))
         {
-            if (!string.IsNullOrWhiteSpace(inputPath))
-            {
-                // One JSON object per line carries the path together with the per-launch
-                // CLI options (e.g. --rmbg-model), so the receiving session does not fall
-                // back to its own shared options for queued items.
-                writer.WriteLine(FormatQueueMessage(inputPath, options));
-            }
+            throw new IOException("The primary batch session closed before confirming the queued invocation.");
+        }
+
+        try
+        {
+            var response = JsonSerializer.Deserialize<QueueInvocationResponse>(responseLine, s_queueMessageJsonOptions);
+            return response?.Accepted == true;
+        }
+        catch (JsonException ex)
+        {
+            throw new IOException("The primary batch session returned an invalid queue confirmation.", ex);
         }
     }
 
@@ -146,10 +213,48 @@ internal sealed class ConversionBatchSession
         [property: JsonPropertyName("path")] string Path,
         [property: JsonPropertyName("options")] Dictionary<string, string>? Options);
 
+    private sealed record QueueInvocationMessage(
+        [property: JsonPropertyName("invocationId")] string InvocationId,
+        [property: JsonPropertyName("items")] QueueMessage[] Items);
+
+    private sealed record QueueInvocationResponse(
+        [property: JsonPropertyName("accepted")] bool Accepted);
+
     private static readonly JsonSerializerOptions s_queueMessageJsonOptions = new()
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    private static string? ReadPipeLine(Stream stream)
+    {
+        const int maxMessageLength = 1024 * 1024;
+        using var buffer = new MemoryStream();
+        while (buffer.Length < maxMessageLength)
+        {
+            var value = stream.ReadByte();
+            if (value < 0)
+            {
+                return buffer.Length == 0 ? null : Encoding.UTF8.GetString(buffer.ToArray());
+            }
+
+            if (value == '\n')
+            {
+                var line = Encoding.UTF8.GetString(buffer.ToArray());
+                return line.EndsWith('\r') ? line[..^1] : line;
+            }
+
+            buffer.WriteByte((byte)value);
+        }
+
+        throw new IOException("The batch queue invocation exceeded the maximum message length.");
+    }
+
+    private static void WritePipeLine(Stream stream, string message)
+    {
+        var bytes = Encoding.UTF8.GetBytes(message + "\n");
+        stream.Write(bytes, 0, bytes.Length);
+        stream.Flush();
+    }
 
     internal static string FormatQueueMessage(string inputPath, IReadOnlyDictionary<string, string>? options)
     {
@@ -251,6 +356,57 @@ internal sealed class ConversionBatchSession
         IsSupportedSourceExtension: ImageConversionCatalog.IsSupportedSourceExtension,
         GetTargetsForSelection: _ => ImageConversionCatalog.GetTargets(),
         GetProfiles: ImageConversionCatalog.GetProfiles);
+
+    public static BatchDefinition CreateCompressVideoDefinition() => new(
+        ActionId: "compress-video",
+        DisplayName: "Compress Video",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: VideoCompressionCatalog.GetSupportedSourceFormatsText(),
+        MutexName: @"Local\FrameShift_CompressVideoBatch",
+        PipeName: "FrameShift_CompressVideoBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: VideoCompressionCatalog.IsSupportedSourceExtension,
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Compress");
+
+    public static BatchDefinition CreateCompressAudioDefinition() => new(
+        ActionId: "compress-audio",
+        DisplayName: "Compress Audio",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: AudioConversionCatalog.GetSupportedSourceFormatsText(),
+        MutexName: @"Local\FrameShift_CompressAudioBatch",
+        PipeName: "FrameShift_CompressAudioBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: AudioConversionCatalog.IsSupportedSourceExtension,
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Compress");
+
+    public static BatchDefinition CreateCompressImageDefinition() => new(
+        ActionId: "compress-image",
+        DisplayName: "Compress Image",
+        RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
+        PickerTitle: null,
+        PickerDescription: null,
+        SupportedSourceFormatsText: ImageConversionCatalog.GetSupportedSourceFormatsText(),
+        MutexName: @"Local\FrameShift_CompressImageBatch",
+        PipeName: "FrameShift_CompressImageBatchQueue",
+        ShowProfiles: false,
+        IsSupportedSourceExtension: ImageConversionCatalog.IsSupportedSourceExtension,
+        GetTargetsForSelection: _ => [],
+        GetProfiles: static () => [],
+        KeepWindowOpenOnFailure: true,
+        PrimaryButtonText: "Compress");
 
     public static BatchDefinition CreateExtractFramesDefinition() => new(
         ActionId: "extract-frames",
@@ -474,7 +630,7 @@ internal sealed class ConversionBatchSession
 
                     if (_pendingPaths.IsEmpty)
                     {
-                        if (ShouldCloseForIdle())
+                        if (TryBeginClosingForIdle())
                         {
                             CloseProgressWindow();
                             return;
@@ -515,7 +671,7 @@ internal sealed class ConversionBatchSession
                     continue;
                 }
 
-                if (ShouldCloseForIdle())
+                if (TryBeginClosingForIdle())
                 {
                     if (_definition.KeepWindowOpenOnFailure &&
                         ExitCode != 0 &&
@@ -557,6 +713,11 @@ internal sealed class ConversionBatchSession
 
     private async Task ProcessQueuedPathAsync(BatchQueueItem queueItem, CancellationToken cancellationToken)
     {
+        if (TryGetKnownItem(queueItem.QueueItemId, out var currentQueueItem))
+        {
+            queueItem = currentQueueItem;
+        }
+
         var inputPath = queueItem.InputPath;
         _logger.Log($"ConversionBatchSession: item started. inputPath={inputPath}");
         if (!_definition.IsSupportedSourceExtension(Path.GetExtension(inputPath)))
@@ -569,6 +730,22 @@ internal sealed class ConversionBatchSession
                     Path.GetExtension(inputPath),
                     _definition.SupportedSourceFormatsText));
             return;
+        }
+
+        if (queueItem.Options is null && _lateItemOptionsProvider is not null)
+        {
+            var optionResult = PromptForLateItemOptions(ToQueueItemInfo(queueItem));
+            if (!optionResult.Success || optionResult.Options is null)
+            {
+                ReportQueueItem(inputPath, "canceled", "Configuration canceled.");
+                return;
+            }
+
+            SetItemOptions(queueItem.QueueItemId, optionResult.Options);
+            if (TryGetKnownItem(queueItem.QueueItemId, out currentQueueItem))
+            {
+                queueItem = currentQueueItem;
+            }
         }
 
         if (_sharedOptions is null)
@@ -606,6 +783,49 @@ internal sealed class ConversionBatchSession
         if (!result.Success && !result.Canceled)
         {
             ExitCode = 1;
+        }
+    }
+
+    private bool TryGetKnownItem(string queueItemId, out BatchQueueItem queueItem)
+    {
+        lock (_sync)
+        {
+            if (_knownItems.TryGetValue(queueItemId, out var knownItem))
+            {
+                queueItem = knownItem;
+                return true;
+            }
+
+            queueItem = null!;
+            return false;
+        }
+    }
+
+    private BatchOptionResult PromptForLateItemOptions(BatchQueueItemInfo item)
+    {
+        var provider = _lateItemOptionsProvider;
+        if (provider is null)
+        {
+            return BatchOptionResult.Failed();
+        }
+
+        try
+        {
+            if (_progressForm is not null &&
+                !_progressForm.IsDisposed &&
+                _progressForm.IsHandleCreated &&
+                _progressForm.InvokeRequired)
+            {
+                return (BatchOptionResult)_progressForm.Invoke(
+                    new Func<BatchOptionResult>(() => provider(item)));
+            }
+
+            return provider(item);
+        }
+        catch (Exception ex)
+        {
+            _logger.Log($"ConversionBatchSession: late item options provider failed for {item.InputPath}: {ex}");
+            return BatchOptionResult.Failed();
         }
     }
 
@@ -740,10 +960,23 @@ internal sealed class ConversionBatchSession
         return elapsed.TotalMilliseconds >= PickerDebounceMilliseconds;
     }
 
-    private bool ShouldCloseForIdle()
+    private bool TryBeginClosingForIdle()
     {
-        var elapsed = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _queueState.LastActivityTicks), DateTimeKind.Utc);
-        return _pickerHandled && _pendingPaths.IsEmpty && elapsed.TotalMilliseconds >= IdleCloseMilliseconds;
+        NamedPipeServerStream? pipeServer;
+        lock (_sync)
+        {
+            var elapsed = DateTime.UtcNow - new DateTime(Interlocked.Read(ref _queueState.LastActivityTicks), DateTimeKind.Utc);
+            if (_closing || !_pickerHandled || !_pendingPaths.IsEmpty || elapsed.TotalMilliseconds < IdleCloseMilliseconds)
+            {
+                return false;
+            }
+
+            _closing = true;
+            pipeServer = _activePipeServer;
+        }
+
+        DisposePipeServer(pipeServer);
+        return true;
     }
 
     private void StartPipeServer()
@@ -752,33 +985,46 @@ internal sealed class ConversionBatchSession
         var serverThread = new Thread(() =>
         {
             _logger.Log("ConversionBatchSession: pipe listener thread entered.");
-            while (!_closing)
+            while (!IsClosing())
             {
                 try
                 {
                     using var pipeServer = new NamedPipeServerStream(
                         _definition.PipeName,
-                        PipeDirection.In,
+                        PipeDirection.InOut,
                         NamedPipeServerStream.MaxAllowedServerInstances,
                         PipeTransmissionMode.Byte,
                         PipeOptions.Asynchronous);
 
+                    if (!TryRegisterPipeServer(pipeServer))
+                    {
+                        return;
+                    }
+
                     pipeServer.WaitForConnection();
 
-                    using var reader = new StreamReader(pipeServer, Encoding.UTF8);
-                    string? line;
-                    while ((line = reader.ReadLine()) is not null)
+                    var accepted = false;
+                    var line = ReadPipeLine(pipeServer);
+                    if (TryParseQueueInvocation(line, out var invocation))
                     {
-                        if (TryParseQueueMessage(line, out var inputPath, out var itemOptions))
-                        {
-                            EnqueueItem(inputPath, itemOptions);
-                            _logger.Log($"QUEUED FROM SECONDARY INSTANCE ({_definition.ActionId}): {inputPath} [options={DescribeOptions(itemOptions)}]");
-                        }
+                        accepted = TryAcceptInvocationAndWriteConfirmation(pipeServer, invocation, out var acceptedItems);
+                        ReportAcceptedInvocation(acceptedItems);
+                    }
+                    else
+                    {
+                        WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log($"Convert batch pipe server error ({_definition.ActionId}):{Environment.NewLine}{ex}");
+                    if (!IsClosing())
+                    {
+                        _logger.Log($"Convert batch pipe server error ({_definition.ActionId}):{Environment.NewLine}{ex}");
+                    }
+                }
+                finally
+                {
+                    ClearActivePipeServer();
                 }
             }
 
@@ -790,6 +1036,121 @@ internal sealed class ConversionBatchSession
 
         _pipeServerThread = serverThread;
         serverThread.Start();
+    }
+
+    private static bool TryParseQueueInvocation(string? line, out QueueInvocationMessage invocation)
+    {
+        invocation = new QueueInvocationMessage(string.Empty, []);
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<QueueInvocationMessage>(line, s_queueMessageJsonOptions);
+            if (parsed is not null &&
+                !string.IsNullOrWhiteSpace(parsed.InvocationId) &&
+                parsed.Items is { Length: > 0 })
+            {
+                invocation = parsed;
+                return true;
+            }
+        }
+        catch (JsonException)
+        {
+            // Fall through for a legacy single-message client.
+        }
+
+        if (!TryParseQueueMessage(line, out var inputPath, out var options))
+        {
+            return false;
+        }
+
+        invocation = new QueueInvocationMessage(
+            Guid.NewGuid().ToString("N"),
+            [new QueueMessage(inputPath, options is null ? null : new Dictionary<string, string>(options))]);
+        return true;
+    }
+
+    private bool TryAcceptInvocationAndWriteConfirmation(
+        Stream pipeServer,
+        QueueInvocationMessage invocation,
+        out IReadOnlyList<BatchQueueItem> acceptedItems)
+    {
+        acceptedItems = [];
+        if (string.IsNullOrWhiteSpace(invocation.InvocationId) || invocation.Items is not { Length: > 0 })
+        {
+            WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
+            return false;
+        }
+
+        var items = invocation.Items
+            .Where(item => !string.IsNullOrWhiteSpace(item.Path))
+            .ToArray();
+        if (items.Length != invocation.Items.Length)
+        {
+            WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
+            return false;
+        }
+
+        lock (_sync)
+        {
+            if (_closing || _globalCancelRequested || _sessionCancellationToken.IsCancellationRequested)
+            {
+                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
+                return false;
+            }
+
+            if (_acceptedInvocationIds.Contains(invocation.InvocationId))
+            {
+                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(true), s_queueMessageJsonOptions));
+                return true;
+            }
+
+            var newlyAcceptedItems = items
+                .Select(item => CreateQueueItem(item.Path, item.Options))
+                .ToList();
+
+            foreach (var queueItem in newlyAcceptedItems)
+            {
+                _knownItems[queueItem.QueueItemId] = queueItem;
+                _removedItems.Remove(queueItem.QueueItemId);
+                _pendingPaths.Enqueue(queueItem);
+            }
+
+            _acceptedInvocationIds.Add(invocation.InvocationId);
+            Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
+
+            try
+            {
+                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(true), s_queueMessageJsonOptions));
+            }
+            catch
+            {
+                foreach (var queueItem in newlyAcceptedItems)
+                {
+                    _knownItems.Remove(queueItem.QueueItemId);
+                    _removedItems.Add(queueItem.QueueItemId);
+                }
+
+                _acceptedInvocationIds.Remove(invocation.InvocationId);
+                throw;
+            }
+
+            acceptedItems = newlyAcceptedItems;
+        }
+
+        return true;
+    }
+
+    private void ReportAcceptedInvocation(IReadOnlyList<BatchQueueItem> acceptedItems)
+    {
+        foreach (var queueItem in acceptedItems)
+        {
+            _progressForm?.AddQueueItem(queueItem.QueueItemId, queueItem.InputPath);
+            _logger.Log($"QUEUED FROM SECONDARY INSTANCE ({_definition.ActionId}): {queueItem.InputPath} [queueItemId={queueItem.QueueItemId}, options={DescribeOptions(queueItem.Options)}]");
+        }
     }
 
     // Items enqueued from the primary launch carry no per-item options: they fall back to the
@@ -812,14 +1173,73 @@ internal sealed class ConversionBatchSession
         var queueItem = CreateQueueItem(inputPath, options);
         lock (_sync)
         {
+            if (_closing || _globalCancelRequested || _sessionCancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             _knownItems[queueItem.QueueItemId] = queueItem;
             _removedItems.Remove(queueItem.QueueItemId);
+            _pendingPaths.Enqueue(queueItem);
+            Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
         }
 
-        _pendingPaths.Enqueue(queueItem);
-        Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
         _progressForm?.AddQueueItem(queueItem.QueueItemId, inputPath);
         _logger.Log($"QUEUED ({_definition.ActionId}): {inputPath} [queueItemId={queueItem.QueueItemId}, options={DescribeOptions(options)}]");
+    }
+
+    private bool TryRegisterPipeServer(NamedPipeServerStream pipeServer)
+    {
+        lock (_sync)
+        {
+            if (_closing)
+            {
+                return false;
+            }
+
+            _activePipeServer = pipeServer;
+            return true;
+        }
+    }
+
+    private void ClearActivePipeServer()
+    {
+        lock (_sync)
+        {
+            _activePipeServer = null;
+        }
+    }
+
+    private bool IsClosing()
+    {
+        lock (_sync)
+        {
+            return _closing;
+        }
+    }
+
+    private void BeginClosing()
+    {
+        NamedPipeServerStream? pipeServer;
+        lock (_sync)
+        {
+            _closing = true;
+            pipeServer = _activePipeServer;
+        }
+
+        DisposePipeServer(pipeServer);
+    }
+
+    private static void DisposePipeServer(NamedPipeServerStream? pipeServer)
+    {
+        try
+        {
+            pipeServer?.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The listener owns the stream and may have completed concurrently.
+        }
     }
 
     private static string DescribeOptions(IReadOnlyDictionary<string, string>? options)
@@ -851,7 +1271,10 @@ internal sealed class ConversionBatchSession
 
     private void OnCancelRequested(object? sender, EventArgs e)
     {
-        _globalCancelRequested = true;
+        lock (_sync)
+        {
+            _globalCancelRequested = true;
+        }
         _logger.Log("ConversionBatchSession: OnCancelRequested entered.");
         var canceledBeforeProcessing = CancelPendingPaths();
         _logger.Log($"ConversionBatchSession: OnCancelRequested canceled pending items count={canceledBeforeProcessing.Length}.");
@@ -919,13 +1342,7 @@ internal sealed class ConversionBatchSession
     private void CloseProgressWindow()
     {
         _logger.Log("ConversionBatchSession: CloseProgressWindow called.");
-        if (_closing)
-        {
-            _logger.Log("ConversionBatchSession: CloseProgressWindow returned early because closing is already true.");
-            return;
-        }
-
-        _closing = true;
+        BeginClosing();
         _progressForm?.CloseSafely();
         _logger.Log("ConversionBatchSession: CloseProgressWindow returned.");
     }
@@ -938,7 +1355,7 @@ internal sealed class ConversionBatchSession
         }
 
         _closeModeActivated = true;
-        _closing = true;
+        BeginClosing();
         _progressForm?.EnableCloseMode("Completed with errors. Review the queue for details.");
         _logger.Log("ConversionBatchSession: failure close mode enabled.");
     }
@@ -1031,4 +1448,14 @@ internal sealed class ConversionBatchSession
         string InputPath,
         long Sequence,
         IReadOnlyDictionary<string, string>? Options);
+
+    internal sealed record BatchQueueItemInfo(
+        string QueueItemId,
+        string InputPath,
+        IReadOnlyDictionary<string, string>? Options);
+
+    private static BatchQueueItemInfo ToQueueItemInfo(BatchQueueItem item) => new(
+        item.QueueItemId,
+        item.InputPath,
+        item.Options);
 }

@@ -1,196 +1,230 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Pipes;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
+using FrameShift.Windows.Batch;
 using FrameShift.Windows.Forms;
+using FrameShift.Windows.ProgressUI;
 
 namespace FrameShift;
 
 internal static partial class Program
 {
-    private static readonly Dictionary<string, (string MutexName, string PipeName)> s_compressBatchInfo =
-        new(StringComparer.OrdinalIgnoreCase)
+    internal static bool IsHeadlessCompressionInvocation(
+        string actionId,
+        IReadOnlyDictionary<string, string> options) => actionId switch
         {
-            ["compress-video"] = (@"Local\FrameShift_CompressVideoBatch", "FrameShift_CompressVideoBatchQueue"),
-            ["compress-audio"] = (@"Local\FrameShift_CompressAudioBatch", "FrameShift_CompressAudioBatchQueue"),
-            ["compress-image"] = (@"Local\FrameShift_CompressImageBatch", "FrameShift_CompressImageBatchQueue"),
+            "compress-video" or "compress-audio" => options.ContainsKey(ActionOptionKeys.Profile),
+            "compress-image" => options.ContainsKey(ActionOptionKeys.Profile) ||
+                                options.ContainsKey(ActionOptionKeys.Target) ||
+                                options.ContainsKey(ActionOptionKeys.TargetSizeBytes),
+            _ => false
         };
 
     private static int RunCompressBatch(string actionId, IFrameShiftAction action, List<string> inputPaths, AppLogger logger)
     {
-        if (!s_compressBatchInfo.TryGetValue(actionId, out var info))
+        var definition = GetCompressionBatchDefinition(actionId);
+        if (definition is null)
         {
             logger.Log($"RunCompressBatch: unknown actionId={actionId}");
             return 1;
         }
 
-        using var batchMutex = new Mutex(true, info.MutexName, out var isPrimary);
-        if (!isPrimary)
+        using var batchMutex = new Mutex(true, definition.MutexName, out var isPrimaryInstance);
+        var ownsBatchMutex = isPrimaryInstance;
+        try
         {
-            try
-            {
-                SendPathsToCompressPrimary(info.PipeName, inputPaths, logger);
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                logger.Log($"RunCompressBatch: SendPaths failed: {ex}");
-                ShowCliError("FrameShift is already running, but the file could not be queued.");
-                return 1;
-            }
-        }
-
-        // Primary: collect all paths that arrive within the debounce window.
-        var sync = new object();
-        var collectedPaths = new List<string>(inputPaths.Where(p => !string.IsNullOrWhiteSpace(p)));
-        var lastActivityTicks = new long[] { DateTime.UtcNow.Ticks };
-        var pipeClosing = false;
-
-        var pipeThread = new Thread(() =>
-        {
-            while (!pipeClosing)
+            if (!isPrimaryInstance)
             {
                 try
                 {
-                    using var server = new NamedPipeServerStream(
-                        info.PipeName,
-                        PipeDirection.In,
-                        NamedPipeServerStream.MaxAllowedServerInstances,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
-                    server.WaitForConnection();
-                    using var reader = new StreamReader(server, Encoding.UTF8);
-                    string? line;
-                    while ((line = reader.ReadLine()) != null)
+                    if (ConversionBatchSession.SendPathsToPrimaryInstance(definition, inputPaths))
                     {
-                        if (!string.IsNullOrWhiteSpace(line))
-                        {
-                            lock (sync)
-                            {
-                                if (!collectedPaths.Any(p => string.Equals(p, line, StringComparison.OrdinalIgnoreCase)))
-                                    collectedPaths.Add(line);
-                            }
-
-                            Interlocked.Exchange(ref lastActivityTicks[0], DateTime.UtcNow.Ticks);
-                            logger.Log($"RunCompressBatch ({actionId}): received path from secondary: {line}");
-                        }
+                        logger.Log($"RunCompressBatch: queued {inputPaths.Count} path(s) into existing {actionId} session.");
+                        return 0;
                     }
+
+                    logger.Log($"RunCompressBatch: existing {actionId} session rejected the queued invocation.");
                 }
-                catch (Exception ex) when (!pipeClosing)
+                catch (Exception ex)
                 {
-                    logger.Log($"RunCompressBatch ({actionId}): pipe server error: {ex.Message}");
+                    logger.Log($"RunCompressBatch: queue injection failed for {actionId}: {ex}");
                 }
+
+                try
+                {
+                    ownsBatchMutex = batchMutex.WaitOne(TimeSpan.FromSeconds(5));
+                }
+                catch (AbandonedMutexException)
+                {
+                    ownsBatchMutex = true;
+                    logger.Log($"RunCompressBatch: acquired abandoned mutex for {actionId}; reopening session.");
+                }
+
+                if (!ownsBatchMutex)
+                {
+                    ShowCliError("FrameShift is already running, but the file could not be queued.");
+                    return 1;
+                }
+
+                logger.Log($"RunCompressBatch: existing {actionId} session closed before accepting the invocation; opening a new session.");
             }
-        })
-        { IsBackground = true };
 
-        pipeThread.Start();
+            using var cancellationSource = new CancellationTokenSource();
+            var session = new ConversionBatchSession(definition, action, logger);
+            session.Initialize(inputPaths.ToArray(), cancellationSource.Token);
 
-        const int debounceMs = 700;
-        while (true)
-        {
-            Thread.Sleep(50);
-            var elapsed = (DateTime.UtcNow - new DateTime(Interlocked.Read(ref lastActivityTicks[0]), DateTimeKind.Utc)).TotalMilliseconds;
-            if (elapsed >= debounceMs) break;
-        }
-
-        pipeClosing = true;
-
-        List<string> paths;
-        lock (sync)
-        {
-            paths = collectedPaths
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-
-        logger.Log($"RunCompressBatch ({actionId}): debounce elapsed, pathCount={paths.Count}");
-
-        if (paths.Count == 0)
-            return 0;
-
-        if (paths.Count == 1)
-        {
-            // Mono-file: original behavior — probe + form + run.
-            var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var mono = new List<string> { paths[0] };
-            var ok = actionId switch
+            try
             {
-                "compress-video" => EnsureCompressVideoOptions(mono, options, logger),
-                "compress-audio" => EnsureCompressAudioOptions(mono, options, logger),
-                "compress-image" => EnsureCompressImageOptions(mono, options, logger),
-                _ => false
-            };
-            if (!ok) return 0;
-            return RunQueuedActionWithProgressForm(action, mono, options, logger, actionId);
+                session.WaitForPickerDebounce(cancellationSource.Token);
+                if (!ConfigureInitialCompressionBatch(actionId, session, logger))
+                {
+                    logger.Log($"RunCompressBatch: compression configuration ended before progress window opened. actionId={actionId}.");
+                    return 0;
+                }
+
+                using var progressForm = new ProgressForm();
+                session.AttachProgressForm(progressForm);
+                progressForm.CancelRequested += (_, _) =>
+                {
+                    logger.Log($"Program: {actionId} CancelRequested event received.");
+                    RequestCancellationAsync(cancellationSource, logger, actionId);
+                };
+                progressForm.Shown += (_, _) => session.StartProcessing(cancellationSource.Token);
+
+                logger.Log($"Program: before Application.Run ({actionId} progress form).");
+                Application.Run(progressForm);
+                logger.Log($"Program: after Application.Run returns ({actionId} progress form).");
+                return session.ExitCode;
+            }
+            finally
+            {
+                session.Close();
+                (action as IDisposable)?.Dispose();
+            }
+        }
+        finally
+        {
+            if (ownsBatchMutex)
+            {
+                batchMutex.ReleaseMutex();
+            }
+        }
+    }
+
+    private static bool ConfigureInitialCompressionBatch(
+        string actionId,
+        ConversionBatchSession session,
+        AppLogger logger)
+    {
+        var initialItems = session.GetPendingQueueItems();
+        if (initialItems.Count == 0)
+        {
+            return false;
         }
 
-        // Multi-file: ask how to configure.
+        var emptyOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (initialItems.Count == 1)
+        {
+            if (!TryGetCompressionOptions(actionId, initialItems[0].InputPath, logger, out var options))
+            {
+                return false;
+            }
+
+            session.SetSharedOptions(emptyOptions);
+            session.SetItemOptions(initialItems[0].QueueItemId, options);
+            session.SetLateItemOptionsProvider(item => GetCompressionOptionsResult(actionId, item.InputPath, logger));
+            return true;
+        }
+
         CompressMultiFileChoice choice;
-        using (var choiceForm = new CompressMultiFileChoiceForm(paths.Count))
+        using (var choiceForm = new CompressMultiFileChoiceForm(initialItems.Count))
         {
             if (choiceForm.ShowDialog() != DialogResult.OK)
-                return 0;
+            {
+                return false;
+            }
+
             choice = choiceForm.Choice;
         }
 
         if (choice == CompressMultiFileChoice.SameForAll)
         {
-            // Probe and show picker for the first file; apply those options to all.
-            var sharedOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            var firstFile = new List<string> { paths[0] };
-            var ok = actionId switch
+            if (!TryGetCompressionOptions(actionId, initialItems[0].InputPath, logger, out var sharedOptions))
             {
-                "compress-video" => EnsureCompressVideoOptions(firstFile, sharedOptions, logger),
-                "compress-audio" => EnsureCompressAudioOptions(firstFile, sharedOptions, logger),
-                "compress-image" => EnsureCompressImageOptions(firstFile, sharedOptions, logger),
-                _ => false
-            };
-            if (!ok) return 0;
-            return RunQueuedActionWithProgressForm(action, paths, sharedOptions, logger, actionId);
-        }
-        else // PerFile
-        {
-            // Open picker for each file in turn; cancel on any dismissal.
-            var requests = new List<ActionRequest>();
-            foreach (var path in paths)
-            {
-                var fileOptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                var singlePath = new List<string> { path };
-                var ok = actionId switch
-                {
-                    "compress-video" => EnsureCompressVideoOptions(singlePath, fileOptions, logger),
-                    "compress-audio" => EnsureCompressAudioOptions(singlePath, fileOptions, logger),
-                    "compress-image" => EnsureCompressImageOptions(singlePath, fileOptions, logger),
-                    _ => false
-                };
-                if (!ok) return 0;
-                requests.Add(new ActionRequest(path, logger, null, fileOptions));
+                return false;
             }
 
-            return RunQueuedRequestsWithProgressForm(action, requests, logger, actionId);
+            // Late arrivals intentionally inherit the same shared choice, matching the user's
+            // explicit SameForAll decision for this live compression session.
+            session.SetSharedOptions(sharedOptions);
+            return true;
         }
+
+        session.SetSharedOptions(emptyOptions);
+        foreach (var item in initialItems)
+        {
+            if (!TryGetCompressionOptions(actionId, item.InputPath, logger, out var itemOptions))
+            {
+                return false;
+            }
+
+            session.SetItemOptions(item.QueueItemId, itemOptions);
+        }
+
+        // A path received after the initial PerFile sequence needs its own specialized picker
+        // when it reaches the queue head; it must not inherit a different occurrence's options.
+        session.SetLateItemOptionsProvider(item => GetCompressionOptionsResult(actionId, item.InputPath, logger));
+        return true;
     }
 
-    private static void SendPathsToCompressPrimary(string pipeName, IEnumerable<string> paths, AppLogger logger)
+    private static bool TryGetCompressionOptions(
+        string actionId,
+        string inputPath,
+        AppLogger logger,
+        out Dictionary<string, string> options)
     {
-        using var client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
-        client.Connect(5000);
-        using var writer = new StreamWriter(client, Encoding.UTF8) { AutoFlush = true };
-        foreach (var path in paths)
+        options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var singlePath = new List<string> { inputPath };
+        return actionId switch
         {
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                writer.WriteLine(path);
-                logger.Log($"RunCompressBatch: sent path to primary: {path}");
-            }
+            "compress-video" => EnsureCompressVideoOptions(singlePath, options, logger),
+            "compress-audio" => EnsureCompressAudioOptions(singlePath, options, logger),
+            "compress-image" => EnsureCompressImageOptions(singlePath, options, logger),
+            _ => false
+        };
+    }
+
+    private static ConversionBatchSession.BatchOptionResult GetCompressionOptionsResult(
+        string actionId,
+        string inputPath,
+        AppLogger logger)
+    {
+        return TryGetCompressionOptions(actionId, inputPath, logger, out var options)
+            ? ConversionBatchSession.BatchOptionResult.Succeeded(options)
+            : ConversionBatchSession.BatchOptionResult.Failed();
+    }
+
+    private static ConversionBatchSession.BatchDefinition? GetCompressionBatchDefinition(string actionId)
+    {
+        if (actionId.Equals("compress-video", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateCompressVideoDefinition();
         }
+
+        if (actionId.Equals("compress-audio", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateCompressAudioDefinition();
+        }
+
+        if (actionId.Equals("compress-image", StringComparison.OrdinalIgnoreCase))
+        {
+            return ConversionBatchSession.CreateCompressImageDefinition();
+        }
+
+        return null;
     }
 }

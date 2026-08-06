@@ -104,7 +104,7 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 
 **Correction ciblée.** Distinguer sélection automatique et sélection utilisateur, ou remettre `CurrentCell = null` et vider la sélection après ajout programmatique initial. Couvrir le câblage réel MainForm → FileQueuePanel → ActionsPanel, pas seulement le resolver pur.
 
-**Statut — corrigé dans 1.18.0.** `FileQueuePanel.AddFiles` mémorise l’existence d’une sélection avant l’ajout. Sans sélection préexistante, il vide explicitement la sélection automatique et remet `CurrentCell` à `null`, ce qui rend la file entière à `MainForm` / `ActionScopeResolver`. Une sélection existante est conservée lors d’un ajout ultérieur. Les tests WinForms ciblés couvrent l’ajout de plusieurs fichiers sans sélection et la conservation d’une sélection explicite.
+**Statut — corrigé dans 1.18.1.** `FileQueuePanel.AddFiles` mémorise l’existence d’une sélection avant l’ajout. Sans sélection préexistante, il vide explicitement la sélection automatique et remet `CurrentCell` à `null`, ce qui rend la file entière à `MainForm` / `ActionScopeResolver`. Une sélection existante est conservée lors d’un ajout ultérieur. Les tests WinForms ciblés couvrent l’ajout de plusieurs fichiers sans sélection et la conservation d’une sélection explicite.
 
 #### H-02 — Les pipelines rawvideo déforment silencieusement les vidéos pivotées à 90°/270°
 
@@ -122,6 +122,8 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 
 **Correction ciblée.** Migrer les trois compressions vers `ConversionBatchSession` et ses IDs/options par invocation. Réparer ce protocole parallèle serait plus coûteux et maintiendrait deux sémantiques de batch.
 
+**Statut — corrigé dans 1.18.1.** Les compressions passent désormais par `ConversionBatchSession` ; l’ancien pipe/debounce parallèle et sa déduplication par chemin ont été supprimés. Le pipe commun transporte une invocation atomique avec accusé d’acceptation : le secondaire ne retourne `0` qu’après insertion confirmée ; une fermeture/refus déclenche l’ouverture d’une nouvelle session via le mutex existant. La frontière de fermeture refuse atomiquement les nouvelles invocations, et une confirmation impossible annule l’insertion avant exécution. Les choix compression `SameForAll` / `PerFile`, les formulaires vidéo/audio/image et le chemin headless sont conservés. Des tests ciblés couvrent doublons, arrivées durant debounce/picker/exécution, fermeture, annulation, options partagées/par fichier et retrait d’une occurrence.
+
 #### H-04 — « Retirer de la file » masque certains éléments sans empêcher leur exécution
 
 **Preuves.** `ProgressForm.QueueGridOnCellContentClick` retire d'abord la ligne et ses mappings, puis ajoute l'ID à `_removedQueueItems` (`src/FrameShift/Windows/ProgressUI/ProgressForm.cs:755-784`). `RemoveQueueRowMappings` enlève cet ID de `_queueItemIdsByPath` (`940-957`). `IsQueueItemRemovalRequested(path)` cherche ensuite précisément dans ce mapping désormais vide (`299-309`). `ActionQueueRunner` dépend de ce résultat pour sauter l'élément (`src/FrameShift/Core/Actions/ActionQueueRunner.cs:37-41`).
@@ -130,7 +132,7 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 
 **Correction ciblée.** Conserver un tombstone `path/ID` consultable jusqu'à consommation, ou porter l'identité de queue jusqu'à `ActionQueueRunner`.
 
-**Statut — corrigé dans 1.18.0.** `ActionQueueRunner` attribue désormais un ID déterministe à chaque occurrence de sa liste statique et transmet cet ID à `IProgressReporter` lors du contrôle précédant l’exécution. `ProgressForm` conserve le tombstone par ID même après suppression de la ligne et de ses mappings visuels, puis le consomme à ce contrôle. Deux occurrences du même chemin restent donc indépendantes. Le retrait de l’élément courant, `Cancel all` et le flux ID propre à `ConversionBatchSession` sont inchangés ; des tests ciblés couvrent le retrait en attente, les doublons, la course juste avant exécution et la session existante.
+**Statut — corrigé dans 1.18.1.** `ActionQueueRunner` attribue désormais un ID déterministe à chaque occurrence de sa liste statique et transmet cet ID à `IProgressReporter` lors du contrôle précédant l’exécution. `ProgressForm` conserve le tombstone par ID même après suppression de la ligne et de ses mappings visuels, puis le consomme à ce contrôle. Deux occurrences du même chemin restent donc indépendantes. Le retrait de l’élément courant, `Cancel all` et le flux ID propre à `ConversionBatchSession` sont inchangés ; des tests ciblés couvrent le retrait en attente, les doublons, la course juste avant exécution et la session existante.
 
 #### H-05 — Des annulations et démarrages secondaires peuvent laisser FFmpeg/FFprobe actifs
 
