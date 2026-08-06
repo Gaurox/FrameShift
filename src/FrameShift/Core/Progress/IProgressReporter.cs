@@ -6,6 +6,13 @@ public interface IProgressReporter
 
     bool IsQueueItemRemovalRequested(string inputPath);
 
+    /// <summary>
+    /// Checks removal for one concrete queue occurrence. The default keeps existing
+    /// reporters source-compatible; queue-aware reporters should use the item ID.
+    /// </summary>
+    bool IsQueueItemRemovalRequested(string inputPath, string queueItemId)
+        => IsQueueItemRemovalRequested(inputPath);
+
     bool IsQueueItemCancellationRequested(string inputPath);
 
     void ReportQueue(IReadOnlyList<string> items);

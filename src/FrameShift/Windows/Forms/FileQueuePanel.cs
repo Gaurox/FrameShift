@@ -92,6 +92,9 @@ public sealed class FileQueuePanel : UserControl
             return 0;
         }
 
+        // DataGridView selects the first added row by default. Keep an existing user
+        // selection, but leave a programmatically populated queue unscoped.
+        var preserveSelection = _grid.SelectedRows.Count > 0;
         var added = 0;
         _grid.SuspendLayout();
         try
@@ -129,6 +132,12 @@ public sealed class FileQueuePanel : UserControl
 
         if (added > 0)
         {
+            if (!preserveSelection)
+            {
+                _grid.ClearSelection();
+                _grid.CurrentCell = null;
+            }
+
             UpdateHeader();
             QueueChanged?.Invoke(this, EventArgs.Empty);
         }

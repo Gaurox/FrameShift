@@ -304,6 +304,21 @@ public sealed class ProgressForm : Form, IProgressReporter
         }
     }
 
+    public bool IsQueueItemRemovalRequested(string inputPath, string queueItemId)
+    {
+        if (string.IsNullOrWhiteSpace(queueItemId))
+        {
+            return IsQueueItemRemovalRequested(inputPath);
+        }
+
+        lock (_removedQueueItems)
+        {
+            // The row and its path mapping may already be gone from the UI. The
+            // tombstone is deliberately consumed only at the execution boundary.
+            return _removedQueueItems.Remove(queueItemId);
+        }
+    }
+
     public bool IsQueueItemCancellationRequested(string inputPath)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
@@ -386,7 +401,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             for (var index = 0; index < items.Count; index++)
             {
                 var item = items[index];
-                AddQueueRow(CreateAnonymousQueueItemId(item, index), item, "queued", string.Empty);
+                AddQueueRow(ActionQueueRunner.CreateQueueItemId(index), item, "queued", string.Empty);
             }
         });
     }
@@ -417,13 +432,7 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         RunOnUiThread(() =>
         {
-            if (!_queueRows.TryGetValue(queueItemId, out var row))
-            {
-                return;
-            }
-
-            _queueGrid.Rows.Remove(row);
-            RemoveQueueRowMappings(queueItemId);
+            RemoveQueuedItem(queueItemId);
         });
     }
 
@@ -775,14 +784,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         var state = Convert.ToString(row.Cells[1].Value) ?? string.Empty;
         if (string.Equals(state, "queued", StringComparison.OrdinalIgnoreCase))
         {
-            _queueGrid.Rows.RemoveAt(e.RowIndex);
-            RemoveQueueRowMappings(queueItemId);
-            lock (_removedQueueItems)
-            {
-                _removedQueueItems.Add(queueItemId);
-            }
-
-            QueueItemRemoveRequested?.Invoke(this, queueItemId);
+            RemoveQueuedItem(queueItemId);
             return;
         }
 
@@ -959,6 +961,23 @@ public sealed class ProgressForm : Form, IProgressReporter
         }
     }
 
+    private void RemoveQueuedItem(string queueItemId)
+    {
+        if (!_queueRows.TryGetValue(queueItemId, out var row))
+        {
+            return;
+        }
+
+        _queueGrid.Rows.Remove(row);
+        RemoveQueueRowMappings(queueItemId);
+        lock (_removedQueueItems)
+        {
+            _removedQueueItems.Add(queueItemId);
+        }
+
+        QueueItemRemoveRequested?.Invoke(this, queueItemId);
+    }
+
     private bool TryGetQueueRowForPath(string inputPath, string targetState, out string queueItemId, out DataGridViewRow row)
     {
         if (!_queueItemIdsByPath.TryGetValue(inputPath, out var queueItemIds) || queueItemIds.Count == 0)
@@ -1017,11 +1036,6 @@ public sealed class ProgressForm : Form, IProgressReporter
 
         row = match.Row;
         return true;
-    }
-
-    private static string CreateAnonymousQueueItemId(string inputPath, int index)
-    {
-        return $"anon::{index}::{inputPath}";
     }
 
     private static string AppendEta(string message, string? etaText)

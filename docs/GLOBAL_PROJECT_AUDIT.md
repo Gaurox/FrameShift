@@ -104,6 +104,8 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 
 **Correction ciblée.** Distinguer sélection automatique et sélection utilisateur, ou remettre `CurrentCell = null` et vider la sélection après ajout programmatique initial. Couvrir le câblage réel MainForm → FileQueuePanel → ActionsPanel, pas seulement le resolver pur.
 
+**Statut — corrigé dans 1.18.0.** `FileQueuePanel.AddFiles` mémorise l’existence d’une sélection avant l’ajout. Sans sélection préexistante, il vide explicitement la sélection automatique et remet `CurrentCell` à `null`, ce qui rend la file entière à `MainForm` / `ActionScopeResolver`. Une sélection existante est conservée lors d’un ajout ultérieur. Les tests WinForms ciblés couvrent l’ajout de plusieurs fichiers sans sélection et la conservation d’une sélection explicite.
+
 #### H-02 — Les pipelines rawvideo déforment silencieusement les vidéos pivotées à 90°/270°
 
 **Preuves.** Le probe conserve dimensions codées et rotation séparée (`src/FrameShift/Core/FFprobe/FfprobeRunner.cs:136-145`, `MediaProbeResult.cs:25-45`). RIFE utilise `probe.VideoWidth/VideoHeight` (`RifeRawVideoPipeline.cs:64-71`) ; Upscale fait de même (`UpscaleRawVideoPipeline.cs:52-59`). Leurs arguments de décodage n'ajoutent pas `-noautorotate` (`RifeRawVideoPipeline.cs:247-263`, `UpscaleRawVideoPipeline.cs:153-167`).
@@ -127,6 +129,8 @@ Appréciation générale : **fondation technique solide, lisible et pragmatique,
 **Impact.** Les `ConversionBatchSession` écoutant l'événement par ID restent correctes, mais les queues génériques peuvent exécuter un fichier que l'utilisateur pense avoir retiré, notamment pour des actions comme remove/reverse audio et certains chemins de compression.
 
 **Correction ciblée.** Conserver un tombstone `path/ID` consultable jusqu'à consommation, ou porter l'identité de queue jusqu'à `ActionQueueRunner`.
+
+**Statut — corrigé dans 1.18.0.** `ActionQueueRunner` attribue désormais un ID déterministe à chaque occurrence de sa liste statique et transmet cet ID à `IProgressReporter` lors du contrôle précédant l’exécution. `ProgressForm` conserve le tombstone par ID même après suppression de la ligne et de ses mappings visuels, puis le consomme à ce contrôle. Deux occurrences du même chemin restent donc indépendantes. Le retrait de l’élément courant, `Cancel all` et le flux ID propre à `ConversionBatchSession` sont inchangés ; des tests ciblés couvrent le retrait en attente, les doublons, la course juste avant exécution et la session existante.
 
 #### H-05 — Des annulations et démarrages secondaires peuvent laisser FFmpeg/FFprobe actifs
 

@@ -8,6 +8,8 @@ namespace FrameShift.Core.Actions;
 
 public sealed class ActionQueueRunner
 {
+    internal static string CreateQueueItemId(int index) => $"generic:{index}";
+
     public async Task<IReadOnlyList<ActionExecutionResult>> RunAsync(
         IFrameShiftAction action,
         IReadOnlyList<ActionRequest> requests,
@@ -34,7 +36,8 @@ public sealed class ActionQueueRunner
                 continue;
             }
 
-            if (reporter?.IsQueueItemRemovalRequested(request.InputPath) == true)
+            var queueItemId = CreateQueueItemId(index);
+            if (reporter?.IsQueueItemRemovalRequested(request.InputPath, queueItemId) == true)
             {
                 results.Add(new ActionExecutionResult(false, "Removed from queue.", null, true, CancellationScope.CurrentItem));
                 continue;
