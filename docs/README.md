@@ -14,6 +14,7 @@ Documentation centrale du projet FrameShift.
 - [Release Notes 1.17.0](RELEASE_NOTES_1.17.0.md)
 - [Release Checklist and Versioning](RELEASE_CHECKLIST.md)
 - [Code File Index](CODE_FILE_INDEX.md)
+- [Extract Specific Frames Implementation Guide](EXTRACT_SPECIFIC_FRAMES_IMPLEMENTATION_GUIDE.md)
 - [Dark / Light Theme Implementation](DARK_LIGHT_THEME_IMPLEMENTATION.md)
 - [Add Subtitles to Video Notes](ADD_SUBTITLES_TO_VIDEO.md)
 - [Create Subtitle File Notes](CREATE_SUBTITLES.md)

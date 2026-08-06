@@ -17,7 +17,7 @@
 ## Downloads
 
 - `FrameShift_1.18.0_Setup.exe` — Windows 10/11 x64 installer
-- SHA-256: `E421BB57BA284001195A60FAEFF142FF3D75D2AA39AC616FDD9F10C6FD0267E6`
+- SHA-256: `EFB2F259A61D922A87E58ACAFDA7ADE728B3EE23C3C913459ECF931F0E3CF922`
 
 FrameShift remains self-contained and offline-first. Optional AI models download only when needed.
 ```
