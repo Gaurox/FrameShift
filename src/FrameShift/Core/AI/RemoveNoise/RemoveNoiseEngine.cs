@@ -36,6 +36,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
     private InferenceSession? _erbDecSession;
     private InferenceSession? _dfDecSession;
     private bool _ready;
+    private int _disposed;
 
     public async Task<string> RemoveNoiseAsync(
         string inputPath,
@@ -152,22 +153,27 @@ internal sealed class RemoveNoiseEngine : IDisposable
             ("feat_spec", featSpecModel, new[] { 1, 2, totalFrames, NbDf }));
 
         Dictionary<string, (float[] data, int[] shape)> encOutputs;
+        cancellationToken.ThrowIfCancellationRequested();
         using (var res = _encSession!.Run(encInputs))
         {
             encOutputs = ExtractAllDataOutputs(res);
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         float[] rawErbGainsAll;
         int[] erbGainsShape;
         var erbDecInputs = BuildInputsFromDict(_erbDecSession!, emptyHidden, encOutputs);
+        cancellationToken.ThrowIfCancellationRequested();
         using (var res = _erbDecSession!.Run(erbDecInputs))
         {
             (rawErbGainsAll, erbGainsShape) = GetFirstDataOutput(res);
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         float[] rawDfCoeffsAll;
         int[] dfCoeffsShape;
         var dfDecInputs = BuildInputsFromDict(_dfDecSession!, emptyHidden, encOutputs);
+        cancellationToken.ThrowIfCancellationRequested();
         using (var res = _dfDecSession!.Run(dfDecInputs))
         {
             var dfOutputs = ExtractAllDataOutputs(res);
@@ -176,6 +182,8 @@ internal sealed class RemoveNoiseEngine : IDisposable
             rawDfCoeffsAll = coefsOut.data;
             dfCoeffsShape = coefsOut.shape;
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         int dfOrder = rawDfCoeffsAll.Length / (NbDf * 2 * totalFrames);
         if (dfOrder != 5)
@@ -297,6 +305,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
                 return;
 
             progress.Report((2, "Loading AI models..."));
+            cancellationToken.ThrowIfCancellationRequested();
             var options = new SessionOptions
             {
                 GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
@@ -304,7 +313,9 @@ internal sealed class RemoveNoiseEngine : IDisposable
             };
 
             _encSession = new InferenceSession(DeepFilterNetModelLocator.EncPath, options);
+            cancellationToken.ThrowIfCancellationRequested();
             _erbDecSession = new InferenceSession(DeepFilterNetModelLocator.ErbDecPath, options);
+            cancellationToken.ThrowIfCancellationRequested();
             _dfDecSession = new InferenceSession(DeepFilterNetModelLocator.DfDecPath, options);
             _ready = true;
         }
@@ -602,9 +613,17 @@ internal sealed class RemoveNoiseEngine : IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         _encSession?.Dispose();
         _erbDecSession?.Dispose();
         _dfDecSession?.Dispose();
+        _encSession = null;
+        _erbDecSession = null;
+        _dfDecSession = null;
         _initGate.Dispose();
     }
 

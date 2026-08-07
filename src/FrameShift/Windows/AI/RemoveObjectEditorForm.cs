@@ -51,8 +51,13 @@ public sealed class RemoveObjectEditorForm : Form
     // Inference
     private ObjectRemovalEngine? _engine;
     private string? _engineModelId;
-    private CancellationTokenSource? _inferCts;
+    private readonly OnnxFormLifetime _lifetime = new();
+    private Task? _closingTask;
     private bool _inferRunning;
+    private bool _closingRequested;
+    private bool _allowClose;
+    private bool _resourcesCleaned;
+    private DialogResult? _requestedDialogResult;
 
     // UI controls
     private Panel _canvasPanel = null!;
@@ -175,6 +180,7 @@ public sealed class RemoveObjectEditorForm : Form
         Load += OnLoad;
         Shown += (_, _) => FitToWindow();
         FormClosing += OnFormClosing;
+        FormClosed += (_, _) => _lifetime.Dispose();
     }
 
     private Panel BuildToolsRail()
@@ -422,7 +428,7 @@ public sealed class RemoveObjectEditorForm : Form
             Font = new Font("Segoe UI", 9F, FontStyle.Bold)
         };
         _btnApply.FlatAppearance.BorderSize = 0;
-        _btnApply.Click += (_, _) => _ = RunInferenceAsync();
+        _btnApply.Click += async (_, _) => await StartInferenceAsync().ConfigureAwait(true);
 
         footer.Resize += (_, _) => LayoutFooter(footer);
         Shown += (_, _) => LayoutFooter(footer);
@@ -461,10 +467,21 @@ public sealed class RemoveObjectEditorForm : Form
 
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
-        _inferCts?.Cancel();
-        _engine?.Dispose();
-        _imageBitmap?.Dispose();
-        _maskOverlay?.Dispose();
+        if (_allowClose)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        if (_closingTask is not null)
+        {
+            return;
+        }
+
+        _closingRequested = true;
+        _requestedDialogResult ??= DialogResult.Cancel;
+        SetClosingUiState();
+        _closingTask = CompleteCloseAsync();
     }
 
     // ─── Canvas painting ───────────────────────────────────────────────────────
@@ -758,16 +775,41 @@ public sealed class RemoveObjectEditorForm : Form
 
     private void CancelOrClose()
     {
-        _inferCts?.Cancel();
-        DialogResult = DialogResult.Cancel;
+        RequestClose(DialogResult.Cancel);
+    }
+
+    private void RequestClose(DialogResult requestedDialogResult)
+    {
+        _requestedDialogResult = requestedDialogResult;
         Close();
     }
 
     // ─── Inference ─────────────────────────────────────────────────────────────
 
-    private async Task RunInferenceAsync()
+    private bool CanUpdateUi => !_closingRequested && !IsDisposed && !Disposing;
+
+    private async Task StartInferenceAsync()
     {
-        if (_maskData is null || _imageBitmap is null) return;
+        if (_closingRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await _lifetime.RunAsync(RunInferenceCoreAsync).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsClosing || _lifetime.Token.IsCancellationRequested)
+        {
+        }
+    }
+
+    private async Task RunInferenceCoreAsync(CancellationToken cancellationToken)
+    {
+        if (_maskData is null || _imageBitmap is null || _closingRequested)
+        {
+            return;
+        }
 
         if (!HasAnyMask())
         {
@@ -784,13 +826,13 @@ public sealed class RemoveObjectEditorForm : Form
         if (!ModelLocator.ModelExists(def))
         {
             var ready = await DownloadModelAsync(def);
-            if (!ready) return;
+            if (!ready || cancellationToken.IsCancellationRequested || _closingRequested)
+            {
+                return;
+            }
         }
 
         SetInferenceUiState(running: true);
-        _inferCts?.Dispose();
-        _inferCts = new CancellationTokenSource();
-        var ct = _inferCts.Token;
 
         if (_engine == null || _engineModelId != def.Id)
         {
@@ -800,48 +842,92 @@ public sealed class RemoveObjectEditorForm : Form
         }
 
         var maskSnapshot = (bool[,])_maskData.Clone();
-        string? outputPath = null;
 
         try
         {
             var progress = new Progress<InpaintProgress>(p =>
             {
-                if (IsDisposed || !IsHandleCreated) return;
-                try
+                if (CanUpdateUi)
                 {
-                    Invoke(() =>
-                    {
-                        _progressBar.Value = Math.Clamp(p.Percent, 0, 100);
-                        _progressLabel.Text = p.Status;
-                    });
+                    _progressBar.Value = Math.Clamp(p.Percent, 0, 100);
+                    _progressLabel.Text = p.Status;
                 }
-                catch (ObjectDisposedException) { }
             });
 
-            outputPath = await _engine.InpaintAsync(_inputPath, maskSnapshot, progress, ct);
+            await _engine.InpaintAsync(_inputPath, maskSnapshot, progress, cancellationToken).ConfigureAwait(true);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            if (!IsDisposed)
-                Invoke(() => Close());
+            if (CanUpdateUi)
+            {
+                RequestClose(DialogResult.OK);
+            }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
             _logger.Log("RemoveObjectEditorForm: inference canceled.");
-            if (!IsDisposed)
-                Invoke(() => SetInferenceUiState(running: false));
         }
         catch (Exception ex)
         {
             _logger.Log($"RemoveObjectEditorForm: inference failed. {ex}");
-            if (!IsDisposed)
+            if (CanUpdateUi)
             {
-                Invoke(() =>
-                {
-                    SetInferenceUiState(running: false);
-                    MessageBox.Show($"Inference failed: {ex.Message}", "FrameShift",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                });
+                MessageBox.Show($"Inference failed: {ex.Message}", "FrameShift",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        finally
+        {
+            if (CanUpdateUi)
+            {
+                SetInferenceUiState(running: false);
+            }
+        }
+    }
+
+    private async Task CompleteCloseAsync()
+    {
+        await _lifetime.BeginClosingAsync(
+            CleanupResourcesAsync,
+            ex => _logger.Log($"RemoveObjectEditorForm: close cleanup failed. {ex}")).ConfigureAwait(true);
+
+        if (IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return;
+        }
+
+        _allowClose = true;
+        DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
+        Close();
+    }
+
+    private Task CleanupResourcesAsync()
+    {
+        if (_resourcesCleaned)
+        {
+            return Task.CompletedTask;
+        }
+
+        _resourcesCleaned = true;
+        _engine?.Dispose();
+        _engine = null;
+        _imageBitmap?.Dispose();
+        _imageBitmap = null;
+        _maskOverlay?.Dispose();
+        _maskOverlay = null;
+        return Task.CompletedTask;
+    }
+
+    private void SetClosingUiState()
+    {
+        SetInferenceUiState(running: true);
+        _btnCancel.Enabled = false;
+        _btnBrush.Enabled = false;
+        _btnEraser.Enabled = false;
+        _btnFit.Enabled = false;
+        _brushSizeSlider.Enabled = false;
+        _brushSizeNum.Enabled = false;
+        _canvasPanel.Enabled = false;
+        _progressLabel.Text = "Closing: waiting for AI processing...";
     }
 
     private Task<bool> DownloadModelAsync(ObjectRemovalModelDefinition def)

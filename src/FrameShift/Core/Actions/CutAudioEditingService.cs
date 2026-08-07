@@ -319,6 +319,11 @@ public sealed class CutAudioEditingService
 
         if (result.Canceled)
         {
+            if (!result.ProcessTerminationConfirmed)
+            {
+                throw new TimeoutException("FFmpeg did not confirm process termination after Cut Audio cancellation.");
+            }
+
             ConversionActionHelper.DeleteIfExists(outputPath);
             throw new OperationCanceledException(cancellationToken);
         }

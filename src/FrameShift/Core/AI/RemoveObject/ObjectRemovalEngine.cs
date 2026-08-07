@@ -26,6 +26,7 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
     private string _providerName = "None";
     private readonly SemaphoreSlim _initGate = new(1, 1);
     private bool _sessionReady;
+    private int _disposed;
 
     public string Provider => _providerName;
 
@@ -232,7 +233,13 @@ private static float[,] ScaleMask(bool[,] mask, int srcW, int srcH, int dstW, in
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         _session?.Dispose();
+        _session = null;
         _initGate.Dispose();
     }
 }

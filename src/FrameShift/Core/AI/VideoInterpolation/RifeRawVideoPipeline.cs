@@ -85,39 +85,41 @@ internal sealed class RifeRawVideoPipeline
         var decodeArguments = BuildDecodeArguments(sourceVideoPath);
         var encodeArguments = BuildEncodeArguments(sourceVideoPath, outputPath, targetFpsText, width, height, hasAudio, settings, sampleRate, videoCodec, videoArgs);
 
-        using var decoder = new Process { StartInfo = _ffmpegRunner.CreateStartInfo(ffmpegPath, decodeArguments) };
-        using var encoder = new Process { StartInfo = _ffmpegRunner.CreateStartInfo(ffmpegPath, encodeArguments) };
-        encoder.StartInfo.RedirectStandardInput = true;
-
-        var decoderError = new StringBuilder();
-        var encoderError = new StringBuilder();
         var totalStopwatch = Stopwatch.StartNew();
 
-        decoder.Start();
-        encoder.Start();
-        _logger.Log($"RifeRawVideoPipeline: decoder started pid={decoder.Id}");
-        _logger.Log($"RifeRawVideoPipeline: encoder started pid={encoder.Id}");
-
-        using var cancellationRegistration = cancellationToken.Register(() =>
-        {
-            TryKill(decoder, "rawvideo-cancel-decoder");
-            TryKill(encoder, "rawvideo-cancel-encoder");
-        });
-
-        using var stderrCancellationSource = new CancellationTokenSource();
-        var decoderErrorTask = ReadErrorAsync(decoder.StandardError, decoderError, stderrCancellationSource.Token);
-        var encoderErrorTask = ReadErrorAsync(encoder.StandardError, encoderError, stderrCancellationSource.Token);
-
-        var firstFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
-        var currentFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
-        var middleFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
+        FfmpegRunner.RawVideoProcess? decoder = null;
+        FfmpegRunner.RawVideoProcess? encoder = null;
+        byte[]? firstFrame = null;
+        byte[]? currentFrame = null;
+        byte[]? middleFrame = null;
+        var completed = false;
 
         try
         {
+            _logger.Log("RifeRawVideoPipeline: starting protected rawvideo decoder and encoder scopes.");
+            decoder = _ffmpegRunner.StartRawVideoProcess(
+                ffmpegPath,
+                decodeArguments,
+                redirectStandardInput: false,
+                drainStandardOutput: false,
+                role: "rife-decoder",
+                cancellationToken: cancellationToken);
+            encoder = _ffmpegRunner.StartRawVideoProcess(
+                ffmpegPath,
+                encodeArguments,
+                redirectStandardInput: true,
+                drainStandardOutput: true,
+                role: "rife-encoder",
+                cancellationToken: cancellationToken);
+
+            firstFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
+            currentFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
+            middleFrame = ArrayPool<byte>.Shared.Rent(frameBytes);
+
             using var engine = new RifeFrameInterpolationEngine(modelPath, metrics);
 
             var decodeFirstFrameStopwatch = Stopwatch.StartNew();
-            if (!await TryReadFrameAsync(decoder.StandardOutput.BaseStream, firstFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false))
+            if (!await TryReadFrameAsync(decoder.StandardOutput, firstFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false))
             {
                 throw new InvalidOperationException("Rawvideo decoder did not produce any frame.");
             }
@@ -128,7 +130,7 @@ internal sealed class RifeRawVideoPipeline
             var outputFrameCount = 0;
 
             var writeFirstFrameStopwatch = Stopwatch.StartNew();
-            await encoder.StandardInput.BaseStream.WriteAsync(firstFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
+            await encoder.StandardInput.WriteAsync(firstFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
             writeFirstFrameStopwatch.Stop();
             metrics.AddWriteFrame(writeFirstFrameStopwatch.Elapsed);
             outputFrameCount++;
@@ -139,7 +141,7 @@ internal sealed class RifeRawVideoPipeline
 
                 bool hasFrame;
                 var readFrameStopwatch = Stopwatch.StartNew();
-                hasFrame = await TryReadFrameAsync(decoder.StandardOutput.BaseStream, currentFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
+                hasFrame = await TryReadFrameAsync(decoder.StandardOutput, currentFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
                 readFrameStopwatch.Stop();
                 metrics.AddReadFrame(readFrameStopwatch.Elapsed);
 
@@ -158,8 +160,8 @@ internal sealed class RifeRawVideoPipeline
                     cancellationToken);
 
                 var writeFrameStopwatch = Stopwatch.StartNew();
-                await encoder.StandardInput.BaseStream.WriteAsync(middleFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
-                await encoder.StandardInput.BaseStream.WriteAsync(currentFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
+                await encoder.StandardInput.WriteAsync(middleFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
+                await encoder.StandardInput.WriteAsync(currentFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false);
                 writeFrameStopwatch.Stop();
                 metrics.AddWriteFrame(writeFrameStopwatch.Elapsed);
                 outputFrameCount += 2;
@@ -170,26 +172,21 @@ internal sealed class RifeRawVideoPipeline
             }
 
             var reconstructionStopwatch = Stopwatch.StartNew();
-            await encoder.StandardInput.FlushAsync(cancellationToken).ConfigureAwait(false);
-            encoder.StandardInput.Close();
+            await encoder.CompleteStandardInputAsync(cancellationToken).ConfigureAwait(false);
             await encoder.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             reconstructionStopwatch.Stop();
             metrics.AddReconstruction(reconstructionStopwatch.Elapsed);
 
             await decoder.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
-            stderrCancellationSource.Cancel();
-            await SuppressCancellationAsync(decoderErrorTask).ConfigureAwait(false);
-            await SuppressCancellationAsync(encoderErrorTask).ConfigureAwait(false);
-
             if (decoder.ExitCode != 0)
             {
-                throw new InvalidOperationException($"Rawvideo decoder failed: {decoderError}");
+                throw new InvalidOperationException($"Rawvideo decoder failed: {decoder.StandardError}");
             }
 
             if (encoder.ExitCode != 0 || !File.Exists(outputPath))
             {
-                throw new InvalidOperationException($"Rawvideo encoder failed: {encoderError}");
+                throw new InvalidOperationException($"Rawvideo encoder failed: {encoder.StandardError}");
             }
 
             totalStopwatch.Stop();
@@ -216,6 +213,7 @@ internal sealed class RifeRawVideoPipeline
                 sourceDuration,
                 outputDuration);
 
+            completed = true;
             return new RifeRawVideoPipelineResult(
                 engine.Provider,
                 sourceFrameCount,
@@ -228,18 +226,54 @@ internal sealed class RifeRawVideoPipeline
         }
         finally
         {
-            ArrayPool<byte>.Shared.Return(firstFrame);
-            ArrayPool<byte>.Shared.Return(currentFrame);
-            ArrayPool<byte>.Shared.Return(middleFrame);
-
-            if (!decoder.HasExited)
+            if (encoder is not null)
             {
-                TryKill(decoder, "rawvideo-finally-decoder");
+                encoder.RequestStop("rife-finally-encoder");
             }
 
-            if (!encoder.HasExited)
+            if (decoder is not null)
             {
-                TryKill(encoder, "rawvideo-finally-encoder");
+                decoder.RequestStop("rife-finally-decoder");
+            }
+
+            try
+            {
+                if (encoder is not null)
+                {
+                    await encoder.DisposeAsync().ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (decoder is not null)
+                    {
+                        await decoder.DisposeAsync().ConfigureAwait(false);
+                    }
+                }
+                finally
+                {
+                    if (firstFrame is not null)
+                    {
+                        ArrayPool<byte>.Shared.Return(firstFrame);
+                    }
+
+                    if (currentFrame is not null)
+                    {
+                        ArrayPool<byte>.Shared.Return(currentFrame);
+                    }
+
+                    if (middleFrame is not null)
+                    {
+                        ArrayPool<byte>.Shared.Return(middleFrame);
+                    }
+
+                    if (!completed)
+                    {
+                        ConversionActionHelper.DeleteIfExists(outputPath);
+                    }
+                }
             }
         }
     }
@@ -364,68 +398,6 @@ internal sealed class RifeRawVideoPipeline
         }
 
         return true;
-    }
-
-    private async Task ReadErrorAsync(StreamReader reader, StringBuilder errorBuilder, CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (true)
-            {
-                var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                if (line is null)
-                {
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    continue;
-                }
-
-                errorBuilder.AppendLine(line);
-                _logger.Log(line);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    private static async Task SuppressCancellationAsync(Task task)
-    {
-        try
-        {
-            await task.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    private void TryKill(Process process, string reason)
-    {
-        try
-        {
-            _logger.Log($"RifeRawVideoPipeline: killing process pid={process.Id}, reason={reason}");
-            process.Kill(entireProcessTree: true);
-        }
-        catch (Exception ex)
-        {
-            _logger.Log($"RifeRawVideoPipeline: kill failed pid={TryGetProcessId(process)}, reason={reason}, error={ex.Message}");
-        }
-    }
-
-    private static int TryGetProcessId(Process process)
-    {
-        try
-        {
-            return process.Id;
-        }
-        catch
-        {
-            return -1;
-        }
     }
 
     private static string BuildReport(

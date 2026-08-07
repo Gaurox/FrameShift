@@ -146,21 +146,17 @@ Dans les deux pipelines raw, le décodeur est démarré avant l'encodeur, avant 
 
 **Correction ciblée.** Ajouter au runner un chemin de capture et un primitive « paire de processus/pipes » qui garantissent enregistrement avant attente, kill de l'arbre, attente bornée et drainage. La nature duplex rawvideo justifie une API spéciale ; elle ne justifie pas quatre implémentations de cycle de vie.
 
-#### H-06 — Cut Audio ferme et supprime son espace de travail pendant des opérations non annulables
+**État H-05a — corrigé dans 1.18.1.** `FfmpegRunner.RunCaptureAsync` et `FfprobeRunner.RunProbeAsync` refusent désormais un token déjà annulé, enregistrent l'annulation juste après `Start`, tuent l'arbre, confirment la sortie avec une seconde attente bornée après un second kill, puis drainent stdout/stderr sans réutiliser le token utilisateur. Le helper FFmpeg nominal applique aussi cette seconde attente.
 
-**Preuves.** Preview, suppression et silence passent `CancellationToken.None` (`src/FrameShift/Windows/Forms/CutAudioForm.cs:344-506`). Le bouton Cancel n'est pas désactivé par `SetBusyState` (`851-863`). `FormClosing` supprime immédiatement le répertoire temporaire (`267-274`, `837-848`). L'initialisation appelle aussi deux opérations FFmpeg de façon synchrone dans le constructeur (`293-308`).
+**État H-05b — corrigé dans 1.18.1.** Les pipelines RIFE et Upscale rawvideo démarrent chaque FFmpeg via un handle interne de `FfmpegRunner`, qui inscrit immédiatement l'annulation, draine stderr (et stdout inutilisé), ferme stdin, tue l'arbre, attend l'arrêt de façon bornée et draine les flux avant le cleanup. Le démarrage partiel du second processus, les sorties prématurées et les annulations ne peuvent plus court-circuiter le `finally` qui arrête les deux processus avant de rendre les buffers ou supprimer la sortie partielle.
 
-**Impact.** FFmpeg peut continuer sur des entrées/sorties supprimées, une continuation peut revenir sur un formulaire disposé et un enfant peut survivre à la fermeture. Sur un média long, la fenêtre peut aussi ne pas apparaître pendant l'initialisation.
+#### H-06 — Cycle de vie de Cut Audio pendant les opérations FFmpeg/FFprobe — Corrigé
 
-**Correction ciblée.** CTS de formulaire partagé, annulation sur fermeture, fermeture différée jusqu'à terminaison, puis cleanup. Déplacer l'initialisation lourde dans `Shown` avec état de chargement.
+`CutAudioForm` dispose désormais d'un CTS de durée de vie et mémorise l'opération active. La fermeture bloque tout nouveau travail, arrête la preview, annule puis attend l'opération, avant un cleanup idempotent. Preview, suppression, silence, waveform et probe utilisent le token du formulaire ; l'initialisation est asynchrone après `Shown`. Les continuations n'actualisent plus une fenêtre en fermeture. Si FFmpeg/FFprobe ne confirme pas sa terminaison, le workspace est conservé et le cas est journalisé. Couverture ciblée : `CutAudioFormLifetimeTests`.
 
-#### H-07 — Des sessions ONNX peuvent être disposées pendant une inférence native
+#### H-07 — Cycle de vie ONNX des éditeurs et pickers IA — Corrigé
 
-**Preuves.** `RemoveObjectEditorForm.OnFormClosing` appelle `Cancel()` puis `_engine.Dispose()` immédiatement (`src/FrameShift/Windows/AI/RemoveObjectEditorForm.cs:458-464`), alors que `RunInferenceAsync` continue (`764-821`) et que `_session.Run(inputs)` n'est pas interruptible au milieu de l'appel natif (`ObjectRemovalEngine.cs:128-145`). Le même ordre apparaît dans `RemoveNoiseAudioPickerForm.Dispose` (`164-175`) pendant que la preview utilise encore `_previewEngine` (`229-240`), ainsi que dans la variante vidéo.
-
-**Impact.** Course entre `InferenceSession.Dispose` et code natif : exception, état incohérent, voire instabilité du processus. Le token protège les étapes entre appels, pas l'appel ONNX déjà engagé.
-
-**Correction ciblée.** Mémoriser la tâche active, demander l'annulation, empêcher de nouveaux travaux, attendre sa fin hors thread UI ou différer la destruction du moteur. Ne disposer la session qu'une fois l'appel natif revenu.
+`RemoveObjectEditorForm` et les deux pickers Remove Noise mémorisent désormais leur opération active via un coordinateur local. Toute fermeture bloque les nouvelles actions, demande l'annulation puis attend la tâche avant de disposer moteur/session, lecteur, CTS et temporaires. OK, Cancel, X et Escape conservent le `DialogResult` demandé. Les moteurs ONNX ont un `Dispose` idempotent ; Remove Noise vérifie désormais l'annulation entre chaque appel ONNX successif sans utiliser `InferenceSession.Dispose()` comme interruption. Couverture ciblée : `OnnxFormLifetimeTests`.
 
 #### H-08 — Les chemins IA longs ont des consommations RAM/disque non bornées
 

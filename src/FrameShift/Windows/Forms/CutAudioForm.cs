@@ -4,6 +4,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Media;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
 using FrameShift.Core.FFmpeg;
@@ -22,6 +23,7 @@ public sealed class CutAudioForm : Form
     private readonly string _ffprobePath;
     private readonly FfprobeRunner _ffprobeRunner;
     private readonly CutAudioEditingService _editingService;
+    private readonly CutAudioFormLifetime _lifetime = new();
     private readonly Panel _wavePanel;
     private readonly TextBox _textStart;
     private readonly TextBox _textEnd;
@@ -46,7 +48,15 @@ public sealed class CutAudioForm : Form
     private int _removeCount;
     private double _totalRemovedSeconds;
     private bool _busy;
+    private bool _workspaceReady;
+    private bool _initializationStarted;
+    private bool _closingRequested;
+    private bool _allowClose;
+    private bool _temporaryRootCleanupCompleted;
+    private bool _temporaryRootCleanupBlocked;
     private bool _preserveWorkingFilesForExecution;
+    private Task? _closingTask;
+    private DialogResult? _requestedDialogResult;
     private SoundPlayer? _previewPlayer;
     private string? _previewPath;
 
@@ -172,16 +182,16 @@ public sealed class CutAudioForm : Form
         };
 
         _buttonPlay = CreateActionButton("Play selection", primary: false, StandardToolButtonWidth);
-        _buttonPlay.Click += async (_, _) => await PlaySelectionAsync().ConfigureAwait(true);
+        _buttonPlay.Click += async (_, _) => await StartOperationAsync(PlaySelectionAsync).ConfigureAwait(true);
 
         _buttonStop = CreateActionButton("Stop", primary: false, 92);
         _buttonStop.Click += (_, _) => StopPreviewPlayer();
 
         _buttonRemove = CreateActionButton("Remove selection", primary: false, StandardWideToolButtonWidth);
-        _buttonRemove.Click += async (_, _) => await RemoveSelectionAsync().ConfigureAwait(true);
+        _buttonRemove.Click += async (_, _) => await StartOperationAsync(RemoveSelectionAsync).ConfigureAwait(true);
 
         _buttonSilence = CreateActionButton("Silence selection", primary: false, StandardWideToolButtonWidth);
-        _buttonSilence.Click += async (_, _) => await SilenceSelectionAsync().ConfigureAwait(true);
+        _buttonSilence.Click += async (_, _) => await StartOperationAsync(SilenceSelectionAsync).ConfigureAwait(true);
 
         toolsPanel.Controls.AddRange([_buttonPlay, _buttonStop, _buttonRemove, _buttonSilence]);
         toolsPanel.Resize += (_, _) => LayoutToolButtons(toolsPanel, _buttonPlay, _buttonStop, _buttonRemove, _buttonSilence);
@@ -234,11 +244,7 @@ public sealed class CutAudioForm : Form
         _buttonCut.Click += (_, _) => ConfirmCut();
 
         _buttonCancel = CreateActionButton("Cancel", primary: false, FrameShiftUiMetrics.SecondaryButtonWidth);
-        _buttonCancel.Click += (_, _) =>
-        {
-            DialogResult = DialogResult.Cancel;
-            Close();
-        };
+        _buttonCancel.Click += (_, _) => RequestClose(DialogResult.Cancel);
 
         var footerPanel = new Panel
         {
@@ -264,23 +270,18 @@ public sealed class CutAudioForm : Form
         AcceptButton = _buttonCut;
         CancelButton = _buttonCancel;
 
-        FormClosing += (_, _) =>
-        {
-            StopPreviewPlayer();
-            if (!_preserveWorkingFilesForExecution)
-            {
-                CleanupTemporaryRoot();
-            }
-        };
+        FormClosing += CutAudioFormOnFormClosing;
+        FormClosed += (_, _) => _lifetime.Dispose();
 
-        Shown += (_, _) =>
+        Shown += async (_, _) =>
         {
             LayoutToolButtons(toolsPanel, _buttonPlay, _buttonStop, _buttonRemove, _buttonSilence);
             UpdateFooterButtonLayout(footerPanel, _buttonCancel, _buttonCut);
-            RefreshWaveformForCurrentWidth();
+            _initializationStarted = true;
+            await StartOperationAsync(InitializeWorkspaceAsync).ConfigureAwait(true);
         };
 
-        InitializeWorkspace();
+        SetBusyState(true, "Preparing audio workspace...");
         ResumeLayout(true);
     }
 
@@ -290,98 +291,223 @@ public sealed class CutAudioForm : Form
 
     public string? TemporaryRootPath => _preserveWorkingFilesForExecution ? _temporaryRootPath : null;
 
-    private void InitializeWorkspace()
+    internal bool IsWorkspaceReadyForTesting => _workspaceReady;
+
+    internal bool IsInitializationStartedForTesting => _initializationStarted;
+
+    internal string TemporaryRootPathForTesting => _temporaryRootPath;
+
+    private bool CanUpdateUi => !_closingRequested && !IsDisposed && !Disposing;
+
+    private async Task StartOperationAsync(Func<CancellationToken, Task> operation)
     {
         try
         {
-            _workingFilePath = _editingService.CreateEditableWorkingCopyAsync(
+            await _lifetime.RunAsync(operation).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsClosing || _lifetime.Token.IsCancellationRequested)
+        {
+        }
+    }
+
+    private void RequestClose(DialogResult requestedDialogResult)
+    {
+        _requestedDialogResult = requestedDialogResult;
+        Close();
+    }
+
+    private void CutAudioFormOnFormClosing(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        if (_closingTask is not null)
+        {
+            return;
+        }
+
+        _closingRequested = true;
+        SetBusyState(true, "Closing: stopping audio processing...");
+        StopPreviewPlayer();
+        _closingTask = CompleteCloseAsync();
+    }
+
+    private async Task CompleteCloseAsync()
+    {
+        await _lifetime.BeginClosingAsync(
+            CleanupTemporaryRootAfterWorkAsync,
+            ex => Core.Logging.AppLogger.LogStatic($"CutAudioForm: close cleanup failed. {ex}")).ConfigureAwait(true);
+
+        if (IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return;
+        }
+
+        _allowClose = true;
+        if (_requestedDialogResult is not null)
+        {
+            DialogResult = _requestedDialogResult.Value;
+        }
+
+        Close();
+    }
+
+    private Task CleanupTemporaryRootAfterWorkAsync()
+    {
+        if (_preserveWorkingFilesForExecution || _temporaryRootCleanupCompleted || _temporaryRootCleanupBlocked)
+        {
+            return Task.CompletedTask;
+        }
+
+        _temporaryRootCleanupCompleted = true;
+        try
+        {
+            if (Directory.Exists(_temporaryRootPath))
+            {
+                Directory.Delete(_temporaryRootPath, recursive: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            Core.Logging.AppLogger.LogStatic($"CutAudioForm: temporary root cleanup deferred because processing may not have stopped cleanly. path={_temporaryRootPath}, error={ex}");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void PreserveTemporaryRootBecauseTerminationWasNotConfirmed(Exception exception)
+    {
+        _temporaryRootCleanupBlocked = true;
+        Core.Logging.AppLogger.LogStatic(
+            $"CutAudioForm: temporary root retained because FFmpeg or FFprobe termination was not confirmed. path={_temporaryRootPath}, error={exception}");
+    }
+
+    private async Task InitializeWorkspaceAsync(CancellationToken cancellationToken)
+    {
+        string? workingFilePath = null;
+        try
+        {
+            SetBusyState(true, "Preparing editable audio workspace...");
+            workingFilePath = await _editingService.CreateEditableWorkingCopyAsync(
                 _ffmpegPath,
                 _inputPath,
                 _temporaryRootPath,
-                CancellationToken.None).GetAwaiter().GetResult();
+                cancellationToken).ConfigureAwait(true);
 
-            _waveformPoints = _editingService.GenerateWaveformPointsAsync(
+            var waveformPoints = await _editingService.GenerateWaveformPointsAsync(
                 _ffmpegPath,
-                _workingFilePath,
+                workingFilePath,
                 _temporaryRootPath,
-                Math.Max(1, _wavePanel.Width),
-                CancellationToken.None).GetAwaiter().GetResult();
+                Math.Max(1, _wavePanel.ClientSize.Width),
+                cancellationToken).ConfigureAwait(true);
 
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!CanUpdateUi)
+            {
+                return;
+            }
+
+            _workingFilePath = workingFilePath;
+            _waveformPoints = waveformPoints;
             SetSelectionToFullRange();
+            _workspaceReady = true;
             RefreshSelectionUi(true);
             _statusLabel.Text = "Waveform ready. Select the area to keep, preview, remove, or silence.";
         }
-        catch
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
-            CleanupTemporaryRoot();
-            throw;
+        }
+        catch (TimeoutException ex) when (_closingRequested)
+        {
+            PreserveTemporaryRootBecauseTerminationWasNotConfirmed(ex);
+        }
+        catch (Exception ex)
+        {
+            if (CanUpdateUi)
+            {
+                _statusLabel.Text = "Audio preparation failed. You can close this window.";
+                ShowActionError(ex.Message);
+            }
+        }
+        finally
+        {
+            if (CanUpdateUi)
+            {
+                SetBusyState(false, _workspaceReady
+                    ? "Waveform ready. Select the area to keep, preview, remove, or silence."
+                    : "Audio preparation failed. You can close this window.");
+            }
         }
     }
 
-    private void RefreshWaveformForCurrentWidth()
+    private async Task PlaySelectionAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_workingFilePath) || !File.Exists(_workingFilePath))
+        if (_busy || !_workspaceReady || _closingRequested)
         {
             return;
         }
 
-        var targetWidth = Math.Max(1, _wavePanel.ClientSize.Width);
-        if (_waveformPoints.Length == targetWidth)
-        {
-            return;
-        }
-
-        _waveformPoints = _editingService.GenerateWaveformPointsAsync(
-            _ffmpegPath,
-            _workingFilePath,
-            _temporaryRootPath,
-            targetWidth,
-            CancellationToken.None).GetAwaiter().GetResult();
-
-        _wavePanel.Invalidate();
-    }
-
-    private async System.Threading.Tasks.Task PlaySelectionAsync()
-    {
-        if (_busy)
-        {
-            return;
-        }
-
+        string? previewPath = null;
         try
         {
-            SetBusyState(true, "Preparing preview...");
             ApplyBoundaryFromText("start");
             ApplyBoundaryFromText("end");
+            SetBusyState(true, "Preparing preview...");
 
-            var previewPath = await _editingService.CreatePreviewAsync(
+            previewPath = await _editingService.CreatePreviewAsync(
                 _ffmpegPath,
                 _workingFilePath,
                 _temporaryRootPath,
                 _startSeconds,
                 _endSeconds,
-                CancellationToken.None).ConfigureAwait(true);
+                cancellationToken).ConfigureAwait(true);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!CanUpdateUi)
+            {
+                ConversionActionHelper.DeleteIfExists(previewPath);
+                return;
+            }
 
             StopPreviewPlayer();
             _previewPath = previewPath;
-            _previewPlayer = new SoundPlayer(previewPath);
-            _previewPlayer.Load();
+            previewPath = null;
+            _previewPlayer = new SoundPlayer(_previewPath);
+            _previewPlayer.LoadAsync();
             _previewPlayer.Play();
             _statusLabel.Text = "Playing selection preview...";
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
+        {
+            ConversionActionHelper.DeleteIfExists(previewPath ?? string.Empty);
+        }
+        catch (TimeoutException ex) when (_closingRequested)
+        {
+            PreserveTemporaryRootBecauseTerminationWasNotConfirmed(ex);
+        }
         catch (Exception ex)
         {
-            ShowActionError(ex.Message);
+            ConversionActionHelper.DeleteIfExists(previewPath ?? string.Empty);
+            if (CanUpdateUi)
+            {
+                ShowActionError(ex.Message);
+            }
         }
         finally
         {
-            SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            if (CanUpdateUi)
+            {
+                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            }
         }
     }
 
-    private async System.Threading.Tasks.Task RemoveSelectionAsync()
+    private async Task RemoveSelectionAsync(CancellationToken cancellationToken)
     {
-        if (_busy)
+        if (_busy || !_workspaceReady || _closingRequested)
         {
             return;
         }
@@ -414,15 +540,22 @@ public sealed class CutAudioForm : Form
                 _startSeconds,
                 _endSeconds,
                 _currentDurationSeconds,
-                CancellationToken.None).ConfigureAwait(true);
+                cancellationToken).ConfigureAwait(true);
 
-            var newDuration = ProbeDurationSeconds(newWorkingFile);
+            var newDuration = await ProbeDurationSecondsAsync(newWorkingFile, cancellationToken).ConfigureAwait(true);
             var newWaveform = await _editingService.GenerateWaveformPointsAsync(
                 _ffmpegPath,
                 newWorkingFile,
                 _temporaryRootPath,
-                Math.Max(1, _wavePanel.Width),
-                CancellationToken.None).ConfigureAwait(true);
+                Math.Max(1, _wavePanel.ClientSize.Width),
+                cancellationToken).ConfigureAwait(true);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!CanUpdateUi)
+            {
+                ConversionActionHelper.DeleteIfExists(newWorkingFile);
+                return;
+            }
 
             _workingFilePath = newWorkingFile;
             newWorkingFile = null;
@@ -436,20 +569,34 @@ public sealed class CutAudioForm : Form
             RefreshSelectionUi(true);
             _statusLabel.Text = "Selection removed.";
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
+        {
+            ConversionActionHelper.DeleteIfExists(newWorkingFile ?? string.Empty);
+        }
+        catch (TimeoutException ex) when (_closingRequested)
+        {
+            PreserveTemporaryRootBecauseTerminationWasNotConfirmed(ex);
+        }
         catch (Exception ex)
         {
             ConversionActionHelper.DeleteIfExists(newWorkingFile ?? string.Empty);
-            ShowActionError(ex.Message);
+            if (CanUpdateUi)
+            {
+                ShowActionError(ex.Message);
+            }
         }
         finally
         {
-            SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            if (CanUpdateUi)
+            {
+                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            }
         }
     }
 
-    private async System.Threading.Tasks.Task SilenceSelectionAsync()
+    private async Task SilenceSelectionAsync(CancellationToken cancellationToken)
     {
-        if (_busy)
+        if (_busy || !_workspaceReady || _closingRequested)
         {
             return;
         }
@@ -477,15 +624,22 @@ public sealed class CutAudioForm : Form
                 _startSeconds,
                 _endSeconds,
                 _currentDurationSeconds,
-                CancellationToken.None).ConfigureAwait(true);
+                cancellationToken).ConfigureAwait(true);
 
-            var newDuration = ProbeDurationSeconds(newWorkingFile);
+            var newDuration = await ProbeDurationSecondsAsync(newWorkingFile, cancellationToken).ConfigureAwait(true);
             var newWaveform = await _editingService.GenerateWaveformPointsAsync(
                 _ffmpegPath,
                 newWorkingFile,
                 _temporaryRootPath,
-                Math.Max(1, _wavePanel.Width),
-                CancellationToken.None).ConfigureAwait(true);
+                Math.Max(1, _wavePanel.ClientSize.Width),
+                cancellationToken).ConfigureAwait(true);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!CanUpdateUi)
+            {
+                ConversionActionHelper.DeleteIfExists(newWorkingFile);
+                return;
+            }
 
             _workingFilePath = newWorkingFile;
             newWorkingFile = null;
@@ -496,19 +650,38 @@ public sealed class CutAudioForm : Form
             RefreshSelectionUi(true);
             _statusLabel.Text = "Selection silenced.";
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
+        {
+            ConversionActionHelper.DeleteIfExists(newWorkingFile ?? string.Empty);
+        }
+        catch (TimeoutException ex) when (_closingRequested)
+        {
+            PreserveTemporaryRootBecauseTerminationWasNotConfirmed(ex);
+        }
         catch (Exception ex)
         {
             ConversionActionHelper.DeleteIfExists(newWorkingFile ?? string.Empty);
-            ShowActionError(ex.Message);
+            if (CanUpdateUi)
+            {
+                ShowActionError(ex.Message);
+            }
         }
         finally
         {
-            SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            if (CanUpdateUi)
+            {
+                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+            }
         }
     }
 
     private void ConfirmCut()
     {
+        if (_busy || !_workspaceReady || _closingRequested)
+        {
+            return;
+        }
+
         try
         {
             ApplyBoundaryFromText("start");
@@ -523,8 +696,7 @@ public sealed class CutAudioForm : Form
             StopPreviewPlayer();
             Selection = new CutAudioSettings(_startSeconds, _endSeconds);
             _preserveWorkingFilesForExecution = true;
-            DialogResult = DialogResult.OK;
-            Close();
+            RequestClose(DialogResult.OK);
         }
         catch (Exception ex)
         {
@@ -532,9 +704,10 @@ public sealed class CutAudioForm : Form
         }
     }
 
-    private double ProbeDurationSeconds(string filePath)
+    private async Task<double> ProbeDurationSecondsAsync(string filePath, CancellationToken cancellationToken)
     {
-        var probeAttempt = _ffprobeRunner.TryProbeMediaAsync(_ffprobePath, filePath, CancellationToken.None).GetAwaiter().GetResult();
+        var probeAttempt = await _ffprobeRunner.TryProbeMediaAsync(_ffprobePath, filePath, cancellationToken).ConfigureAwait(true);
+        cancellationToken.ThrowIfCancellationRequested();
         if (probeAttempt.Probe?.Duration is null || probeAttempt.Probe.Duration.Value.TotalSeconds <= 0)
         {
             throw new InvalidOperationException(probeAttempt.ErrorMessage ?? MediaActionMessages.DurationUnavailable());
@@ -545,7 +718,7 @@ public sealed class CutAudioForm : Form
 
     private void ApplyBoundaryFromText(string target)
     {
-        if (_busy)
+        if (_busy || _closingRequested)
         {
             return;
         }
@@ -834,36 +1007,29 @@ public sealed class CutAudioForm : Form
         }
     }
 
-    private void CleanupTemporaryRoot()
-    {
-        try
-        {
-            if (Directory.Exists(_temporaryRootPath))
-            {
-                Directory.Delete(_temporaryRootPath, recursive: true);
-            }
-        }
-        catch
-        {
-        }
-    }
-
     private void SetBusyState(bool busy, string statusText)
     {
         _busy = busy;
         UseWaitCursor = busy;
         _statusLabel.Text = statusText;
-        _buttonPlay.Enabled = !busy;
-        _buttonStop.Enabled = !busy;
-        _buttonRemove.Enabled = !busy;
-        _buttonSilence.Enabled = !busy;
-        _buttonCut.Enabled = !busy;
-        _textStart.Enabled = !busy;
-        _textEnd.Enabled = !busy;
+        var allowEditing = _workspaceReady && !busy && !_closingRequested;
+        _buttonPlay.Enabled = allowEditing;
+        _buttonStop.Enabled = allowEditing;
+        _buttonRemove.Enabled = allowEditing;
+        _buttonSilence.Enabled = allowEditing;
+        _buttonCut.Enabled = allowEditing;
+        _buttonCancel.Enabled = !_closingRequested;
+        _textStart.Enabled = allowEditing;
+        _textEnd.Enabled = allowEditing;
     }
 
     private void ShowActionError(string message)
     {
+        if (!CanUpdateUi)
+        {
+            return;
+        }
+
         MessageBox.Show(
             this,
             message,

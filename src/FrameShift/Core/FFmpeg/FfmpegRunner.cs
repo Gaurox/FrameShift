@@ -18,7 +18,8 @@ public sealed record FfmpegRunResult(
     int ExitCode,
     string StandardError,
     bool Canceled,
-    CancellationScope CancellationScope);
+    CancellationScope CancellationScope,
+    bool ProcessTerminationConfirmed = true);
 
 internal sealed class FfmpegProgressState
 {
@@ -242,6 +243,35 @@ public sealed class FfmpegRunner
         return startInfo;
     }
 
+    internal RawVideoProcess StartRawVideoProcess(
+        string executablePath,
+        IReadOnlyCollection<string> arguments,
+        bool redirectStandardInput,
+        bool drainStandardOutput,
+        string role,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
+        process.StartInfo.RedirectStandardInput = redirectStandardInput;
+
+        try
+        {
+            if (!process.Start())
+            {
+                throw new InvalidOperationException($"FFmpeg {role} process did not start.");
+            }
+
+            return new RawVideoProcess(this, process, drainStandardOutput, role, cancellationToken);
+        }
+        catch
+        {
+            process.Dispose();
+            throw;
+        }
+    }
+
     public async Task<FfmpegRunResult> RunAsync(
         string executablePath,
         IReadOnlyCollection<string> arguments,
@@ -356,10 +386,11 @@ public sealed class FfmpegRunner
             monitorStopSource.Token);
 
         int exitCode;
+        var processTerminationConfirmed = true;
         if (canceled)
         {
-            var processExited = await WaitForExitAfterCancellationAsync(process).ConfigureAwait(false);
-            exitCode = processExited ? process.ExitCode : -1;
+            processTerminationConfirmed = await WaitForExitAfterCancellationAsync(process).ConfigureAwait(false);
+            exitCode = processTerminationConfirmed ? process.ExitCode : -1;
         }
         else
         {
@@ -381,7 +412,7 @@ public sealed class FfmpegRunner
             SuppressCancellationAsync(queueCancellationTask)).ConfigureAwait(false);
 
         _logger.Log($"FfmpegRunner: RunAsync returning. canceled={canceled}, exitCode={exitCode}, scope={cancellationScope}, currentFile={currentFile ?? "<none>"}.");
-        return new FfmpegRunResult(exitCode, stderrBuilder.ToString(), canceled, cancellationScope);
+        return new FfmpegRunResult(exitCode, stderrBuilder.ToString(), canceled, cancellationScope, processTerminationConfirmed);
     }
 
     public async Task<bool> IsEncoderAvailableAsync(
@@ -411,16 +442,41 @@ public sealed class FfmpegRunner
         IReadOnlyCollection<string> arguments,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
         process.Start();
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var cancellationSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            _logger.Log($"FfmpegRunner: capture cancellation requested. pid={TryGetProcessId(process)}.");
+            TryKill(process, "capture-cancellation", null);
+            cancellationSignal.TrySetResult(true);
+        });
 
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+        var waitForExitTask = process.WaitForExitAsync();
+
+        if (await Task.WhenAny(waitForExitTask, cancellationSignal.Task).ConfigureAwait(false) != waitForExitTask)
+        {
+            var processExited = await WaitForExitAfterCancellationAsync(process, waitForExitTask).ConfigureAwait(false);
+            if (!processExited)
+            {
+                throw new TimeoutException("FFmpeg capture process did not exit after cancellation.");
+            }
+        }
+        else
+        {
+            await waitForExitTask.ConfigureAwait(false);
+        }
 
         var stdout = await stdoutTask.ConfigureAwait(false);
         var stderr = await stderrTask.ConfigureAwait(false);
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!string.IsNullOrWhiteSpace(stderr))
         {
             _logger.Log(stderr.Trim());
@@ -745,10 +801,10 @@ public sealed class FfmpegRunner
         }
     }
 
-    private async Task<bool> WaitForExitAfterCancellationAsync(Process process)
+    private async Task<bool> WaitForExitAfterCancellationAsync(Process process, Task? pendingWaitForExitTask = null)
     {
         _logger.Log($"FfmpegRunner: WaitForExitAsync started after cancellation. pid={TryGetProcessId(process)}.");
-        var waitForExitTask = process.WaitForExitAsync();
+        var waitForExitTask = pendingWaitForExitTask ?? process.WaitForExitAsync();
         var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(5000)).ConfigureAwait(false);
         if (completedTask == waitForExitTask)
         {
@@ -759,6 +815,17 @@ public sealed class FfmpegRunner
 
         _logger.Log($"FfmpegRunner: WaitForExitAsync timeout after cancellation — forcing kill. pid={TryGetProcessId(process)}.");
         TryKill(process, "post-cancellation-timeout", null);
+
+        _logger.Log($"FfmpegRunner: WaitForExitAsync started after second kill. pid={TryGetProcessId(process)}.");
+        completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(5000)).ConfigureAwait(false);
+        if (completedTask == waitForExitTask)
+        {
+            await waitForExitTask.ConfigureAwait(false);
+            _logger.Log($"FfmpegRunner: WaitForExitAsync finished after second kill. pid={TryGetProcessId(process)}, exitCode={process.ExitCode}.");
+            return true;
+        }
+
+        _logger.Log($"FfmpegRunner: WaitForExitAsync did not finish after second kill. pid={TryGetProcessId(process)}.");
         return false;
     }
 
@@ -804,6 +871,197 @@ public sealed class FfmpegRunner
         if (requestedScope > currentScope)
         {
             currentScope = requestedScope;
+        }
+    }
+
+    internal sealed class RawVideoProcess : IAsyncDisposable
+    {
+        private readonly FfmpegRunner _owner;
+        private readonly Process _process;
+        private readonly string _role;
+        private readonly CancellationTokenSource _streamReadCancellationSource = new();
+        private readonly CancellationTokenRegistration _cancellationRegistration;
+        private readonly Task _stderrDrainTask;
+        private readonly Task _stdoutDrainTask;
+        private readonly StringBuilder _stderr = new();
+        private readonly object _drainSync = new();
+        private Task? _drainTask;
+        private int _standardInputClosed;
+        private int _disposed;
+
+        internal RawVideoProcess(
+            FfmpegRunner owner,
+            Process process,
+            bool drainStandardOutput,
+            string role,
+            CancellationToken cancellationToken)
+        {
+            _owner = owner;
+            _process = process;
+            _role = role;
+            _cancellationRegistration = cancellationToken.Register(() => RequestStop("rawvideo-cancellation"));
+            _stderrDrainTask = DrainStandardErrorAsync();
+            _stdoutDrainTask = drainStandardOutput
+                ? DrainStandardOutputAsync()
+                : Task.CompletedTask;
+
+            _owner._logger.Log($"FfmpegRunner: rawvideo {role} started. pid={TryGetProcessId(process)}.");
+        }
+
+        public Stream StandardOutput => _process.StandardOutput.BaseStream;
+
+        public Stream StandardInput => _process.StandardInput.BaseStream;
+
+        public string StandardError => _stderr.ToString();
+
+        public int ExitCode => _process.ExitCode;
+
+        public void RequestStop(string reason)
+        {
+            CloseStandardInput();
+            _owner.TryKill(_process, $"rawvideo-{_role}-{reason}", null);
+        }
+
+        public async Task CompleteStandardInputAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await StandardInput.FlushAsync(cancellationToken).ConfigureAwait(false);
+            CloseStandardInput();
+        }
+
+        public async Task WaitForExitAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                await StopAndDrainAsync("rawvideo-wait-canceled").ConfigureAwait(false);
+                throw;
+            }
+
+            await DrainStreamsAsync(canceled: false).ConfigureAwait(false);
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await StopAndDrainAsync("rawvideo-dispose").ConfigureAwait(false);
+            }
+            finally
+            {
+                _cancellationRegistration.Dispose();
+                _streamReadCancellationSource.Dispose();
+                _process.Dispose();
+            }
+        }
+
+        private void CloseStandardInput()
+        {
+            if (Interlocked.Exchange(ref _standardInputClosed, 1) != 0 || !_process.StartInfo.RedirectStandardInput)
+            {
+                return;
+            }
+
+            try
+            {
+                _process.StandardInput.Close();
+            }
+            catch (Exception ex)
+            {
+                _owner._logger.Log($"FfmpegRunner: rawvideo {_role} stdin close failed. pid={TryGetProcessId(_process)}, error={ex.Message}");
+            }
+        }
+
+        private async Task StopAndDrainAsync(string reason)
+        {
+            RequestStop(reason);
+            var exited = await _owner.WaitForExitAfterCancellationAsync(_process).ConfigureAwait(false);
+            await DrainStreamsAsync(canceled: true).ConfigureAwait(false);
+
+            if (!exited)
+            {
+                _owner._logger.Log($"FfmpegRunner: rawvideo {_role} exit was not confirmed after cancellation. pid={TryGetProcessId(_process)}.");
+            }
+        }
+
+        private Task DrainStreamsAsync(bool canceled)
+        {
+            lock (_drainSync)
+            {
+                _drainTask ??= DrainStreamsCoreAsync(canceled);
+                return _drainTask;
+            }
+        }
+
+        private async Task DrainStreamsCoreAsync(bool canceled)
+        {
+            var drainTask = Task.WhenAll(
+                SuppressStreamReadFailureAsync(_stderrDrainTask, "stderr"),
+                SuppressStreamReadFailureAsync(_stdoutDrainTask, "stdout"));
+            var timeoutMilliseconds = canceled ? 1500 : 5000;
+            if (await Task.WhenAny(drainTask, Task.Delay(timeoutMilliseconds)).ConfigureAwait(false) != drainTask)
+            {
+                _owner._logger.Log($"FfmpegRunner: rawvideo {_role} stream drain timed out. Canceling internal stream reads.");
+                _streamReadCancellationSource.Cancel();
+            }
+
+            await drainTask.ConfigureAwait(false);
+        }
+
+        private async Task DrainStandardErrorAsync()
+        {
+            var buffer = new char[4096];
+            try
+            {
+                while (true)
+                {
+                    var read = await _process.StandardError.ReadAsync(
+                        buffer.AsMemory(0, buffer.Length),
+                        _streamReadCancellationSource.Token).ConfigureAwait(false);
+                    if (read <= 0)
+                    {
+                        return;
+                    }
+
+                    _stderr.Append(buffer, 0, read);
+                }
+            }
+            catch (OperationCanceledException) when (_streamReadCancellationSource.IsCancellationRequested)
+            {
+            }
+        }
+
+        private async Task DrainStandardOutputAsync()
+        {
+            try
+            {
+                await _process.StandardOutput.BaseStream.CopyToAsync(
+                    Stream.Null,
+                    _streamReadCancellationSource.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (_streamReadCancellationSource.IsCancellationRequested)
+            {
+            }
+        }
+
+        private async Task SuppressStreamReadFailureAsync(Task task, string streamName)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _owner._logger.Log($"FfmpegRunner: rawvideo {_role} {streamName} drain failed. pid={TryGetProcessId(_process)}, error={ex.Message}");
+            }
         }
     }
 }

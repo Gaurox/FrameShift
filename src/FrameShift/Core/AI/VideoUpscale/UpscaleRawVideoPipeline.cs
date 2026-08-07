@@ -1,10 +1,8 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.Actions;
@@ -73,38 +71,39 @@ internal sealed class UpscaleRawVideoPipeline
             probe.HasAudio,
             transcodeAudio);
 
-        using var decoder = new Process { StartInfo = _ffmpegRunner.CreateStartInfo(ffmpegPath, decodeArguments) };
-        using var encoder = new Process { StartInfo = _ffmpegRunner.CreateStartInfo(ffmpegPath, encodeArguments) };
-        encoder.StartInfo.RedirectStandardInput = true;
 
-        var decoderError = new StringBuilder();
-        var encoderError = new StringBuilder();
-
-        decoder.Start();
-        encoder.Start();
-        _logger.Log($"UpscaleRawVideoPipeline: decoder started pid={decoder.Id}");
-        _logger.Log($"UpscaleRawVideoPipeline: encoder started pid={encoder.Id}");
-
-        using var cancellationRegistration = cancellationToken.Register(() =>
-        {
-            TryKill(decoder, "upscale-rawvideo-cancel-decoder");
-            TryKill(encoder, "upscale-rawvideo-cancel-encoder");
-        });
-
-        using var stderrCancellationSource = new CancellationTokenSource();
-        var decoderErrorTask = ReadErrorAsync(decoder.StandardError, decoderError, stderrCancellationSource.Token);
-        var encoderErrorTask = ReadErrorAsync(encoder.StandardError, encoderError, stderrCancellationSource.Token);
-
-        var inputFrame = ArrayPool<byte>.Shared.Rent(inputFrameBytes);
-        var outputFrame = ArrayPool<byte>.Shared.Rent(outputFrameBytes);
+        FfmpegRunner.RawVideoProcess? decoder = null;
+        FfmpegRunner.RawVideoProcess? encoder = null;
+        byte[]? inputFrame = null;
+        byte[]? outputFrame = null;
+        var completed = false;
 
         try
         {
+            _logger.Log("UpscaleRawVideoPipeline: starting protected rawvideo decoder and encoder scopes.");
+            decoder = _ffmpegRunner.StartRawVideoProcess(
+                ffmpegPath,
+                decodeArguments,
+                redirectStandardInput: false,
+                drainStandardOutput: false,
+                role: "upscale-decoder",
+                cancellationToken: cancellationToken);
+            encoder = _ffmpegRunner.StartRawVideoProcess(
+                ffmpegPath,
+                encodeArguments,
+                redirectStandardInput: true,
+                drainStandardOutput: true,
+                role: "upscale-encoder",
+                cancellationToken: cancellationToken);
+
+            inputFrame = ArrayPool<byte>.Shared.Rent(inputFrameBytes);
+            outputFrame = ArrayPool<byte>.Shared.Rent(outputFrameBytes);
+
             int sourceFrameCount = 0;
             using var processor = new UpscaleFrameProcessor(model);
 
             while (await TryReadFrameAsync(
-                decoder.StandardOutput.BaseStream,
+                decoder.StandardOutput,
                 inputFrame.AsMemory(0, inputFrameBytes),
                 cancellationToken).ConfigureAwait(false))
             {
@@ -113,7 +112,7 @@ internal sealed class UpscaleRawVideoPipeline
                 using var source = ImageSharpImage.LoadPixelData<Rgb24>(inputFrame.AsSpan(0, inputFrameBytes), sourceWidth, sourceHeight);
                 using var output = processor.Upscale(source, request, progress: null, cancellationToken);
                 WriteImageToRgb24Bytes(output, outputFrame, outputFrameBytes);
-                await encoder.StandardInput.BaseStream.WriteAsync(
+                await encoder.StandardInput.WriteAsync(
                     outputFrame.AsMemory(0, outputFrameBytes),
                     cancellationToken).ConfigureAwait(false);
 
@@ -121,32 +120,49 @@ internal sealed class UpscaleRawVideoPipeline
                 progress?.Report((sourceFrameCount, estimatedTotal));
             }
 
-            await encoder.StandardInput.BaseStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-            encoder.StandardInput.Close();
+            await encoder.CompleteStandardInputAsync(cancellationToken).ConfigureAwait(false);
 
             await encoder.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             await decoder.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
-            stderrCancellationSource.Cancel();
-            await SuppressCancellationAsync(decoderErrorTask).ConfigureAwait(false);
-            await SuppressCancellationAsync(encoderErrorTask).ConfigureAwait(false);
-
             if (decoder.ExitCode != 0)
-                throw new InvalidOperationException($"Rawvideo decoder failed: {decoderError}");
+                throw new InvalidOperationException($"Rawvideo decoder failed: {decoder.StandardError}");
             if (encoder.ExitCode != 0 || !File.Exists(outputPath))
-                throw new InvalidOperationException($"Rawvideo encoder failed: {encoderError}");
+                throw new InvalidOperationException($"Rawvideo encoder failed: {encoder.StandardError}");
 
+            completed = true;
             return new UpscaleRawVideoPipelineResult(processor.Provider, sourceFrameCount, sourceFrameCount);
         }
         finally
         {
-            ArrayPool<byte>.Shared.Return(inputFrame);
-            ArrayPool<byte>.Shared.Return(outputFrame);
+            if (encoder is not null)
+                encoder.RequestStop("upscale-finally-encoder");
+            if (decoder is not null)
+                decoder.RequestStop("upscale-finally-decoder");
 
-            if (!decoder.HasExited)
-                TryKill(decoder, "upscale-rawvideo-finally-decoder");
-            if (!encoder.HasExited)
-                TryKill(encoder, "upscale-rawvideo-finally-encoder");
+            try
+            {
+                if (encoder is not null)
+                    await encoder.DisposeAsync().ConfigureAwait(false);
+            }
+            finally
+            {
+                try
+                {
+                    if (decoder is not null)
+                        await decoder.DisposeAsync().ConfigureAwait(false);
+                }
+                finally
+                {
+                    if (inputFrame is not null)
+                        ArrayPool<byte>.Shared.Return(inputFrame);
+                    if (outputFrame is not null)
+                        ArrayPool<byte>.Shared.Return(outputFrame);
+
+                    if (!completed)
+                        ConversionActionHelper.DeleteIfExists(outputPath);
+                }
+            }
         }
     }
 
@@ -256,43 +272,4 @@ internal sealed class UpscaleRawVideoPipeline
         return true;
     }
 
-    private static async Task ReadErrorAsync(StreamReader reader, StringBuilder sink, CancellationToken cancellationToken)
-    {
-        var buffer = new char[4096];
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            int read = await reader.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken).ConfigureAwait(false);
-            if (read <= 0)
-                break;
-
-            sink.Append(buffer, 0, read);
-        }
-    }
-
-    private static async Task SuppressCancellationAsync(Task task)
-    {
-        try
-        {
-            await task.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
-
-    private void TryKill(Process process, string reason)
-    {
-        try
-        {
-            if (!process.HasExited)
-            {
-                _logger.Log($"UpscaleRawVideoPipeline: killing process pid={process.Id} reason={reason}.");
-                process.Kill(entireProcessTree: true);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.Log($"UpscaleRawVideoPipeline: failed to kill process for {reason}. {ex.Message}");
-        }
-    }
 }

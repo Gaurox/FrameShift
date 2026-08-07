@@ -34,10 +34,15 @@ public sealed class RemoveNoiseAudioPickerForm : Form
     private readonly string? _ffmpegPath;
     private readonly FfmpegRunner? _ffmpegRunner;
     private RemoveNoiseEngine? _previewEngine;
-    private CancellationTokenSource? _previewCts;
+    private readonly OnnxFormLifetime _lifetime = new();
+    private Task? _closingTask;
     private string? _previewTempExtract;
     private string? _previewTempClean;
     private SoundPlayer? _soundPlayer;
+    private bool _closingRequested;
+    private bool _allowClose;
+    private bool _resourcesCleaned;
+    private DialogResult? _requestedDialogResult;
 
     public RemoveNoiseAudioPickerForm(
         string sourceLabel,
@@ -135,18 +140,20 @@ public sealed class RemoveNoiseAudioPickerForm : Form
 
         _previewButton = FrameShiftUiFactory.CreateFixedActionButton("▶  Preview", new Point(12, 328), new Size(130, 34), primary: false);
         _previewButton.Enabled = _ffmpegRunner != null;
-        _previewButton.Click  += async (_, _) => await RunPreviewAsync().ConfigureAwait(true);
+        _previewButton.Click  += async (_, _) => await StartPreviewAsync().ConfigureAwait(true);
         Controls.Add(_previewButton);
 
         _cancelButton  = FrameShiftUiFactory.CreateFixedActionButton("Cancel",  new Point(278, 328), new Size(120, 34), primary: false);
         _denoiseButton = FrameShiftUiFactory.CreateFixedActionButton("Denoise", new Point(408, 328), new Size(140, 34), primary: true);
-        _cancelButton.DialogResult  = DialogResult.Cancel;
-        _denoiseButton.DialogResult = DialogResult.OK;
+        _cancelButton.Click += (_, _) => RequestClose(DialogResult.Cancel);
+        _denoiseButton.Click += (_, _) => RequestClose(DialogResult.OK);
         Controls.Add(_cancelButton);
         Controls.Add(_denoiseButton);
 
         AcceptButton = _denoiseButton;
         CancelButton = _cancelButton;
+        FormClosing += OnFormClosing;
+        FormClosed += (_, _) => _lifetime.Dispose();
 
         SelectStrength(RemoveNoiseAudioSettings.StrengthMaximum, _lightTile, _normalTile, _strongTile, _maximumTile);
     }
@@ -161,21 +168,6 @@ public sealed class RemoveNoiseAudioPickerForm : Form
         _previewButton.SetBounds(12, _cancelButton.Top, _previewButton.Width, _cancelButton.Height);
     }
 
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _previewCts?.Cancel();
-            _previewCts?.Dispose();
-            _soundPlayer?.Stop();
-            _soundPlayer?.Dispose();
-            _previewEngine?.Dispose();
-            TryDeletePreviewTemp(_previewTempExtract);
-            TryDeletePreviewTemp(_previewTempClean);
-        }
-        base.Dispose(disposing);
-    }
-
     public static string BuildSourceLabel(IReadOnlyList<string> inputPaths)
     {
         if (inputPaths.Count == 1)
@@ -188,12 +180,30 @@ public sealed class RemoveNoiseAudioPickerForm : Form
         return $"{inputPaths.Count} selected files";
     }
 
-    private async Task RunPreviewAsync()
+    private bool CanUpdateUi => !_closingRequested && !IsDisposed && !Disposing;
+
+    private async Task StartPreviewAsync()
     {
-        _previewCts?.Cancel();
-        _previewCts?.Dispose();
-        _previewCts = new CancellationTokenSource();
-        var ct = _previewCts.Token;
+        if (_closingRequested)
+        {
+            return;
+        }
+
+        try
+        {
+            await _lifetime.RunAsync(RunPreviewCoreAsync).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsClosing || _lifetime.Token.IsCancellationRequested)
+        {
+        }
+    }
+
+    private async Task RunPreviewCoreAsync(CancellationToken ct)
+    {
+        if (_closingRequested)
+        {
+            return;
+        }
 
         _soundPlayer?.Stop();
 
@@ -231,7 +241,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
             var minGain = RemoveNoiseAudioSettings.ToMinGain(_selectedStrength);
             var aiProgress = new Progress<(int percent, string status)>(p =>
             {
-                if (!ct.IsCancellationRequested && !IsDisposed)
+                if (!ct.IsCancellationRequested && CanUpdateUi)
                     _previewButton.Text = $"Processing {p.percent}%";
             });
 
@@ -239,7 +249,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
                 .RemoveNoiseAsync(_previewTempExtract, aiProgress, ct, minGain)
                 .ConfigureAwait(true);
 
-            if (ct.IsCancellationRequested)
+            if (ct.IsCancellationRequested || !CanUpdateUi)
                 return;
 
             _soundPlayer?.Dispose();
@@ -249,17 +259,91 @@ public sealed class RemoveNoiseAudioPickerForm : Form
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            if (!ct.IsCancellationRequested)
+            if (!ct.IsCancellationRequested && CanUpdateUi)
                 MessageBox.Show($"Preview failed: {ex.Message}", "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         finally
         {
-            if (!ct.IsCancellationRequested && !IsDisposed)
+            if (!ct.IsCancellationRequested && CanUpdateUi)
             {
                 _previewButton.Text    = "▶  Preview";
                 _previewButton.Enabled = true;
             }
         }
+    }
+
+    private void RequestClose(DialogResult requestedDialogResult)
+    {
+        _requestedDialogResult = requestedDialogResult;
+        Close();
+    }
+
+    private void OnFormClosing(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose)
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        if (_closingTask is not null)
+        {
+            return;
+        }
+
+        _closingRequested = true;
+        _requestedDialogResult ??= DialogResult.Cancel;
+        SetClosingUiState();
+        _closingTask = CompleteCloseAsync();
+    }
+
+    private async Task CompleteCloseAsync()
+    {
+        await _lifetime.BeginClosingAsync(
+            CleanupPreviewResourcesAsync,
+            ex => AppLogger.LogStatic($"RemoveNoiseAudioPickerForm: close cleanup failed. {ex}")).ConfigureAwait(true);
+
+        if (IsDisposed || Disposing || !IsHandleCreated)
+        {
+            return;
+        }
+
+        _allowClose = true;
+        DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
+        Close();
+    }
+
+    private Task CleanupPreviewResourcesAsync()
+    {
+        if (_resourcesCleaned)
+        {
+            return Task.CompletedTask;
+        }
+
+        _resourcesCleaned = true;
+        _soundPlayer?.Stop();
+        _soundPlayer?.Dispose();
+        _soundPlayer = null;
+        _previewEngine?.Dispose();
+        _previewEngine = null;
+        TryDeletePreviewTemp(_previewTempExtract);
+        TryDeletePreviewTemp(_previewTempClean);
+        _previewTempExtract = null;
+        _previewTempClean = null;
+        return Task.CompletedTask;
+    }
+
+    private void SetClosingUiState()
+    {
+        _previewButton.Enabled = false;
+        _previewButton.Text = "Closing...";
+        _cancelButton.Enabled = false;
+        _denoiseButton.Enabled = false;
+        _stereoCheckBox.Enabled = false;
+        _lightTile.Enabled = false;
+        _normalTile.Enabled = false;
+        _strongTile.Enabled = false;
+        _maximumTile.Enabled = false;
     }
 
     private void SelectStrength(string strength, params Panel[] tiles)

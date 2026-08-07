@@ -502,22 +502,46 @@ public sealed class FfprobeRunner
         return probeAttempt.Probe?.Duration;
     }
 
-    private async Task<ProbeResult> RunProbeAsync(
+    internal async Task<ProbeResult> RunProbeAsync(
         string executablePath,
         IReadOnlyCollection<string> arguments,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
 
         process.Start();
 
-        var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var errorTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var cancellationSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var cancellationRegistration = cancellationToken.Register(() =>
+        {
+            _logger.Log($"FfprobeRunner: cancellation requested. pid={TryGetProcessId(process)}.");
+            TryKill(process, "cancellation");
+            cancellationSignal.TrySetResult(true);
+        });
 
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
+        var waitForExitTask = process.WaitForExitAsync();
+
+        if (await Task.WhenAny(waitForExitTask, cancellationSignal.Task).ConfigureAwait(false) != waitForExitTask)
+        {
+            var processExited = await WaitForExitAfterCancellationAsync(process, waitForExitTask).ConfigureAwait(false);
+            if (!processExited)
+            {
+                throw new TimeoutException("FFprobe process did not exit after cancellation.");
+            }
+        }
+        else
+        {
+            await waitForExitTask.ConfigureAwait(false);
+        }
 
         var output = await outputTask.ConfigureAwait(false);
         var error = (await errorTask.ConfigureAwait(false)).Trim();
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (!string.IsNullOrWhiteSpace(error))
         {
@@ -527,7 +551,65 @@ public sealed class FfprobeRunner
         return new ProbeResult(process.ExitCode == 0, output, error);
     }
 
-    private sealed record ProbeResult(bool Success, string Output, string StandardError);
+    private void TryKill(Process process, string reason)
+    {
+        try
+        {
+            _logger.Log($"FfprobeRunner: kill process requested. pid={TryGetProcessId(process)}, reason={reason}, hasExited={process.HasExited}.");
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            _logger.Log($"FfprobeRunner: kill process returned. pid={TryGetProcessId(process)}, reason={reason}, hasExited={process.HasExited}.");
+        }
+        catch (Exception ex)
+        {
+            _logger.Log($"FfprobeRunner: kill process failed. pid={TryGetProcessId(process)}, reason={reason}, error={ex}.");
+        }
+    }
+
+    private async Task<bool> WaitForExitAfterCancellationAsync(Process process, Task? pendingWaitForExitTask = null)
+    {
+        _logger.Log($"FfprobeRunner: WaitForExitAsync started after cancellation. pid={TryGetProcessId(process)}.");
+        var waitForExitTask = pendingWaitForExitTask ?? process.WaitForExitAsync();
+        var completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(5000)).ConfigureAwait(false);
+        if (completedTask == waitForExitTask)
+        {
+            await waitForExitTask.ConfigureAwait(false);
+            _logger.Log($"FfprobeRunner: WaitForExitAsync finished after cancellation. pid={TryGetProcessId(process)}, exitCode={process.ExitCode}.");
+            return true;
+        }
+
+        _logger.Log($"FfprobeRunner: WaitForExitAsync timeout after cancellation — forcing kill. pid={TryGetProcessId(process)}.");
+        TryKill(process, "post-cancellation-timeout");
+
+        _logger.Log($"FfprobeRunner: WaitForExitAsync started after second kill. pid={TryGetProcessId(process)}.");
+        completedTask = await Task.WhenAny(waitForExitTask, Task.Delay(5000)).ConfigureAwait(false);
+        if (completedTask == waitForExitTask)
+        {
+            await waitForExitTask.ConfigureAwait(false);
+            _logger.Log($"FfprobeRunner: WaitForExitAsync finished after second kill. pid={TryGetProcessId(process)}, exitCode={process.ExitCode}.");
+            return true;
+        }
+
+        _logger.Log($"FfprobeRunner: WaitForExitAsync did not finish after second kill. pid={TryGetProcessId(process)}.");
+        return false;
+    }
+
+    private static int TryGetProcessId(Process process)
+    {
+        try
+        {
+            return process.Id;
+        }
+        catch
+        {
+            return -1;
+        }
+    }
+
+    internal sealed record ProbeResult(bool Success, string Output, string StandardError);
 }
 
 public sealed record MediaProbeAttemptResult(MediaProbeResult? Probe, string? ErrorMessage)

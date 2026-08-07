@@ -24,4 +24,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FrameShift\FrameShift.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\FakeMediaProcess.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
