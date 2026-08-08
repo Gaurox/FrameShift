@@ -17,8 +17,14 @@ using Xunit;
 
 namespace FrameShift.Tests;
 
+[Collection(FrameShiftPreferenceTestCollection.Name)]
 public sealed class CreateSubtitlesTests
 {
+    public CreateSubtitlesTests(FrameShiftTestSettingsDirectory settingsDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(settingsDirectory);
+    }
+
     [Fact]
     public void Segmenter_BreaksOnPunctuationAndSilence()
     {
@@ -375,15 +381,17 @@ public sealed class CreateSubtitlesTests
         Assert.True(form.IsAssPresetSectionVisible);
     }
 
-    [Fact]
+    [CreateSubtitlesIntegrationFact(
+        "mixed_fr_en_16k.wav",
+        "export-control",
+        "base-encoder.onnx",
+        "base-decoder.onnx",
+        "base-tokens.txt")]
     public async Task Alternative_Output_Formats_Are_Written_With_Expected_Extensions()
     {
         var repoRoot = GetRepositoryRoot();
         var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_16k.wav");
         var modelSourceDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control");
-
-        if (!File.Exists(sampleAudio) || !File.Exists(Path.Combine(modelSourceDir, "base-encoder.onnx")))
-            return;
 
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_alt_formats_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);
@@ -459,15 +467,17 @@ public sealed class CreateSubtitlesTests
         }
     }
 
-    [Fact]
+    [CreateSubtitlesIntegrationFact(
+        "mixed_fr_en_16k.wav",
+        "export-control",
+        "base-encoder.onnx",
+        "base-decoder.onnx",
+        "base-tokens.txt")]
     public async Task Audio_And_Video_Actions_Produce_Equivalent_Subtitle_Text()
     {
         var repoRoot = GetRepositoryRoot();
         var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_16k.wav");
         var modelSourceDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control");
-
-        if (!File.Exists(sampleAudio) || !File.Exists(Path.Combine(modelSourceDir, "base-encoder.onnx")))
-            return; // integration test — requires local dev assets in scratch/
 
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_tests_{Guid.NewGuid():N}_é_日本語");
         Directory.CreateDirectory(tempRoot);
@@ -581,15 +591,17 @@ public sealed class CreateSubtitlesTests
         }
     }
 
-    [Fact]
+    [CreateSubtitlesIntegrationFact(
+        "mixed_fr_en_long.wav",
+        "export-control",
+        "base-encoder.onnx",
+        "base-decoder.onnx",
+        "base-tokens.txt")]
     public async Task Long_Audio_Over_Thirty_Seconds_Produces_Subtitles()
     {
         var repoRoot = GetRepositoryRoot();
         var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_long.wav");
         var modelSourceDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control");
-        if (!File.Exists(sampleAudio))
-            return; // integration test — requires local dev assets in scratch/
-
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_long_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);
 
@@ -646,15 +658,17 @@ public sealed class CreateSubtitlesTests
         }
     }
 
-    [Fact]
+    [CreateSubtitlesIntegrationFact(
+        "mixed_fr_en_long.wav",
+        "export-control",
+        "base-encoder.onnx",
+        "base-decoder.onnx",
+        "base-tokens.txt")]
     public async Task Long_Audio_Can_Be_Canceled_Between_Windows()
     {
         var repoRoot = GetRepositoryRoot();
         var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_long.wav");
         var modelSourceDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control");
-        if (!File.Exists(sampleAudio))
-            return; // integration test — requires local dev assets in scratch/
-
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_cancel_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);
 
@@ -834,20 +848,17 @@ public sealed class CreateSubtitlesTests
         }
     }
 
-    [Fact]
+    [CreateSubtitlesIntegrationFact(
+        "mixed_fr_en_16k.wav",
+        "export-control\\small-export",
+        "small-encoder.onnx",
+        "small-decoder.onnx",
+        "small-tokens.txt")]
     public async Task Small_Model_Produces_Subtitles_With_FR_EN_Audio()
     {
         var repoRoot = GetRepositoryRoot();
         var sampleAudio = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "samples", "mixed_fr_en_16k.wav");
         var smallExportDir = Path.Combine(repoRoot, "scratch", "WhisperBaseOnnxSpike", "export-control", "small-export");
-
-        if (!File.Exists(Path.Combine(smallExportDir, "small-encoder.onnx")))
-        {
-            // Small model not exported locally — skip (CI will skip, dev can run after export)
-            return;
-        }
-
-        Assert.True(File.Exists(sampleAudio), $"Missing sample audio: {sampleAudio}");
 
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_small_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempRoot);

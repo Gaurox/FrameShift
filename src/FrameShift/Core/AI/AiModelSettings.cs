@@ -11,11 +11,13 @@ namespace FrameShift.Core.AI;
 /// </summary>
 public sealed class AiModelSettings
 {
-    private static readonly string ConfigDirectory = Path.Combine(
+    private static readonly string DefaultConfigDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "FrameShift", "config");
 
-    public static readonly string ConfigFilePath = Path.Combine(ConfigDirectory, "settings.json");
+    internal const string ConfigDirectoryOverrideEnvironmentVariable = "FRAMESHIFT_CONFIG_DIRECTORY";
+
+    public static string ConfigFilePath => Path.Combine(GetConfigDirectory(), "settings.json");
 
     private static readonly string DefaultModelsDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -48,9 +50,10 @@ public sealed class AiModelSettings
     {
         try
         {
-            Directory.CreateDirectory(ConfigDirectory);
+            var configFilePath = ConfigFilePath;
+            Directory.CreateDirectory(Path.GetDirectoryName(configFilePath)!);
             var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ConfigFilePath, json);
+            File.WriteAllText(configFilePath, json);
         }
         catch (Exception ex)
         {
@@ -94,5 +97,13 @@ public sealed class AiModelSettings
         {
             return false;
         }
+    }
+
+    private static string GetConfigDirectory()
+    {
+        var overrideDirectory = Environment.GetEnvironmentVariable(ConfigDirectoryOverrideEnvironmentVariable);
+        return string.IsNullOrWhiteSpace(overrideDirectory)
+            ? DefaultConfigDirectory
+            : overrideDirectory;
     }
 }

@@ -238,6 +238,8 @@ Cinq `[Fact]` Create Subtitles font `return` si les actifs locaux manquent (`tes
 
 Les marquer explicitement comme intégration/skip quand les actifs manquent, isoler la racine de config par variable/injection minimale et séparer le job CI reproductible du job lourd optionnel.
 
+**Statut — corrigé (M-04, vérification du 9 août 2026).** Les cinq intégrations Create Subtitles portent désormais un attribut xUnit v2 conditionnel : elles sont comptées `Skipped` à la découverte lorsque l’audio ou l’ensemble des artefacts ONNX locaux requis sous `scratch/` manque, et s’exécutent sans autre condition lorsque ces ressources sont présentes. Les tests Create Subtitles sont regroupés dans une collection qui redirige `AiModelSettings` vers un dossier temporaire propre à l’exécution via `FRAMESHIFT_CONFIG_DIRECTORY` ; le vrai `%LOCALAPPDATA%\FrameShift\config\settings.json` n’est plus lu, écrit ou restauré par eux. `dotnet test tests\FrameShift.Tests\FrameShift.Tests.csproj -c Release` a donné **429 passed, 0 failed, 5 skipped, 434 total** : les cinq skips correspondent aux actifs locaux absents, sans nouveau bug fonctionnel révélé. L’empreinte SHA-256 du fichier de préférences utilisateur est restée identique avant et après la suite.
+
 #### M-05 — Plusieurs chemins UI restent synchrones, non annulables ou incohérents
 
 - `MainForm.ExpandPaths` appelle `Directory.GetFiles` sur le thread UI et matérialise tout un dossier (`MainForm.cs:169-203`). Les répertoires volumineux ou réseau peuvent figer la fenêtre.
