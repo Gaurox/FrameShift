@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.18.1** · latest published release: **1.17.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.18.1** · latest published release: **1.18.0** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
