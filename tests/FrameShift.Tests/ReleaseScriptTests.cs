@@ -77,6 +77,19 @@ public sealed class ReleaseScriptTests
         Assert.False(File.Exists(fixture.InstallerPath));
     }
 
+    [Fact]
+    public void CanonicalRelease_TamperedFfmpegPayloadStopsBeforeInno()
+    {
+        using var fixture = new ReleaseFixture { TamperFfmpegPayload = true };
+
+        var result = fixture.Run();
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(result.LogLines, line => line.StartsWith("dotnet publish ", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("SHA-256 mismatch", result.StandardError, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class ReleaseFixture : IDisposable
     {
         private readonly string _toolsDirectory;
@@ -103,6 +116,7 @@ public sealed class ReleaseScriptTests
         public string InstallerPath { get; }
         public string PreviousPublishResiduePath { get; }
         public string? FailingStep { get; init; }
+        public bool TamperFfmpegPayload { get; init; }
 
         public void CreatePreviousPublishResidue()
         {
@@ -133,6 +147,8 @@ public sealed class ReleaseScriptTests
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR"] = PublishDirectory;
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_INSTALLER"] = InstallerPath;
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_FAIL_STEP"] = FailingStep ?? string.Empty;
+            startInfo.Environment["FRAMESHIFT_RELEASE_TEST_SOURCE_DIR"] = Path.Combine(Root, "src", "FrameShift");
+            startInfo.Environment["FRAMESHIFT_RELEASE_TEST_TAMPER_FFMPEG"] = TamperFfmpegPayload ? "1" : "0";
 
             using var process = Process.Start(startInfo);
             Assert.NotNull(process);
@@ -156,6 +172,8 @@ public sealed class ReleaseScriptTests
         {
             File.Copy(FindRepositoryFile("build_installer.ps1"), Path.Combine(Root, "build_installer.ps1"));
             WriteFile("src\\FrameShift\\FrameShift.csproj", "<Project><PropertyGroup><Version>1.2.3</Version></PropertyGroup></Project>");
+            CopyRepositoryFile("src\\FrameShift\\Tools\\ffmpeg\\ffmpeg.exe");
+            CopyRepositoryFile("src\\FrameShift\\Tools\\ffmpeg\\ffprobe.exe");
             WriteFile("src\\FrameShift.SubtitlesWorker\\FrameShift.SubtitlesWorker.csproj", "<Project />");
             WriteFile("tests\\FrameShift.Tests\\FrameShift.Tests.csproj", "<Project />");
             WriteFile("docs\\CHANGELOG.md", "## 1.2.3");
@@ -187,8 +205,9 @@ public sealed class ReleaseScriptTests
                 "mkdir \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\" 2>nul",
                 "mkdir \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\" 2>nul",
                 "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\FrameShift.exe\"",
-                "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\"",
-                "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffprobe.exe\"",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_SOURCE_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_SOURCE_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" >nul",
+                "if /I \"%FRAMESHIFT_RELEASE_TEST_TAMPER_FFMPEG%\"==\"1\" echo tampered>> \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\"",
                 "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\\FrameShift.SubtitlesWorker.exe\"",
                 "exit /b 0"
             });
@@ -217,6 +236,13 @@ public sealed class ReleaseScriptTests
             var path = Path.Combine(Root, relativePath);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, contents);
+        }
+
+        private void CopyRepositoryFile(string relativePath)
+        {
+            var destination = Path.Combine(Root, relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            File.Copy(FindRepositoryFile(relativePath), destination);
         }
 
         private static string GetPowerShellPath()

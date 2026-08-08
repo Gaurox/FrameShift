@@ -11,8 +11,11 @@ Third-party components keep their own licenses. The main project license does no
 
 FrameShift bundles `ffmpeg.exe` and `ffprobe.exe` as part of its installer and local toolchain.
 
-- Build: `2025-04-17-git-7684243fbe-essentials_build` by [Gyan Doshi](https://www.gyan.dev/ffmpeg/builds/)
-- Upstream project: https://ffmpeg.org
+- Build: [`9.0-essentials_build-www.gyan.dev`](https://www.gyan.dev/ffmpeg/builds/) by Gyan Doshi (release build, 4 August 2026)
+- Distribution archive: [`ffmpeg-release-essentials.zip`](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip), SHA-256 `E6B54767A6065919048F1A098EB27211CA4E12B4348A05D88777A5855D0B6E71`
+- Upstream project: [FFmpeg 9.0 "Lei"](https://ffmpeg.org/download.html), source commit [`d32b387f2b`](https://github.com/FFmpeg/FFmpeg/commit/d32b387f2b)
+- Bundled binary SHA-256: `ffmpeg.exe` `227AF0691433B703FFC5725E47F7D06EEFC34B4A72E7870E73D30E2CDA483ECF`; `ffprobe.exe` `901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88`
+- Configuration verified from both binaries: static GPLv3 build with `--enable-gpl --enable-version3`, including FrameShift-required codecs/libraries such as libx264, libx265, libvpx, libopus, libmp3lame, libwebp and libass.
 - License: **GNU General Public License v3.0 or later** (build compiled with `--enable-gpl --enable-version3`)
 - Source code: https://ffmpeg.org/download.html
 

@@ -34,7 +34,7 @@ The only official release command is:
 .\build_installer.ps1
 ```
 
-`build_installer.ps1` is the canonical, blocking workflow. In order, it validates the required files, version/changelog and clean Git state; restores all projects with `--locked-mode`; runs `dotnet test` in Release with `--no-restore`; clears only `publish\FrameShift-win-x64`; publishes a self-contained `win-x64` payload with `--no-restore`; verifies the application, FFmpeg/FFprobe and subtitle-worker payload; then compiles Inno Setup from that exact publish directory. Any required failure, including an unavailable or failing Inno compiler, returns a non-zero exit code. Use `-AllowDirty` only for an intentional local build from a dirty tree.
+`build_installer.ps1` is the canonical, blocking workflow. In order, it validates the required files, version/changelog and clean Git state; verifies the pinned SHA-256 values of the bundled FFmpeg and FFprobe binaries; restores all projects with `--locked-mode`; runs `dotnet test` in Release with `--no-restore`; clears only `publish\FrameShift-win-x64`; publishes a self-contained `win-x64` payload with `--no-restore`; verifies the application, the FFmpeg/FFprobe payload hashes and subtitle-worker payload; then compiles Inno Setup from that exact publish directory. Any required failure, including an unavailable or failing Inno compiler, returns a non-zero exit code. Use `-AllowDirty` only for an intentional local build from a dirty tree.
 
 `build_all.ps1`, `build_publish.ps1`, and `build_publish.bat` are compatibility wrappers to the same workflow. They do not offer optional test, publish-only, or installer-skipping modes.
 

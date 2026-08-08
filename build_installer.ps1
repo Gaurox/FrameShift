@@ -8,6 +8,11 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$script:BundledFfmpegHashes = @{
+    'Tools\ffmpeg\ffmpeg.exe' = '227AF0691433B703FFC5725E47F7D06EEFC34B4A72E7870E73D30E2CDA483ECF'
+    'Tools\ffmpeg\ffprobe.exe' = '901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88'
+}
+
 function Assert-RequiredFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -19,6 +24,53 @@ function Assert-RequiredFile {
 
     if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "$Label not found: $Path"
+    }
+}
+
+function Assert-ExpectedSha256 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ExpectedHash
+    )
+
+    $stream = [System.IO.File]::OpenRead($Path)
+    try {
+        $hasher = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $actualHash = ([System.BitConverter]::ToString($hasher.ComputeHash($stream))).Replace('-', '')
+        }
+        finally {
+            $hasher.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+
+    if (![string]::Equals($actualHash, $ExpectedHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "$Label SHA-256 mismatch. Expected $ExpectedHash, got ${actualHash}: $Path"
+    }
+}
+
+function Assert-BundledFfmpegPayload {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PayloadRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    foreach ($relativePath in $script:BundledFfmpegHashes.Keys) {
+        $toolPath = Join-Path $PayloadRoot $relativePath
+        Assert-RequiredFile -Path $toolPath -Label "$Label $relativePath"
+        Assert-ExpectedSha256 -Path $toolPath -Label "$Label $relativePath" -ExpectedHash $script:BundledFfmpegHashes[$relativePath]
     }
 }
 
@@ -164,6 +216,8 @@ function Assert-PublishPayload {
             throw "Publish payload is incomplete. Required file not found: $payloadFile"
         }
     }
+
+    Assert-BundledFfmpegPayload -PayloadRoot $PublishDirectory -Label 'Published FFmpeg payload'
 }
 
 try {
@@ -175,6 +229,7 @@ try {
     $installerDir = Join-Path $repoRoot 'installer'
     $issFile = Join-Path $installerDir 'FrameShift.iss'
     $publishDir = Join-Path $repoRoot 'publish\FrameShift-win-x64'
+    $appSourceDir = Join-Path $repoRoot 'src\FrameShift'
 
     Write-Host 'Validating release inputs...' -ForegroundColor Cyan
     Assert-RequiredFile -Path $projectFile -Label 'FrameShift project file'
@@ -183,6 +238,7 @@ try {
     Assert-RequiredFile -Path $changelogPath -Label 'CHANGELOG.md'
     Assert-RequiredFile -Path $issFile -Label 'Inno Setup script'
     Assert-PublishDirectoryIsSafe -RepositoryRoot $repoRoot -PublishDirectory $publishDir
+    Assert-BundledFfmpegPayload -PayloadRoot $appSourceDir -Label 'Bundled FFmpeg source payload'
 
     $appVersion = Get-ProjectVersion -ProjectFilePath $projectFile
     $installerExe = Join-Path $installerDir ("FrameShift_{0}_Setup.exe" -f $appVersion)
