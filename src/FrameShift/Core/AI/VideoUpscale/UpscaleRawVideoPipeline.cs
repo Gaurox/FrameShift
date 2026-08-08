@@ -176,7 +176,7 @@ internal sealed class UpscaleRawVideoPipeline
         "-an",
         "-sn",
         "-dn",
-        "-vsync", "0",
+        "-fps_mode", "passthrough",
         "-pix_fmt", "rgb24",
         "-f", "rawvideo",
         "-"

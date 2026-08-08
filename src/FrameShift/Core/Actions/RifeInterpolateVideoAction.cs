@@ -452,7 +452,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             "-an",
             "-sn",
             "-dn",
-            "-vsync", "0",
+            "-fps_mode", "passthrough",
             "-c:v", "bmp",
             outputPattern
         ];

@@ -200,6 +200,7 @@ public sealed class VideoOrientationPipelineTests
         Assert.Contains("rawvideo", arguments);
         Assert.Contains("-pix_fmt", arguments);
         Assert.Contains("rgb24", arguments);
+        AssertFfmpeg9PassthroughFrameTiming(arguments);
         AssertNoRotationOverride(arguments);
     }
 
@@ -207,7 +208,14 @@ public sealed class VideoOrientationPipelineTests
     {
         Assert.Contains("-c:v", arguments);
         Assert.Contains("bmp", arguments);
+        AssertFfmpeg9PassthroughFrameTiming(arguments);
         AssertNoRotationOverride(arguments);
+    }
+
+    private static void AssertFfmpeg9PassthroughFrameTiming(IReadOnlyList<string> arguments)
+    {
+        Assert.Equal("passthrough", GetOptionValue(arguments, "-fps_mode"));
+        Assert.DoesNotContain("-vsync", arguments);
     }
 
     private static void AssertRawvideoEncodeArguments(

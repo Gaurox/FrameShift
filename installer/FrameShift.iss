@@ -16,6 +16,7 @@
 AppName={#MyAppName}
 AppId={#MyAppId}
 AppVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\FrameShift
 DefaultGroupName={#MyAppName}

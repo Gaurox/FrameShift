@@ -46,7 +46,7 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-**New in 1.18.0 — Extract specific frames.** Extract the first frame, last frame, or keyframes from Explorer, while `Extract all frames` remains the one-click hub action. The CLI accepts `--frame-mode all|first|last|keyframes`; all outputs stay adjacent to the source with safe unique naming.
+**New in 1.18.1 — reliability and release hardening.** Queues and compression batches handle duplicate and late requests safely; RIFE and Upscale Video now respect display orientation; FFmpeg, FFprobe, and ONNX-backed workflows shut down cleanly on cancellation. Audio separation uses bounded streaming memory, and the installer now ships the validated FFmpeg 9.0 payload with its required notices.
 
 Alongside the Explorer right-click menu, FrameShift opens a simple drop-driven window: drag in as many files as you want and it shows only the actions that fit them, grouped by type. Each action runs on the whole selection in one pass, so large batches are no longer limited by Explorer's multi-file context-menu cap.
 
@@ -189,6 +189,7 @@ tests/
 - [Architecture Freeze](docs/ARCHITECTURE_FREEZE.md)
 - [Migration Plan](docs/MIGRATION_PLAN.md)
 - [Changelog](docs/CHANGELOG.md)
+- [Release Notes 1.18.1](docs/RELEASE_NOTES_1.18.1.md)
 - [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)
 - [Dark / Light Theme Implementation](docs/DARK_LIGHT_THEME_IMPLEMENTATION.md)
 - [Code File Index](docs/CODE_FILE_INDEX.md)

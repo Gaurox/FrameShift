@@ -57,7 +57,7 @@ public sealed class ExtractFramesSettingsTests
     }
 
     [Fact]
-    public void BuildAllArguments_PreservesTheHistoricalArgumentContract()
+    public void BuildAllArguments_UsesFfmpeg9PassthroughFrameTiming()
     {
         var arguments = ExtractFramesAction.BuildAllArguments("input.mp4", "frames\\input_%06d.png");
 
@@ -74,7 +74,7 @@ public sealed class ExtractFramesSettingsTests
             "-an",
             "-sn",
             "-dn",
-            "-vsync", "0",
+            "-fps_mode", "passthrough",
             "-c:v", "png",
             "-compression_level", "6",
             "frames\\input_%06d.png"

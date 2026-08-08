@@ -378,7 +378,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         "-hide_banner", "-loglevel", "error", "-stats_period", "0.25",
         "-progress", "pipe:1", "-nostats", "-y",
         "-i", inputPath,
-        "-map", "0:v:0", "-an", "-sn", "-dn", "-vsync", "0",
+        "-map", "0:v:0", "-an", "-sn", "-dn", "-fps_mode", "passthrough",
         "-c:v", "bmp", outputPattern
     ];
 

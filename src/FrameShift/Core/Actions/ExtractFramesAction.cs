@@ -362,7 +362,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
         }
     }
 
-    // This historical argument contract is intentionally kept unchanged for --frame-mode all and no --frame-mode.
+    // Keep every decoded frame without relying on the removed FFmpeg -vsync option.
     internal static IReadOnlyList<string> BuildAllArguments(string inputPath, string outputPattern)
     {
         return
@@ -378,7 +378,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
             "-an",
             "-sn",
             "-dn",
-            "-vsync", "0",
+            "-fps_mode", "passthrough",
             "-c:v", "png",
             "-compression_level", "6",
             outputPattern

@@ -290,7 +290,7 @@ internal sealed class RifeRawVideoPipeline
             "-an",
             "-sn",
             "-dn",
-            "-vsync", "0",
+            "-fps_mode", "passthrough",
             "-pix_fmt", "rgb24",
             "-f", "rawvideo",
             "-"
