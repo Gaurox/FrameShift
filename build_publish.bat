@@ -2,10 +2,10 @@
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
-set "PS_SCRIPT=%SCRIPT_DIR%build_publish.ps1"
+set "PS_SCRIPT=%SCRIPT_DIR%build_installer.ps1"
 
 if not exist "%PS_SCRIPT%" (
-    echo build_publish.ps1 introuvable: "%PS_SCRIPT%"
+    echo build_installer.ps1 introuvable: "%PS_SCRIPT%"
     exit /b 1
 )
 

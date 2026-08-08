@@ -1,5 +1,7 @@
 param(
-    [switch]$RunInstaller
+    [switch]$AllowDirty,
+    [switch]$RunInstaller,
+    [string]$IsccPath
 )
 
 $ErrorActionPreference = 'Stop'

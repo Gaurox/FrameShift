@@ -227,13 +227,13 @@ It is an alternative for quick, everyday media tasks from the Windows right-clic
 - Third-party components and optional AI model notices are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - `references/` is reference-only.
 - Active runtime resources must stay inside the real FrameShift project tree.
-- Before rebuilding the installer, publish the app so the setup packs the latest release payload.
+- The only official release command is:
 
 ```powershell
-.\build_publish.ps1
+ .\build_installer.ps1
 ```
 
-`build_publish.ps1` publishes to `publish\FrameShift-win-x64\` and runs Inno Setup automatically if found. Pass `-RunTests` to run the test suite first.
+It validates the release inputs and version entry, restores locked dependencies, runs mandatory Release tests, clears only `publish\FrameShift-win-x64\`, publishes the self-contained `win-x64` payload, validates its required files, then compiles Inno Setup. Any required failure returns a non-zero exit code. `build_all.ps1`, `build_publish.ps1`, and `build_publish.bat` are compatibility wrappers to this command.
 
 ---
 

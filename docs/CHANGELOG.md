@@ -7,6 +7,7 @@ Prepared for manual testing.
 - **H-01 — launcher scope.** Programmatic file additions no longer leave the first row selected by default: the main window therefore acts on the complete queue. A selection explicitly made by the user remains selected after later additions.
 - **H-03 — compression batch reliability.** Video, audio and image compression now use the shared conversion batch queue. Duplicate paths remain separate occurrences; late invocations are confirmed atomically before their secondary process succeeds, and a request at the closing boundary is retried in a fresh session rather than silently lost. The `SameForAll` / `PerFile` choices, specialized compression forms and headless behavior are unchanged.
 - **H-04 — queue removal identity.** Generic queues carry an occurrence ID through the final pre-execution check. Removing one pending item leaves a durable tombstone until that check, so two identical paths remain independent and a just-removed item cannot run accidentally.
+- **H-11 — canonical release chain.** `build_installer.ps1` is now the only release workflow: locked restores, mandatory Release tests, safe cleanup of only the expected publish folder, self-contained `win-x64` publish, payload verification, and a blocking Inno build from that current payload. The former build/publish scripts are thin compatibility wrappers, and contract tests cover clean-clone ordering plus test, publish, Inno, and stale-payload failures.
 
 ## 1.18.0
 

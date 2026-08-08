@@ -216,12 +216,12 @@ Règle obligatoire pour toute modification faite dans le projet :
 
 - après chaque modification de code : exécuter au minimum `dotnet build src/FrameShift/FrameShift.csproj` ;
 - ne jamais considérer un correctif terminé sans build vert ;
-- si le test réel passe par l'installateur Inno Setup, le menu contextuel Explorer ou une installation existante :
-- exécuter aussi `dotnet publish src/FrameShift/FrameShift.csproj -c Release -r win-x64 --self-contained true` ;
-- puis seulement recompiler `installer/FrameShift.iss`.
+- pour toute release, test réel via installateur, menu contextuel Explorer ou installation existante : exécuter uniquement `.\build_installer.ps1` ;
+- ne pas enchaîner manuellement publish et Inno : le script canonique valide l'état requis, restaure en mode verrouillé, exécute les tests Release obligatoires, nettoie uniquement `publish\FrameShift-win-x64`, publie le payload `win-x64` self-contained, le contrôle, puis compile l'ISS ;
+- `build_all.ps1`, `build_publish.ps1` et `build_publish.bat` sont des wrappers de compatibilité et ne constituent pas des workflows de release distincts.
 
 Important :
 
 - `bin\Debug\...` ne prouve pas qu'une installation Explorer utilise le nouveau binaire ;
-- l'ISS package la sortie `Release\...\publish` ;
+- l'ISS package exclusivement `publish\FrameShift-win-x64` produit par le run canonique courant ;
 - en cas de doute runtime, toujours vérifier quel binaire a réellement été publié puis installé.

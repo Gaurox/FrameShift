@@ -159,6 +159,7 @@ Règles stables :
 - pas de modèle embarqué dans Git ni dans l’installateur ;
 - téléchargement du modèle au moment utile, pas à l’ouverture simple d’une UI ;
 - vérification d’intégrité du modèle dans le flux de préflight ou de téléchargement quand le module le prévoit ;
+- l’installateur place toujours FFmpeg, FFprobe et tout le dossier `Workers\CreateSubtitlesWorker` (y compris ses DLL natives) avec le composant fixe `core` ; les composants optionnels pilotent uniquement les menus Explorer et ne conditionnent jamais la disponibilité d’une action dans la fenêtre principale ;
 - le dossier de modèles personnalisé reste pris en charge, mais une racine de volume, un profil, Windows, Program Files, `{app}` ou l’un de leurs parents est refusé ; à la désinstallation, FrameShift ne supprime jamais cette racine ni récursivement un dossier de modèles : il retire seulement les fichiers explicitement connus dans un dossier marqué comme créé par FrameShift, puis ne retire ce dossier que s’il est vide ;
 - `remove-background` conserve `fast` comme comportement par défaut et expose trois modèles via option CLI / menu Explorer sans dupliquer l’action ;
 - dans l’état figé de `1.0.11`, les deux modèles `high-resolution` tournent volontairement en **CPU only** ; seul `fast` reste en `DirectML` avec fallback CPU ;
@@ -187,9 +188,6 @@ Après modification de code :
 - `dotnet build src/FrameShift/FrameShift.csproj`
 
 Avant test via installateur ou menu contextuel :
-- `dotnet publish src/FrameShift/FrameShift.csproj -c Release -r win-x64 --self-contained true`
-- recompilation Inno Setup ensuite
+- `.\build_installer.ps1`
 
-Raison :
-- éviter de tester un ancien binaire ;
-- garder une chaîne claire entre code, publish et setup.
+`build_installer.ps1` est l'unique chaîne de release : validation des entrées, restore verrouillé, tests Release, nettoyage limité à `publish\FrameShift-win-x64`, publish `win-x64` self-contained, contrôle du payload, puis compilation Inno Setup. Les anciens scripts sont uniquement des wrappers de compatibilité ; aucune autre commande n'est une méthode de release officielle.

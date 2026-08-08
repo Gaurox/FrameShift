@@ -182,7 +182,7 @@ Dans les deux pipelines raw, le décodeur est démarré avant l'encodeur, avant 
 
 **Impact.** Une installation personnalisée peut montrer des actions impossibles à exécuter. Lors d'une mise à jour avec composant décoché, un runtime ancien n'est pas explicitement retiré et peut continuer à être utilisé.
 
-**Correction ciblée.** Solution la plus simple : toujours installer les runtimes partagés et utiliser les composants uniquement pour les menus Explorer. Si la réduction de payload est impérative, persister un manifeste et filtrer le catalogue ; cela coûte davantage.
+**Correction appliquée — état actif 1.18.1.** Les trois entrées `[Files]` des runtimes partagés (`ffmpeg.exe`, `ffprobe.exe` et tout `Workers\CreateSubtitlesWorker`, DLL natives incluses) appartiennent désormais au composant fixe `core`. Elles sont donc présentes dans toute installation fraîche et remplacées par le payload courant lors d’un upgrade, y compris lorsque les anciens composants d’action sont décochés ; `ignoreversion` reste appliqué. Les composants optionnels ne sont plus utilisés par le payload runtime et servent à `InstallSelectedMenus` pour les intégrations Explorer. La fenêtre principale peut conserver l’intégralité de `ActionCatalog` sans manifeste ni filtrage dynamique. Les modèles IA restent téléchargés à la demande ou fournis manuellement pour BRIA, jamais embarqués dans l’installateur. La checklist de release porte désormais les scénarios complete/custom/upgrade/uninstall correspondants.
 
 #### H-11 — Les deux chemins de release donnent des garanties contradictoires
 
@@ -190,7 +190,7 @@ Dans les deux pipelines raw, le décodeur est démarré avant l'encodeur, avant 
 
 **Impact.** Un clone réellement propre peut échouer au gate `--no-restore`; l'autre voie peut publier sans tests ou masquer l'échec installateur. Un fichier résiduel/étranger du publish précédent peut entrer dans l'installateur canonique.
 
-**Correction ciblée.** Un seul point d'entrée : validation des chemins, nettoyage récupérable et borné du publish, restore en mode verrouillé, tests obligatoires, publish, contrôle de manifeste, compilation Inno ; toute étape attendue doit retourner un code non nul.
+**Correction appliquée — état actif 1.18.1.** `build_installer.ps1` est désormais l'unique chaîne complète : validation des entrées, version/changelog et Git ; restore de l'application, du worker et des tests en `--locked-mode` ; tests Release obligatoires en `--no-restore` ; nettoyage strict de `publish\FrameShift-win-x64` seulement, avec refus des reparse points ; publish self-contained `win-x64` en `--no-restore` ; vérification du payload minimal ; puis Inno compilé avec `PublishOutputDir` explicitement fixé à ce publish courant. Une sortie Inno absente, vide ou non rafraîchie échoue. Les anciens `build_all.ps1`, `build_publish.ps1` et `build_publish.bat` sont de simples wrappers, et README/checklist ne documentent plus qu'une commande officielle. Les tests de contrat exécutent le script dans un clone synthétique sans `obj`, couvrent l'ordre restore/test, l'arrêt sur échec de test ou publish, l'échec Inno, l'absence de résidu et la provenance du payload Inno.
 
 #### H-12 — Le snapshot FFmpeg embarqué précède des correctifs de sécurité publics
 

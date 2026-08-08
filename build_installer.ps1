@@ -1,14 +1,26 @@
+[CmdletBinding()]
 param(
-    [switch]$RunInstaller
+    [switch]$AllowDirty,
+    [switch]$RunInstaller,
+    [string]$IsccPath
 )
 
 $ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
 
-$repoRoot = if ([string]::IsNullOrWhiteSpace($PSScriptRoot)) { (Get-Location).Path } else { (Resolve-Path $PSScriptRoot).Path }
-$projectDir = Join-Path $repoRoot 'src\FrameShift'
-$installerDir = Join-Path $repoRoot 'installer'
-$projectFile = Join-Path $projectDir 'FrameShift.csproj'
-$issFile = Join-Path $installerDir 'FrameShift.iss'
+function Assert-RequiredFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Label
+    )
+
+    if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+        throw "$Label not found: $Path"
+    }
+}
 
 function Get-ProjectVersion {
     param(
@@ -26,60 +38,43 @@ function Get-ProjectVersion {
     throw "No <Version> was found in $ProjectFilePath"
 }
 
-$appVersion = Get-ProjectVersion -ProjectFilePath $projectFile
-$installerExe = Join-Path $installerDir ("FrameShift_{0}_Setup.exe" -f $appVersion)
+function Invoke-ExternalTool {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$FilePath,
 
-# --- Gate 1: working tree must be clean ---
-Write-Host "Checking git working tree..." -ForegroundColor Cyan
-$gitDirty = git -C $repoRoot status --porcelain 2>&1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host 'git status failed — skipping cleanliness check.' -ForegroundColor Yellow
-} elseif (![string]::IsNullOrWhiteSpace($gitDirty)) {
-    Write-Host ''
-    Write-Host 'Uncommitted changes detected:' -ForegroundColor Yellow
-    Write-Host $gitDirty -ForegroundColor Yellow
-    Write-Host ''
-    Write-Host 'The installer will package the published output regardless, but the working tree is not clean.' -ForegroundColor Yellow
-    $confirm = Read-Host 'Continue anyway? [y/N]'
-    if ($confirm -notmatch '^[yY]$') {
-        throw 'Build aborted: uncommitted changes present.'
+        [Parameter(Mandatory = $true)]
+        [string[]]$Arguments,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Step
+    )
+
+    & $FilePath @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Step failed with exit code $LASTEXITCODE."
     }
-} else {
-    Write-Host "Working tree clean." -ForegroundColor Green
-}
-
-# --- Gate 2: CHANGELOG.md must have a section for this version ---
-Write-Host "Checking CHANGELOG.md for version $appVersion..." -ForegroundColor Cyan
-$changelogPath = Join-Path $repoRoot 'docs\CHANGELOG.md'
-if (!(Test-Path $changelogPath)) {
-    throw "CHANGELOG.md not found at: $changelogPath"
-}
-$changelogContent = Get-Content -LiteralPath $changelogPath -Raw
-if ($changelogContent -notmatch "(?m)^## $([regex]::Escape($appVersion))\s*$") {
-    throw "CHANGELOG.md has no '## $appVersion' section. Add a release entry before building."
-}
-Write-Host "CHANGELOG.md ## $appVersion section found — OK" -ForegroundColor Green
-
-# --- Gate 3: tests must pass ---
-Write-Host "Running tests..." -ForegroundColor Cyan
-$testProject = Join-Path $repoRoot 'tests\FrameShift.Tests\FrameShift.Tests.csproj'
-dotnet test $testProject -c Release --no-restore --verbosity minimal
-if ($LASTEXITCODE -ne 0) {
-    throw 'Tests failed. Fix all test failures before building the installer.'
-}
-Write-Host "All tests passed." -ForegroundColor Green
-
-$publishDir = Join-Path $repoRoot 'publish\FrameShift-win-x64'
-
-Write-Host "Publishing FrameShift release payload v$appVersion..." -ForegroundColor Cyan
-dotnet publish $projectFile -c Release -r win-x64 -p:SelfContained=true -p:PublishSingleFile=false -o $publishDir
-if ($LASTEXITCODE -ne 0) {
-    throw 'dotnet publish failed.'
 }
 
 function Get-IsccPath {
-    $candidates = @(
-        (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
+    param(
+        [string]$RequestedPath
+    )
+
+    if (![string]::IsNullOrWhiteSpace($RequestedPath)) {
+        if (!(Test-Path -LiteralPath $RequestedPath -PathType Leaf)) {
+            throw "Requested Inno Setup compiler not found: $RequestedPath"
+        }
+
+        return (Resolve-Path -LiteralPath $RequestedPath).Path
+    }
+
+    $candidates = @()
+    if (![string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
+        $candidates += (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe')
+    }
+
+    $candidates += @(
         'C:\Program Files (x86)\Inno Setup 6\ISCC.exe',
         'C:\Program Files\Inno Setup 6\ISCC.exe',
         'C:\Program Files (x86)\Inno Setup 5\ISCC.exe',
@@ -87,7 +82,7 @@ function Get-IsccPath {
     )
 
     foreach ($candidate in $candidates) {
-        if (Test-Path $candidate) {
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
             return $candidate
         }
     }
@@ -97,32 +92,179 @@ function Get-IsccPath {
         return $command.Source
     }
 
-    return $null
+    throw 'Inno Setup compiler not found. Install Inno Setup or pass -IsccPath.'
 }
 
-$isccPath = Get-IsccPath
-if ($null -eq $isccPath) {
+function Assert-PublishDirectoryIsSafe {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$PublishDirectory
+    )
+
+    $publishRoot = [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot 'publish'))
+    $expectedPublishDirectory = [System.IO.Path]::GetFullPath((Join-Path $publishRoot 'FrameShift-win-x64'))
+    $actualPublishDirectory = [System.IO.Path]::GetFullPath($PublishDirectory)
+
+    if (![string]::Equals($actualPublishDirectory, $expectedPublishDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to clean an unexpected publish directory: $actualPublishDirectory"
+    }
+
+    foreach ($path in @($publishRoot, $expectedPublishDirectory)) {
+        if (Test-Path -LiteralPath $path) {
+            $attributes = (Get-Item -LiteralPath $path -Force).Attributes
+            if (($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+                throw "Refusing to clean publish path containing a reparse point: $path"
+            }
+        }
+    }
+}
+
+function Clear-ExpectedPublishDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$PublishDirectory
+    )
+
+    Assert-PublishDirectoryIsSafe -RepositoryRoot $RepositoryRoot -PublishDirectory $PublishDirectory
+
+    if (Test-Path -LiteralPath $PublishDirectory) {
+        Write-Host "Cleaning publish directory: $PublishDirectory" -ForegroundColor Cyan
+        Remove-Item -LiteralPath $PublishDirectory -Recurse -Force
+    }
+
+    [System.IO.Directory]::CreateDirectory($PublishDirectory) | Out-Null
+
+    if ($null -ne (Get-ChildItem -LiteralPath $PublishDirectory -Force | Select-Object -First 1)) {
+        throw "Publish directory was not empty after cleanup: $PublishDirectory"
+    }
+}
+
+function Assert-PublishPayload {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PublishDirectory
+    )
+
+    $requiredPayloadFiles = @(
+        'FrameShift.exe',
+        'Tools\ffmpeg\ffmpeg.exe',
+        'Tools\ffmpeg\ffprobe.exe',
+        'Workers\CreateSubtitlesWorker\FrameShift.SubtitlesWorker.exe'
+    )
+
+    foreach ($relativePath in $requiredPayloadFiles) {
+        $payloadFile = Join-Path $PublishDirectory $relativePath
+        if (!(Test-Path -LiteralPath $payloadFile -PathType Leaf)) {
+            throw "Publish payload is incomplete. Required file not found: $payloadFile"
+        }
+    }
+}
+
+try {
+    $repoRoot = (Resolve-Path -LiteralPath $PSScriptRoot).Path
+    $projectFile = Join-Path $repoRoot 'src\FrameShift\FrameShift.csproj'
+    $workerProject = Join-Path $repoRoot 'src\FrameShift.SubtitlesWorker\FrameShift.SubtitlesWorker.csproj'
+    $testProject = Join-Path $repoRoot 'tests\FrameShift.Tests\FrameShift.Tests.csproj'
+    $changelogPath = Join-Path $repoRoot 'docs\CHANGELOG.md'
+    $installerDir = Join-Path $repoRoot 'installer'
+    $issFile = Join-Path $installerDir 'FrameShift.iss'
+    $publishDir = Join-Path $repoRoot 'publish\FrameShift-win-x64'
+
+    Write-Host 'Validating release inputs...' -ForegroundColor Cyan
+    Assert-RequiredFile -Path $projectFile -Label 'FrameShift project file'
+    Assert-RequiredFile -Path $workerProject -Label 'Create Subtitles worker project file'
+    Assert-RequiredFile -Path $testProject -Label 'Test project file'
+    Assert-RequiredFile -Path $changelogPath -Label 'CHANGELOG.md'
+    Assert-RequiredFile -Path $issFile -Label 'Inno Setup script'
+    Assert-PublishDirectoryIsSafe -RepositoryRoot $repoRoot -PublishDirectory $publishDir
+
+    $appVersion = Get-ProjectVersion -ProjectFilePath $projectFile
+    $installerExe = Join-Path $installerDir ("FrameShift_{0}_Setup.exe" -f $appVersion)
+    $changelogContent = Get-Content -LiteralPath $changelogPath -Raw
+    if ($changelogContent -notmatch "(?m)^## $([regex]::Escape($appVersion))\s*$") {
+        throw "CHANGELOG.md has no '## $appVersion' section. Add a release entry before building."
+    }
+
+    $gitStatus = git -C $repoRoot status --porcelain 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "git status failed with exit code $LASTEXITCODE."
+    }
+
+    if (![string]::IsNullOrWhiteSpace(($gitStatus -join [Environment]::NewLine))) {
+        if (!$AllowDirty) {
+            throw 'Working tree has uncommitted changes. Commit or stash them, or pass -AllowDirty for an intentional local build.'
+        }
+
+        Write-Host 'Proceeding with an explicitly allowed dirty working tree:' -ForegroundColor Yellow
+        Write-Host $gitStatus -ForegroundColor Yellow
+    }
+
+    Write-Host "Release version: $appVersion" -ForegroundColor Green
+
+    Write-Host 'Restoring locked dependencies...' -ForegroundColor Cyan
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'
+
+    Write-Host 'Running mandatory Release tests...' -ForegroundColor Cyan
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('test', $testProject, '-c', 'Release', '--no-restore', '--verbosity', 'minimal') -Step 'Release tests'
+
+    Clear-ExpectedPublishDirectory -RepositoryRoot $repoRoot -PublishDirectory $publishDir
+
+    Write-Host "Publishing FrameShift win-x64 self-contained payload v$appVersion..." -ForegroundColor Cyan
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @(
+        'publish', $projectFile,
+        '-c', 'Release',
+        '-r', 'win-x64',
+        '--self-contained', 'true',
+        '-p:PublishSingleFile=false',
+        '--no-restore',
+        '--verbosity', 'minimal',
+        '-o', $publishDir
+    ) -Step 'FrameShift publish'
+
+    Assert-PublishPayload -PublishDirectory $publishDir
+    Write-Host 'Publish payload verified.' -ForegroundColor Green
+
+    $compilerPath = Get-IsccPath -RequestedPath $IsccPath
+    $installerBuildStartedAt = [DateTime]::UtcNow
+    Write-Host "Compiling installer v$appVersion with $compilerPath ..." -ForegroundColor Cyan
+    Invoke-ExternalTool -FilePath $compilerPath -Arguments @(
+        "/DMyAppVersion=$appVersion",
+        "/DPublishOutputDir=$publishDir",
+        $issFile
+    ) -Step 'Inno Setup compilation'
+
+    if (!(Test-Path -LiteralPath $installerExe -PathType Leaf)) {
+        throw "Installer was not created: $installerExe"
+    }
+
+    $installerInfo = Get-Item -LiteralPath $installerExe
+    if ($installerInfo.Length -le 0) {
+        throw "Installer is empty: $installerExe"
+    }
+
+    if ($installerInfo.LastWriteTimeUtc -lt $installerBuildStartedAt.AddSeconds(-2)) {
+        throw "Installer was not refreshed by the current Inno Setup compilation: $installerExe"
+    }
+
     Write-Host ''
-    Write-Host 'Inno Setup compiler not found.' -ForegroundColor Yellow
-    Write-Host 'The release payload was published successfully, but the installer was not rebuilt.' -ForegroundColor Yellow
-    Write-Host "Run ISCC.exe manually on: $issFile" -ForegroundColor Yellow
+    Write-Host "Installer ready: $installerExe" -ForegroundColor Green
+
+    if ($RunInstaller) {
+        Write-Host 'Launching installer...' -ForegroundColor Cyan
+        Start-Process -FilePath $installerExe -WorkingDirectory $installerDir
+    }
+}
+catch {
+    Write-Error $_
     exit 1
 }
 
-Write-Host "Compiling installer v$appVersion with $isccPath ..." -ForegroundColor Cyan
-& $isccPath "/DMyAppVersion=$appVersion" $issFile
-if ($LASTEXITCODE -ne 0) {
-    throw 'Inno Setup compilation failed.'
-}
-
-if (!(Test-Path $installerExe)) {
-    throw "Installer was not created: $installerExe"
-}
-
-Write-Host ''
-Write-Host "Installer ready: $installerExe" -ForegroundColor Green
-
-if ($RunInstaller) {
-    Write-Host 'Launching installer...' -ForegroundColor Cyan
-    Start-Process -FilePath $installerExe -WorkingDirectory $installerDir
-}
+exit 0
