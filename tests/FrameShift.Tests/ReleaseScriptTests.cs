@@ -90,6 +90,19 @@ public sealed class ReleaseScriptTests
         Assert.Contains("SHA-256 mismatch", result.StandardError, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void CanonicalRelease_MissingDistributionNoticeInPublishStopsBeforeInno()
+    {
+        using var fixture = new ReleaseFixture { OmitPublishedDistributionNotice = true };
+
+        var result = fixture.Run();
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(result.LogLines, line => line.StartsWith("dotnet publish ", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("Publish distribution notice", result.StandardError, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class ReleaseFixture : IDisposable
     {
         private readonly string _toolsDirectory;
@@ -117,6 +130,7 @@ public sealed class ReleaseScriptTests
         public string PreviousPublishResiduePath { get; }
         public string? FailingStep { get; init; }
         public bool TamperFfmpegPayload { get; init; }
+        public bool OmitPublishedDistributionNotice { get; init; }
 
         public void CreatePreviousPublishResidue()
         {
@@ -149,6 +163,8 @@ public sealed class ReleaseScriptTests
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_FAIL_STEP"] = FailingStep ?? string.Empty;
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_SOURCE_DIR"] = Path.Combine(Root, "src", "FrameShift");
             startInfo.Environment["FRAMESHIFT_RELEASE_TEST_TAMPER_FFMPEG"] = TamperFfmpegPayload ? "1" : "0";
+            startInfo.Environment["FRAMESHIFT_RELEASE_TEST_ROOT"] = Root;
+            startInfo.Environment["FRAMESHIFT_RELEASE_TEST_OMIT_NOTICE"] = OmitPublishedDistributionNotice ? "1" : "0";
 
             using var process = Process.Start(startInfo);
             Assert.NotNull(process);
@@ -178,6 +194,12 @@ public sealed class ReleaseScriptTests
             WriteFile("tests\\FrameShift.Tests\\FrameShift.Tests.csproj", "<Project />");
             WriteFile("docs\\CHANGELOG.md", "## 1.2.3");
             WriteFile("installer\\FrameShift.iss", "; fixture");
+            CopyRepositoryFile("LICENSE");
+            CopyRepositoryFile("THIRD_PARTY_NOTICES.md");
+            CopyRepositoryFile("src\\FrameShift.SubtitlesWorker\\native-dml\\THIRD_PARTY_NOTICES.txt");
+            CopyRepositoryFile("licenses\\subtitles-worker-native\\APACHE-2.0.txt");
+            CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-LICENSE.txt");
+            CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt");
         }
 
         private void CreateFakeTools()
@@ -204,9 +226,18 @@ public sealed class ReleaseScriptTests
                 "if /I \"%FRAMESHIFT_RELEASE_TEST_FAIL_STEP%\"==\"publish\" exit /b 32",
                 "mkdir \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\" 2>nul",
                 "mkdir \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\" 2>nul",
+                "mkdir \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\" 2>nul",
                 "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\FrameShift.exe\"",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_SOURCE_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_SOURCE_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\LICENSE\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\LICENSE\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\THIRD_PARTY_NOTICES.md\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\THIRD_PARTY_NOTICES.md\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\src\\FrameShift.SubtitlesWorker\\native-dml\\THIRD_PARTY_NOTICES.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\THIRD_PARTY_NOTICES.txt\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" >nul",
+                "if /I \"%FRAMESHIFT_RELEASE_TEST_OMIT_NOTICE%\"==\"1\" goto skipnotice",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt\" >nul",
+                ":skipnotice",
                 "if /I \"%FRAMESHIFT_RELEASE_TEST_TAMPER_FFMPEG%\"==\"1\" echo tampered>> \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\"",
                 "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\\FrameShift.SubtitlesWorker.exe\"",
                 "exit /b 0"
@@ -219,6 +250,8 @@ public sealed class ReleaseScriptTests
                 "if exist \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\stale-from-previous-publish.txt\" exit /b 42",
                 "if not exist \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\FrameShift.exe\" exit /b 43",
                 "if not exist \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\" exit /b 44",
+                "if not exist \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\LICENSE\" exit /b 46",
+                "if not exist \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt\" exit /b 47",
                 "echo %* | findstr /C:\"/DPublishOutputDir=%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\" >nul",
                 "if errorlevel 1 exit /b 45",
                 "echo fixture installer> \"%FRAMESHIFT_RELEASE_TEST_INSTALLER%\"",

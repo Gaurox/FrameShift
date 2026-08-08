@@ -34,6 +34,7 @@ UninstallDisplayIcon={app}\Assets\Icons\app\app.ico
 ShowComponentSizes=no
 DisableDirPage=no
 CloseApplications=yes
+LicenseFile={#AppPayloadDir}\licenses\LICENSE
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

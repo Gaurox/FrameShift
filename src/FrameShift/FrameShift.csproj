@@ -46,6 +46,30 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+
+    <Content Include="..\..\LICENSE" Link="licenses\LICENSE">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
+    <Content Include="..\..\THIRD_PARTY_NOTICES.md" Link="licenses\THIRD_PARTY_NOTICES.md">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
+    <Content Include="..\FrameShift.SubtitlesWorker\native-dml\THIRD_PARTY_NOTICES.txt" Link="licenses\subtitles-worker-native\THIRD_PARTY_NOTICES.txt">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
+    <Content Include="..\..\licenses\subtitles-worker-native\APACHE-2.0.txt" Link="licenses\subtitles-worker-native\APACHE-2.0.txt">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
+    <Content Include="..\..\licenses\subtitles-worker-native\DirectML-LICENSE.txt" Link="licenses\subtitles-worker-native\DirectML-LICENSE.txt">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+
+    <Content Include="..\..\licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt" Link="licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <Target Name="CopyCreateSubtitlesWorkerForBuild" AfterTargets="Build">

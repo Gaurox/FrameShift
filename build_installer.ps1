@@ -13,6 +13,15 @@ $script:BundledFfmpegHashes = @{
     'Tools\ffmpeg\ffprobe.exe' = '901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88'
 }
 
+$script:DistributionNoticeFiles = @(
+    @{ Source = 'LICENSE'; Published = 'licenses\LICENSE' },
+    @{ Source = 'THIRD_PARTY_NOTICES.md'; Published = 'licenses\THIRD_PARTY_NOTICES.md' },
+    @{ Source = 'src\FrameShift.SubtitlesWorker\native-dml\THIRD_PARTY_NOTICES.txt'; Published = 'licenses\subtitles-worker-native\THIRD_PARTY_NOTICES.txt' },
+    @{ Source = 'licenses\subtitles-worker-native\APACHE-2.0.txt'; Published = 'licenses\subtitles-worker-native\APACHE-2.0.txt' },
+    @{ Source = 'licenses\subtitles-worker-native\DirectML-LICENSE.txt'; Published = 'licenses\subtitles-worker-native\DirectML-LICENSE.txt' },
+    @{ Source = 'licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt'; Published = 'licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt' }
+)
+
 function Assert-RequiredFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -71,6 +80,30 @@ function Assert-BundledFfmpegPayload {
         $toolPath = Join-Path $PayloadRoot $relativePath
         Assert-RequiredFile -Path $toolPath -Label "$Label $relativePath"
         Assert-ExpectedSha256 -Path $toolPath -Label "$Label $relativePath" -ExpectedHash $script:BundledFfmpegHashes[$relativePath]
+    }
+}
+
+function Assert-DistributionNoticeSources {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot
+    )
+
+    foreach ($noticeFile in $script:DistributionNoticeFiles) {
+        $sourcePath = Join-Path $RepositoryRoot $noticeFile.Source
+        Assert-RequiredFile -Path $sourcePath -Label "Distribution notice source $($noticeFile.Source)"
+    }
+}
+
+function Assert-DistributionNoticePayload {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PublishDirectory
+    )
+
+    foreach ($noticeFile in $script:DistributionNoticeFiles) {
+        $publishedPath = Join-Path $PublishDirectory $noticeFile.Published
+        Assert-RequiredFile -Path $publishedPath -Label "Publish distribution notice $($noticeFile.Published)"
     }
 }
 
@@ -218,6 +251,7 @@ function Assert-PublishPayload {
     }
 
     Assert-BundledFfmpegPayload -PayloadRoot $PublishDirectory -Label 'Published FFmpeg payload'
+    Assert-DistributionNoticePayload -PublishDirectory $PublishDirectory
 }
 
 try {
@@ -239,6 +273,7 @@ try {
     Assert-RequiredFile -Path $issFile -Label 'Inno Setup script'
     Assert-PublishDirectoryIsSafe -RepositoryRoot $repoRoot -PublishDirectory $publishDir
     Assert-BundledFfmpegPayload -PayloadRoot $appSourceDir -Label 'Bundled FFmpeg source payload'
+    Assert-DistributionNoticeSources -RepositoryRoot $repoRoot
 
     $appVersion = Get-ProjectVersion -ProjectFilePath $projectFile
     $installerExe = Join-Path $installerDir ("FrameShift_{0}_Setup.exe" -f $appVersion)

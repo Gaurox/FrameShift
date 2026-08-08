@@ -210,6 +210,8 @@ Dans les deux pipelines raw, le décodeur est démarré avant l'encodeur, avant 
 
 **Correction ciblée.** Installer un dossier `licenses/` déterministe avec licence projet, notices tierces et textes requis ; envisager `LicenseFile` Inno ; vérifier l'obligation et l'offre de source correspondant exactement au build FFmpeg distribué.
 
+**Statut — corrigé le 9 août 2026.** Le projet publie désormais un dossier statique `licenses/` : `LICENSE`, `THIRD_PARTY_NOTICES.md` et les notices natives du worker (`subtitles-worker-native/THIRD_PARTY_NOTICES.txt`, `APACHE-2.0.txt`, `DirectML-LICENSE.txt`, `DirectML-THIRD_PARTY_NOTICES.txt`). `FrameShift.csproj` copie explicitement cet ensemble vers le publish `win-x64`; l’entrée récursive déjà canonique de l’ISS l’installe donc au même emplacement. `LicenseFile={#AppPayloadDir}\licenses\LICENSE` affiche la licence GPLv3 FrameShift pendant l’installation sans ajouter de payload distinct. Le script de release vérifie les sources puis la présence exacte de chaque fichier dans le publish avant d’appeler Inno Setup. `THIRD_PARTY_NOTICES.md` conserve la provenance, les hashes et la représentation de FFmpeg/FFprobe, du runtime .NET et des dépendances applicatives ; les termes DirectML 1.15.4 et ses notices de package sont maintenant distribués tels quels. Les tests Release, build, publish et compilation ISS ont été rejoués avec succès ; Inno Setup a lu `LicenseFile` et compilé les entrées `[Files]` depuis ce publish validé. La validation interactive d’une installation reste à faire sur une machine ou un environnement de test dédié.
+
 ### Moyenne
 
 #### M-01 — Trois familles de modèles acceptent ensuite la seule présence du fichier

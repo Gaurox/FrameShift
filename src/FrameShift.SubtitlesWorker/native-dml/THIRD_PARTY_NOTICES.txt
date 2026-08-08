@@ -46,9 +46,10 @@ SHA-256  : 9C9E6D822561C6C41B90E6994B3E8857CF1D66DBFB1E0C4C799C7C89B4E92DA1
 Size     : 18,526,208 bytes (17.67 MB)
 
 DirectML is redistributable under the terms of the Microsoft.AI.DirectML NuGet
-package license.  The full license text is included in the NuGet package at:
-  LICENSE-CODE.txt  (MIT, for sample code)
-  LICENSE.txt       (Microsoft Software License Terms for DirectML)
+package license. FrameShift distributes the exact package texts beside this
+notice in `licenses/subtitles-worker-native/`:
+  DirectML-LICENSE.txt              (Microsoft Software License Terms for DirectML)
+  DirectML-THIRD_PARTY_NOTICES.txt (package third-party notices)
 
 ----------------------------------------------------------------------
 ORT MIT License (applies to onnxruntime.dll and onnxruntime_providers_shared.dll)
@@ -79,6 +80,9 @@ SOFTWARE.
 sherpa-onnx Apache 2.0 License (applies to sherpa-onnx-c-api.dll)
 ----------------------------------------------------------------------
 Copyright 2022-2025 Next-gen kaldi authors
+
+The complete Apache License 2.0 text is distributed beside this notice as
+`licenses/subtitles-worker-native/APACHE-2.0.txt`.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

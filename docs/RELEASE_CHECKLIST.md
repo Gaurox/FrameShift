@@ -34,7 +34,7 @@ The only official release command is:
 .\build_installer.ps1
 ```
 
-`build_installer.ps1` is the canonical, blocking workflow. In order, it validates the required files, version/changelog and clean Git state; verifies the pinned SHA-256 values of the bundled FFmpeg and FFprobe binaries; restores all projects with `--locked-mode`; runs `dotnet test` in Release with `--no-restore`; clears only `publish\FrameShift-win-x64`; publishes a self-contained `win-x64` payload with `--no-restore`; verifies the application, the FFmpeg/FFprobe payload hashes and subtitle-worker payload; then compiles Inno Setup from that exact publish directory. Any required failure, including an unavailable or failing Inno compiler, returns a non-zero exit code. Use `-AllowDirty` only for an intentional local build from a dirty tree.
+`build_installer.ps1` is the canonical, blocking workflow. In order, it validates the required files, version/changelog and clean Git state; verifies the pinned SHA-256 values of the bundled FFmpeg and FFprobe binaries; restores all projects with `--locked-mode`; runs `dotnet test` in Release with `--no-restore`; clears only `publish\FrameShift-win-x64`; publishes a self-contained `win-x64` payload with `--no-restore`; verifies the application, the FFmpeg/FFprobe payload hashes, subtitle-worker payload and the static distribution-notice set; then compiles Inno Setup from that exact publish directory. Any required failure, including an unavailable or failing Inno compiler, returns a non-zero exit code. Use `-AllowDirty` only for an intentional local build from a dirty tree.
 
 `build_all.ps1`, `build_publish.ps1`, and `build_publish.bat` are compatibility wrappers to the same workflow. They do not offer optional test, publish-only, or installer-skipping modes.
 
@@ -42,6 +42,7 @@ Manual steps after the script completes:
 
 - Confirm the expected installer is produced in `installer/`
 - Confirm the publish payload and installer do not include unnecessary debug files
+- Confirm `publish\FrameShift-win-x64\licenses\` contains `LICENSE`, `THIRD_PARTY_NOTICES.md`, and `subtitles-worker-native\` with `THIRD_PARTY_NOTICES.txt`, `APACHE-2.0.txt`, `DirectML-LICENSE.txt`, and `DirectML-THIRD_PARTY_NOTICES.txt`. The installer receives that same directory; its licence page displays `licenses\LICENSE`.
 - For installer runtime coherence (H-10), verify a fresh complete install and a custom `core`-only install both contain the current `ffmpeg.exe`, `ffprobe.exe`, and `Workers\CreateSubtitlesWorker` payload. The `core`-only install must create no action-specific Explorer menus.
 - Verify custom installs selecting only `remove_noise_video`, only Media Info, Create Subtitles audio, and Create Subtitles video: each selected Explorer menu is present, non-selected menus are absent, and the shared runtimes remain present.
 - Verify upgrades from a previous minimal install and with formerly selected components now deselected: FFmpeg, FFprobe, and the subtitles worker are replaced by the current payload while `InstallSelectedMenus` removes menus that are no longer selected. Finish with an uninstall and confirm the shared runtimes and Explorer menus are removed.

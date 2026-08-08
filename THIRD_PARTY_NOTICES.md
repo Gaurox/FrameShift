@@ -5,6 +5,10 @@ See [LICENSE](LICENSE) for the full project license text.
 
 Third-party components keep their own licenses. The main project license does not replace or rewrite those upstream licenses.
 
+Every release carries this document as `licenses/THIRD_PARTY_NOTICES.md`. The
+same directory contains the FrameShift GPLv3 text (`licenses/LICENSE`) and the
+additional static native-worker license texts identified below.
+
 ---
 
 ## FFmpeg and FFprobe
@@ -22,6 +26,15 @@ FrameShift bundles `ffmpeg.exe` and `ffprobe.exe` as part of its installer and l
 This build includes components licensed under LGPL and GPL. Because this build was compiled with `--enable-gpl`, the binary as a whole is governed by the GPL v3+. FrameShift is itself distributed under GPL v3, which is compatible with this requirement.
 
 In compliance with the GPL, users who wish to obtain the corresponding source code for the bundled FFmpeg build may refer to the upstream source repository listed above, or to the build provider (www.gyan.dev).
+
+---
+
+## .NET Runtime
+
+The self-contained `win-x64` publish includes the .NET 8 Windows Desktop runtime.
+
+- Source: https://github.com/dotnet/runtime and https://github.com/dotnet/wpf
+- License: **MIT License**
 
 ---
 
@@ -285,9 +298,13 @@ package already used by the main app) to keep the two ORT stacks isolated.
 ### DirectML.dll (bundled native DLL)
 
 - Source: Microsoft.AI.DirectML 1.15.4 (bin/x64-win)
-- License: **Microsoft DirectML License** (see NuGet package `Microsoft.AI.DirectML` for full terms)
+- License: **Microsoft DirectML License**
 - SHA-256: `9C9E6D822561C6C41B90E6994B3E8857CF1D66DBFB1E0C4C799C7C89B4E92DA1`
-- Full notice: `src/FrameShift.SubtitlesWorker/native-dml/THIRD_PARTY_NOTICES.txt`
+- Native-worker notices and the exact DirectML package terms are distributed in
+  `licenses/subtitles-worker-native/`:
+  `THIRD_PARTY_NOTICES.txt`, `DirectML-LICENSE.txt`, and
+  `DirectML-THIRD_PARTY_NOTICES.txt`. The Apache 2.0 text for the custom
+  sherpa-onnx native build is distributed there as `APACHE-2.0.txt`.
 
 ---
 
