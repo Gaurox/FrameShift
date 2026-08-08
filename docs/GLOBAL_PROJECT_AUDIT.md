@@ -28,7 +28,7 @@ L'analyse a ensuite couvert les projets C#, les scripts de build/release, l'inst
 | SDK .NET | `8.0.420` ; cible applicative `.NET 8` / `net8.0-windows`. |
 | Scan NuGet `--vulnerable --include-transitive` | Aucun package vulnérable signalé pour l'application, le worker ou les tests, avec les données NuGet disponibles le 4 août 2026. |
 | Scan NuGet `--deprecated --include-transitive` | Aucun package déprécié pour l'application et le worker. `xunit 2.9.2` et ses composants v2 sont signalés « Legacy » dans le projet de tests. |
-| FFmpeg / FFprobe embarqués | Snapshot `2025-04-17-git-7684243fbe-essentials_build-www.gyan.dev`. |
+| FFmpeg / FFprobe embarqués | Release `9.0-essentials_build-www.gyan.dev` (FFmpeg 9.0, 4 août 2026), vérifiée par SHA-256 et republiée dans le payload `win-x64`. |
 
 Le publish et l'installateur n'ont pas été régénérés, afin de ne pas réécrire `publish/` ni l'exécutable Inno existant. Leur cohérence a été contrôlée par lecture des projets/scripts/ISS et inspection en lecture seule du payload présent ; la feuille de route demande précisément un smoke test reproductible de ces étapes.
 
@@ -199,6 +199,8 @@ Dans les deux pipelines raw, le décodeur est démarré avant l'encodeur, avant 
 **Impact.** FrameShift ouvre des médias potentiellement non fiables ; un snapshot antérieur ne peut pas contenir les commits de correction postérieurs. L'audit ne démontre pas que chaque CVE est exploitable dans chaque commande FrameShift, mais la dette de patch est réelle et la surface est directement exposée aux fichiers utilisateur.
 
 **Correction ciblée.** Passer à un build stable récent, vérifier provenance/configuration/hash, rejouer les tests fonctionnels et médias réels, puis pinner les nouveaux SHA dans le gate de release.
+
+**Statut — corrigé le 9 août 2026.** FrameShift embarque désormais le build statique GPLv3 `9.0-essentials_build-www.gyan.dev` de Gyan Doshi, correspondant à la release stable FFmpeg 9.0 du 4 août 2026 et au commit source `d32b387f2b`. L’archive `ffmpeg-release-essentials.zip` a été téléchargée depuis Gyan.dev et son SHA-256 publié a été confirmé (`E6B54767A6065919048F1A098EB27211CA4E12B4348A05D88777A5855D0B6E71`). Les binaires embarqués sont `ffmpeg.exe` `227AF0691433B703FFC5725E47F7D06EEFC34B4A72E7870E73D30E2CDA483ECF` et `ffprobe.exe` `901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88`. Leur configuration confirme `--enable-gpl --enable-version3 --enable-static` et la disponibilité des bibliothèques utilisées par FrameShift, notamment libx264, libx265, libvpx, libopus, libmp3lame, libwebp et libass. `build_installer.ps1` refuse désormais une source ou un payload publié dont l’un de ces hashes diffère ; le test de release couvre aussi une altération simulée avant Inno Setup. Les tests Release (433/433), le build Release (0 avertissement, 0 erreur), le publish self-contained `win-x64`, l’installateur Inno Setup et les smokes réels sur médias courts ont réussi. Les commandes FrameShift existantes sont restées inchangées : aucune incompatibilité 9.0 n’a été constatée.
 
 #### H-13 — Les licences/notices du dépôt ne sont pas livrées avec le produit
 
