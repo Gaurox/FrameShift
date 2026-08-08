@@ -61,126 +61,45 @@ internal sealed class RemoveNoiseEngine : IDisposable
         EnsureSessions(progress, cancellationToken);
 
         progress.Report((5, "Loading audio..."));
-        float[] samples = LoadMonoFloat48k(inputPath, cancellationToken);
-
-        cancellationToken.ThrowIfCancellationRequested();
         progress.Report((15, "Analyzing audio..."));
+        var analysis = LoadAnalyzeAndBuildFeatures(inputPath, progress, cancellationToken);
+        int sampleCount = analysis.SampleCount;
+        int totalFrames = analysis.TotalFrames;
+        int[] erbBandWidths = analysis.ErbBandWidths;
+        float[][] analyzedRe = analysis.AnalyzedRe;
+        float[][] analyzedIm = analysis.AnalyzedIm;
 
-        int[] erbBandWidths = BuildOfficialErbBandWidths(Sr, FftSize, NbErb, MinNbErbFreqs);
         var fft = new BluesteinFft(FftSize);
-        var analysisState = new OfficialLibDfState(FftSize, HopSize, fft);
         var synthesisState = new OfficialLibDfState(FftSize, HopSize, fft);
 
-        float[] analysisAudio = new float[samples.Length + FftSize];
-        Array.Copy(samples, analysisAudio, samples.Length);
-        int totalFrames = (int)Math.Ceiling(analysisAudio.Length / (double)HopSize);
-
-        var analyzedRe = new float[totalFrames][];
-        var analyzedIm = new float[totalFrames][];
-        for (int i = 0; i < totalFrames; i++)
-        {
-            analyzedRe[i] = new float[SpecBins];
-            analyzedIm[i] = new float[SpecBins];
-        }
-
-        var analysisChunk = new float[HopSize];
-        for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            int chunkOffset = frameIdx * HopSize;
-            Array.Clear(analysisChunk, 0, analysisChunk.Length);
-            int copyLen = Math.Min(HopSize, analysisAudio.Length - chunkOffset);
-            if (copyLen > 0)
-                Array.Copy(analysisAudio, chunkOffset, analysisChunk, 0, copyLen);
-
-            analysisState.AnalysisFrame(analysisChunk, analyzedRe[frameIdx], analyzedIm[frameIdx]);
-        }
-
-        progress.Report((30, "Building model features..."));
-        float[] erbFramesAll = new float[totalFrames * NbErb];
-        float[] specFeatAll = new float[2 * totalFrames * NbDf];
-        float normAlpha = MathF.Exp(-(float)HopSize / Sr / NormTau);
-        float oneMinusAlpha = 1f - normAlpha;
-        float[] erbNormState = MakeLinearRamp(MeanNormInitMin, MeanNormInitMax, NbErb);
-        float[] specNormState = MakeLinearRamp(UnitNormInitMin, UnitNormInitMax, NbDf);
-
-        for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            float[] specRe = analyzedRe[frameIdx];
-            float[] specIm = analyzedIm[frameIdx];
-
-            int erbBase = frameIdx * NbErb;
-            int erbBinOffset = 0;
-            for (int b = 0; b < NbErb; b++)
-            {
-                float weightedPower = 0f;
-                int bandWidth = erbBandWidths[b];
-                for (int j = 0; j < bandWidth; j++)
-                {
-                    int k = erbBinOffset + j;
-                    weightedPower += specRe[k] * specRe[k] + specIm[k] * specIm[k];
-                }
-
-                float xDb = bandWidth > 0
-                    ? 10f * MathF.Log10(MathF.Max(weightedPower / bandWidth, 1e-10f))
-                    : -100f;
-
-                erbNormState[b] = normAlpha * erbNormState[b] + oneMinusAlpha * xDb;
-                erbFramesAll[erbBase + b] = (xDb - erbNormState[b]) / MeanNormDenom;
-                erbBinOffset += bandWidth;
-            }
-
-            int specReBase = frameIdx * NbDf;
-            int specImBase = totalFrames * NbDf + frameIdx * NbDf;
-            for (int k = 0; k < NbDf; k++)
-            {
-                float mag = MathF.Sqrt(specRe[k] * specRe[k] + specIm[k] * specIm[k]);
-                specNormState[k] = normAlpha * specNormState[k] + oneMinusAlpha * mag;
-                float inv = 1f / MathF.Sqrt(MathF.Max(specNormState[k], 1e-10f));
-                specFeatAll[specReBase + k] = specRe[k] * inv;
-                specFeatAll[specImBase + k] = specIm[k] * inv;
-            }
-        }
-
         progress.Report((45, "Running AI inference..."));
-        float[] featErbModel = ShiftFeatureTime(erbFramesAll, 1, totalFrames, NbErb, Lookahead);
-        float[] featSpecModel = ShiftFeatureTime(specFeatAll, 2, totalFrames, NbDf, Lookahead);
 
         var emptyHidden = new Dictionary<string, DenseTensor<float>>(StringComparer.Ordinal);
         var encInputs = BuildInputs(_encSession!, emptyHidden,
-            ("feat_erb", featErbModel, new[] { 1, 1, totalFrames, NbErb }),
-            ("feat_spec", featSpecModel, new[] { 1, 2, totalFrames, NbDf }));
+            ("feat_erb", analysis.ErbFeatures, new[] { 1, 1, totalFrames, NbErb }),
+            ("feat_spec", analysis.SpecFeatures, new[] { 1, 2, totalFrames, NbDf }));
 
-        Dictionary<string, (float[] data, int[] shape)> encOutputs;
-        cancellationToken.ThrowIfCancellationRequested();
-        using (var res = _encSession!.Run(encInputs))
-        {
-            encOutputs = ExtractAllDataOutputs(res);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
         float[] rawErbGainsAll;
         int[] erbGainsShape;
-        var erbDecInputs = BuildInputsFromDict(_erbDecSession!, emptyHidden, encOutputs);
-        cancellationToken.ThrowIfCancellationRequested();
-        using (var res = _erbDecSession!.Run(erbDecInputs))
-        {
-            (rawErbGainsAll, erbGainsShape) = GetFirstDataOutput(res);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
         float[] rawDfCoeffsAll;
         int[] dfCoeffsShape;
-        var dfDecInputs = BuildInputsFromDict(_dfDecSession!, emptyHidden, encOutputs);
+
         cancellationToken.ThrowIfCancellationRequested();
-        using (var res = _dfDecSession!.Run(dfDecInputs))
+        using (var encoderResults = _encSession!.Run(encInputs))
         {
-            var dfOutputs = ExtractAllDataOutputs(res);
-            if (!dfOutputs.TryGetValue("coefs", out var coefsOut))
-                throw new InvalidOperationException($"df_dec output 'coefs' not found. Have: [{string.Join(", ", dfOutputs.Keys)}]");
-            rawDfCoeffsAll = coefsOut.data;
-            dfCoeffsShape = coefsOut.shape;
+            var erbDecInputs = BuildInputsFromResults(_erbDecSession!, emptyHidden, encoderResults);
+            cancellationToken.ThrowIfCancellationRequested();
+            using (var erbResults = _erbDecSession!.Run(erbDecInputs))
+            {
+                (rawErbGainsAll, erbGainsShape) = GetFirstDataOutput(erbResults);
+            }
+
+            var dfDecInputs = BuildInputsFromResults(_dfDecSession!, emptyHidden, encoderResults);
+            cancellationToken.ThrowIfCancellationRequested();
+            using (var dfResults = _dfDecSession!.Run(dfDecInputs))
+            {
+                (rawDfCoeffsAll, dfCoeffsShape) = GetDataOutput(dfResults, "coefs");
+            }
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -200,36 +119,24 @@ internal sealed class RemoveNoiseEngine : IDisposable
         }
 
         progress.Report((70, "Reconstructing cleaned audio..."));
-        var processedRe = new float[totalFrames][];
-        var processedIm = new float[totalFrames][];
-        for (int i = 0; i < totalFrames; i++)
-        {
-            processedRe[i] = new float[SpecBins];
-            processedIm[i] = new float[SpecBins];
-        }
+        var outputRe = new float[SpecBins];
+        var outputIm = new float[SpecBins];
+        var synthChunk = new float[HopSize];
+        var clean = new float[sampleCount];
+        int delay = FftSize - HopSize;
 
         for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            float[] specRe = new float[SpecBins];
-            float[] specIm = new float[SpecBins];
-            Array.Copy(analyzedRe[frameIdx], specRe, SpecBins);
-            Array.Copy(analyzedIm[frameIdx], specIm, SpecBins);
+            float[] analyzedFrameRe = analyzedRe[frameIdx];
+            float[] analyzedFrameIm = analyzedIm[frameIdx];
+            Array.Copy(analyzedFrameRe, outputRe, SpecBins);
+            Array.Copy(analyzedFrameIm, outputIm, SpecBins);
 
-            float[] erbGains = ExtractFrameSlice(rawErbGainsAll, erbGainsShape, 2, frameIdx);
-            float[] rawDfCoeffs = ExtractFrameSlice(rawDfCoeffsAll, dfCoeffsShape, 1, frameIdx);
-
-            var specMaskedRe = new float[SpecBins];
-            var specMaskedIm = new float[SpecBins];
-            Array.Copy(specRe, specMaskedRe, SpecBins);
-            Array.Copy(specIm, specMaskedIm, SpecBins);
-            ApplyOfficialErbBandGains(specMaskedRe, specMaskedIm, erbGains, erbBandWidths, minGain);
-
-            var dfOutputRe = new float[SpecBins];
-            var dfOutputIm = new float[SpecBins];
-            Array.Copy(specRe, dfOutputRe, SpecBins);
-            Array.Copy(specIm, dfOutputIm, SpecBins);
+            var erbGains = GetFirstOuterFrameSlice(rawErbGainsAll, erbGainsShape, 2, frameIdx);
+            var rawDfCoeffs = GetFirstOuterFrameSlice(rawDfCoeffsAll, dfCoeffsShape, 1, frameIdx);
+            ApplyOfficialErbBandGains(outputRe, outputIm, erbGains, erbBandWidths, minGain);
 
             ApplyOfficialMfDfFullSequence(
                 analyzedRe,
@@ -239,43 +146,22 @@ internal sealed class RemoveNoiseEngine : IDisposable
                 Lookahead,
                 frameIdx,
                 NbDf,
-                dfOutputRe,
-                dfOutputIm);
+                outputRe,
+                outputIm);
 
             // apply attenuation floor to DF bins (blend with original)
             if (minGain > 0f)
             {
                 for (int k = 0; k < NbDf; k++)
                 {
-                    dfOutputRe[k] += minGain * (specRe[k] - dfOutputRe[k]);
-                    dfOutputIm[k] += minGain * (specIm[k] - dfOutputIm[k]);
+                    outputRe[k] += minGain * (analyzedFrameRe[k] - outputRe[k]);
+                    outputIm[k] += minGain * (analyzedFrameIm[k] - outputIm[k]);
                 }
             }
 
-            for (int k = NbDf; k < SpecBins; k++)
-            {
-                dfOutputRe[k] = specMaskedRe[k];
-                dfOutputIm[k] = specMaskedIm[k];
-            }
-
-            Array.Copy(dfOutputRe, processedRe[frameIdx], SpecBins);
-            Array.Copy(dfOutputIm, processedIm[frameIdx], SpecBins);
+            synthesisState.SynthesisFrame(outputRe, outputIm, synthChunk);
+            CopySynthesisChunkToClean(synthChunk, clean, frameIdx, delay);
         }
-
-        float[] synthAudio = new float[totalFrames * HopSize];
-        var synthChunk = new float[HopSize];
-        for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            synthesisState.SynthesisFrame(processedRe[frameIdx], processedIm[frameIdx], synthChunk);
-            Array.Copy(synthChunk, 0, synthAudio, frameIdx * HopSize, HopSize);
-        }
-
-        float[] clean = new float[samples.Length];
-        int delay = FftSize - HopSize;
-        int synthCopyLen = Math.Min(samples.Length, synthAudio.Length - delay);
-        if (synthCopyLen > 0)
-            Array.Copy(synthAudio, delay, clean, 0, synthCopyLen);
 
         progress.Report((92, "Saving cleaned file..."));
         outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_clean", ".wav");
@@ -325,7 +211,89 @@ internal sealed class RemoveNoiseEngine : IDisposable
         }
     }
 
-    private static float[] LoadMonoFloat48k(string path, CancellationToken cancellationToken)
+    private static RemoveNoiseAnalysis LoadAnalyzeAndBuildFeatures(
+        string path,
+        IProgress<(int percent, string status)> progress,
+        CancellationToken cancellationToken)
+    {
+        var loaded = LoadMonoFloat48k(path, cancellationToken);
+        int totalFrames = checked((loaded.Count + FftSize + HopSize - 1) / HopSize);
+        int[] erbBandWidths = BuildOfficialErbBandWidths(Sr, FftSize, NbErb, MinNbErbFreqs);
+        var analyzedRe = new float[totalFrames][];
+        var analyzedIm = new float[totalFrames][];
+        var fft = new BluesteinFft(FftSize);
+        var analysisState = new OfficialLibDfState(FftSize, HopSize, fft);
+        var analysisChunk = new float[HopSize];
+
+        for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            analyzedRe[frameIdx] = new float[SpecBins];
+            analyzedIm[frameIdx] = new float[SpecBins];
+
+            int chunkOffset = frameIdx * HopSize;
+            Array.Clear(analysisChunk, 0, analysisChunk.Length);
+            int copyLength = Math.Min(HopSize, loaded.Count - chunkOffset);
+            if (copyLength > 0)
+                Array.Copy(loaded.Samples, chunkOffset, analysisChunk, 0, copyLength);
+
+            analysisState.AnalysisFrame(analysisChunk, analyzedRe[frameIdx], analyzedIm[frameIdx]);
+        }
+
+        progress.Report((30, "Building model features..."));
+        var erbFeatures = new float[checked(totalFrames * NbErb)];
+        var specFeatures = new float[checked(2 * totalFrames * NbDf)];
+        var erbFeatureFrame = new float[NbErb];
+        var specReFeatureFrame = new float[NbDf];
+        var specImFeatureFrame = new float[NbDf];
+        float normAlpha = MathF.Exp(-(float)HopSize / Sr / NormTau);
+        float oneMinusAlpha = 1f - normAlpha;
+        float[] erbNormState = MakeLinearRamp(MeanNormInitMin, MeanNormInitMax, NbErb);
+        float[] specNormState = MakeLinearRamp(UnitNormInitMin, UnitNormInitMax, NbDf);
+
+        for (int frameIdx = 0; frameIdx < totalFrames; frameIdx++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            float[] specRe = analyzedRe[frameIdx];
+            float[] specIm = analyzedIm[frameIdx];
+
+            int erbBinOffset = 0;
+            for (int b = 0; b < NbErb; b++)
+            {
+                float weightedPower = 0f;
+                int bandWidth = erbBandWidths[b];
+                for (int j = 0; j < bandWidth; j++)
+                {
+                    int k = erbBinOffset + j;
+                    weightedPower += specRe[k] * specRe[k] + specIm[k] * specIm[k];
+                }
+
+                float xDb = bandWidth > 0
+                    ? 10f * MathF.Log10(MathF.Max(weightedPower / bandWidth, 1e-10f))
+                    : -100f;
+                erbNormState[b] = normAlpha * erbNormState[b] + oneMinusAlpha * xDb;
+                erbFeatureFrame[b] = (xDb - erbNormState[b]) / MeanNormDenom;
+                erbBinOffset += bandWidth;
+            }
+
+            for (int k = 0; k < NbDf; k++)
+            {
+                float mag = MathF.Sqrt(specRe[k] * specRe[k] + specIm[k] * specIm[k]);
+                specNormState[k] = normAlpha * specNormState[k] + oneMinusAlpha * mag;
+                float inv = 1f / MathF.Sqrt(MathF.Max(specNormState[k], 1e-10f));
+                specReFeatureFrame[k] = specRe[k] * inv;
+                specImFeatureFrame[k] = specIm[k] * inv;
+            }
+
+            StoreLookaheadShiftedFrame(erbFeatures, 1, totalFrames, NbErb, Lookahead, frameIdx, 0, erbFeatureFrame);
+            StoreLookaheadShiftedFrame(specFeatures, 2, totalFrames, NbDf, Lookahead, frameIdx, 0, specReFeatureFrame);
+            StoreLookaheadShiftedFrame(specFeatures, 2, totalFrames, NbDf, Lookahead, frameIdx, 1, specImFeatureFrame);
+        }
+
+        return new RemoveNoiseAnalysis(loaded.Count, totalFrames, erbBandWidths, analyzedRe, analyzedIm, erbFeatures, specFeatures);
+    }
+
+    private static LoadedMonoAudio LoadMonoFloat48k(string path, CancellationToken cancellationToken)
     {
         using var reader = new AudioFileReader(path);
         ISampleProvider source = reader;
@@ -334,16 +302,40 @@ internal sealed class RemoveNoiseEngine : IDisposable
         if (source.WaveFormat.Channels > 1)
             source = source.ToMono();
 
-        var samples = new List<float>(Sr * 60);
+        int initialCapacity = GetInitialSampleCapacity(reader.TotalTime);
+        var samples = new float[initialCapacity];
+        int sampleCount = 0;
         var buffer = new float[8192];
         int read;
         while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            samples.AddRange(buffer.AsSpan(0, read).ToArray());
+            EnsureSampleCapacity(ref samples, checked(sampleCount + read));
+            buffer.AsSpan(0, read).CopyTo(samples.AsSpan(sampleCount, read));
+            sampleCount += read;
         }
 
-        return samples.ToArray();
+        return new LoadedMonoAudio(samples, sampleCount);
+    }
+
+    private static int GetInitialSampleCapacity(TimeSpan duration)
+    {
+        if (duration <= TimeSpan.Zero)
+            return 8192;
+
+        double estimatedSampleCount = Math.Ceiling(duration.TotalSeconds * Sr);
+        return estimatedSampleCount is > 0 and <= int.MaxValue
+            ? Math.Max(8192, (int)estimatedSampleCount)
+            : 8192;
+    }
+
+    private static void EnsureSampleCapacity(ref float[] samples, int requiredCount)
+    {
+        if (requiredCount <= samples.Length)
+            return;
+
+        int newCapacity = checked(Math.Max(requiredCount, samples.Length + samples.Length / 2));
+        Array.Resize(ref samples, newCapacity);
     }
 
     private static float FreqToErb(float hz) => 9.265f * MathF.Log(1f + hz / (24.7f * 9.265f));
@@ -403,47 +395,46 @@ internal sealed class RemoveNoiseEngine : IDisposable
         return result;
     }
 
-    private static float[] ShiftFeatureTime(float[] src, int channels, int frames, int bins, int lookahead)
+    internal static void StoreLookaheadShiftedFrame(
+        float[] destination,
+        int channels,
+        int frames,
+        int bins,
+        int lookahead,
+        int sourceFrame,
+        int channel,
+        ReadOnlySpan<float> values)
     {
-        var dst = new float[src.Length];
-        for (int c = 0; c < channels; c++)
-        {
-            int channelBase = c * frames * bins;
-            for (int t = 0; t < frames; t++)
-            {
-                int srcT = t + lookahead;
-                if (srcT >= frames)
-                    continue;
+        if ((uint)channel >= (uint)channels || values.Length < bins)
+            throw new ArgumentOutOfRangeException(nameof(channel));
 
-                Array.Copy(src, channelBase + srcT * bins, dst, channelBase + t * bins, bins);
-            }
-        }
+        int destinationFrame = sourceFrame - lookahead;
+        if ((uint)destinationFrame >= (uint)frames)
+            return;
 
-        return dst;
+        values[..bins].CopyTo(destination.AsSpan((channel * frames + destinationFrame) * bins, bins));
     }
 
-    private static float[] ExtractFrameSlice(float[] data, int[] shape, int timeDim, int frameIndex)
+    internal static void CopySynthesisChunkToClean(float[] synthChunk, float[] clean, int frameIndex, int delay)
     {
-        int outer = 1;
-        for (int i = 0; i < timeDim; i++)
-            outer *= shape[i];
+        int outputOffset = checked(frameIndex * synthChunk.Length - delay);
+        int sourceOffset = Math.Max(0, -outputOffset);
+        int destinationOffset = Math.Max(0, outputOffset);
+        int copyLength = Math.Min(synthChunk.Length - sourceOffset, clean.Length - destinationOffset);
+        if (copyLength > 0)
+            Array.Copy(synthChunk, sourceOffset, clean, destinationOffset, copyLength);
+    }
 
+    private static ReadOnlySpan<float> GetFirstOuterFrameSlice(float[] data, int[] shape, int timeDim, int frameIndex)
+    {
         int inner = 1;
         for (int i = timeDim + 1; i < shape.Length; i++)
             inner *= shape[i];
 
-        var result = new float[outer * inner];
-        int timeStride = shape[timeDim] * inner;
-        for (int o = 0; o < outer; o++)
-        {
-            int srcOffset = o * timeStride + frameIndex * inner;
-            Array.Copy(data, srcOffset, result, o * inner, inner);
-        }
-
-        return result;
+        return data.AsSpan(checked(frameIndex * inner), inner);
     }
 
-    private static void ApplyOfficialErbBandGains(float[] specRe, float[] specIm, float[] erbGains, int[] erbBandWidths, float minGain = 0f)
+    private static void ApplyOfficialErbBandGains(float[] specRe, float[] specIm, ReadOnlySpan<float> erbGains, int[] erbBandWidths, float minGain = 0f)
     {
         int offset = 0;
         for (int b = 0; b < erbBandWidths.Length; b++)
@@ -464,7 +455,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
     private static void ApplyOfficialMfDfFullSequence(
         float[][] analyzedRe,
         float[][] analyzedIm,
-        float[] rawDfCoeffsFrame,
+        ReadOnlySpan<float> rawDfCoeffsFrame,
         int dfOrder,
         int lookahead,
         int frameIdx,
@@ -516,8 +507,10 @@ internal sealed class RemoveNoiseEngine : IDisposable
                 string.Equals(d.name, inputName, StringComparison.OrdinalIgnoreCase));
             if (match != default)
             {
-                var tensor = new DenseTensor<float>(match.shape);
-                match.data.AsSpan(0, Math.Min(match.data.Length, (int)tensor.Length)).CopyTo(tensor.Buffer.Span);
+                // The feature arrays already have the ONNX row-major layout. Keep this
+                // tensor as a view over them rather than allocating and copying a second
+                // full-sequence feature buffer.
+                var tensor = new DenseTensor<float>(match.data.AsMemory(), match.shape);
                 list.Add(NamedOnnxValue.CreateFromTensor(inputName, tensor));
             }
         }
@@ -525,26 +518,10 @@ internal sealed class RemoveNoiseEngine : IDisposable
         return list.ToArray();
     }
 
-    private static Dictionary<string, (float[] data, int[] shape)> ExtractAllDataOutputs(
-        IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results)
-    {
-        var outputs = new Dictionary<string, (float[] data, int[] shape)>(StringComparer.Ordinal);
-        foreach (var result in results)
-        {
-            if (IsHidden(result.Name))
-                continue;
-
-            var tensor = result.AsTensor<float>();
-            outputs[result.Name] = (tensor.ToArray(), tensor.Dimensions.ToArray());
-        }
-
-        return outputs;
-    }
-
-    private static NamedOnnxValue[] BuildInputsFromDict(
+    private static NamedOnnxValue[] BuildInputsFromResults(
         InferenceSession session,
         Dictionary<string, DenseTensor<float>> hidden,
-        Dictionary<string, (float[] data, int[] shape)> available)
+        IDisposableReadOnlyCollection<DisposableNamedOnnxValue> available)
     {
         var list = new List<NamedOnnxValue>();
         foreach (var inputName in session.InputMetadata.Keys)
@@ -556,15 +533,17 @@ internal sealed class RemoveNoiseEngine : IDisposable
                 continue;
             }
 
-            if (!available.TryGetValue(inputName, out var entry))
+            DisposableNamedOnnxValue? match = available.FirstOrDefault(result =>
+                !IsHidden(result.Name) && string.Equals(result.Name, inputName, StringComparison.OrdinalIgnoreCase));
+            if (match is null)
             {
                 throw new InvalidOperationException(
-                    $"Required input '{inputName}' not found in available outputs. Have: [{string.Join(", ", available.Keys)}]");
+                    $"Required input '{inputName}' not found in encoder outputs. Have: [{string.Join(", ", available.Select(result => result.Name))}]");
             }
 
-            var tensor = new DenseTensor<float>(entry.shape);
-            entry.data.AsSpan(0, Math.Min(entry.data.Length, (int)tensor.Length)).CopyTo(tensor.Buffer.Span);
-            list.Add(NamedOnnxValue.CreateFromTensor(inputName, tensor));
+            // The encoder result remains alive while both decoders run. Passing its tensor
+            // directly avoids materializing and copying every full-sequence encoder output.
+            list.Add(NamedOnnxValue.CreateFromTensor(inputName, match.AsTensor<float>()));
         }
 
         return list.ToArray();
@@ -583,6 +562,22 @@ internal sealed class RemoveNoiseEngine : IDisposable
         }
 
         throw new InvalidOperationException("No data output found.");
+    }
+
+    private static (float[] data, int[] shape) GetDataOutput(
+        IDisposableReadOnlyCollection<DisposableNamedOnnxValue> results,
+        string outputName)
+    {
+        var result = results.FirstOrDefault(value =>
+            !IsHidden(value.Name) && string.Equals(value.Name, outputName, StringComparison.OrdinalIgnoreCase));
+        if (result is null)
+        {
+            throw new InvalidOperationException(
+                $"df_dec output '{outputName}' not found. Have: [{string.Join(", ", results.Select(value => value.Name))}]");
+        }
+
+        var tensor = result.AsTensor<float>();
+        return (tensor.ToArray(), tensor.Dimensions.ToArray());
     }
 
     private static bool IsHidden(string name) =>
@@ -610,6 +605,17 @@ internal sealed class RemoveNoiseEngine : IDisposable
         {
         }
     }
+
+    private readonly record struct LoadedMonoAudio(float[] Samples, int Count);
+
+    private sealed record RemoveNoiseAnalysis(
+        int SampleCount,
+        int TotalFrames,
+        int[] ErbBandWidths,
+        float[][] AnalyzedRe,
+        float[][] AnalyzedIm,
+        float[] ErbFeatures,
+        float[] SpecFeatures);
 
     public void Dispose()
     {

@@ -185,6 +185,39 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
                 }
             }
 
+            if (!BmpVideoDiskPreflight.TryResolveFrameCount(
+                    probe.EstimatedVideoFrameCount,
+                    probe.Duration.Value,
+                    probe.VideoFrameRate.Value,
+                    out var sourceFrameCount,
+                    out var frameCountFailure))
+            {
+                request.Logger.Log($"RifeInterpolateVideoAction: BMP preflight refused '{request.InputPath}'. {frameCountFailure}");
+                request.ProgressReporter?.ReportState("failed", frameCountFailure);
+                return new ActionExecutionResult(false, frameCountFailure);
+            }
+
+            if (!BmpVideoDiskPreflight.TryEstimateRife(
+                    sourceFrameCount,
+                    probe.DisplayVideoWidth,
+                    probe.DisplayVideoHeight,
+                    settings.TargetMultiplier,
+                    new FileInfo(request.InputPath).Length,
+                    out var diskRequirement,
+                    out var diskEstimateFailure))
+            {
+                request.Logger.Log($"RifeInterpolateVideoAction: BMP preflight refused '{request.InputPath}'. {diskEstimateFailure}");
+                request.ProgressReporter?.ReportState("failed", diskEstimateFailure);
+                return new ActionExecutionResult(false, diskEstimateFailure);
+            }
+
+            if (!BmpVideoDiskPreflight.TryValidate(diskRequirement, tempRoot, outputPath, out var diskSpaceFailure))
+            {
+                request.Logger.Log($"RifeInterpolateVideoAction: BMP preflight refused '{request.InputPath}'. {diskSpaceFailure}");
+                request.ProgressReporter?.ReportState("failed", diskSpaceFailure);
+                return new ActionExecutionResult(false, diskSpaceFailure);
+            }
+
             Directory.CreateDirectory(extractedFramesDirectory);
             Directory.CreateDirectory(interpolationWorkingDirectory);
 

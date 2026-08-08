@@ -42,16 +42,37 @@ internal sealed class VideoUpscaleEngine : IDisposable
             foreach (var inputFramePath in frames)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                using var source = SharpImage.Load<Rgba32>(inputFramePath);
-                using var output = _processor.Upscale(source, request, progress: null, cancellationToken);
                 var outputFramePath = Path.Combine(outputFramesDirectory, Path.GetFileName(inputFramePath));
-                output.SaveAsBmp(outputFramePath, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Pixel32 });
+                using (var source = SharpImage.Load<Rgba32>(inputFramePath))
+                using (var output = _processor.Upscale(source, request, progress: null, cancellationToken))
+                {
+                    output.SaveAsBmp(outputFramePath, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Pixel32 });
+                }
+
+                // The output has been safely persisted; source BMPs are never read again.
+                DeleteProcessedInputFrame(inputFramePath, cancellationToken);
                 processed++;
                 progress?.Report((processed, frames.Length));
             }
 
             return new VideoUpscaleResult(processed, _processor.Provider);
         }, cancellationToken).ConfigureAwait(false);
+    }
+
+    internal static void DeleteProcessedInputFrame(string path, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            File.Delete(path);
+        }
+        catch (IOException)
+        {
+            // The action-level finally cleans the isolated temporary root.
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     public void Dispose() => _processor.Dispose();

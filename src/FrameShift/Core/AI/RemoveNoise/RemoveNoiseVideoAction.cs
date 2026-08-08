@@ -91,6 +91,21 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             return new ActionExecutionResult(false, MediaActionMessages.MissingAudioTrack());
         }
 
+        if (probe.Duration is null)
+        {
+            const string durationFailure = "Remove Noise could not determine the audio duration for its memory preflight.";
+            request.ProgressReporter?.ReportState("failed", durationFailure);
+            request.Logger.Log($"RemoveNoiseVideoAction: memory preflight refused '{request.InputPath}'. {durationFailure}");
+            return new ActionExecutionResult(false, durationFailure);
+        }
+
+        if (!RemoveNoiseMemoryEstimator.TryValidateAvailableMemory(probe.Duration.Value, out var memoryFailure))
+        {
+            request.ProgressReporter?.ReportState("failed", memoryFailure);
+            request.Logger.Log($"RemoveNoiseVideoAction: memory preflight refused '{request.InputPath}'. {memoryFailure}");
+            return new ActionExecutionResult(false, memoryFailure);
+        }
+
         var processStereo   = requestedStereo && probe.PrimaryAudioChannels >= 2;
         var containerExt    = Path.GetExtension(request.InputPath).ToLowerInvariant();
         var remuxAudioCodec = RemoveNoiseVideoSettings.GetRemuxAudioCodec(containerExt);

@@ -59,6 +59,13 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
                 false,
                 "AI model not found. Run FrameShift.exe --action remove-noise from Explorer to download it first."));
 
+        if (!RemoveNoiseMemoryEstimator.TryValidateAudioFile(request.InputPath, out var memoryFailure))
+        {
+            request.ProgressReporter?.ReportState("failed", memoryFailure);
+            request.Logger.Log($"RemoveNoiseAction: memory preflight refused '{request.InputPath}'. {memoryFailure}");
+            return Task.FromResult(new ActionExecutionResult(false, memoryFailure));
+        }
+
         return ExecuteCoreAsync(request, cancellationToken);
     }
 

@@ -183,10 +183,30 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
                 passProgress,
                 cancellationToken);
 
+            // Once a pass completed, its inputs are no longer needed. Keeping only the
+            // current generation caps the BMP footprint to two generations instead of all.
+            DeleteCompletedInputDirectory(currentInputDirectory, cancellationToken);
             currentInputDirectory = currentOutputDirectory;
         }
 
         return Directory.GetFiles(currentInputDirectory, $"*{TempFrameExtension}", SearchOption.TopDirectoryOnly).Length;
+    }
+
+    internal static void DeleteCompletedInputDirectory(string directory, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        try
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+        catch (IOException)
+        {
+            // The action-level finally still owns the root; a transient lock must not turn
+            // an otherwise valid interpolation into a failed output.
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     public void InterpolateMiddleFrameRaw(

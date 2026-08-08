@@ -209,6 +209,40 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                 }
             }
 
+            if (!BmpVideoDiskPreflight.TryResolveFrameCount(
+                    probe.EstimatedVideoFrameCount,
+                    probe.Duration.Value,
+                    probe.VideoFrameRate.Value,
+                    out var sourceFrameCount,
+                    out var frameCountFailure))
+            {
+                request.Logger.Log($"UpscaleVideoAction: BMP preflight refused '{request.InputPath}'. {frameCountFailure}");
+                request.ProgressReporter?.ReportState("failed", frameCountFailure);
+                return FailedResult(request, frameCountFailure);
+            }
+
+            if (!BmpVideoDiskPreflight.TryEstimateUpscale(
+                    sourceFrameCount,
+                    sourceWidth,
+                    sourceHeight,
+                    target.Width,
+                    target.Height,
+                    new FileInfo(request.InputPath).Length,
+                    out var diskRequirement,
+                    out var diskEstimateFailure))
+            {
+                request.Logger.Log($"UpscaleVideoAction: BMP preflight refused '{request.InputPath}'. {diskEstimateFailure}");
+                request.ProgressReporter?.ReportState("failed", diskEstimateFailure);
+                return FailedResult(request, diskEstimateFailure);
+            }
+
+            if (!BmpVideoDiskPreflight.TryValidate(diskRequirement, tempRoot, outputPath, out var diskSpaceFailure))
+            {
+                request.Logger.Log($"UpscaleVideoAction: BMP preflight refused '{request.InputPath}'. {diskSpaceFailure}");
+                request.ProgressReporter?.ReportState("failed", diskSpaceFailure);
+                return FailedResult(request, diskSpaceFailure);
+            }
+
             Directory.CreateDirectory(inputFrames);
             Directory.CreateDirectory(outputFrames);
             request.ProgressReporter?.ReportState("processing", "Extracting source frames...");
