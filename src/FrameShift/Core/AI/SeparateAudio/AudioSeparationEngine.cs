@@ -61,33 +61,46 @@ internal sealed class AudioSeparationEngine : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new AudioSeparationProgress(5, 0, 0, "Loading audio..."));
 
-        using var reader = new AudioChunkReader(inputPath);
-        var chunkTotal = OverlapAddRing.ComputeChunkCount(reader.TotalSamplesPerChannel);
+        using var reader = new AudioChunkReader(inputPath, cancellationToken);
+        var estimatedChunkTotal = reader.EstimatedChunkCount;
         using var writers = OutputWriters.Create(inputPath, stems);
         var ring = new OverlapAddRing(StemCount);
 
         AppLogger.LogStatic(
-            $"AudioSeparationEngine: starting. provider={Provider}, split={_usesSplitPipeline}, chunks={chunkTotal}, samples={reader.TotalSamplesPerChannel}");
+            $"AudioSeparationEngine: starting. provider={Provider}, split={_usesSplitPipeline}, chunks~={estimatedChunkTotal}");
 
         try
         {
-            for (var chunkIndex = 0; chunkIndex < chunkTotal; chunkIndex++)
+            var chunkTotal = 0;
+            for (var chunkIndex = 0; ; chunkIndex++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var startSample = (long)chunkIndex * OverlapAddRing.ChunkHop;
-                var mixChunk = reader.ReadChunk(startSample, OverlapAddRing.ChunkLen);
+                var mixChunk = reader.ReadChunk(startSample, OverlapAddRing.ChunkLen, cancellationToken);
                 var stemChunk = RunChunk(mixChunk, cancellationToken);
 
                 ring.Accumulate(chunkIndex, stemChunk);
 
-                var isLastChunk = chunkIndex == chunkTotal - 1;
-                var drained = ring.Drain(isLastChunk, reader.TotalSamplesPerChannel);
+                var isLastChunk = reader.IsLastChunk;
+                var drained = ring.Drain(isLastChunk, isLastChunk ? reader.TotalSamplesPerChannel : 0);
                 WriteOutputs(drained, stems, writers);
 
-                var percent = 10 + ((chunkIndex + 1) * 89 / chunkTotal);
-                var status = $"Processing chunk {chunkIndex + 1}/{chunkTotal} ({Provider})";
-                progress.Report(new AudioSeparationProgress(percent, chunkIndex + 1, chunkTotal, status));
+                var completedChunks = chunkIndex + 1;
+                var displayChunkTotal = isLastChunk
+                    ? completedChunks
+                    : Math.Max(estimatedChunkTotal, completedChunks + 1);
+                var percent = isLastChunk
+                    ? 99
+                    : 10 + Math.Min(89, completedChunks * 89 / displayChunkTotal);
+                var status = $"Processing chunk {completedChunks}/{displayChunkTotal} ({Provider})";
+                progress.Report(new AudioSeparationProgress(percent, completedChunks, displayChunkTotal, status));
+
+                if (isLastChunk)
+                {
+                    chunkTotal = completedChunks;
+                    break;
+                }
             }
 
             progress.Report(new AudioSeparationProgress(100, chunkTotal, chunkTotal, "Done."));
