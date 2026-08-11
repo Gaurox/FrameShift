@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.0
+
+Prepared for release.
+
+- **Join Videos.** Added the single-track `join-videos` action. Its WinForms editor accepts multiple clips (including repeated occurrences), exposes received/natural-name/creation-date/modification-date/custom ordering, and previews thumbnails and durations on a horizontal drag-reorder timeline. The complete timeline always fills 100% of the visible bar, with each segment sized from its share of the total duration and a small usability floor for extremely short clips. Transitions, trimming, and advanced editing remain deliberately excluded. The editor also accepts files dropped directly onto the open window — showing the same insertion marker used for internal drag-reorder and inserting at that exact position while Custom order is active — supports `Delete` and `Ctrl+Left`/`Ctrl+Right` for quick removal/reordering plus a `Clear all` reset, defaults to and remembers the last deterministic sort choice (natural file name by default) between sessions, and flags a mismatched resolution or missing audio for a clip in its tooltip.
+- **Safe media strategy.** FrameShift performs direct FFconcat stream copy only when a targeted FFprobe signature establishes a conservative match. Otherwise SDR clips are normalized automatically to adjacent unique `_joined.mp4` H.264/AAC output, using the first clip's display resolution/orientation with aspect-preserving black padding and generated silence for clips without audio. Mixed HDR/SDR or HDR needing normalization is refused clearly in v1.
+- **Windows integration.** Explorer gets a `Join videos` video component with the Player multi-select model. Independent Explorer invocations are coalesced by the existing small mutex/named-pipe pattern before the editor opens; its received ordering remains explicitly provisional. Hub launches preserve queue order, and headless CLI can force `--join-mode auto|copy|normalize`.
+- **Operational contract.** Join runs as one ProgressForm operation, all FFmpeg/FFprobe work stays behind the runners, and failure/cancellation removes the output partial plus the action-owned temporary concat/filter files. Added unit and WinForms coverage for modes, duplicate order preservation, Explorer arrivals before/after handle creation, the Add videos button, planning, concat escaping, catalog/scope, registry, CLI parsing, timeline compatibility hints, drop-position insertion, and sort-order persistence, plus a real-FFmpeg integration test that normalizes two differently sized clips (one without audio) end to end.
+- **Fix: normalization always failed.** The normalize pipeline passed its filter graph via `-filter_complex_script <file>`, an option the bundled FFmpeg 9 essentials build does not implement (`Unrecognized option`). Every join that could not use direct stream copy — i.e. any two clips without an identical signature — failed immediately with a misleading "selected codecs are not supported" message; two occurrences of the exact same file always worked because that path stays on direct copy. The graph is now passed inline via `-filter_complex`.
+
 ## 1.18.1
 
 Prepared for manual testing.

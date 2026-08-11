@@ -62,6 +62,30 @@ public static class MediaActionMessages
     public static string ImageToPdfPageSizeInvalid() =>
         "The selected custom page size is invalid.";
 
+    public static string JoinVideosSettingsMissing() =>
+        "Join Videos settings are missing.";
+
+    public static string JoinVideosSettingsInvalid() =>
+        "Join Videos settings are invalid.";
+
+    public static string JoinVideosRequiresAtLeastTwoVideos() =>
+        "Join Videos requires at least two video files.";
+
+    public static string JoinVideosMetadataIncomplete() =>
+        "FrameShift could not determine the duration, frame rate, or dimensions needed to join these videos.";
+
+    public static string JoinVideosCopyNotSafe() =>
+        "These clips cannot be joined safely without re-encoding. Use automatic or normalize mode.";
+
+    public static string JoinVideosHdrNormalizationNotSupported() =>
+        "Join Videos v1 cannot normalize HDR clips. Use compatible HDR clips for direct joining, or convert them to SDR first.";
+
+    public static string JoinVideosHdrMixNotSupported() =>
+        "Join Videos v1 cannot mix HDR and SDR clips. Convert the clips to a common SDR format first.";
+
+    public static string JoinVideosFailed() =>
+        "FFmpeg failed while joining the videos.";
+
     public static string ImageLoadFailed(string inputPath) =>
         $"FrameShift could not load this image: {inputPath}";
 

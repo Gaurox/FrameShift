@@ -20,6 +20,8 @@ public static class ActionOptionKeys
     public const string ResizeWidth = "resize-width";
     public const string ResizeHeight = "resize-height";
     public const string ImageToPdfSettings = "image-to-pdf-settings";
+    public const string JoinVideosSettings = "join-videos-settings";
+    public const string JoinVideosMode = "join-videos-mode";
     public const string GifResolution = "gif-resolution";
     public const string GifFps = "gif-fps";
     public const string GifQuality = "gif-quality";

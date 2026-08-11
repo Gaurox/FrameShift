@@ -102,6 +102,7 @@ public sealed class ActionCatalogTests
     [InlineData("crop-image", ActionArity.Single, ActionCategory.Image)]
     [InlineData("cut-video", ActionArity.Single, ActionCategory.Video)]
     [InlineData("image-to-pdf", ActionArity.Combine, ActionCategory.Image)]
+    [InlineData("join-videos", ActionArity.Combine, ActionCategory.Video)]
     [InlineData("media-info", ActionArity.Single, ActionCategory.General)]
     public void KnownEntries_HaveExpectedArityAndCategory(string key, ActionArity arity, ActionCategory category)
     {
@@ -207,5 +208,15 @@ public sealed class ActionCatalogTests
 
         Assert.Equal("Extract all frames", entry.DisplayName);
         Assert.Empty(entry.ExtraCliArgs);
+    }
+
+    [Fact]
+    public void JoinVideos_RequiresTwoVideoInputs()
+    {
+        Assert.True(ActionCatalog.TryGet("join-videos", out var entry));
+
+        Assert.Equal(2, entry.MinimumInputCount);
+        Assert.True(entry.Accepts(".mp4"));
+        Assert.False(entry.Accepts(".mp3"));
     }
 }

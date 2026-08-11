@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version active : **1.18.1**.
+Version active : **1.19.0**.
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).
@@ -43,6 +43,7 @@ Actions vidéo :
 - `upscale-video`
 - `remove-noise-video`
 - `create-subtitles-video`
+- `join-videos`
 - `media-info`
 
 Actions audio :
@@ -125,6 +126,7 @@ Mono-fichier interactif :
 - `remove-noise`
 - `remove-noise-video`
 - `image-to-pdf`
+- `join-videos` (combinaison interactive de plusieurs clips)
 - `media-info`
 
 Recadrage visuel actuel :
@@ -146,6 +148,7 @@ En pratique :
 - certaines actions ouvrent un picker si les options attendues ne sont pas déjà fournies ;
 - `media-info` reste dépendant d’une fenêtre WinForms ;
 - `image-to-pdf` reste un éditeur interactif, même si l’action finale est exécutée côté core ;
+- `join-videos` ouvre une timeline mono-piste avec thumbnails, durées, tris et glisser-déposer. L’UI reste toujours automatique ; en CLI, `--join-mode auto|copy|normalize` permet d’imposer le pipeline. Le concat sans réencodage ne s’active que sur signature de flux strictement compatible ; sinon les clips SDR deviennent un MP4 H.264/AAC, avec padding ratio, géométrie/orientation du premier clip et silence pour les clips sans audio. HDR mélangé ou à normaliser est refusé en V1 ;
 - `remove-background` passe par la progression commune WinForms : une seule fenêtre, file visible, erreurs dans la queue, progression régulière pendant les longues inférences CPU et préflight modèle si le modèle manque ;
 - `extract-frames` accepte `--frame-mode all|first|last|keyframes` ; sans cette option, le mode historique `all` est conservé. Le hub affiche seulement `Extract all frames`; Explorer garde cette entrée directe et propose `Extract specific frames` avec First frame, Last frame et Keyframes. Chaque élément de la file batch conserve son propre mode ;
 - `remove-background` supporte maintenant trois variantes de modèle via CLI et menus Explorer : `fast` par défaut, `high-resolution` pour le rendu HR matting, et `high-resolution-general` pour la variante HR segmentation ;

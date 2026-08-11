@@ -61,6 +61,21 @@ public sealed class ProgramCliTests
         Assert.Single(inputPaths, @"C:\test\video.mp4");
     }
 
+    [Theory]
+    [InlineData("auto")]
+    [InlineData("copy")]
+    [InlineData("normalize")]
+    public void TryParseArguments_WithJoinMode_ParsesOption(string joinMode)
+    {
+        var args = new[] { "--action", "join-videos", "--join-mode", joinMode, @"C:\test\one.mp4", @"C:\test\two.mp4" };
+
+        var result = Program.TryParseArguments(args, out _, out var inputPaths, out var options, out _);
+
+        Assert.True(result);
+        Assert.Equal(joinMode, options[ActionOptionKeys.JoinVideosMode]);
+        Assert.Equal(2, inputPaths.Count);
+    }
+
     [Fact]
     public void TryParseArguments_WithUpscalePipeline_ParsesOption()
     {

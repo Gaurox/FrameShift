@@ -114,6 +114,16 @@ public sealed class ActionScopeResolverTests
     }
 
     [Fact]
+    public void Resolve_JoinVideos_DisabledUntilTwoVideosAreSelected()
+    {
+        var one = Find(ActionScopeResolver.Resolve(new[] { @"C:\a.mp4" }), "join-videos")!;
+        var two = Find(ActionScopeResolver.Resolve(new[] { @"C:\a.mp4", @"C:\b.mp4" }), "join-videos")!;
+
+        Assert.False(one.IsEnabled);
+        Assert.True(two.IsEnabled);
+    }
+
+    [Fact]
     public void Resolve_MediaInfo_AppearsForAnyFamily()
     {
         Assert.NotNull(Find(ActionScopeResolver.Resolve(new[] { @"C:\a.mp4" }), "media-info"));

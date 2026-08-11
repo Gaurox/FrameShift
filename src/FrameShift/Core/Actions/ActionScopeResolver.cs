@@ -60,7 +60,7 @@ public static class ActionScopeResolver
                 continue;
             }
 
-            var (isEnabled, reason) = Evaluate(entry.Arity, matching);
+            var (isEnabled, reason) = Evaluate(entry, matching);
             result.Add(new ActionAvailability(entry, matching, isEnabled, reason));
         }
 
@@ -98,11 +98,16 @@ public static class ActionScopeResolver
         return count;
     }
 
-    private static (bool IsEnabled, string? Reason) Evaluate(ActionArity arity, int matching)
+    private static (bool IsEnabled, string? Reason) Evaluate(ActionCatalogEntry entry, int matching)
     {
+        if (matching < entry.MinimumInputCount)
+        {
+            return (false, $"Select at least {entry.MinimumInputCount} files for this action.");
+        }
+
         // Single-file editors accept exactly one compatible file (D2). Batch and Combine
         // run on the whole matching subset.
-        if (arity == ActionArity.Single && matching > 1)
+        if (entry.Arity == ActionArity.Single && matching > 1)
         {
             return (false, "Select a single file for this action.");
         }

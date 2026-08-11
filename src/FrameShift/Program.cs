@@ -351,6 +351,11 @@ internal static partial class Program
             return RunImageToPdf(action, inputPaths, options, logger);
         }
 
+        if (actionId.Equals("join-videos", StringComparison.OrdinalIgnoreCase))
+        {
+            return RunJoinVideos(action, inputPaths, options, logger);
+        }
+
         if (actionId.Equals("remove-object", StringComparison.OrdinalIgnoreCase))
         {
             return RunRemoveObject(inputPaths[0], logger);

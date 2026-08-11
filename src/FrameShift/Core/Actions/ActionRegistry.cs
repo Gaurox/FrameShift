@@ -107,6 +107,10 @@ public sealed class ActionRegistry
                 toolLocator),
             new ImageToPdfAction(
                 new ImageToPdfPdfExporter()),
+            new JoinVideosAction(
+                ffmpegRunner,
+                ffprobeRunner,
+                toolLocator),
             new CropVideoAction(
                 ffmpegRunner,
                 ffprobeRunner,

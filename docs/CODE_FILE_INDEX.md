@@ -15,6 +15,7 @@ Règles de lecture :
 - `src/FrameShift/ProgramBatch.cs`
 - `src/FrameShift/ProgramAiPreflight.cs`
 - `src/FrameShift/ProgramImageToPdf.cs`
+- `src/FrameShift/ProgramJoinVideos.cs`
 - `src/FrameShift/ProgramRemoveObject.cs`
 - `src/FrameShift/ProgramPickersConversion.cs`
 - `src/FrameShift/ProgramPickersCut.cs`
@@ -97,6 +98,9 @@ Vidéo :
 - `src/FrameShift/Core/Actions/ExtractAudioCatalog.cs`
 - `src/FrameShift/Core/Actions/ExtractFramesAction.cs`
 - `src/FrameShift/Core/Actions/ExtractFramesSettings.cs`
+- `src/FrameShift/Core/Actions/JoinVideosAction.cs`
+- `src/FrameShift/Core/Actions/JoinVideosSettings.cs`
+- `src/FrameShift/Core/Actions/JoinVideosPlanner.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoAction.cs`
 - `src/FrameShift/Core/Actions/RifeInterpolateVideoAction.cs`
 - `src/FrameShift/Core/Actions/InterpolateVideoSettings.cs`
@@ -131,6 +135,7 @@ Media Info :
 - `src/FrameShift/Core/FFprobe/MediaProbeResult.cs`
 - `src/FrameShift/Core/FFprobe/MediaStreamInfo.cs`
 - `src/FrameShift/Core/FFprobe/MediaInfoData.cs`
+- `src/FrameShift/Core/FFprobe/JoinVideoProbeResult.cs`
 
 ## Core/Helpers, logging, progress
 
@@ -233,6 +238,8 @@ IA :
 
 Contrôles :
 - `src/FrameShift/Windows/Controls/SeekTrackBar.cs`
+- `src/FrameShift/Windows/Controls/JoinVideoTimelineItem.cs`
+- `src/FrameShift/Windows/Controls/JoinVideosTimelineControl.cs`
 
 Formulaires :
 - `src/FrameShift/Windows/Forms/MainForm.cs`
@@ -251,6 +258,7 @@ Formulaires :
 - `src/FrameShift/Windows/Forms/CutAudioForm.cs`
 - `src/FrameShift/Windows/Forms/CutVideoForm.cs`
 - `src/FrameShift/Windows/Forms/ImageToPdfForm.cs`
+- `src/FrameShift/Windows/Forms/JoinVideosForm.cs`
 - `src/FrameShift/Windows/Forms/InterpolateVideoForm.cs`
 - `src/FrameShift/Windows/Forms/ResizeImageForm.cs`
 - `src/FrameShift/Windows/Forms/ResizeMediaFormBase.cs`
@@ -278,6 +286,7 @@ Helpers UI :
 - `src/FrameShift/Windows/Forms/AddSubtitlesToVideoPickerForm.cs`
 - `src/FrameShift/Windows/Forms/AddSubtitlesToVideoBurnEditorForm.cs`
 - `src/FrameShift/Windows/Helpers/PreviewLayoutHelper.cs`
+- `src/FrameShift/Windows/Helpers/NaturalFileNameComparer.cs`
 
 Responsabilités UI partagées :
 - `FrameShiftUiMetrics.cs` centralise les métriques de géométrie UI actives : marges, hauteurs standard, footer, gaps, rayons, largeurs de rail.
@@ -312,6 +321,10 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 - `tests/FrameShift.Tests/FrameShiftThemeTests.cs`
+- `tests/FrameShift.Tests/JoinVideosSettingsTests.cs`
+- `tests/FrameShift.Tests/JoinVideosPlannerTests.cs`
+- `tests/FrameShift.Tests/JoinVideosFormTests.cs`
+- `tests/FrameShift.Tests/JoinVideosTimelineControlTests.cs`
 
 Assets de test utiles :
 - `tests/input/`
@@ -324,8 +337,10 @@ Assets de test utiles :
 - `ProgramBatch.cs` = batch, progression, annulation ;
 - `ProgramAiPreflight.cs` = préflight IA ;
 - `ProgramImageToPdf.cs` = flux single-instance `Image to PDF` ;
+- `ProgramJoinVideos.cs` = flux mono-action multi-instance `Join Videos` ;
 - `ProgramPickers*.cs` = fallback UI et collecte d'options par familles d'actions, y compris le picker mode + fichier de `add-subtitles-video`.
 - `Image to PDF` reste un module interactif lancé par ce launcher `Program`, pas un exécutable séparé.
+- `Join Videos` reste un module interactif mono-piste lancé par `Program` : sa timeline conserve les occurrences du même fichier, son pipe local agrège les invocations Explorer, et le core ne reçoit qu'une opération finalisée via `JoinVideosSettings`.
 - `CropImageForm` et `CropVideoForm` partagent maintenant une base UI proche via `FrameShiftCropEditorUi.cs`, avec auto-crop visuel et navigation de preview.
 - `Add Subtitles to Video` (`add-subtitles-video`) reste une seule action produit : `SelectableTrack` conserve le planner conteneur léger du lot 1, tandis que `BurnIntoVideo` charge `.srt` / `.ass` / `.frameshift-subtitles.json`, génère au besoin un ASS temporaire dimensionné sur la vidéo, réencode la vidéo via FFmpeg et copie l’audio quand le conteneur de sortie le permet.
 - Le lot 3 ajoute `AddSubtitlesToVideoBurnAppearance`, des overrides de style burn sérialisables, et un éditeur WinForms `AddSubtitlesToVideoBurnEditorForm` avec aperçu frame par frame. Le même générateur ASS temporaire sert à la prévisualisation comme à l’incrustation finale ; les `.ass` externes restent en passthrough avec les contrôles visuels désactivés.

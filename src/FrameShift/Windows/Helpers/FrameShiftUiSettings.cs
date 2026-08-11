@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FrameShift.Core.Logging;
 
 namespace FrameShift.Windows.Helpers;
@@ -19,6 +20,9 @@ public sealed class FrameShiftUiSettings
     public static readonly string ConfigFilePath = Path.Combine(ConfigDirectory, "ui-settings.json");
 
     public string? Theme { get; set; } = nameof(FrameShiftThemePreference.System);
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? JoinVideosSortOrder { get; set; }
 
     public FrameShiftThemePreference GetThemePreference()
     {
@@ -67,7 +71,8 @@ public sealed class FrameShiftUiSettings
             Directory.CreateDirectory(directory);
             var settingsToSave = new FrameShiftUiSettings
             {
-                Theme = GetThemePreference().ToString()
+                Theme = GetThemePreference().ToString(),
+                JoinVideosSortOrder = JoinVideosSortOrder
             };
             var json = JsonSerializer.Serialize(settingsToSave, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configFilePath, json);

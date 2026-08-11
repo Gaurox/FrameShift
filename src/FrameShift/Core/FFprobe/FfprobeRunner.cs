@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -229,6 +231,125 @@ public sealed class FfprobeRunner
         }
     }
 
+    public async Task<(JoinVideoProbeResult? Probe, string? Error)> TryProbeJoinVideoAsync(
+        string executablePath,
+        string inputPath,
+        CancellationToken cancellationToken)
+    {
+        var arguments = new[]
+        {
+            "-v", "error",
+            "-show_data",
+            "-show_entries", "format=format_name,duration:stream=index,codec_type,codec_name,codec_tag_string,profile,level,width,height,pix_fmt,color_space,color_transfer,color_primaries,color_range,field_order,time_base,avg_frame_rate,r_frame_rate,sample_aspect_ratio,start_time,sample_fmt,sample_rate,channels,channel_layout,extradata:stream_tags=rotate:stream_side_data=rotation",
+            "-of", "json",
+            inputPath
+        };
+
+        var result = await RunProbeAsync(executablePath, arguments, cancellationToken).ConfigureAwait(false);
+        if (!result.Success || string.IsNullOrWhiteSpace(result.Output))
+        {
+            return (null, ConversionActionHelper.GetFriendlyProbeError(result.StandardError));
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(result.Output);
+            var root = document.RootElement;
+            if (!root.TryGetProperty("streams", out var streamsElement) || streamsElement.ValueKind != JsonValueKind.Array)
+            {
+                return (null, ConversionActionHelper.GetFriendlyProbeError(result.StandardError));
+            }
+
+            JoinVideoStreamInfo? video = null;
+            JoinAudioStreamInfo? audio = null;
+            var videoStreamCount = 0;
+            var audioStreamCount = 0;
+            var otherStreamCount = 0;
+
+            foreach (var stream in streamsElement.EnumerateArray())
+            {
+                var type = GetStringValue(stream, "codec_type") ?? string.Empty;
+                if (string.Equals(type, "video", StringComparison.OrdinalIgnoreCase))
+                {
+                    videoStreamCount++;
+                    if (video is null)
+                    {
+                        video = new JoinVideoStreamInfo(
+                            GetStringValue(stream, "codec_name"),
+                            GetStringValue(stream, "codec_tag_string"),
+                            GetStringValue(stream, "profile"),
+                            GetStringValue(stream, "level"),
+                            GetPositiveInt(stream, "width"),
+                            GetPositiveInt(stream, "height"),
+                            GetStringValue(stream, "pix_fmt"),
+                            GetStringValue(stream, "color_space"),
+                            GetStringValue(stream, "color_transfer"),
+                            GetStringValue(stream, "color_primaries"),
+                            GetStringValue(stream, "color_range"),
+                            GetStringValue(stream, "field_order"),
+                            GetStringValue(stream, "time_base"),
+                            GetFrameRateSignature(stream),
+                            GetStringValue(stream, "sample_aspect_ratio"),
+                            GetStringValue(stream, "start_time"),
+                            ComputeDataHash(GetStringValue(stream, "extradata")),
+                            TryGetRotationDegrees(stream));
+                    }
+
+                    continue;
+                }
+
+                if (string.Equals(type, "audio", StringComparison.OrdinalIgnoreCase))
+                {
+                    audioStreamCount++;
+                    if (audio is null)
+                    {
+                        audio = new JoinAudioStreamInfo(
+                            GetStringValue(stream, "codec_name"),
+                            GetStringValue(stream, "codec_tag_string"),
+                            GetStringValue(stream, "profile"),
+                            GetStringValue(stream, "sample_fmt"),
+                            GetStringValue(stream, "sample_rate"),
+                            GetPositiveInt(stream, "channels"),
+                            GetStringValue(stream, "channel_layout"),
+                            GetStringValue(stream, "time_base"),
+                            GetStringValue(stream, "start_time"),
+                            ComputeDataHash(GetStringValue(stream, "extradata")));
+                    }
+
+                    continue;
+                }
+
+                otherStreamCount++;
+            }
+
+            var formatName = default(string);
+            TimeSpan? duration = null;
+            if (root.TryGetProperty("format", out var formatElement))
+            {
+                formatName = GetStringValue(formatElement, "format_name");
+                var durationValue = GetStringValue(formatElement, "duration");
+                if (double.TryParse(durationValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) && seconds > 0d)
+                {
+                    duration = TimeSpan.FromSeconds(seconds);
+                }
+            }
+
+            return (new JoinVideoProbeResult(
+                duration,
+                formatName,
+                videoStreamCount,
+                audioStreamCount,
+                otherStreamCount,
+                video,
+                audio), null);
+        }
+        catch (Exception ex)
+        {
+            _logger.Log($"FfprobeRunner: Join Videos probe parse failed: {ex.Message}");
+            return (null, ConversionActionHelper.GetFriendlyProbeError(result.StandardError));
+        }
+    }
+
     public async Task<(MediaInfoData? Data, string? Error)> TryProbeMediaInfoAsync(
         string executablePath,
         string inputPath,
@@ -443,6 +564,48 @@ public sealed class FfprobeRunner
             : value.ValueKind == JsonValueKind.Number
                 ? value.GetRawText()
                 : null;
+    }
+
+    private static int GetPositiveInt(JsonElement element, string propertyName)
+    {
+        if (!element.TryGetProperty(propertyName, out var value))
+        {
+            return 0;
+        }
+
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number) && number > 0)
+        {
+            return number;
+        }
+
+        return int.TryParse(GetStringValue(element, propertyName), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed) && parsed > 0
+            ? parsed
+            : 0;
+    }
+
+    private static string? GetFrameRateSignature(JsonElement stream)
+    {
+        var average = GetStringValue(stream, "avg_frame_rate");
+        if (!string.IsNullOrWhiteSpace(average) && !string.Equals(average, "0/0", StringComparison.Ordinal))
+        {
+            return average;
+        }
+
+        var real = GetStringValue(stream, "r_frame_rate");
+        return !string.IsNullOrWhiteSpace(real) && !string.Equals(real, "0/0", StringComparison.Ordinal)
+            ? real
+            : null;
+    }
+
+    private static string? ComputeDataHash(string? data)
+    {
+        if (string.IsNullOrWhiteSpace(data))
+        {
+            return null;
+        }
+
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(data));
+        return Convert.ToHexString(bytes);
     }
 
     private static int? TryParseBitDepth(string? value)

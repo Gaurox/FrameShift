@@ -68,6 +68,7 @@ Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
 Name: "video\extract_frames"; Description: "Extract all and specific frames"; Types: complete custom
 Name: "video\create_gif"; Description: "Create GIF"; Types: complete custom
 Name: "video\add_subtitles_video"; Description: "Add subtitles to video"; Types: complete custom
+Name: "video\join_videos"; Description: "Join videos"; Types: complete custom
 Name: "video\extract_audio"; Description: "Extract audio"; Types: complete custom
 Name: "video\cut_video"; Description: "Cut video"; Types: complete custom
 Name: "video\crop_video"; Description: "Crop video"; Types: complete custom
@@ -505,6 +506,10 @@ begin
   begin
     Result := ExpandConstant('{app}\Assets\Icons\ai\add_subtitles_video.ico');
   end;
+  if MenuKey = 'join_videos' then
+  begin
+    Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\join-videos-video-icon.ico');
+  end;
   if MenuKey = 'image_to_pdf' then
   begin
     Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\image-to-pdf-image-icon.ico');
@@ -694,6 +699,37 @@ begin
   end;
 end;
 
+procedure ConfigureJoinVideosMenuForHive(const Hive: Integer; const Ext: string);
+var
+  KeyPath: string;
+begin
+  ConfigureActionMenuForHive(Hive, Ext, 'join_videos', 'Join videos', 'join-videos', '');
+  KeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShift\shell\join_videos';
+  // Player lets Explorer pass larger multi-selections. FrameShift still treats the
+  // received order as provisional and exposes an explicit timeline order UI.
+  RegWriteStringValue(Hive, KeyPath, 'MultiSelectModel', 'Player');
+end;
+
+procedure ApplyJoinVideosMenuList(const Extensions: string);
+var
+  RemainingExtensions: string;
+  Extension: string;
+begin
+  RemainingExtensions := Extensions;
+  while RemainingExtensions <> '' do
+  begin
+    Extension := GetListItem(RemainingExtensions);
+    if IsAdminInstallMode then
+    begin
+      ConfigureJoinVideosMenuForHive(HKLM, Extension);
+    end
+    else
+    begin
+      ConfigureJoinVideosMenuForHive(HKCU, Extension);
+    end;
+  end;
+end;
+
 procedure InstallSelectedMenus;
 begin
   CleanupContextMenuKeys;
@@ -812,6 +848,11 @@ begin
       'Add subtitles to video',
       'add-subtitles-video',
       '');
+  end;
+
+  if WizardIsComponentSelected('video\join_videos') then
+  begin
+    ApplyJoinVideosMenuList(VideoExtensions);
   end;
 
   if WizardIsComponentSelected('video\extract_audio') then

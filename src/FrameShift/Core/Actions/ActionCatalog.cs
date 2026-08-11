@@ -45,7 +45,8 @@ public sealed record ActionCatalogEntry(
     ActionCategory Category,
     ActionArity Arity,
     IReadOnlyList<string> AcceptedExtensions,
-    IReadOnlyList<string> ExtraCliArgs)
+    IReadOnlyList<string> ExtraCliArgs,
+    int MinimumInputCount = 1)
 {
     /// <summary>
     /// True when this action can operate on a file with the given extension.
@@ -112,6 +113,9 @@ public static class ActionCatalog
     private static ActionCatalogEntry Single(string actionId, string displayName, ActionCategory category, string[] exts)
         => new(actionId, actionId, displayName, category, ActionArity.Single, exts, NoArgs);
 
+    private static ActionCatalogEntry Combine(string actionId, string displayName, ActionCategory category, string[] exts, int minimumInputCount)
+        => new(actionId, actionId, displayName, category, ActionArity.Combine, exts, NoArgs, minimumInputCount);
+
     private static readonly ActionCatalogEntry[] EntriesArray =
     [
         // ---- Video ----
@@ -123,6 +127,7 @@ public static class ActionCatalog
         Batch("remove-noise-video", "Remove noise (video)", ActionCategory.Video, VideoExts),
         Batch("upscale-video", "Upscale video", ActionCategory.Video, VideoExts),
         Batch("create-subtitles-video", "Create subtitle file", ActionCategory.Video, VideoExts),
+        Combine("join-videos", "Join videos", ActionCategory.Video, VideoExts, minimumInputCount: 2),
         Single("create-gif", "Create GIF", ActionCategory.Video, VideoExts),
         Single("cut-video", "Cut video", ActionCategory.Video, VideoExts),
         Single("crop-video", "Crop video", ActionCategory.Video, VideoExts),
@@ -164,8 +169,7 @@ public static class ActionCatalog
         Single("rotate-flip-image", "Rotate / flip image", ActionCategory.Image, ImageExts),
         Single("convert-to-icon", "Convert to icon", ActionCategory.Image, ImageExts),
         Single("remove-object", "Remove object", ActionCategory.Image, ImageExts),
-        new("image-to-pdf", "image-to-pdf", "Image to PDF",
-            ActionCategory.Image, ActionArity.Combine, ImageExts, NoArgs),
+        Combine("image-to-pdf", "Image to PDF", ActionCategory.Image, ImageExts, minimumInputCount: 1),
 
         // ---- General (cross-type) ----
         Single("media-info", "Media info", ActionCategory.General, MediaInfoExts),

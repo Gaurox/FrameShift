@@ -44,6 +44,18 @@ internal static partial class Program
                 continue;
             }
 
+            if (string.Equals(token, "--join-mode", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length || !JoinVideosSettings.TryParseMode(args[index + 1], out _))
+                {
+                    error = "The --join-mode option requires one of: auto, copy, normalize.";
+                    return false;
+                }
+
+                options[ActionOptionKeys.JoinVideosMode] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--target", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.Target] = args[++index];
