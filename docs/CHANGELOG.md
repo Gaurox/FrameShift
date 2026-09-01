@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.19.1
+
+Prepared for release.
+
+- **Crop ratios.** Added the `3:4`, `3:2`, and `2:3` presets to Crop Image and Crop Video.
+
 ## 1.19.0
 
 Prepared for release.

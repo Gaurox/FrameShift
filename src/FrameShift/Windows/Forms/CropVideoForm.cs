@@ -141,7 +141,7 @@ public sealed class CropVideoForm : Form
         previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
         previewContentHost.Controls.Add(previewSectionLayout);
 
-        var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3" };
+        var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" };
         var ratioSection = FrameShiftCropEditorUi.CreateRatioSection(
             ratioOptions,
             ApplyRatioToCurrentCrop,
@@ -1100,6 +1100,9 @@ public sealed class CropVideoForm : Form
             "16:9" => 16.0 / 9.0,
             "9:16" => 9.0 / 16.0,
             "4:3" => 4.0 / 3.0,
+            "3:4" => 3.0 / 4.0,
+            "3:2" => 3.0 / 2.0,
+            "2:3" => 2.0 / 3.0,
             _ => null
         };
     }

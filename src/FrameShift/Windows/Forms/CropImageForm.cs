@@ -59,7 +59,7 @@ public sealed class CropImageForm : Form
         MinimizeBox = true;
         WindowState = FormWindowState.Normal;
         ClientSize = new Size(1120, 720);
-        MinimumSize = new Size(920, 620);
+        MinimumSize = new Size(920, 690);
         Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         BackColor = FrameShiftTheme.PageBackground;
         ControlHelper.SetDoubleBuffered(this);
@@ -93,7 +93,7 @@ public sealed class CropImageForm : Form
         previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
         previewContentHost.Controls.Add(_previewPanel);
 
-        var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3" };
+        var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" };
         var ratioSection = FrameShiftCropEditorUi.CreateRatioSection(
             ratioOptions,
             ApplyRatioToCurrentCrop,
@@ -1057,6 +1057,9 @@ public sealed class CropImageForm : Form
             "16:9" => 16.0 / 9.0,
             "9:16" => 9.0 / 16.0,
             "4:3" => 4.0 / 3.0,
+            "3:4" => 3.0 / 4.0,
+            "3:2" => 3.0 / 2.0,
+            "2:3" => 2.0 / 3.0,
             _ => null
         };
     }
