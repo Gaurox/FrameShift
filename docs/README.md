@@ -18,6 +18,7 @@ Documentation centrale du projet FrameShift.
 - [Code File Index](CODE_FILE_INDEX.md)
 - [Extract Specific Frames Implementation Guide](EXTRACT_SPECIFIC_FRAMES_IMPLEMENTATION_GUIDE.md)
 - [Dark / Light Theme Implementation](DARK_LIGHT_THEME_IMPLEMENTATION.md)
+- [UI Audit and Standardization Plan — 2026-09-28](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md)
 - [Add Subtitles to Video Notes](ADD_SUBTITLES_TO_VIDEO.md)
 - [Join Videos Notes](JOIN_VIDEOS.md)
 - [Create Subtitle File Notes](CREATE_SUBTITLES.md)
