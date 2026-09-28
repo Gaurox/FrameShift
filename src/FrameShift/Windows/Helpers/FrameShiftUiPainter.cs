@@ -21,15 +21,23 @@ public static class FrameShiftUiPainter
     public static void DrawRoundedBorder(Control control, Graphics graphics, Color borderColor, int radius, float penWidth = 1F)
     {
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        using var pen = new Pen(borderColor, penWidth);
+        if (control.Width < 2 || control.Height < 2) return;
+        using var pen = new Pen(borderColor, penWidth * control.DeviceDpi / FrameShiftUiMetrics.DesignDpi);
         var rect = new Rectangle(0, 0, control.Width - 1, control.Height - 1);
-        using var path = CreateRoundedPath(rect, radius);
+        using var path = CreateRoundedPath(rect, FrameShiftUiMetrics.ToPixels(control, radius));
         graphics.DrawPath(pen, path);
     }
 
     public static GraphicsPath CreateRoundedPath(Rectangle rect, int radius)
     {
         var path = new GraphicsPath();
+        if (rect.Width <= 0 || rect.Height <= 0) return path;
+        radius = Math.Clamp(radius, 0, Math.Min(rect.Width, rect.Height) / 2);
+        if (radius == 0)
+        {
+            path.AddRectangle(rect);
+            return path;
+        }
         var diameter = radius * 2;
         var arc = new Rectangle(rect.Location, new Size(diameter, diameter));
 
@@ -45,9 +53,9 @@ public static class FrameShiftUiPainter
         return path;
     }
 
-    public static Bitmap CreateCenteredIconBackground(string iconPath, Size canvasSize, Point offset)
+    public static Bitmap CreateCenteredIconBackground(string iconPath, Size canvasSize, Point offset, int dpi = FrameShiftUiMetrics.DesignDpi)
     {
-        using var icon = new Icon(iconPath);
+        using var icon = new Icon(iconPath, canvasSize);
         using var iconBitmap = icon.ToBitmap();
         var canvas = new Bitmap(canvasSize.Width, canvasSize.Height);
 
@@ -57,8 +65,8 @@ public static class FrameShiftUiPainter
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
         graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-        var availableWidth = Math.Max(1, canvasSize.Width - 8);
-        var availableHeight = Math.Max(1, canvasSize.Height - 8);
+        var availableWidth = Math.Max(1, canvasSize.Width - FrameShiftUiMetrics.ToPixels(8, dpi));
+        var availableHeight = Math.Max(1, canvasSize.Height - FrameShiftUiMetrics.ToPixels(8, dpi));
         var scale = Math.Min(availableWidth / (float)iconBitmap.Width, availableHeight / (float)iconBitmap.Height);
         var drawWidth = Math.Max(1, (int)Math.Round(iconBitmap.Width * scale));
         var drawHeight = Math.Max(1, (int)Math.Round(iconBitmap.Height * scale));

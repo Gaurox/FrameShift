@@ -1,11 +1,98 @@
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using FrameShift.Windows.Controls;
 
 namespace FrameShift.Windows.Helpers;
 
 public static class FrameShiftUiFactory
 {
+    public static FrameShiftHeader CreateHeader(string title, string subtitle, string preferredIconPath,
+        string fallbackIconPath, string fallbackGlyph, Point? iconOffset = null)
+    {
+        var path = FrameShiftUiPainter.ResolveIconPath(preferredIconPath, fallbackIconPath);
+        return new FrameShiftHeader(title, subtitle, path, fallbackGlyph,
+            ResolveHeaderIconOffset(path, iconOffset ?? Point.Empty));
+    }
+
+    public static Button CreateMeasuredActionButton(string text, bool primary)
+    {
+        var button = new FrameShiftActionButton(primary ? FrameShiftUiMetrics.PrimaryButtonWidth : FrameShiftUiMetrics.SecondaryButtonWidth)
+        {
+            Text = text,
+            FlatStyle = FlatStyle.Flat,
+            Cursor = Cursors.Hand,
+            UseVisualStyleBackColor = false,
+            BackColor = primary ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.Surface,
+            ForeColor = primary ? Color.White : FrameShiftTheme.AccentText
+        };
+        button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
+        button.FlatAppearance.MouseOverBackColor = primary ? FrameShiftTheme.PrimaryBlue : FrameShiftTheme.AccentSoft;
+        return button;
+    }
+
+    /// <summary>Content must report its preferred height (e.g. an auto-sized table of fields).</summary>
+    public static TableLayoutPanel CreateSection(string title, Control content)
+    {
+        var section = new TableLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top,
+            ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, BackColor = FrameShiftTheme.Surface
+        };
+        section.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        section.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        section.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var label = new Label { Text = title, AutoSize = true, Dock = DockStyle.Fill, Margin = Padding.Empty, ForeColor = FrameShiftTheme.AccentText };
+        content.Dock = DockStyle.Top;
+        section.Controls.Add(label, 0, 0);
+        section.Controls.Add(content, 0, 1);
+        void Metrics()
+        {
+            section.Padding = FrameShiftUiMetrics.ToPixels(FrameShiftUiMetrics.StandardSectionPadding, section.DeviceDpi);
+            content.Margin = new Padding(0, FrameShiftUiMetrics.ToPixels(section, FrameShiftUiMetrics.SectionContentGap), 0, 0);
+        }
+        section.HandleCreated += (_, _) => Metrics();
+        section.DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
+        FrameShiftUiPainter.AttachRoundedBorder(section, FrameShiftTheme.PrimaryBlue, FrameShiftUiMetrics.PanelCornerRadius);
+        return section;
+    }
+
+    public static TableLayoutPanel CreateFieldRow(string labelText, Control editor, string? unit = null)
+    {
+        var row = new FrameShiftFieldRow
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top,
+            ColumnCount = unit is null ? 2 : 3, RowCount = 1, Margin = Padding.Empty
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var label = new Label { Text = labelText, AutoSize = true, Anchor = AnchorStyles.Left, TabIndex = 0 };
+        editor.Dock = DockStyle.Fill;
+        editor.TabIndex = 1;
+        editor.AccessibleName ??= labelText.Replace("&", "");
+        row.Controls.Add(label, 0, 0);
+        row.Controls.Add(editor, 1, 0);
+        if (unit is not null)
+        {
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            row.Controls.Add(new Label { Text = unit, AutoSize = true, Anchor = AnchorStyles.Left, TabIndex = 2 }, 2, 0);
+        }
+        void Metrics()
+        {
+            var gap = FrameShiftUiMetrics.ToPixels(row, FrameShiftUiMetrics.LineGap);
+            foreach (Control control in row.Controls) control.Margin = new Padding(0, 0, gap, gap);
+        }
+        row.HandleCreated += (_, _) => Metrics();
+        row.DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
+        return row;
+    }
+
+    public static FrameShiftStatusMessage CreateStatusMessage(string text) => new() { Text = text };
+
+    // Compatibility factories below serve forms awaiting migration in C–E; remove unused paths in F.
     public static Panel CreateFramedPanel(Point location, Size size, Color backgroundColor, Color borderColor, int radius)
     {
         var panel = new Panel

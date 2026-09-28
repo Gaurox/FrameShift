@@ -2,6 +2,8 @@
 
 Ce document définit la base visuelle à respecter pour toutes les fenêtres WinForms de FrameShift.
 
+**Chantier du 28 septembre 2026 :** pour les composants validés en B et les prochains pilotes, suivre le [contrat du socle UI](UI_FOUNDATION.md) et la [feuille de route](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). Les dimensions ci-dessous sont des références logiques à 96 DPI; les anciennes recettes fixes attendent leur migration C/D/E et la réconciliation documentaire F. B est validée pour les primitives et les deux démonstrations à 100/150/200/300 %, avec confirmation utilisateur des tests manuels. La qualification globale des fenêtres métier reste à réaliser.
+
 Objectif :
 - garder une identité UI cohérente ;
 - éviter les variations arbitraires ;

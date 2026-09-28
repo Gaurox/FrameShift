@@ -5,6 +5,8 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- UI chantier only. Release keeps its existing DPI mode until qualification G. -->
+    <ApplicationHighDpiMode Condition="'$(Configuration)' == 'Debug'">PerMonitorV2</ApplicationHighDpiMode>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationIcon>Assets\Icons\app\app.ico</ApplicationIcon>
