@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 29 septembre 2026 : A et B validées; C implémentée sur les cinq pilotes, design validé à 100 %, recette DPI réelle encore à effectuer; D à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous A, B et C. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 29 septembre 2026 : A et B validées; C validée sur les cinq pilotes (design, 100/150/200/300 % et recette manuelle), critères techniques de sortie atteints ; GO proposé pour D1, lancement en attente d'accord; D à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous A, B et C. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -516,6 +516,34 @@ Subtitles mesure désormais uniquement le contenu visible à l'ouverture. Au cha
 
 **Validation utilisateur du 29 septembre 2026 :** correction Subtitles acceptée (« validé. committe. »). Les cinq rendus sont maintenant validés à 100 %, y compris les boutons communs et la hauteur compacte de Subtitles. Cette validation autorise leur enregistrement dans Git ; elle ne vaut pas validation des essais DPI encore à effectuer. C reste ouverte pour cette recette ; aucun GO D/E.
 
+#### Validation des mises à l'échelle C — 29 septembre 2026
+
+Après le commit `a3128f0`, l'utilisateur confirme : **« toutes les mises a l'échelles testées et validées »**. Dans le périmètre de la recette transmise, cela valide les cinq pilotes aux paliers **100/150/200/300 %**. Validation manuelle déclarative, sans nouvelle capture demandée ; aucun défaut signalé. Le design à 100 % avait déjà été validé séparément.
+
+Cette confirmation ne certifie pas les échelles intermédiaires de la matrice finale, la résolution 4K, l'application installée ni les fenêtres hors C. Elle ne confirme pas explicitement les scénarios distincts de déplacement multi-écran, taille du texte Windows, clavier, changements d'options, gestes Cut/Crop et fermeture pendant chargement. Leur couverture est en cours de clarification avant de conclure le jalon C ; les preuves automatisées déjà consignées restent acquises, sans être présentées comme essais manuels.
+
+**Bilan provisoire :** socle commun utilisé par les cinq pilotes, composants et exceptions documentés ; composition WinForms suffisante, aucune base `FrameShiftForm` nécessaire à ce stade. Design et rendu aux quatre paliers validés par l'utilisateur ; aucun nouveau P1 rapporté. Le GO D/E reste distinct et n'est pas donné automatiquement. Mise à jour documentaire seulement : aucun rebuild requis ni nouvelle exécution de tests revendiquée.
+
+#### Bilan final C et validation de la recette — 29 septembre 2026
+
+Après réception des manipulations restantes, l'utilisateur répond **« ok tout validé »**. Cette confirmation couvre la recette transmise : clavier (Tab/Maj+Tab, flèches, Espace, Entrée/Échap), changements d'options, gestes et valeurs Cut/Crop, fermeture pendant chargement, déplacement entre écrans et augmentation de la taille du texte Windows. Elle complète la validation explicite antérieure des cinq pilotes à 100/150/200/300 %. Preuve déclarative utilisateur ; aucun relevé automatique ni capture supplémentaire. Les valeurs exactes du réglage de texte et la chronologie de chaque essai ne sont pas mesurées par l'agent.
+
+| Pilote | Résultat final dans le périmètre C |
+|---|---|
+| Interpolate Video FFmpeg | Design, échelles, clavier, presets et valeur personnalisée validés. |
+| Compress Image | Design, échelles, profils et cycles formats/cible/unité validés. |
+| Cut Video | Design, échelles, bornes/champs/poignées, aperçu et fermeture pendant chargement validés. |
+| Create Subtitles | Design compact, échelles, groupes radio, cycles SRT/ASS/Project et conservation du style validés. |
+| Crop Image | Design, échelles, poignées, ratios, zoom/Fit, conservation des dimensions source et fermeture pendant chargement validés. |
+
+**Socle retenu :** politique DPI, bandeau mesuré, sections/marges, boutons de footer identiques, mesure du contenu et stratégie de défilement communs. Cut garde les commandes sous l'aperçu ; Crop utilise le rail adaptable ; Subtitles ajuste explicitement la hauteur au format. Ces exceptions répondent aux workflows et utilisent les composants communs. Aucune base `FrameShiftForm` ni framework supplémentaire nécessaire. Aperçus et coordonnées média restent séparés du layout.
+
+**Preuves techniques :** commit de référence `a3128f0`, version de développement 1.19.1, dernier binaire de recette `AF83BE01BA6E47F505C908E829E40E93FAF79A1DC5F5011CBC1B6CCE77ED7523`. Builds sans avertissement/erreur ; suites et rejeux tracés dans les révisions précédentes (35 tests UI, puis 6 cas ciblés après la dernière correction locale ; 486 tests réussis et 5 ignorés lors du dernier passage large). Aucun nouveau test exécuté pour cette clôture documentaire. Aucun P1 restant signalé sur les pilotes ; les changements partagés ont été vérifiés sur leurs consommateurs B/C.
+
+**Limites conservées :** pas de qualification de toutes les fenêtres historiques, de la distribution installée, de l'installateur, des exports complets ou modèles IA ; 12 tests affichant des fenêtres exclus des passages automatisés. Échelles intermédiaires et 4K non certifiées par cette recette. Release conserve sa configuration DPI antérieure. Ces limites relèvent des migrations et de la qualification ultérieures, et ne sont pas transformées en résultats positifs.
+
+**Critères techniques de sortie de C : atteints sur le périmètre testé ; recette C validée. GO proposé pour D1**, en commençant par Progress, puis Main (ActionsPanel/FileQueuePanel), Settings et MediaInfo. Le lancement de D attend l'accord explicite du responsable conformément au jalon ; **D/E non commencées**, aucune publication autorisée par cette validation.
+
 ### Jalon après C — GO / NO-GO obligatoire
 
 Ce jalon fait partie de la sortie de C; il n'ajoute pas de huitième phase.
@@ -657,7 +685,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; les cinq rendus de C sont validés à 100 %, avec recette DPI restante; D à G ne sont pas commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle, avec GO proposé pour D1; D à G ne sont pas commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

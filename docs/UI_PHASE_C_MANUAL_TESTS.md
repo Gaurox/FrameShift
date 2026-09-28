@@ -1,6 +1,6 @@
 # Phase C — Recette manuelle des cinq pilotes
 
-État au 29 septembre 2026 : **les cinq pilotes sont validés par l'utilisateur à 100 %**, y compris la dernière correction de hauteur Subtitles. La prochaine étape est la recette DPI ci-dessous. La validation de B ne valide pas automatiquement ces fenêtres métier.
+État au 29 septembre 2026 : **design et mises à l'échelle des cinq pilotes validés par l'utilisateur à 100/150/200/300 %**. Les autres scénarios (options, clavier, gestes, fermeture pendant chargement, multi-écran et texte Windows agrandi) sont également validés par la réponse « ok tout validé ». Recette C validée ; les instructions ci-dessous servent désormais au rejeu. La validation de B ne valide pas automatiquement ces fenêtres métier.
 
 ## Ouvrir les bonnes fenêtres
 
@@ -78,7 +78,7 @@ Pour chacune des cinq fenêtres :
 
 ## Écrans et taille du texte
 
-**À faire après validation du design à 100 %.** Refaire le parcours à 150 %, 200 % et 300 %, à résolution physique constante, en fermant et rouvrant les pilotes à chaque palier. Les changements Windows restent manuels.
+**Paliers 100/150/200/300 % validés par l'utilisateur.** Les consignes suivantes restent disponibles pour un rejeu : conserver la résolution physique et fermer/rouvrir les pilotes à chaque palier. Les changements Windows restent manuels.
 
 Puis :
 
@@ -98,4 +98,4 @@ Après accord sur ce design et essais DPI :
 
 En cas de défaut, indiquer seulement **pilote + échelle + manipulation + résultat observé**. Les traitements média complets, la distribution installée et les fenêtres hors pilotes ne sont pas qualifiés par ce lanceur.
 
-Le bilan de C et le GO/NO-GO seront complétés après ce retour. D/E attendent une validation explicite.
+Bilan final de C consigné dans l'audit : critères techniques atteints, GO proposé pour D1. Le lancement de D/E attend un accord explicite.
