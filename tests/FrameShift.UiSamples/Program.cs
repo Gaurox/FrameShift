@@ -12,7 +12,7 @@ internal static class Program
         {
             try
             {
-                ApplicationConfiguration.Initialize();
+                InitializeSampleApplication();
                 var results = new List<object>();
                 foreach (var editor in new[] { false, true })
                 {
@@ -27,6 +27,14 @@ internal static class Program
                     results.Add(new { editor, dpi = form.DeviceDpi, client = form.ClientSize.ToString(),
                         highDpiMode = Application.HighDpiMode.ToString(), visible = form.Visible });
                 }
+                using (var launcher = new PilotLauncherForm())
+                {
+                    CreateHiddenHandles(launcher);
+                    launcher.PerformAutoScale();
+                    launcher.PerformLayout();
+                    if (launcher.Visible) throw new InvalidOperationException("Pilot launcher must stay hidden during checks.");
+                    results.Add(new { pilotLauncher = true, dpi = launcher.DeviceDpi, highDpiMode = Application.HighDpiMode.ToString(), visible = launcher.Visible });
+                }
                 File.WriteAllText(args[1], System.Text.Json.JsonSerializer.Serialize(results, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 return 0;
             }
@@ -36,8 +44,8 @@ internal static class Program
                 return 1;
             }
         }
-        ApplicationConfiguration.Initialize();
-        Application.Run(new SampleForm(editor: false));
+        InitializeSampleApplication();
+        Application.Run(args.Contains("--pilots") ? new PilotLauncherForm() : new SampleForm(editor: false));
         return 0;
     }
 
@@ -45,6 +53,15 @@ internal static class Program
     {
         _ = control.Handle;
         foreach (Control child in control.Controls) CreateHiddenHandles(child);
+    }
+
+    private static void InitializeSampleApplication()
+    {
+        // InternalsVisibleTo also exposes the application's generated global type.
+        // This assembly's SDK-generated initializer wins and configures the sample's PMv2 mode.
+#pragma warning disable CS0436
+        global::ApplicationConfiguration.Initialize();
+#pragma warning restore CS0436
     }
 }
 

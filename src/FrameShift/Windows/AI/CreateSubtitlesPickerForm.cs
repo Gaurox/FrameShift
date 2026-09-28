@@ -10,16 +10,12 @@ namespace FrameShift.Windows.AI;
 
 internal sealed class CreateSubtitlesPickerForm : Form
 {
-    private const int CompactClientHeight = 594;
-    private const int ExpandedClientHeight = 754;
-
     private string _selectedModelId;
     private CreateSubtitlesOutputFormat _selectedOutputFormat;
     private CreateSubtitlesAssPreset _selectedAssPreset;
     private readonly Panel _assPresetSection;
-    private readonly Panel _infoCard;
-    private readonly Button _cancelButton;
-    private readonly Button _createButton;
+    private readonly TableLayoutPanel _layout;
+    private bool _loaded;
 
     public CreateSubtitlesPickerForm(
         string actionTitle,
@@ -27,160 +23,113 @@ internal sealed class CreateSubtitlesPickerForm : Form
         CreateSubtitlesOutputFormat initialOutputFormat = CreateSubtitlesOutputFormat.StandardSrt,
         CreateSubtitlesAssPreset initialAssPreset = CreateSubtitlesAssPreset.Classic)
     {
-        var models = CreateSubtitlesModelCatalog.GetAll();
-        var outputFormats = CreateSubtitlesOutputFormats.GetAll();
-        var assPresets = CreateSubtitlesAssPresets.GetAll();
         _selectedModelId = CreateSubtitlesModelCatalog.GetDefault().Id;
         _selectedOutputFormat = initialOutputFormat;
         _selectedAssPreset = initialAssPreset;
-
-        FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", IconPaths.CreateSubtitlesAiIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
-        ClientSize = new Size(560, CompactClientHeight);
-
-        Controls.Add(FrameShiftUiFactory.CreateFixedHeader(
-            $"FrameShift - {actionTitle}",
-            $"Source: {sourceLabel}",
-            IconPaths.CreateSubtitlesAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "AI"));
-
-        var modelSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 82), new Size(536, 208), "Model");
-        Controls.Add(modelSection);
-
-        for (var i = 0; i < models.Count; i++)
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(680, 640), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", $"Source: {sourceLabel}",
+            IconPaths.CreateSubtitlesAiIcon, IconPaths.FrameShiftAiIcon, "AI");
+        var modelControls = new List<Control>();
+        foreach (var model in CreateSubtitlesModelCatalog.GetAll())
         {
-            var model = models[i];
-            var rowY = 30 + i * 58;
-
-            var radio = new RadioButton
-            {
-                Location = new Point(18, rowY),
-                Size = new Size(500, 22),
-                Text = model.DisplayName,
-                ForeColor = FrameShiftTheme.TextPrimary,
-                Checked = model.Id == _selectedModelId,
-                Tag = model.Id,
-                AutoSize = false
-            };
-            var capturedId = model.Id;
-            radio.CheckedChanged += (_, _) => { if (radio.Checked) _selectedModelId = capturedId; };
-            modelSection.Controls.Add(radio);
-
-            var descLabel = new Label
-            {
-                Location = new Point(40, rowY + 24),
-                Size = new Size(478, 17),
-                ForeColor = FrameShiftTheme.TextSecondary,
-                Text = BuildRowDescription(model)
-            };
-            modelSection.Controls.Add(descLabel);
+            var radio = CreateRadio(model.DisplayName, BuildRowDescription(model));
+            radio.Checked = model.Id == _selectedModelId;
+            radio.Tag = model.Id;
+            radio.CheckedChanged += (_, _) => { if (radio.Checked) _selectedModelId = model.Id; };
+            modelControls.Add(radio);
         }
-
-        var outputSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 302), new Size(536, 148), "Output");
-        Controls.Add(outputSection);
-
-        for (var i = 0; i < outputFormats.Count; i++)
+        var outputControls = new List<Control>();
+        foreach (var format in CreateSubtitlesOutputFormats.GetAll())
         {
-            var outputFormat = outputFormats[i];
-            var rowY = 30 + i * 38;
-
-            var radio = new RadioButton
-            {
-                Location = new Point(18, rowY),
-                Size = new Size(500, 22),
-                Text = outputFormat.GetDisplayName(),
-                ForeColor = FrameShiftTheme.TextPrimary,
-                Checked = outputFormat == _selectedOutputFormat,
-                AutoSize = false
-            };
-            var capturedOutputFormat = outputFormat;
+            var radio = CreateRadio(format.GetDisplayName(), format.GetDescription());
+            radio.Checked = format == _selectedOutputFormat;
+            radio.Tag = format;
             radio.CheckedChanged += (_, _) =>
             {
-                if (radio.Checked)
-                {
-                    _selectedOutputFormat = capturedOutputFormat;
-                    UpdateAssPresetVisibility();
-                }
+                if (!radio.Checked) return;
+                _selectedOutputFormat = format;
+                UpdateAssPresetVisibility();
             };
-            outputSection.Controls.Add(radio);
-
-            outputSection.Controls.Add(new Label
-            {
-                Location = new Point(40, rowY + 20),
-                Size = new Size(478, 16),
-                ForeColor = FrameShiftTheme.TextSecondary,
-                Text = outputFormat.GetDescription()
-            });
+            outputControls.Add(radio);
         }
-
-        _assPresetSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 462), new Size(536, 148), "ASS preset");
-        Controls.Add(_assPresetSection);
-
-        for (var i = 0; i < assPresets.Count; i++)
+        var presetControls = new List<Control>();
+        foreach (var preset in CreateSubtitlesAssPresets.GetAll())
         {
-            var assPreset = assPresets[i];
-            var rowY = 30 + i * 38;
-
-            var radio = new RadioButton
-            {
-                Location = new Point(18, rowY),
-                Size = new Size(500, 22),
-                Text = assPreset.GetDisplayName(),
-                ForeColor = FrameShiftTheme.TextPrimary,
-                Checked = assPreset == _selectedAssPreset,
-                AutoSize = false
-            };
-            var capturedAssPreset = assPreset;
-            radio.CheckedChanged += (_, _) =>
-            {
-                if (radio.Checked)
-                {
-                    _selectedAssPreset = capturedAssPreset;
-                }
-            };
-            _assPresetSection.Controls.Add(radio);
-
-            _assPresetSection.Controls.Add(new Label
-            {
-                Location = new Point(40, rowY + 20),
-                Size = new Size(478, 16),
-                ForeColor = FrameShiftTheme.TextSecondary,
-                Text = assPreset.GetDescription()
-            });
+            var radio = CreateRadio(preset.GetDisplayName(), preset.GetDescription());
+            radio.Checked = preset == _selectedAssPreset;
+            radio.Tag = preset;
+            radio.CheckedChanged += (_, _) => { if (radio.Checked) _selectedAssPreset = preset; };
+            presetControls.Add(radio);
         }
-
-        _infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 462), new Size(536, 68));
-        Controls.Add(_infoCard);
-        _infoCard.Controls.Add(new Label
+        _assPresetSection = FrameShiftUiFactory.CreateSection("ASS style", CreateRadioList(presetControls));
+        _assPresetSection.Name = "assPresets";
+        var content = FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateSection("Transcription model", CreateRadioList(modelControls)),
+            FrameShiftUiFactory.CreateSection("Output format", CreateRadioList(outputControls)), _assPresetSection);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        var create = FrameShiftUiFactory.CreateMeasuredActionButton("Create File", true);
+        create.DialogResult = DialogResult.OK;
+        _layout = FrameShiftDialogLayout.Create(header, content, FrameShiftDialogLayout.CreateActions(cancel, create),
+            FrameShiftUiFactory.CreateStatusMessage("Transcription runs locally. Creates a new subtitle file next to the source."));
+        Controls.Add(_layout);
+        Load += (_, _) =>
         {
-            Location = new Point(12, 8),
-            Size = new Size(512, 48),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "FrameShift prepares mono 16 kHz audio, transcribes it locally with Whisper, then writes a unique subtitle file next to the source."
-        });
-
-        _cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, 540), new Size(120, 34), primary: false);
-        _cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(_cancelButton);
-
-        _createButton = FrameShiftUiFactory.CreateFixedActionButton("Create File", new Point(408, 540), new Size(140, 34), primary: true);
-        _createButton.DialogResult = DialogResult.OK;
-        Controls.Add(_createButton);
-
-        AcceptButton = _createButton;
-        CancelButton = _cancelButton;
-
+            _loaded = true;
+            UpdateAssPresetVisibility();
+        };
+        AcceptButton = create;
+        CancelButton = cancel;
         UpdateAssPresetVisibility();
+        ResumeLayout(true);
     }
 
     public string SelectedModelId => _selectedModelId;
+
+    private static RadioButton CreateRadio(string title, string description) => new()
+    {
+        Text = title, AccessibleDescription = description, AutoSize = true,
+        Dock = DockStyle.Top, Margin = Padding.Empty,
+        ForeColor = FrameShiftTheme.TextPrimary, UseVisualStyleBackColor = true
+    };
+
+    private static TableLayoutPanel CreateRadioList(List<Control> choices)
+    {
+        // All radios share one parent: native exclusivity and arrow navigation are preserved.
+        var list = new TableLayoutPanel
+        {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top, ColumnCount = 1, Margin = Padding.Empty, Size = Size.Empty
+        };
+        list.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        foreach (var choice in choices)
+        {
+            var row = list.RowCount;
+            list.RowCount += 2;
+            list.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            list.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            list.Controls.Add(choice, 0, row);
+            var description = FrameShiftUiFactory.CreateWrappingLabel(choice.AccessibleDescription ?? "");
+            description.Click += (_, _) => { ((RadioButton)choice).Checked = true; choice.Focus(); };
+            list.Controls.Add(description, 0, row + 1);
+        }
+        void Metrics()
+        {
+            foreach (Control control in list.Controls)
+            {
+                var row = list.GetRow(control);
+                control.Margin = new Padding(row % 2 == 1 ? FrameShiftUiMetrics.ToPixels(list, 22) : 0, 0, 0,
+                    row % 2 == 1 && row < list.RowCount - 1
+                        ? FrameShiftUiMetrics.ToPixels(list, FrameShiftUiMetrics.BlockGap) : 0);
+            }
+        }
+        list.HandleCreated += (_, _) => Metrics();
+        list.DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
+        return list;
+    }
 
     public CreateSubtitlesOutputFormat SelectedOutputFormat => _selectedOutputFormat;
 
@@ -221,21 +170,15 @@ internal sealed class CreateSubtitlesPickerForm : Form
 
     private void UpdateAssPresetVisibility()
     {
-        var showAssPresets = _selectedOutputFormat == CreateSubtitlesOutputFormat.AdvancedAss;
-        _assPresetSection.Visible = showAssPresets;
-
-        if (showAssPresets)
+        if (_assPresetSection is not null)
+            _assPresetSection.Visible = _selectedOutputFormat == CreateSubtitlesOutputFormat.AdvancedAss;
+        if (_loaded && WindowState == FormWindowState.Normal)
         {
-            ClientSize = new Size(560, ExpandedClientHeight);
-            _infoCard.Location = new Point(12, 622);
-            _cancelButton.Location = new Point(278, 700);
-            _createButton.Location = new Point(408, 700);
-            return;
+            // Fit only on opening or an explicit format choice, never while the user resizes.
+            // Hidden ASS options must not leave a reserved empty area in SRT/project mode.
+            var workingArea = Screen.FromControl(this).WorkingArea;
+            FrameShiftDialogLayout.FitInitialHeight(this, _layout, workingArea.Size);
+            Bounds = FrameShiftWindowPolicy.FitBounds(Bounds, workingArea);
         }
-
-        ClientSize = new Size(560, CompactClientHeight);
-        _infoCard.Location = new Point(12, 462);
-        _cancelButton.Location = new Point(278, 540);
-        _createButton.Location = new Point(408, 540);
     }
 }

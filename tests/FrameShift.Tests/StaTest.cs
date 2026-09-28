@@ -15,6 +15,8 @@ internal static class StaTest
         {
             try
             {
+                // Fail the test instead of opening WinForms' unhandled-exception dialog.
+                System.Windows.Forms.Application.SetUnhandledExceptionMode(System.Windows.Forms.UnhandledExceptionMode.ThrowException, true);
                 action();
             }
             catch (Exception ex)

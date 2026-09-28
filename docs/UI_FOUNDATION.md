@@ -1,6 +1,6 @@
 # Socle UI — implémentation B
 
-État du 28 septembre 2026 : **B validée sur le périmètre du socle**. Builds et tests automatisés verts; huit captures manuelles des structures compacte et éditeur reçues à 100/150/200/300 %, puis validation explicite de tous les tests manuels par l'utilisateur, y compris défilement, contenu dynamique, redimensionnement, clavier, transitions entre écrans et texte Windows agrandi. Le socle est prêt pour C; C n'est pas commencée. Les captures Image to PDF concernent la fonction installée historique, dont la migration est prévue en E. La [feuille de route](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) détaille les preuves et les limites conservées.
+État du 28 septembre 2026 : **B validée sur le périmètre du socle**. Builds et tests automatisés verts; huit captures manuelles des structures compacte et éditeur reçues à 100/150/200/300 %, puis validation explicite de tous les tests manuels par l'utilisateur, y compris défilement, contenu dynamique, redimensionnement, clavier, transitions entre écrans et texte Windows agrandi. Les cinq pilotes C et leurs derniers ajustements sont validés à 100 % le 29 septembre 2026 ; les essais DPI réels des pilotes restent à effectuer. Les captures Image to PDF concernent la fonction installée historique, dont la migration est prévue en E. La [feuille de route](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) détaille les preuves et les limites conservées.
 
 ## Construction des prochains pilotes
 
@@ -43,8 +43,13 @@ Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, ac
 | `FrameShiftUiMetrics` | Constantes logiques 96 DPI; `ToPixels` réservé aux calculs manuels. Les tailles clientes, bornes et mesures de texte sont déjà en pixels. Aucun `Scale()` récursif supplémentaire ni multiplication manuelle des polices en production. |
 | `CreateHeader` | Titre mesuré avec retour à la ligne; métadonnées sur une ligne avec infobulle et menu « Copy details ». Icône reconstruite depuis le fichier à la taille courante; ancien bitmap et ressources possédées libérés. |
 | `CreateSection` | Titre et contenu dans des rangées AutoSize distinctes. Le contenu doit annoncer sa hauteur préférée, par exemple une table de champs AutoSize. |
+| `CreateVerticalStack` / `CreateWrappingLabel` | Composition des pilotes C : table verticale AutoSize, intervalle logique partagé entre rangées, descriptions natives avec retour à la ligne. Les contrôles restent dans un parent commun pour les groupes radio exclusifs. |
+| `CreateChoiceRow` / `FrameShiftChoiceCard` | Choix exclusifs radio natifs présentés en cartes, avec description et état sélectionné. Rangée espacée, cartes de hauteur commune et retour à la ligne en largeur réduite. La hauteur préférée est calculée pour la largeur disponible, y compris les demandes non contraintes des tables. |
+| Champs compacts et unités | `CreateFieldRow(..., logicalEditorWidth: ...)` borne la largeur d'un champ numérique ; le reste de la ligne absorbe l'espace libre. `CreateFieldWithUnit` garde la valeur et son sélecteur d'unité côte à côte. |
+| `FitInitialHeight` | Mesure à `Load`, après scaling natif, du contenu et des rangées réelles ; taille bornée à l'espace de travail. Usage explicite sur les dialogues compacts. Subtitles réutilise cette mesure au changement explicite de format pour ne pas réserver de vide aux styles ASS masqués ; largeur conservée, hauteur et position bornées à l'écran, aucun ajustement si maximisée. Aucun appel depuis Resize/Layout. |
+| `CreateTimeline` | Variante éditeur : aperçu flexible au-dessus, commandes temporelles en dessous. Leur viewport défile si leur hauteur mesurée dépasse 60 % de l'espace intérieur disponible ; le footer reste indépendant. |
 | `CreateFieldRow` | Label natif avec mnémonique, nom accessible du champ, éditeur extensible, unité facultative. Le label long revient à la ligne et laisse de la place à l'éditeur. |
-| `CreateMeasuredActionButton` / `CreateActions` | Taille d'après le texte et les minima logiques. Barre hors scroll; retour à la ligne des boutons et de leurs textes si nécessaire. Relier `AcceptButton`/`CancelButton` et leurs événements dans le formulaire. |
+| `CreateMeasuredActionButton` / `CreateActions` | Même taille pour validation et annulation/fermeture : base 140 × 34 logique, paire agrandie ensemble si un texte le requiert. Barre hors scroll; retour à la ligne des boutons et de leurs textes si nécessaire. Relier `AcceptButton`/`CancelButton` et leurs événements dans le formulaire. |
 | `CreateStatusMessage` | Texte multiligne sélectionnable/copiable, lecture seule. Hauteur mesurée et plafonnée à 96 unités logiques, défilement vertical des détails longs pour préserver le footer. |
 | Ajouts dynamiques | Ajouter dans les mêmes tables de champs/sections; laisser WinForms hériter de la police et du DPI. Les composants recalculent leurs mesures/paddings dans leur contexte courant. Pas de tailles calculées à partir des anciennes bornes. |
 
@@ -89,3 +94,35 @@ Sans commande à saisir, ouvrir dans l'Explorateur :
 6. Remettre ensuite les réglages Windows souhaités. Aucune étape n'est effectuée automatiquement par l'agent.
 
 Ces fenêtres utilisent des valeurs fictives. Aucun média, traitement FFmpeg, fichier utilisateur ou paramètre applicatif n'est modifié. Elles servent à qualifier les composants avant la migration des pilotes C. Elles ne démontrent pas que les fenêtres métier historiques sont déjà corrigées.
+
+## Pilotes C — développement et recette
+
+### Contrat de géométrie figé — 29 septembre 2026
+
+À réutiliser dans tous les menus lors de leur migration, sans variantes locales selon l'action ou le rôle principal/secondaire :
+
+| Élément | Référence à 96 DPI |
+|---|---|
+| Validation / annulation / fermeture | 140 × 34 ; mêmes dimensions pour la paire ; écart 10 |
+| Marges extérieures | 12 sur chaque côté |
+| Bandeau / corps / statut / actions et aperçu / options | Séparation 12 |
+| Sections ou blocs empilés | Écart 10 |
+| Champs, choix sur une ligne et titre / contenu de section | Écart 8 |
+| Intérieur des sections | Gauche 12, haut 10, droite 12, bas 12 |
+| Bandeau commun | Minimum 58 de haut, icône 38, marges horizontales 12, verticales 8, écart icône / texte 10 |
+
+Ces valeurs sont centralisées dans `FrameShiftUiMetrics`. Une règle figée reste adaptative : la paire de boutons grandit ensemble pour des textes longs ou une police agrandie, le bandeau peut grandir pour un titre sur plusieurs lignes, et les métriques suivent le DPI. Ne pas figer des pixels physiques ni couper les textes. Les boutons internes spécialisés (par exemple ×2/×3/×4) peuvent être plus compacts ; ils ne sont pas des commandes de footer.
+
+Le bandeau et les espacements des cinq pilotes respectaient déjà ce contrat ; leur géométrie est conservée. Les quelques constantes équivalentes encore littérales du nouveau socle utilisent maintenant les métriques communes. Les menus historiques utilisent encore les chemins de compatibilité avant D/E : ils ne sont pas déclarés uniformisés par cette révision C.
+
+Create Subtitles retrouve des listes verticales radio natives, avec une description secondaire indentée sous chaque choix. Les radios d'un groupe restent dans le même parent pour conserver l'exclusivité et la navigation par flèches. Les cartes restent utilisées pour les trois profils Compress Image, acceptés par l'utilisateur.
+
+Interpolate Video (FFmpeg), Compress Image et Create Subtitles composent le dialogue compact ajusté au contenu à l'ouverture. Cut Video utilise la variante timeline avec commandes sous l'aperçu ; Crop Image conserve le rail défilant et son repli sous l'aperçu. Les appels historiques des autres fenêtres restent disponibles jusqu'à D/E/F.
+
+Les boutons mesurés partagent désormais un dessin légèrement arrondi (6 unités logiques), avec états survol, sélection clavier et focus ; ils restent des boutons natifs pour l'activation et l'accessibilité. Le mode contraste élevé utilise le rendu natif. Les messages courts n'affichent plus de scrollbar ; les détails longs restent consultables par défilement. La recette visuelle de ce nouveau standard commence à 100 %, conformément à la demande utilisateur, avant les essais DPI.
+
+Les aperçus Cut sont désormais asynchrones, annulables et sérialisés dans `CutVideoForm.Preview.cs`. Une demande récente annule la précédente ; son décodage attend la libération du précédent. Les erreurs restent dans l'état de l'aperçu. Crop charge aussi son image hors du fil UI ; son décodeur natif déjà démarré doit terminer avant la libération de ses ressources. Les coordonnées de recadrage restent en pixels source ; seuls dessin et zones de prise des poignées utilisent les métriques DPI.
+
+`tests/FrameShift.UiSamples` propose un lanceur `--pilots`, accessible par double-clic sur `TEST_PHASE_C.cmd`. Il ouvre les cinq formulaires réels et rapporte les réglages sélectionnés sans exporter les médias. Le décodage des aperçus et FFprobe utilisent les runners du projet. L'accès interne accordé à cet assembly de test permet d'ouvrir le picker Subtitles et de retarder un aperçu Cut pour la recette de fermeture. Aucun outil de capture n'est ajouté.
+
+Voir [la procédure manuelle C](UI_PHASE_C_MANUAL_TESTS.md) et [le bilan de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md#c--cinq-fenêtres-pilotes--p1). Les échelles Windows réelles et les déplacements multi-écran des pilotes attendent une nouvelle validation utilisateur ; celle de B concerne les démonstrations du socle.

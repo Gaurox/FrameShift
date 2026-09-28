@@ -10,6 +10,12 @@ Objectif :
 - préserver une mise en page simple, stable et lisible ;
 - permettre à une nouvelle fenêtre de s’intégrer au projet sans casser le style existant.
 
+**Pilotes C :** Interpolate Video (FFmpeg), Compress Image, Cut Video, Create Subtitles et Crop Image sont migrés dans le build de développement. La recette métier aux quatre échelles reste à confirmer suivant [cette procédure](UI_PHASE_C_MANUAL_TESTS.md). Le passage à D/E attend le bilan et le GO explicite.
+
+**Révision de design après le premier essai C :** valider à 100 % avant de reprendre les essais DPI. Standard proposé : boutons à coins légèrement arrondis et espacés ; cartes radio de hauteur commune avec description ; champs numériques compacts ; unité près de la valeur ; taille initiale mesurée pour montrer tout le contenu quand l'écran le permet. Le défilement reste un recours pour l'espace réduit. Les éditeurs peuvent choisir le rail latéral (Crop) ou les commandes temporelles sous l'aperçu (Cut) sans dupliquer le socle.
+
+**Révision du 29 septembre :** rendu global accepté à 100 %, sauf les cartes Subtitles remplacées à la demande utilisateur par des listes radio verticales avec descriptions. Les cartes restent adaptées à Compress Image. Le [contrat de géométrie figé](UI_FOUNDATION.md#contrat-de-géométrie-figé--29-septembre-2026) fixe les boutons de footer identiques à 140 × 34 unités logiques, les marges, les écarts et le bandeau commun. Il prime sur les recettes historiques de ce document. Appliqué aux pilotes C ; les menus historiques suivront lors de D/E. Les cinq pilotes et les derniers ajustements Subtitles sont validés à 100 % le 29 septembre 2026 ; les essais DPI restent à effectuer.
+
 Si une future UI a une contrainte qui n’est pas décrite ici, elle doit s’adapter en conservant l’esprit général :
 - mêmes couleurs de référence ;
 - mêmes marges de base ;
@@ -382,8 +388,8 @@ Typographie :
 - texte court, verbe d’action simple.
 
 Dimensions :
-- largeur standard : `140 px` pour l’action principale ;
-- hauteur standard : `34 px`.
+- largeur standard : `140` unités logiques pour l’action principale ;
+- hauteur standard : `34` unités logiques, agrandie avec la paire si la mesure du texte le demande.
 
 ### 7.2 Bouton secondaire
 
@@ -401,8 +407,8 @@ Style :
 - curseur pointeur.
 
 Dimensions :
-- largeur standard : `120 px` pour l’annulation ou l’action secondaire de footer ;
-- hauteur standard : `34 px`.
+- largeur standard : `140` unités logiques pour l’annulation ou la fermeture, identique à l’action principale ;
+- hauteur standard : `34` unités logiques. Les deux boutons grandissent ensemble pour un texte long ou agrandi, selon le socle commun ; aucun ajustement arbitraire par fenêtre.
 
 ### 7.3 Règles de placement
 

@@ -23,6 +23,7 @@ public sealed class CropImageForm : Form
     private readonly Panel _previewPanel;
     private readonly Label _sourceLabel;
     private readonly Label _sizeLabel;
+    private readonly Button _okButton;
     private readonly RadioButton[] _ratioButtons;
     private readonly System.Windows.Forms.Timer _resizeRefreshTimer;
     private Bitmap? _previewBitmap;
@@ -33,6 +34,9 @@ public sealed class CropImageForm : Form
     private PointF _panStartCenter;
     private string _dragMode = string.Empty;
     private bool _closing;
+    private bool _disposed;
+    private readonly CancellationTokenSource _previewCancellation = new();
+    private Task? _initializationTask;
     private bool _isLiveResize;
     private int _sourceWidth;
     private int _sourceHeight;
@@ -51,32 +55,11 @@ public sealed class CropImageForm : Form
         _ffmpegRunner = ffmpegRunner;
 
         SuspendLayout();
-
+        FrameShiftWindowPolicy.Initialize(this, new Size(1120, 720), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Crop image");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        WindowState = FormWindowState.Normal;
-        ClientSize = new Size(1120, 720);
-        MinimumSize = new Size(920, 690);
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
         ControlHelper.SetDoubleBuffered(this);
-
         _resizeRefreshTimer = new System.Windows.Forms.Timer { Interval = 35 };
-        _resizeRefreshTimer.Tick += (_, _) =>
-        {
-            _resizeRefreshTimer.Stop();
-            RefreshPreviewLayout();
-        };
-
-        var rootLayout = FrameShiftCropEditorUi.CreateRootLayout();
-
-        var headerPanel = CreateHeaderPanel();
-
-        var contentLayout = FrameShiftCropEditorUi.CreateContentLayout(out var leftLayout, out var rightLayout);
-
+        _resizeRefreshTimer.Tick += (_, _) => { _resizeRefreshTimer.Stop(); RefreshPreviewLayout(); };
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
@@ -86,136 +69,57 @@ public sealed class CropImageForm : Form
         _previewPanel.MouseWheel += PreviewPanelOnMouseWheel;
         _previewPanel.MouseEnter += (_, _) => _previewPanel.Focus();
         _previewPanel.Resize += (_, _) => SchedulePreviewLayoutRefresh();
+        _previewPanel.DpiChangedAfterParent += (_, _) => SchedulePreviewLayoutRefresh();
         _previewPanel.TabStop = true;
-
-        var previewSection = FrameShiftUiFactory.CreateFillSection("Preview", out var previewContentHost);
-        previewSection.Margin = Padding.Empty;
-        previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-        previewContentHost.Controls.Add(_previewPanel);
-
         var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" };
-        var ratioSection = FrameShiftCropEditorUi.CreateRatioSection(
-            ratioOptions,
-            ApplyRatioToCurrentCrop,
-            out _ratioButtons,
-            out var ratioSectionHeight);
-        rightLayout.RowStyles[0] = new RowStyle(SizeType.Absolute, ratioSectionHeight);
-
-        var mediaCard = FrameShiftCropEditorUi.CreateMediaInfoCard(2);
-        var mediaLayout = new TableLayoutPanel
+        _ratioButtons = ratioOptions.Select((option, index) => new RadioButton
         {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        mediaLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        mediaLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.InfoLineHeight * 2));
-        mediaLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.InfoLineHeight * 2));
-
-        _sourceLabel = new Label
+            Text = option, Tag = option, AutoSize = true, Checked = index == 0
+        }).ToArray();
+        foreach (var radio in _ratioButtons)
+            radio.CheckedChanged += (_, _) => { if (radio.Checked && _previewBitmap is not null) ApplyRatioToCurrentCrop(); };
+        var ratioSection = FrameShiftUiFactory.CreateSection("Ratio", FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
+        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel("Image: loading...");
+        _sizeLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        var mediaSection = FrameShiftUiFactory.CreateSection("Image", FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _sizeLabel));
+        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton("Auto crop", false);
+        autoCrop.Click += (_, _) => ApplyAutoCrop();
+        var fit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        fit.Click += (_, _) => FitPreviewToView();
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        reset.Click += (_, _) => ResetCropRect();
+        var tools = FrameShiftUiFactory.CreateSection("Tools", FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
+        var ok = _okButton = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        ok.Enabled = false;
+        ok.Click += (_, _) =>
         {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Text = "Image: loading..."
-        };
-
-        _sizeLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        mediaLayout.Controls.Add(_sourceLabel, 0, 0);
-        mediaLayout.Controls.Add(_sizeLabel, 0, 1);
-        mediaCard.Controls.Add(mediaLayout);
-        rightLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, FrameShiftUiFactory.GetInfoCardHeight(2) + mediaCard.Margin.Vertical);
-
-        var autoCropButton = CreateActionButton("Auto crop", primary: false);
-        autoCropButton.Click += (_, _) => ApplyAutoCrop();
-
-        var fitButton = CreateActionButton("Fit", primary: false);
-        fitButton.Click += (_, _) => FitPreviewToView();
-
-        var resetButton = CreateActionButton("Reset", primary: false);
-        resetButton.Click += (_, _) => ResetCropRect();
-        var toolsSection = FrameShiftCropEditorUi.CreateToolsSection(out var toolsButtonHost, autoCropButton, fitButton, resetButton);
-
-        var okButton = CreateActionButton("OK", primary: true);
-        okButton.Size = new Size(FrameShiftUiMetrics.PrimaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight);
-        okButton.Click += (_, _) =>
-        {
+            if (_previewBitmap is null) return;
             _selection = GetSourceCropRect();
             DialogResult = DialogResult.OK;
             Close();
         };
-
-        var cancelButton = CreateActionButton("Cancel", primary: false);
-        cancelButton.Size = new Size(FrameShiftUiMetrics.SecondaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight);
-        cancelButton.Margin = Padding.Empty;
-        cancelButton.DialogResult = DialogResult.Cancel;
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        footerPanel.Controls.Add(cancelButton);
-        footerPanel.Controls.Add(okButton);
-
-        leftLayout.Controls.Add(previewSection, 0, 0);
-
-        rightLayout.Controls.Add(ratioSection, 0, 0);
-        rightLayout.Controls.Add(mediaCard, 0, 1);
-        rightLayout.Controls.Add(toolsSection, 0, 2);
-        rightLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 3);
-
-        contentLayout.Controls.Add(leftLayout, 0, 0);
-        contentLayout.Controls.Add(rightLayout, 1, 0);
-
-        headerPanel.Margin = Padding.Empty;
-        contentLayout.Margin = Padding.Empty;
-        footerPanel.Margin = Padding.Empty;
-
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(contentLayout, 0, 2);
-        rootLayout.Controls.Add(footerPanel, 0, 3);
-
-        Controls.Add(rootLayout);
-
-        AcceptButton = okButton;
-        CancelButton = cancelButton;
-
-        Shown += (_, _) => InitializePreview();
-
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Crop image", $"Source: {Path.GetFileName(_inputPath)}",
+            IconPaths.ContextMenuIco("crop-video-image-icon.ico"), IconPaths.AppIcon, "◧");
+        Controls.Add(FrameShiftCropEditorUi.Create(header, _previewPanel,
+            FrameShiftUiFactory.CreateVerticalStack(ratioSection, mediaSection, tools), cancel, ok));
+        AcceptButton = ok;
+        CancelButton = cancel;
+        Shown += async (_, _) => await StartPreviewAsync();
         ResizeBegin += (_, _) => _isLiveResize = true;
-        ResizeEnd += (_, _) =>
-        {
-            _isLiveResize = false;
-            RefreshPreviewLayout();
-        };
-
-        FormClosing += (_, _) =>
-        {
-            _closing = true;
-            _resizeRefreshTimer.Stop();
-            DisposePreviewBitmaps();
-        };
-
-        FrameShiftCropEditorUi.WireFooterLayout(this, footerPanel, cancelButton, okButton);
-        FrameShiftCropEditorUi.WireToolLayout(this, toolsButtonHost, autoCropButton, fitButton, resetButton);
-
+        ResizeEnd += (_, _) => { _isLiveResize = false; RefreshPreviewLayout(); };
+        FormClosing += CloseAfterPreviewAsync;
         ResumeLayout(true);
     }
 
     public VideoCropSettings? Selection => _selection;
 
-    private void InitializePreview()
+    internal Task StartPreviewAsync() => _initializationTask ??= InitializePreviewAsync();
+
+    private async Task InitializePreviewAsync()
     {
+        Bitmap? bitmap = null;
         try
         {
             var sourceExtension = Path.GetExtension(_inputPath).ToLowerInvariant();
@@ -226,19 +130,22 @@ public sealed class CropImageForm : Form
 
             if (sourceExtension == ".webp")
             {
-                _previewBitmap = PreviewFrameHelper.CaptureFrameAsync(
+                bitmap = await PreviewFrameHelper.CaptureFrameAsync(
                     _ffmpegPath,
                     _ffmpegRunner,
                     _inputPath,
                     0d,
                     "Crop Image Preview",
-                    CancellationToken.None).GetAwaiter().GetResult();
+                    _previewCancellation.Token);
             }
             else
             {
-                _previewBitmap = ImageBitmapHelper.LoadBitmap(_inputPath);
+                bitmap = await Task.Run(() => ImageBitmapHelper.LoadBitmap(_inputPath), _previewCancellation.Token);
             }
 
+            if (_closing || IsDisposed || _previewCancellation.IsCancellationRequested) return;
+            _previewBitmap = bitmap;
+            bitmap = null;
             _sourceWidth = _previewBitmap.Width;
             _sourceHeight = _previewBitmap.Height;
             _previewSourceCenter = new PointF(_sourceWidth / 2.0f, _sourceHeight / 2.0f);
@@ -247,20 +154,52 @@ public sealed class CropImageForm : Form
             ResetCropRect();
             UpdateSourceLabel();
             UpdateSizeLabel();
+            _okButton.Enabled = true;
             _previewPanel.Invalidate();
         }
+        catch (OperationCanceledException) when (_previewCancellation.IsCancellationRequested) { }
         catch (Exception ex)
         {
             if (!_closing && !IsDisposed)
-            {
-                var errorMessage = ImageCropSupport.GetFriendlyLoadError(ex);
-                MessageBox.Show(this, errorMessage, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                DialogResult = DialogResult.Cancel;
-                Close();
-            }
+                _sourceLabel.Text = $"Preview unavailable: {ImageCropSupport.GetFriendlyLoadError(ex)}";
+        }
+        finally { bitmap?.Dispose(); }
+    }
+
+    private async void CloseAfterPreviewAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_closing) return;
+        _closing = true;
+        _resizeRefreshTimer.Stop();
+        _previewCancellation.Cancel();
+        if (_initializationTask is { IsCompleted: false })
+        {
+            var result = DialogResult;
+            e.Cancel = true;
+            Enabled = false;
+            await _initializationTask;
+            if (IsDisposed) return;
+            DialogResult = result;
+            Close();
         }
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_disposed)
+        {
+            _disposed = true;
+            _closing = true;
+            _previewCancellation.Cancel();
+            _resizeRefreshTimer?.Dispose();
+            DisposePreviewBitmaps();
+            // The decoder may still be unwinding after direct Dispose().
+            if (_initializationTask is { IsCompleted: false })
+                _ = _initializationTask.ContinueWith(_ => _previewCancellation.Dispose(), TaskScheduler.Default);
+            else _previewCancellation.Dispose();
+        }
+        base.Dispose(disposing);
+    }
     private void UpdateSourceLabel()
     {
         _sourceLabel.Text = $"Image: {_sourceWidth} x {_sourceHeight} px";
@@ -293,6 +232,7 @@ public sealed class CropImageForm : Form
 
     private void ResetCropRect()
     {
+        if (_previewBitmap is null) return;
         var ratio = GetRatioValue(GetSelectedRatioMode());
         var margin = 0.08;
         var width = _imageBounds.Width * (1.0 - (margin * 2.0));
@@ -436,8 +376,8 @@ public sealed class CropImageForm : Form
         outer.Exclude(_cropRect);
         e.Graphics.FillRegion(overlayBrush, outer);
 
-        using var pen = new Pen(Color.White, 2);
-        using var accentPen = new Pen(Color.FromArgb(32, 145, 255), 1);
+        using var pen = new Pen(Color.White, FrameShiftUiMetrics.ToPixels(_previewPanel, 2));
+        using var accentPen = new Pen(Color.FromArgb(32, 145, 255), FrameShiftUiMetrics.ToPixels(_previewPanel, 1));
         using var handleBrush = new SolidBrush(Color.White);
 
         e.Graphics.DrawRectangle(pen, _cropRect.X, _cropRect.Y, _cropRect.Width, _cropRect.Height);
@@ -450,7 +390,8 @@ public sealed class CropImageForm : Form
 
         foreach (var point in GetHandles())
         {
-            e.Graphics.FillRectangle(handleBrush, point.X - 4, point.Y - 4, 8, 8);
+            var halfHandle = FrameShiftUiMetrics.ToPixels(_previewPanel, 4);
+            e.Graphics.FillRectangle(handleBrush, point.X - halfHandle, point.Y - halfHandle, 2 * halfHandle, 2 * halfHandle);
         }
     }
 
@@ -549,7 +490,8 @@ public sealed class CropImageForm : Form
         var oldNorm = NormalizeRect(oldRect);
         var newNorm = NormalizeRect(newRect);
         var union = RectangleF.Union(oldNorm, newNorm);
-        union.Inflate(18.0f, 18.0f);
+        var margin = FrameShiftUiMetrics.ToPixels(_previewPanel, 18);
+        union.Inflate(margin, margin);
 
         var left = Math.Max(0, (int)Math.Floor(union.X));
         var top = Math.Max(0, (int)Math.Floor(union.Y));
@@ -566,7 +508,7 @@ public sealed class CropImageForm : Form
 
     private string GetHitMode(PointF point)
     {
-        const float handle = 9.0f;
+        var handle = FrameShiftUiMetrics.ToPixels(_previewPanel, 9);
         foreach (var handleHit in GetHandlesWithModes())
         {
             if (Math.Abs(point.X - handleHit.Point.X) <= handle && Math.Abs(point.Y - handleHit.Point.Y) <= handle)
@@ -1219,19 +1161,4 @@ public sealed class CropImageForm : Form
         return Math.Max(min, Math.Min(max, value));
     }
 
-    private Panel CreateHeaderPanel()
-    {
-        return FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Crop image",
-            $"Source: {Path.GetFileName(_inputPath)}",
-            IconPaths.ContextMenuIco("crop-video-image-icon.ico"),
-            IconPaths.AppIcon,
-            "◧",
-            460);
-    }
-
-    private static Button CreateActionButton(string text, bool primary)
-    {
-        return FrameShiftUiFactory.CreateActionButton(text, primary, primary ? FrameShiftUiMetrics.PrimaryButtonWidth : FrameShiftUiMetrics.SecondaryButtonWidth);
-    }
 }

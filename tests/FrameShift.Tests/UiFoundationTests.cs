@@ -44,6 +44,8 @@ public sealed class UiFoundationTests
                 Assert.Equal(form.DeviceDpi, (int)form.AutoScaleDimensions.Width);
                 Assert.True(header.SubtitleLabel.Bottom <= header.Height);
                 Assert.True(actions.ClientRectangle.Contains(primary.Bounds));
+                Assert.Equal(new Size(140, 34), primary.Size);
+                Assert.Equal(primary.Size, cancel.Size);
                 Assert.True(actions.Bottom <= root.ClientSize.Height);
 
                 // Add a control after handles/scaling, without calling Scale() on its subtree.
@@ -141,6 +143,7 @@ public sealed class UiFoundationTests
             Assert.True(Rectangle.Intersect(cancel.Bounds, primary.Bounds).IsEmpty);
             Assert.True(actions.ClientRectangle.Contains(primary.Bounds));
             Assert.True(actions.ClientRectangle.Contains(cancel.Bounds));
+            Assert.Equal(primary.Size, cancel.Size);
             var viewport = Assert.IsType<Panel>(root.GetControlFromPosition(0, 1));
             Assert.True(viewport.AutoScroll);
             Assert.True(viewport.Bottom <= actions.Top);
@@ -155,7 +158,8 @@ public sealed class UiFoundationTests
             primary.Text = "Confirmer cette opération avec le préréglage sélectionné";
             header.SubtitleLabel.Text = "Métadonnées modifiées après construction";
             LayoutTree(host);
-            Assert.True(actions.ClientRectangle.Contains(primary.Bounds));
+            Assert.Equal(primary.Size, cancel.Size);
+            Assert.True(actions.ClientRectangle.Contains(primary.Bounds), $"scale={textScale}; primary={primary.Bounds}; actions={actions.Bounds}");
             Assert.True(actions.Bottom <= root.ClientSize.Height - root.Padding.Bottom);
             Assert.True(header.SubtitleLabel.Bottom <= header.Height);
         });
@@ -195,7 +199,9 @@ public sealed class UiFoundationTests
     {
         StaTest.Run(() =>
         {
-            using var host = new Panel { Size = new Size(700, 250) };
+            // Compare two explicit fonts; the process/Windows default is not a stable baseline.
+            using var initialFont = new Font("Segoe UI", 9);
+            using var host = new Panel { Size = new Size(700, 250), Font = initialFont };
             var editor = new TextBox { Text = "00:00:04.733" };
             var row = FrameShiftUiFactory.CreateFieldRow("&Durée", editor, "secondes");
             host.Controls.Add(row);
@@ -205,7 +211,7 @@ public sealed class UiFoundationTests
             host.Font = font;
             LayoutTree(host);
             Assert.Equal("Durée", editor.AccessibleName);
-            Assert.True(row.Height > initial);
+            Assert.True(row.Height > initial, $"Initial height={initial}, final={row.Height}, host font={host.Font}, editor font={editor.Font}, dpi={host.DeviceDpi}");
             Assert.True(editor.Left >= row.Controls[0].Right);
             Assert.True(editor.Right <= row.Controls[2].Left);
             Assert.True(row.ClientRectangle.Contains(editor.Bounds));
@@ -213,6 +219,35 @@ public sealed class UiFoundationTests
             LayoutTree(host);
             Assert.True(editor.Width > 200);
             Assert.True(row.Controls[0].Height > editor.Height);
+        });
+    }
+
+    [Fact]
+    public void StatusMessage_ScrollbarChanges_AreSafeDuringNativeResizeAndDisposal()
+    {
+        StaTest.Run(() =>
+        {
+            using var host = new Panel { Size = new Size(400, 80) };
+            var status = FrameShiftUiFactory.CreateStatusMessage("Short message");
+            host.Controls.Add(status);
+            CreateHiddenHandles(host);
+            for (var i = 0; i < 10; i++)
+            {
+                status.Text = string.Join(Environment.NewLine, Enumerable.Repeat("Long details that must stay available", 20));
+                host.Size = new Size(220 + i * 10, 60);
+                LayoutTree(host);
+                Application.DoEvents();
+                Assert.Equal(ScrollBars.Vertical, status.ScrollBars);
+                status.Text = "Short message";
+                host.Size = new Size(400, 80);
+                LayoutTree(host);
+                Application.DoEvents();
+                Assert.Equal(ScrollBars.None, status.ScrollBars);
+            }
+            status.Text = new string('x', 5000);
+            host.Width = 240;
+            host.Dispose();
+            Application.DoEvents(); // A queued scrollbar change must not recreate a disposed HWND.
         });
     }
 

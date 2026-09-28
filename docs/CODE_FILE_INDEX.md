@@ -257,6 +257,7 @@ Formulaires :
 - `src/FrameShift/Windows/Forms/CropVideoForm.cs`
 - `src/FrameShift/Windows/Forms/CutAudioForm.cs`
 - `src/FrameShift/Windows/Forms/CutVideoForm.cs`
+- `src/FrameShift/Windows/Forms/CutVideoForm.Preview.cs` — aperçu asynchrone annulable/sérialisé du pilote C, fermeture et libération des bitmaps.
 - `src/FrameShift/Windows/Forms/ImageToPdfForm.cs`
 - `src/FrameShift/Windows/Forms/JoinVideosForm.cs`
 - `src/FrameShift/Windows/Forms/InterpolateVideoForm.cs`
@@ -276,6 +277,9 @@ Helpers UI :
 - `src/FrameShift/Windows/Helpers/WindowsThemeDetector.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftMenuRenderer.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiFactory.cs`
+- `src/FrameShift/Windows/Controls/FrameShiftChoiceCard.cs` — radio natif présenté en carte descriptive, rendu sélectionné et clavier natif.
+- `src/FrameShift/Windows/Controls/FrameShiftFlowRow.cs` — choix espacés, hauteur mesurée selon la largeur, retour à la ligne.
+- `src/FrameShift/Windows/Controls/FrameShiftTimelineWorkspace.cs` — aperçu au-dessus des contrôles temporels, défilement de secours indépendant du footer.
 - `src/FrameShift/Windows/Helpers/FrameShiftUiLayout.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiMetrics.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiPainter.cs`

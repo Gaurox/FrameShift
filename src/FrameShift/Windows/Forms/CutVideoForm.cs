@@ -12,14 +12,12 @@ using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.Forms;
 
-public sealed class CutVideoForm : Form
+public sealed partial class CutVideoForm : Form
 {
     private const int StandardInlineButtonWidth = 28;
     private readonly string _inputPath;
-    private readonly string _ffmpegPath;
     private readonly double _fps;
     private readonly int _totalFrames;
-    private readonly FfmpegRunner _ffmpegRunner;
     private readonly Panel _previewPanel;
     private readonly PictureBox _previewBox;
     private readonly TextBox _textStart;
@@ -28,7 +26,6 @@ public sealed class CutVideoForm : Form
     private readonly TextBox _textEndTime;
     private readonly Label _labelSelection;
     private readonly Label _labelPreviewState;
-    private readonly Label _labelHint;
     private readonly Button _buttonStartPrev;
     private readonly Button _buttonStartNext;
     private readonly Button _buttonEndPrev;
@@ -40,17 +37,16 @@ public sealed class CutVideoForm : Form
     private readonly UiState _uiState;
 
     private Bitmap? _currentPreviewBitmap;
-    private bool _busy;
 
-    public CutVideoForm(
-        string inputPath,
-        string ffmpegPath,
-        MediaProbeResult probe,
-        FfmpegRunner ffmpegRunner)
+
+    public CutVideoForm(string inputPath, string ffmpegPath, MediaProbeResult probe, FfmpegRunner ffmpegRunner)
+        : this(inputPath, ffmpegPath, probe, ffmpegRunner, null) { }
+
+    internal CutVideoForm(string inputPath, string ffmpegPath, MediaProbeResult probe, FfmpegRunner ffmpegRunner,
+        Func<double, CancellationToken, Task<Bitmap>>? previewLoader)
     {
         _inputPath = inputPath;
-        _ffmpegPath = ffmpegPath;
-        _ffmpegRunner = ffmpegRunner;
+        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(ffmpegPath, ffmpegRunner, inputPath, seconds, "Cut Video Preview", token));
         _fps = probe.VideoFrameRate ?? throw new InvalidOperationException(MediaActionMessages.VideoFrameRateUnavailable());
         _totalFrames = probe.EstimatedVideoFrameCount is long count && count > 0
             ? (int)Math.Min(int.MaxValue, count)
@@ -66,423 +62,144 @@ public sealed class CutVideoForm : Form
         _uiState = new UiState();
 
         SuspendLayout();
-
+        FrameShiftWindowPolicy.Initialize(this, new Size(1120, 760), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Cut video");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        WindowState = FormWindowState.Normal;
-        MinimumSize = new Size(980, 700);
-        ClientSize = new Size(1040, 760);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         ControlHelper.SetDoubleBuffered(this);
-
-        var rootLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(FrameShiftUiMetrics.OuterPadding),
-            ColumnCount = 1,
-            RowCount = 8
-        };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.HeaderHeight));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 196F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.FooterButtonHeight));
-
-        var headerPanel = CreateHeaderPanel();
-
-        _previewPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(32, 32, 32),
-            Margin = Padding.Empty
-        };
-        ControlHelper.SetDoubleBuffered(_previewPanel);
-
-        _previewBox = new PictureBox
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.Transparent,
-            SizeMode = PictureBoxSizeMode.Zoom
-        };
+        _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), Margin = Padding.Empty };
+        _previewBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, TabStop = false };
         _previewPanel.Controls.Add(_previewBox);
-
-        var previewStateCard = CreateInfoCardPanel();
-        previewStateCard.Margin = Padding.Empty;
-        previewStateCard.Padding = new Padding(10, 4, 10, 4);
-
-        _labelPreviewState = new Label
-        {
-            Dock = DockStyle.Fill,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true
-        };
-        previewStateCard.Controls.Add(_labelPreviewState);
-
-        var previewSection = CreateSectionPanel("Preview", out var previewContentHost);
-        previewSection.Margin = Padding.Empty;
-        previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-
-        var previewSectionLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        previewSectionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.LineGap));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26F));
-        previewSectionLayout.Controls.Add(_previewPanel, 0, 0);
-        previewSectionLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        previewSectionLayout.Controls.Add(previewStateCard, 0, 2);
-        previewContentHost.Controls.Add(previewSectionLayout);
-
-        var selectionSection = CreateSectionPanel("Selection", out var selectionContentHost);
-        selectionSection.Margin = Padding.Empty;
-        selectionSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-
-        var selectionLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        selectionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        selectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));
-        selectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        selectionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        var boundaryLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 3,
-            RowCount = 1
-        };
-        boundaryLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        boundaryLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        boundaryLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        boundaryLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        _textStart = CreateValueTextBox();
+        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel("Preview: waiting for first frame...");
+        _labelSelection = FrameShiftUiFactory.CreateWrappingLabel("");
+        _textStart = new TextBox { Name = "startFrame" };
+        _textEnd = new TextBox { Name = "endFrame" };
+        _textStartTime = new TextBox { Name = "startTime" };
+        _textEndTime = new TextBox { Name = "endTime" };
         _textStart.Leave += (_, _) => ApplyBoundaryFromText("start");
-        _textStart.KeyDown += TextStartOnKeyDown;
-
-        _buttonStartPrev = CreateInlineStepButton("<");
-        _buttonStartPrev.Click += (_, _) => StepFrameBoundary("start", -1);
-
-        _buttonStartNext = CreateInlineStepButton(">");
-        _buttonStartNext.Click += (_, _) => StepFrameBoundary("start", 1);
-
-        _textEnd = CreateValueTextBox();
         _textEnd.Leave += (_, _) => ApplyBoundaryFromText("end");
-        _textEnd.KeyDown += TextEndOnKeyDown;
-
-        _buttonEndPrev = CreateInlineStepButton("<");
-        _buttonEndPrev.Click += (_, _) => StepFrameBoundary("end", -1);
-
-        _buttonEndNext = CreateInlineStepButton(">");
-        _buttonEndNext.Click += (_, _) => StepFrameBoundary("end", 1);
-
-        _textStartTime = CreateValueTextBox();
         _textStartTime.Leave += (_, _) => ApplyBoundaryFromTimeText("start");
-        _textStartTime.KeyDown += TextStartTimeOnKeyDown;
-
-        _textEndTime = CreateValueTextBox();
         _textEndTime.Leave += (_, _) => ApplyBoundaryFromTimeText("end");
+        _textStart.KeyDown += TextStartOnKeyDown;
+        _textEnd.KeyDown += TextEndOnKeyDown;
+        _textStartTime.KeyDown += TextStartTimeOnKeyDown;
         _textEndTime.KeyDown += TextEndTimeOnKeyDown;
-
-        var startGroup = CreateBoundaryGroup("Start", _textStart, _buttonStartPrev, _buttonStartNext, _textStartTime);
-        var endGroup = CreateBoundaryGroup("End", _textEnd, _buttonEndPrev, _buttonEndNext, _textEndTime);
-        boundaryLayout.Controls.Add(startGroup, 0, 0);
-        boundaryLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 1, 0);
-        boundaryLayout.Controls.Add(endGroup, 2, 0);
-
-        _selectionPanel = CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
-        _selectionPanel.Dock = DockStyle.Fill;
-        _selectionPanel.Margin = Padding.Empty;
+        _buttonStartPrev = CreateInlineStepButton("<");
+        _buttonStartNext = CreateInlineStepButton(">");
+        _buttonEndPrev = CreateInlineStepButton("<");
+        _buttonEndNext = CreateInlineStepButton(">");
+        _buttonStartPrev.Click += (_, _) => StepFrameBoundary("start", -1);
+        _buttonStartNext.Click += (_, _) => StepFrameBoundary("start", 1);
+        _buttonEndPrev.Click += (_, _) => StepFrameBoundary("end", -1);
+        _buttonEndNext.Click += (_, _) => StepFrameBoundary("end", 1);
+        _selectionPanel = FrameShiftUiFactory.CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
+        _selectionPanel.Name = "frameRange";
+        _selectionPanel.AccessibleName = "Frame range";
+        _selectionPanel.AccessibleDescription = "Drag a handle, or edit the frame and time fields above.";
+        _selectionPanel.Dock = DockStyle.Top;
+        _selectionPanel.Height = 80;
+        _selectionPanel.HandleCreated += (_, _) => _selectionPanel.Height = FrameShiftUiMetrics.ToPixels(_selectionPanel, 80);
+        _selectionPanel.DpiChangedAfterParent += (_, _) =>
+        {
+            _selectionPanel.Height = FrameShiftUiMetrics.ToPixels(_selectionPanel, 80);
+            _selectionPanel.Invalidate();
+        };
         ControlHelper.SetDoubleBuffered(_selectionPanel);
         _selectionPanel.Paint += SelectionPanelOnPaint;
         _selectionPanel.MouseDown += SelectionPanelOnMouseDown;
         _selectionPanel.MouseMove += SelectionPanelOnMouseMove;
         _selectionPanel.MouseUp += SelectionPanelOnMouseUp;
-
-        selectionLayout.Controls.Add(boundaryLayout, 0, 0);
-        selectionLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        selectionLayout.Controls.Add(_selectionPanel, 0, 2);
-        selectionContentHost.Controls.Add(selectionLayout);
-
-        var hintCard = CreateInfoCardPanel();
-        hintCard.Margin = new Padding(0, FrameShiftUiMetrics.OuterPadding, 0, 0);
-        hintCard.Padding = new Padding(FrameShiftUiMetrics.OuterPadding, FrameShiftUiMetrics.LineGap, FrameShiftUiMetrics.OuterPadding, FrameShiftUiMetrics.LineGap);
-
-        var hintLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        hintLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        hintLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18F));
-        hintLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18F));
-
-        _labelSelection = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-
-        _labelHint = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "Drag a handle on the range bar, or edit the frame and time fields directly."
-        };
-
-        hintLayout.Controls.Add(_labelSelection, 0, 0);
-        hintLayout.Controls.Add(_labelHint, 0, 1);
-        hintCard.Controls.Add(hintLayout);
-
-        var buttonOk = CreateActionButton("OK", primary: true);
+        var options = FrameShiftUiFactory.CreateSection("Selection", FrameShiftUiFactory.CreateVerticalStack(
+            CreateBoundaryRows(
+                CreateBoundaryGroup("Start", _textStart, _buttonStartPrev, _buttonStartNext, _textStartTime),
+                CreateBoundaryGroup("End", _textEnd, _buttonEndPrev, _buttonEndNext, _textEndTime)),
+            _selectionPanel, _labelSelection, _labelPreviewState));
+        var buttonOk = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
         buttonOk.Click += (_, _) => ConfirmCut();
-
-        var buttonCancel = CreateActionButton("Cancel", primary: false);
+        var buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
         buttonCancel.DialogResult = DialogResult.Cancel;
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        footerPanel.Controls.Add(buttonCancel);
-        footerPanel.Controls.Add(buttonOk);
-        footerPanel.Resize += (_, _) => UpdateFooterButtonLayout(footerPanel, buttonCancel, buttonOk);
-        Shown += (_, _) => UpdateFooterButtonLayout(footerPanel, buttonCancel, buttonOk);
-
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(previewSection, 0, 2);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 3);
-        rootLayout.Controls.Add(selectionSection, 0, 4);
-        rootLayout.Controls.Add(hintCard, 0, 5);
-        rootLayout.Controls.Add(footerPanel, 0, 7);
-
-        Controls.Add(rootLayout);
-
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Cut video",
+            $"Source: {Path.GetFileName(_inputPath)}    FPS: {_fps:0.###}    Frames: {_totalFrames}",
+            IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "✂");
+        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options,
+            FrameShiftDialogLayout.CreateActions(buttonCancel, buttonOk)));
         AcceptButton = buttonOk;
         CancelButton = buttonCancel;
-
-        _previewTimer = new System.Windows.Forms.Timer
-        {
-            Interval = 140
-        };
+        _previewTimer = new System.Windows.Forms.Timer { Interval = 140 };
         _previewTimer.Tick += PreviewTimerOnTick;
-
-        FormClosing += (_, _) =>
-        {
-            _previewTimer.Stop();
-            _previewTimer.Dispose();
-            DisposePreviewBitmap();
-        };
-
-        InitializeWorkspace();
+        FormClosing += CloseAfterPreviewAsync;
+        Shown += async (_, _) => await RequestPreviewAsync(1);
+        RefreshSelectionUi(refreshPreview: false);
         ResumeLayout(true);
     }
 
     public CutVideoSettings? Selection { get; private set; }
 
-    private Panel CreateHeaderPanel()
+    private static TableLayoutPanel CreateBoundaryRows(Control start, Control end)
     {
-        return FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Cut video",
-            $"Source: {Path.GetFileName(_inputPath)}    FPS: {_fps:0.###}    Frames: {_totalFrames.ToString(CultureInfo.InvariantCulture)}",
-            IconPaths.ContextMenuIco("cut-video-audio-icon.ico"),
-            IconPaths.AppIcon,
-            "✂",
-            900);
+        var rows = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, Margin = Padding.Empty, Size = Size.Empty };
+        rows.Controls.Add(start);
+        rows.Controls.Add(end);
+        bool? stacked = null;
+        var arranging = false;
+        rows.Layout += (_, _) =>
+        {
+            if (arranging) return;
+            arranging = true;
+            try
+            {
+                var narrow = rows.Width < FrameShiftUiMetrics.ToPixels(rows, 640);
+                if (stacked == narrow) return;
+                stacked = narrow;
+                rows.SuspendLayout();
+                rows.ColumnStyles.Clear();
+                rows.RowStyles.Clear();
+                rows.ColumnCount = narrow ? 1 : 2;
+                rows.RowCount = narrow ? 2 : 1;
+                rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, narrow ? 100 : 50));
+                rows.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                if (narrow) rows.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                else rows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+                rows.SetCellPosition(start, new TableLayoutPanelCellPosition(0, 0));
+                rows.SetCellPosition(end, new TableLayoutPanelCellPosition(narrow ? 0 : 1, narrow ? 1 : 0));
+                rows.ResumeLayout(true);
+            }
+            finally { arranging = false; }
+        };
+        return rows;
     }
 
-    private static Panel CreateBoundaryGroup(string title, TextBox frameTextBox, Button previousButton, Button nextButton, TextBox timeTextBox)
+    private static TableLayoutPanel CreateBoundaryGroup(string title, TextBox frame, Button previous, Button next, TextBox time)
     {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = 2
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 80F));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
-
-        var titleLabel = new Label
-        {
-            Text = $"{title} frame",
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        var timeLabel = new Label
-        {
-            Text = $"{title} time",
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        var frameHost = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        frameHost.Controls.Add(frameTextBox);
-        frameHost.Controls.Add(previousButton);
-        frameHost.Controls.Add(nextButton);
-        frameHost.Resize += (_, _) => LayoutFrameEditor(frameHost, frameTextBox, previousButton, nextButton);
-        LayoutFrameEditor(frameHost, frameTextBox, previousButton, nextButton);
-
-        layout.Controls.Add(titleLabel, 0, 0);
-        layout.Controls.Add(frameHost, 1, 0);
-        layout.Controls.Add(timeLabel, 0, 1);
-        layout.Controls.Add(timeTextBox, 1, 1);
-
-        panel.Controls.Add(layout);
-        return panel;
-    }
-
-    private static void LayoutFrameEditor(Control host, Control textBox, Control previousButton, Control nextButton)
-    {
-        if (host.ClientSize.Width <= 0 || host.ClientSize.Height <= 0)
-        {
-            return;
-        }
-
-        var rightButtonsWidth = (StandardInlineButtonWidth * 2) + FrameShiftUiMetrics.LineGap;
-        var textWidth = Math.Max(0, host.ClientSize.Width - rightButtonsWidth - FrameShiftUiMetrics.LineGap);
-        var verticalOffset = Math.Max(0, (host.ClientSize.Height - 26) / 2);
-
-        textBox.SetBounds(0, verticalOffset, textWidth, 26);
-        previousButton.SetBounds(textWidth + FrameShiftUiMetrics.LineGap, verticalOffset, StandardInlineButtonWidth, 26);
-        nextButton.SetBounds(textWidth + FrameShiftUiMetrics.LineGap + StandardInlineButtonWidth + FrameShiftUiMetrics.LineGap, verticalOffset, StandardInlineButtonWidth, 26);
-    }
-
-    private static TextBox CreateValueTextBox()
-    {
-        var textBox = FrameShiftUiFactory.CreateValueTextBox();
-        textBox.Margin = Padding.Empty;
-        textBox.BorderStyle = BorderStyle.FixedSingle;
-        return textBox;
+        var frameEditor = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
+        frameEditor.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        frameEditor.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        frameEditor.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        frameEditor.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        frame.Dock = DockStyle.Fill;
+        frameEditor.Controls.Add(frame, 0, 0);
+        frameEditor.Controls.Add(previous, 1, 0);
+        frameEditor.Controls.Add(next, 2, 0);
+        previous.AccessibleName = $"Previous {title.ToLowerInvariant()} frame";
+        next.AccessibleName = $"Next {title.ToLowerInvariant()} frame";
+        return FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow($"{title} frame", frameEditor),
+            FrameShiftUiFactory.CreateFieldRow($"{title} time", time));
     }
 
     private static Button CreateInlineStepButton(string text)
     {
-        var button = new Button
+        var button = new FrameShift.Windows.Controls.FrameShiftActionButton(StandardInlineButtonWidth)
         {
-            Text = text,
-            Margin = Padding.Empty,
-            FlatStyle = FlatStyle.Flat,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            UseVisualStyleBackColor = false,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.AccentText
+            Text = text, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand,
+            UseVisualStyleBackColor = false, BackColor = FrameShiftTheme.Surface, ForeColor = FrameShiftTheme.AccentText
         };
         button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-        button.FlatAppearance.MouseDownBackColor = FrameShiftTheme.AccentSoftHover;
         return button;
-    }
-
-    private static Panel CreateSectionPanel(string title, out Panel contentHost)
-    {
-        return FrameShiftUiFactory.CreateFillSection(title, out contentHost);
-    }
-
-    private static Panel CreateInfoCardPanel()
-    {
-        return FrameShiftUiFactory.CreateFillInfoCard();
-    }
-
-    private static Button CreateActionButton(string text, bool primary)
-    {
-        return FrameShiftUiFactory.CreateActionButton(text, primary, primary ? FrameShiftUiMetrics.PrimaryButtonWidth : FrameShiftUiMetrics.SecondaryButtonWidth);
-    }
-
-    private static void UpdateFooterButtonLayout(Control footerPanel, Button cancelButton, Button okButton)
-    {
-        if (footerPanel.ClientSize.Width <= 0 || footerPanel.ClientSize.Height <= 0)
-        {
-            return;
-        }
-
-        FrameShiftUiLayout.LayoutFooterButtons(footerPanel, cancelButton, okButton, FrameShiftUiMetrics.LineGap);
-    }
-
-    private static Panel CreateFramedPanel(Color backgroundColor, Color borderColor, int radius)
-    {
-        return FrameShiftUiFactory.CreateFramedPanel(backgroundColor, borderColor, radius);
-    }
-
-    private void InitializeWorkspace()
-    {
-        RefreshSelectionUi(refreshPreview: false);
-        LoadPreviewFrame(1);
-    }
-
-    private void LoadPreviewFrame(int frameNumber)
-    {
-        _busy = true;
-        try
-        {
-            var seconds = Math.Max(0d, (frameNumber - 1) / _fps);
-            var bitmap = PreviewFrameHelper.CaptureFrameAsync(
-                _ffmpegPath,
-                _ffmpegRunner,
-                _inputPath,
-                seconds,
-                "Cut Video Preview",
-                CancellationToken.None).GetAwaiter().GetResult();
-
-            DisposePreviewBitmap();
-            _currentPreviewBitmap = bitmap;
-            _previewBox.Image = _currentPreviewBitmap;
-            _labelPreviewState.Text = $"Previewing {Capitalize(_uiState.ActiveBoundary)} frame: {frameNumber} ({CutVideoMath.FormatPreciseTime(seconds)})";
-        }
-        finally
-        {
-            _busy = false;
-        }
     }
 
     private void SchedulePreviewUpdate(int frameNumber)
     {
+        if (_closing) return;
+        _previewCancellation?.Cancel();
         _uiState.PendingPreviewFrame = frameNumber;
         _previewTimer.Stop();
         _previewTimer.Start();
@@ -520,7 +237,7 @@ public sealed class CutVideoForm : Form
 
     private bool ApplyBoundaryFromText(string target)
     {
-        if (_busy || _uiState.UpdatingText)
+        if (_closing || _uiState.UpdatingText)
         {
             return true;
         }
@@ -568,7 +285,7 @@ public sealed class CutVideoForm : Form
 
     private bool ApplyBoundaryFromTimeText(string target)
     {
-        if (_busy || _uiState.UpdatingText)
+        if (_closing || _uiState.UpdatingText)
         {
             return true;
         }
@@ -620,7 +337,7 @@ public sealed class CutVideoForm : Form
 
     private void StepFrameBoundary(string target, int delta)
     {
-        if (_busy)
+        if (_closing)
         {
             return;
         }
@@ -705,30 +422,22 @@ public sealed class CutVideoForm : Form
         MessageBox.Show(this, message, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
     }
 
-    private void PreviewTimerOnTick(object? sender, EventArgs e)
+    private async void PreviewTimerOnTick(object? sender, EventArgs e)
     {
         _previewTimer.Stop();
-        try
-        {
-            LoadPreviewFrame(_uiState.PendingPreviewFrame);
-        }
-        catch (Exception ex)
-        {
-            ShowActionError(ex.Message);
-        }
+        await RequestPreviewAsync(_uiState.PendingPreviewFrame);
     }
-
     private void SelectionPanelOnPaint(object? sender, PaintEventArgs e)
     {
         var graphics = e.Graphics;
         graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-        var trackLeft = 18;
-        var trackTop = 38;
-        var trackWidth = Math.Max(1, _selectionPanel.ClientSize.Width - 36);
-        var trackHeight = 6;
-        var handleWidth = 10;
-        var handleHeight = 28;
+        var trackLeft = TrackPixels(18);
+        var trackTop = TrackPixels(38);
+        var trackWidth = Math.Max(1, _selectionPanel.ClientSize.Width - TrackPixels(36));
+        var trackHeight = TrackPixels(6);
+        var handleWidth = TrackPixels(10);
+        var handleHeight = TrackPixels(28);
 
         var startX = ConvertFrameToTrackX(_selection.StartFrame);
         var endX = ConvertFrameToTrackX(_selection.EndFrame);
@@ -737,11 +446,11 @@ public sealed class CutVideoForm : Form
             (startX, endX) = (endX, startX);
         }
 
-        var selectionWidth = Math.Max(2, endX - startX);
+        var selectionWidth = Math.Max(TrackPixels(2), endX - startX);
         var startHandleX = startX - (handleWidth / 2);
-        var startHandleY = trackTop - 11;
+        var startHandleY = trackTop - TrackPixels(11);
         var endHandleX = endX - (handleWidth / 2);
-        var endHandleY = trackTop - 11;
+        var endHandleY = trackTop - TrackPixels(11);
 
         using var trackBrush = new SolidBrush(FrameShiftTheme.SurfaceBorder);
         using var selectionBrush = new SolidBrush(FrameShiftTheme.PrimaryBlue);
@@ -751,17 +460,17 @@ public sealed class CutVideoForm : Form
         using var endBrush = new SolidBrush(string.Equals(_uiState.ActiveBoundary, "end", StringComparison.Ordinal)
             ? FrameShiftTheme.SecondaryBlue
             : FrameShiftTheme.PrimaryBlue);
-        using var handleBorderPen = new Pen(FrameShiftTheme.SecondaryBlue);
-        using var tickPen = new Pen(FrameShiftTheme.TextMuted);
+        using var handleBorderPen = new Pen(FrameShiftTheme.SecondaryBlue, TrackPixels(1));
+        using var tickPen = new Pen(FrameShiftTheme.TextMuted, TrackPixels(1));
         using var labelBrush = new SolidBrush(FrameShiftTheme.TextSecondary);
 
         graphics.FillRectangle(trackBrush, trackLeft, trackTop, trackWidth, trackHeight);
-        graphics.FillRectangle(selectionBrush, startX, trackTop - 4, selectionWidth, 14);
+        graphics.FillRectangle(selectionBrush, startX, trackTop - TrackPixels(4), selectionWidth, TrackPixels(14));
 
         for (var index = 0; index <= 10; index++)
         {
             var tickX = trackLeft + (int)Math.Round((trackWidth * index) / 10.0);
-            graphics.DrawLine(tickPen, tickX, 18, tickX, 27);
+            graphics.DrawLine(tickPen, tickX, TrackPixels(18), tickX, TrackPixels(27));
         }
 
         graphics.FillRectangle(startBrush, startHandleX, startHandleY, handleWidth, handleHeight);
@@ -769,15 +478,15 @@ public sealed class CutVideoForm : Form
         graphics.DrawRectangle(handleBorderPen, startHandleX, startHandleY, handleWidth, handleHeight);
         graphics.DrawRectangle(handleBorderPen, endHandleX, endHandleY, handleWidth, handleHeight);
 
-        graphics.DrawString("1", Font, labelBrush, 14, 2);
+        graphics.DrawString("1", Font, labelBrush, TrackPixels(14), TrackPixels(2));
         var lastFrameText = _totalFrames.ToString(CultureInfo.InvariantCulture);
         var lastFrameSize = graphics.MeasureString(lastFrameText, Font);
-        graphics.DrawString(lastFrameText, Font, labelBrush, _selectionPanel.ClientSize.Width - lastFrameSize.Width - 14, 2);
+        graphics.DrawString(lastFrameText, Font, labelBrush, _selectionPanel.ClientSize.Width - lastFrameSize.Width - TrackPixels(14), TrackPixels(2));
     }
 
     private void SelectionPanelOnMouseDown(object? sender, MouseEventArgs e)
     {
-        if (e.Button != MouseButtons.Left || _busy)
+        if (e.Button != MouseButtons.Left || _closing)
         {
             return;
         }
@@ -817,7 +526,7 @@ public sealed class CutVideoForm : Form
 
     private void SelectionPanelOnMouseMove(object? sender, MouseEventArgs e)
     {
-        if (_busy)
+        if (_closing)
         {
             return;
         }
@@ -899,10 +608,12 @@ public sealed class CutVideoForm : Form
         }
     }
 
+    private int TrackPixels(int logical) => FrameShiftUiMetrics.ToPixels(_selectionPanel, logical);
+
     private int ConvertFrameToTrackX(int frame)
     {
-        var trackLeft = 18;
-        var trackWidth = _selectionPanel.ClientSize.Width - 36;
+        var trackLeft = TrackPixels(18);
+        var trackWidth = _selectionPanel.ClientSize.Width - TrackPixels(36);
         if (_totalFrames <= 1)
         {
             return trackLeft;
@@ -914,8 +625,8 @@ public sealed class CutVideoForm : Form
 
     private int ConvertTrackXToFrame(int x)
     {
-        var trackLeft = 18;
-        var trackWidth = _selectionPanel.ClientSize.Width - 36;
+        var trackLeft = TrackPixels(18);
+        var trackWidth = _selectionPanel.ClientSize.Width - TrackPixels(36);
         if (trackWidth <= 0 || _totalFrames <= 1)
         {
             return 1;

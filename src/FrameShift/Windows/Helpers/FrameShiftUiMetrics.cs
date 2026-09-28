@@ -24,6 +24,7 @@ public static class FrameShiftUiMetrics
     public const int OuterPadding = 12;
     public const int HeaderHeight = 58;
     public const int FooterButtonHeight = 34;
+    public const int FooterButtonWidth = 140;
     public const int CompactFooterHeight = 52;
     public const int PrimaryButtonWidth = 140;
     public const int SecondaryButtonWidth = 120;

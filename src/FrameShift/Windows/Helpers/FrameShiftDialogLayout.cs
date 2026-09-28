@@ -7,6 +7,50 @@ namespace FrameShift.Windows.Helpers;
 /// <summary>Shared header/body/status/actions structure. Only the body can scroll.</summary>
 public static class FrameShiftDialogLayout
 {
+    /// <summary>Fits at Load after native scaling, or on an explicit content variant change. Not a Resize handler.</summary>
+    internal static void FitInitialHeight(Form form, TableLayoutPanel root)
+        => FitInitialHeight(form, root, Screen.FromControl(form).WorkingArea.Size);
+
+    internal static void FitInitialHeight(Form form, TableLayoutPanel root, Size workingArea)
+    {
+        var viewport = root.GetControlFromPosition(0, 1) as Panel;
+        var restoreScroll = viewport?.AutoScroll == true;
+        // A scrollbar left over from the provisional height narrows wrapping content,
+        // which can keep that same scrollbar alive after the window has grown to fit.
+        if (restoreScroll) viewport!.AutoScroll = false;
+        try
+        {
+            // Wrapping choices can settle to a shorter height once the full width is restored.
+            // Bound convergence to this explicit fit request; never call this from Resize/Layout.
+            for (var pass = 0; pass < 3; pass++)
+            {
+                form.PerformLayout();
+                var width = Math.Max(1, root.ClientSize.Width - root.Padding.Horizontal);
+                var height = root.Padding.Vertical;
+                for (var row = 0; row < root.RowCount; row++)
+                {
+                    var control = root.GetControlFromPosition(0, row);
+                    if (control is null) continue;
+                    var available = Math.Max(1, width - control.Margin.Horizontal);
+                    if (control == viewport && restoreScroll && viewport!.Controls.Count > 0)
+                        height += viewport.Controls[0].GetPreferredSize(new Size(available, 0)).Height + control.Margin.Vertical;
+                    else
+                    {
+                        // Native editors can keep a minimum actual height larger than their text measurement.
+                        var preferred = control.GetPreferredSize(new Size(available, 0));
+                        height += Math.Max(control.Height, preferred.Height) + control.Margin.Vertical;
+                    }
+                }
+                var maximum = Math.Max(1, workingArea.Height - (form.Height - form.ClientSize.Height));
+                var targetHeight = Math.Min(height, maximum);
+                if (pass > 0 && form.ClientSize.Height == targetHeight) break;
+                form.ClientSize = new Size(form.ClientSize.Width, targetHeight);
+                root.PerformLayout();
+            }
+        }
+        finally { if (restoreScroll) viewport!.AutoScroll = true; }
+    }
+
     public static TableLayoutPanel Create(Control header, Control content, Control actions, Control? status = null)
         => CreateShell(header, CreateScrollBody(content), actions, status);
 
