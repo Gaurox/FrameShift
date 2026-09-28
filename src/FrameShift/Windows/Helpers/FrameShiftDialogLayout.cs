@@ -97,7 +97,7 @@ public static class FrameShiftDialogLayout
         return viewport;
     }
 
-    public static FlowLayoutPanel CreateActions(Button cancel, Button primary)
+    public static FlowLayoutPanel CreateActions(params Button[] buttons)
     {
         var actions = new FrameShiftActionBar
         {
@@ -105,16 +105,16 @@ public static class FrameShiftDialogLayout
             Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft,
             WrapContents = true, Margin = Padding.Empty
         };
-        cancel.TabIndex = 0;
-        primary.TabIndex = 1;
-        // The primary stays at the right; native flow wraps the secondary when space is short.
-        actions.Controls.Add(primary);
-        actions.Controls.Add(cancel);
+        for (var index = buttons.Length - 1; index >= 0; index--)
+        {
+            buttons[index].TabIndex = index;
+            actions.Controls.Add(buttons[index]);
+        }
         void Metrics()
         {
             var gap = FrameShiftUiMetrics.ToPixels(actions, FrameShiftUiMetrics.FooterButtonGap);
-            primary.Margin = new Padding(gap, 0, 0, gap);
-            cancel.Margin = new Padding(0, 0, 0, gap);
+            for (var index = 0; index < buttons.Length; index++)
+                buttons[index].Margin = new Padding(index == 0 ? 0 : gap, 0, 0, gap);
         }
         actions.HandleCreated += (_, _) => Metrics();
         actions.DpiChangedAfterParent += (_, _) => Metrics();

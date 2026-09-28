@@ -25,7 +25,7 @@ public sealed class RawVideoProcessLifecycleTests
         var parentReadyPath = fixture.GetPath("decoder-parent.pid");
         var childReadyPath = fixture.GetPath("decoder-child.pid");
 
-        var decoder = runner.StartRawVideoProcess(
+        await using var decoder = runner.StartRawVideoProcess(
             GetPowerShellPath(),
             BuildArguments("tree", parentReadyPath, childReadyPath),
             redirectStandardInput: false,
@@ -393,9 +393,19 @@ public sealed class RawVideoProcessLifecycleTests
 
     private static async Task<int> ReadProcessIdAsync(string path)
     {
-        await WaitForFileAsync(path);
-        Assert.True(int.TryParse(File.ReadAllText(path), out var processId) && processId > 0, $"Invalid PID marker: {path}");
-        return int.Parse(File.ReadAllText(path), System.Globalization.CultureInfo.InvariantCulture);
+        // Existence precedes completion of WriteAllText in the controlled process.
+        var timeoutAt = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 10d);
+        while (Stopwatch.GetTimestamp() < timeoutAt)
+        {
+            try
+            {
+                if (int.TryParse(File.ReadAllText(path), out var processId) && processId > 0)
+                    return processId;
+            }
+            catch (IOException) { /* Missing or still exclusively open by the writer. */ }
+            await Task.Delay(50).ConfigureAwait(false);
+        }
+        throw new TimeoutException($"The controlled process did not finish writing its PID marker: {path}");
     }
 
     private static async Task WaitForFileAsync(string path)

@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 29 septembre 2026 : A et B validées; C validée sur les cinq pilotes (design, 100/150/200/300 % et recette manuelle), critères techniques de sortie atteints ; GO proposé pour D1, lancement en attente d'accord; D à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous A, B et C. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 29 septembre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 implémentée et vérifiée automatiquement, recette visuelle en attente. D2/D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -564,6 +564,80 @@ Un GO autorise la migration, **pas la publication de `PerMonitorV2` ni une annon
 - **Critère de sortie :** les 24 fenêtres et leurs variantes utilisent la politique commune, restent lisibles et accessibles en espace réduit, et leurs changements d'état ne réinjectent plus des dimensions brutes. File/annulation de Progress et comportements métier préservés; aucun P1 ouvert sur le périmètre migré.
 - **Validation nécessaire :** build et tests ciblés par lot; recette à 100/150/200/300 %, petits/grands menus, modèles et formats, erreurs longues, contrôles dynamiques, annulation et états de progression. Appliquer les invariants runtime de 8.1; conserver des vérifications des cinq pilotes pour les modifications communes.
 
+#### Exécution D1 — 29 septembre 2026
+
+**Autorisation :** « Go phase D en suivant les standards validés », après validation complète de C et commit `5b62534`. Développement local, sans publication ni changement de mode DPI Release.
+
+**Surfaces migrées :**
+
+| Surface | Réalisation D1 |
+|---|---|
+| Progress, priorité du lot | Bandeau mesuré commun ; statut long copiable/défilant ; barre indéterminée à l'attente puis numérique au premier progrès ; file extensible et métriques de lignes/colonnes sensibles au DPI ; soutien masquable ; Cancel all / Close dans le footer partagé. |
+| Main | Bandeau et footer communs ; état vide simple ; file/actions côte à côte puis empilées en largeur réduite ; sélection et périmètre des actions conservés. |
+| FileQueuePanel / ActionsPanel | En-tête de file mesuré, noms complets en infobulle, boutons d'actions mesurés, filtres natifs accessibles au clavier, recherche et arité conservées ; anciens contrôles reconstruits désormais libérés. |
+| Settings | Sections modèles/apparence adaptatives, hauteur ajustée au contenu à l'ouverture, défilement de secours, Close standard. Les handlers de préférences restent les mêmes. |
+| Media Info | Bandeau commun, surface texte extensible et défilement natif dans les deux axes, Copy / Close de taille identique, fonte monospacée libérée avec la fenêtre. |
+
+**Socle :** mêmes métriques figées en C ; extension de `CreateActions` au footer à une commande et de `CreateSection` aux surfaces remplissant l'espace. Les usages B/C existants gardent leur disposition. `FrameShiftGridUi` centralise seulement les métriques des deux files, sans nouvelle hiérarchie de formulaires. Main conserve un séparateur local réorientable et Progress une taille centrale minimale avec défilement de secours : ces adaptations servent leur contenu spécifique.
+
+**Vérifications exécutées :**
+
+- Build application et build UiSamples : réussis, zéro erreur/avertissement.
+- 7 nouveaux cas `UiD1Tests` : handles cachés, redimensionnement/texte agrandi, footer accessible, états Progress, annulation idempotente, périmètre de sélection de Main, filtres répétés et ajustement de Settings.
+- 7 tests existants file/retrait : réussis ; contrats des occurrences, retraits et annulation conservés.
+- Suite finale séquentielle avec filtre sans affichage : **495 réussis, 5 skips média/IA, 0 échec**. Les 12 cas affichant des fenêtres sont exclus séparément. Cette suite inclut les **37 cas du socle et des cinq pilotes C**, ainsi que les 7 nouveaux cas D1. Commande dans [la recette D1](UI_PHASE_D1_MANUAL_TESTS.md).
+- Contrôle `UiSamples --check` : sortie 0, PMv2, DPI natif observé 96, quatre fenêtres de démonstration/lanceurs demeurées invisibles. Aucun palier Windows n'a été modifié ou simulé par cette commande.
+- Traces locales : `scratch/phase-d1/d1-final.trx`, `d1-queues.trx`, `d1-layout.trx`, `hidden-pmv2.json`.
+
+**Incidents de validation consignés :** le premier passage parallèle a échoué sur deux assertions de layout B/C ; les sept cas concernés repassent isolément sans changement de code produit, puis les 37 cas B/C passent dans la suite séquentielle. L'interférence exacte du passage parallèle reste à isoler ; les résultats ne prouvent pas une validation DPI réelle. Le premier passage séquentiel a révélé une course préexistante du test RawVideo : lecture du marqueur PID pendant son écriture exclusive. Le helper de test attend désormais un PID lisible/valide ; le processus décodeur du test concerné est libéré même si la préparation échoue. Les deux processus factices laissés par l'échec ont été identifiés puis arrêtés. Aucun changement dans les runners ou le Core.
+
+**Validation manuelle actualisée :** interfaces D1 validées à 100 % par l'utilisateur après les derniers ajustements de Progress. Restent à vérifier : 150/200/300 %, focus/clavier, clair/sombre, transitions et défilements, déplacement multi-écran et texte Windows agrandi. Le lanceur `TEST_PHASE_D1.cmd` ouvre les vrais formulaires avec états simulés pour Progress et intercepte les actions de Main. Settings reste réel ; sa recette le précise. Les états simulés ne certifient pas de nouveaux exports ou téléchargements.
+
+**Décision : interfaces D1 validées à 100 %, qualification DPI encore en attente. Critères de sortie de D non atteints.** Conformément au découpage validé, D2 puis D3 restent à réaliser après validation du lot précédent. Aucun lancement de E, aucune installation, capture ou prise de contrôle du bureau.
+
+#### Retour D1 et refonte de Progress — 29 septembre 2026
+
+- L'utilisateur confirme « tout ok sauf erreur longue » et fournit une capture de Progress : la zone Current task ne montre qu'une ligne et une partie de la suivante, avec un défilement peu utilisable. Ce défaut est **reproduit visuellement**, malgré les premiers tests qui vérifiaient surtout le footer et la conservation du texte. Les autres scénarios sont acceptés par l'utilisateur ; ce retour ne précise pas de nouveaux paliers DPI.
+- Refonte locale de Progress demandée et réalisée : résumé d'état court en haut ; file simplifiée File/Status et panneau Details extensible côte à côte ; empilement en largeur réduite. Le message intégral est dans un TextBox natif multiligne Dock Fill, pas dans le statut court empilé de la première version. Zone de lecture minimale calculée pour huit lignes ; Copy details ; retour Current task ; lecture par occurrence de file sans remplacement par les mises à jour d'un autre fichier ; ouverture des nouveaux messages au début du texte.
+- Le chemin complet accompagne le message dans Details et sa copie. Les valeurs internes de la file, retraits et contrats d'annulation restent conservés. Le lanceur simule aussi la fin de l'annulation individuelle lorsque son timer observe la demande.
+- Vérification complémentaire : **15 tests ciblés réussis** (8 D1 et 7 file/retraits), dont un test régressif qui exige au moins 200 pixels de hauteur de lecture à l'ouverture, au moins huit lignes après réduction/agrandissement de police, le message complet, le retour au début et la conservation de la sélection pendant les mises à jour. Builds application/UiSamples réussis, zéro erreur/avertissement. Trace : `scratch/phase-d1/d1-progress-redesign.trx`.
+- Aucun helper partagé ni pilote C modifié pour cette correction. Le passage de 495 tests ci-dessus décrit la première version D1 ; la nouvelle vérification est ciblée sur la refonte. **Nouvelle présentation Progress à revoir manuellement**, puis paliers DPI à confirmer explicitement. D2/D3 restent en attente.
+
+#### Second retour Progress — disposition verticale et présentation
+
+L'utilisateur refuse les détails à droite et demande un panneau en haut ou en bas, plus haut, ainsi qu'une refonte esthétique dans le thème. La présentation précédente reste un essai rejeté ; elle n'est pas validée.
+
+- Disposition retenue : Activity, Files, puis Messages & details **sous la file et sur toute sa largeur**, à toutes les largeurs de fenêtre.
+- Lecture : minimum de douze lignes selon la police et 220 unités logiques ; contexte et commandes regroupés au-dessus du texte ; hauteur initiale portée à 920 unités logiques, bornée par la zone de travail commune. Défilement de secours conservé sur petit écran. Le test contrôle aussi l'absence de défilement extérieur à la taille initiale dans son environnement.
+- Présentation locale : bandeau Activity bleu doux, état en gras, pourcentage plus visible, ETA masquée lorsqu'elle est vide ; compteur de fichiers, libellés Waiting/Processing/Failed/etc. présentés sans changer les états stockés ; lignes alternées discrètes et séparateurs utilisant les métriques communes. Les fontes locales sont libérées et recalculées lors des changements de police.
+- Bandeau supérieur, boutons, arrondis, palette et écarts restent ceux du socle validé. Aucun changement des autres fenêtres acceptées.
+- Vérification : **15 tests ciblés réussis**, dont position permanente sous la file, même largeur des deux panneaux, hauteur minimale de lecture, texte intégral et sélection conservée. Trace : `scratch/phase-d1/d1-progress-vertical.trx`. Builds application et lanceur réussis, zéro erreur/avertissement.
+- **Rendu manuel de cette nouvelle version en attente**, sans annoncer de validation DPI réelle. D2/D3 ne démarrent pas dans cette révision.
+
+#### Harmonisation des couleurs Files — retour suivant
+
+La capture utilisateur montre l'en-tête File en bleu Windows saturé. Le style des en-têtes définissait le fond normal mais laissait les couleurs de sélection natives : la sélection d'une cellule colorait aussi son en-tête de colonne.
+
+Correction locale : fond neutre et texte secondaire explicités pour l'en-tête normal/sélectionné ; lignes sélectionnées en bleu doux ; fonds alternés hérités par la colonne × au lieu d'une case de fond différente ; retrait en attente en accent du thème, rouge réservé à l'annulation active ; couleur des états conservée en sélection. Les valeurs utilisées appartiennent à la palette clair/sombre existante.
+
+Builds application/lanceur réussis sans avertissement ; **15 tests ciblés réussis**, trace `scratch/phase-d1/d1-files-colors.trx`. Aucun test visuel automatisé ni nouvelle validation manuelle annoncée. Rendu harmonisé à revoir par l'utilisateur.
+
+#### Files sobre — suppression des bandes alternées
+
+La capture suivante confirme que l'alternance Surface/PageBackground ajoutée à la sélection AccentSoft produit trois fonds distincts, refusés par l'utilisateur. Cette révision remplace le choix visuel précédent : lignes et en-tête sur Surface uniforme, sélection seule sur PageBackground, noms en TextPrimary, croix de retrait en TextMuted. Les états sémantiques et l'annulation active conservent leurs repères. Aucun changement de disposition ou de comportement.
+
+Build application et lanceur réussi, zéro avertissement/erreur. Pas de nouveau test ni de nouvelle exécution de la suite pour ce changement limité aux couleurs ; les 15 tests du passage précédent restent le dernier contrôle comportemental. Rendu à valider manuellement en relançant le lanceur D1.
+
+#### Détails réduits après validation des couleurs
+
+L'utilisateur valide les couleurs, puis demande de réduire de moitié la zone erreur. La cible du panneau passe de 60 % à 30 % du corps file/détails ; l'espace libéré revient à Files. Un minimum de six lignes / 110 unités logiques de lecture préserve les messages et commandes aux fortes échelles, avec défilement si nécessaire. Le minimum du corps additionne les besoins des deux panneaux, sans imposer leur proportion en espace réduit : aucun défilement extérieur ajouté à l'ouverture par défaut.
+
+Build application/lanceur réussi sans avertissement ni erreur ; **8 tests D1 réussis**, dont lecture multiligne, absence de défilement extérieur par défaut, redimensionnement/texte agrandi et conservation du diagnostic sélectionné. Trace : `scratch/phase-d1/d1-details-height.trx`. Nouvelle hauteur à revoir manuellement.
+
+#### Validation visuelle à 100 % et sauvegarde Git
+
+L'utilisateur confirme : « ok les ui sont validées en 100% commite. demain je testerai avec les mise à l'échelle ». La validation couvre le rendu final des interfaces D1, y compris Files sobre et la zone erreur réduite. Les essais 150/200/300 % sont encore à réaliser par l'utilisateur ; aucune validation DPI supplémentaire ni clôture de D1 n'est déduite de ce retour. D2/D3 et E restent en attente. Commit du lot D1 demandé, sans publication.
+
 ### E — Éditeurs restants — P1
 
 - **Objectif :** achever les migrations en garantissant espace de travail adaptable, interaction précise et absence de confusion entre DPI et coordonnées média.
@@ -685,7 +759,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle, avec GO proposé pour D1; D à G ne sont pas commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 implémentée en attente de recette, D2/D3 et E à G non commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

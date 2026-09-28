@@ -277,6 +277,8 @@ Helpers UI :
 - `src/FrameShift/Windows/Helpers/WindowsThemeDetector.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftMenuRenderer.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftUiFactory.cs`
+- `src/FrameShift/Windows/Helpers/FrameShiftGridUi.cs` — métriques DPI/texte communes aux files Main et Progress.
+- `src/FrameShift/Windows/ProgressUI/ProgressForm.Details.cs` — lecture/copier des détails complets, sélection par occurrence et réorganisation file/détails de Progress.
 - `src/FrameShift/Windows/Controls/FrameShiftChoiceCard.cs` — radio natif présenté en carte descriptive, rendu sélectionné et clavier natif.
 - `src/FrameShift/Windows/Controls/FrameShiftFlowRow.cs` — choix espacés, hauteur mesurée selon la largeur, retour à la ligne.
 - `src/FrameShift/Windows/Controls/FrameShiftTimelineWorkspace.cs` — aperçu au-dessus des contrôles temporels, défilement de secours indépendant du footer.
@@ -304,6 +306,8 @@ Responsabilités UI partagées :
 ## Tests
 
 Unit tests actifs :
+- `tests/FrameShift.Tests/UiD1Tests.cs` — fenêtres D1 cachées, redimensionnement, progression, annulation et périmètre des actions.
+- `tests/FrameShift.UiSamples/D1LauncherForm.cs` — recette manuelle D1 via `TEST_PHASE_D1.cmd` ; états simulés et actions Main interceptées.
 - `tests/FrameShift.Tests/ChangePitchSettingsTests.cs`
 - `tests/FrameShift.Tests/AddSubtitlesToVideoPlannerTests.cs`
 - `tests/FrameShift.Tests/AddSubtitlesToVideoBurnTests.cs`
@@ -373,5 +377,5 @@ Assets de test utiles :
 - `Upscale/ModelLocator.cs` sépare le stockage `upscale-image-onnx` / `upscale-video-onnx` et copie à la demande les anciens modèles valides depuis `upscale-onnx`.
 - `UpscaleRawVideoPipeline.cs` porte le chemin rapide par défaut de `upscale-video` : FFmpeg décode/encode en `rawvideo` mémoire, `UpscaleVideoAction` garde un fallback automatique vers le pipeline BMP historique, et `UpscaleFrameProcessor.cs` réutilise maintenant ses buffers/tensors pour réduire les allocations par frame. Le profilage (juin 2026) a montré ce pipeline borné par l'inférence ONNX DirectML (copies/conversions/I/O négligeables) ; `UpscaleFrameProcessor` retourne désormais l'image upscalée sans `.Clone()` plein-frame redondant (resize in-place sur le chemin target≠natif), réduisant le pic mémoire sans changer la sortie.
 - `BackgroundRemovalEngine.cs` utilise désormais `ProcessPixelRows` + accès direct aux buffers `DenseTensor` (au lieu des indexeurs pixel `image[x,y]` / `tensor[0,c,y,x]`) pour la construction du tenseur d'entrée, la construction du masque et le composite final ; gain mesuré ×5–×22 sur ces phases CPU pour les grandes images via le chemin `fast`/Bria ; les chemins `high-resolution` restent bornés par l'inférence CPU ; sortie bit-à-bit identique.
-- `MainForm.cs` inclut désormais une section "AI models folder" avec Browse, Reset to default et Open folder.
+- `MainForm.cs` ouvre `SettingsForm.cs`, qui porte la section "AI models folder" avec Browse, Reset to default et Open folder.
 - La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.

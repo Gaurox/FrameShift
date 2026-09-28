@@ -18,9 +18,6 @@ namespace FrameShift.Windows.Forms;
 /// </summary>
 public sealed class ActionsPanel : UserControl
 {
-    private static readonly Font s_headerFont = new("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_chipFont = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_buttonFont = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
     private static readonly MediaFamily[] FamilyOrder = { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Other };
 
     private readonly TextBox _searchBox;
@@ -36,6 +33,7 @@ public sealed class ActionsPanel : UserControl
 
     public ActionsPanel()
     {
+        AutoScaleMode = AutoScaleMode.Inherit;
         BackColor = FrameShiftTheme.Surface;
         ForeColor = FrameShiftTheme.TextPrimary;
 
@@ -47,7 +45,7 @@ public sealed class ActionsPanel : UserControl
             BackColor = FrameShiftTheme.Surface,
             Padding = new Padding(12, 10, 12, 10)
         };
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
@@ -66,17 +64,7 @@ public sealed class ActionsPanel : UserControl
             Rebuild();
         };
 
-        _chipsPanel = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true,
-            BackColor = FrameShiftTheme.Surface,
-            Margin = new Padding(0, 0, 0, 6),
-            Padding = Padding.Empty
-        };
+        _chipsPanel = FrameShiftUiFactory.CreateChoiceRow();
 
         _content = new FlowLayoutPanel
         {
@@ -93,6 +81,16 @@ public sealed class ActionsPanel : UserControl
         root.Controls.Add(_chipsPanel, 0, 1);
         root.Controls.Add(_content, 0, 2);
         Controls.Add(root);
+        void Metrics()
+        {
+            root.Padding = FrameShiftUiMetrics.ToPixels(FrameShiftUiMetrics.StandardSectionPadding, DeviceDpi);
+            _searchBox.Margin = new Padding(0, 0, 0, FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.LineGap));
+            ArrangeActions();
+        }
+        HandleCreated += (_, _) => Metrics();
+        DpiChangedAfterParent += (_, _) => Metrics();
+        _content.SizeChanged += (_, _) => ArrangeActions();
+        Metrics();
     }
 
     public event EventHandler<ActionInvokedEventArgs>? ActionInvoked;
@@ -123,8 +121,10 @@ public sealed class ActionsPanel : UserControl
         _content.SuspendLayout();
         try
         {
+            _toolTip.RemoveAll();
             BuildChips(baseCounts);
             BuildActions(scopeCounts);
+            ArrangeActions();
         }
         finally
         {
@@ -135,7 +135,7 @@ public sealed class ActionsPanel : UserControl
 
     private void BuildChips(IReadOnlyDictionary<MediaFamily, int> baseCounts)
     {
-        _chipsPanel.Controls.Clear();
+        DisposeChildren(_chipsPanel);
         if (_currentScope.Count == 0 && _allFiles.Count == 0)
         {
             return;
@@ -157,7 +157,7 @@ public sealed class ActionsPanel : UserControl
 
     private void BuildActions(IReadOnlyDictionary<MediaFamily, int> scopeCounts)
     {
-        _content.Controls.Clear();
+        DisposeChildren(_content);
 
         var applicable = ActionScopeResolver.Resolve(_currentScope);
         if (!string.IsNullOrEmpty(_search))
@@ -206,7 +206,6 @@ public sealed class ActionsPanel : UserControl
         {
             AutoSize = true,
             Text = $"{CategoryLabel(category)}  ·  {count}",
-            Font = s_headerFont,
             ForeColor = FrameShiftTheme.TextSecondary,
             Margin = new Padding(0, 10, 0, 4)
         };
@@ -220,25 +219,10 @@ public sealed class ActionsPanel : UserControl
             text += $"   ·  {availability.MatchingFileCount}";
         }
 
-        var button = new Button
-        {
-            Text = text,
-            Width = 152,
-            Height = 34,
-            FlatStyle = FlatStyle.Flat,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(8, 0, 4, 0),
-            Margin = new Padding(0, 0, 8, 8),
-            Font = s_buttonFont,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Enabled = availability.IsEnabled,
-            UseVisualStyleBackColor = false
-        };
-        button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-
+        var button = FrameShiftUiFactory.CreateMeasuredActionButton(text, false, 152);
+        button.TextAlign = ContentAlignment.MiddleLeft;
+        button.Enabled = availability.IsEnabled;
+        button.Tag = availability.Entry;
         if (!availability.IsEnabled && !string.IsNullOrWhiteSpace(availability.DisabledReason))
         {
             _toolTip.SetToolTip(button, availability.DisabledReason);
@@ -257,30 +241,51 @@ public sealed class ActionsPanel : UserControl
         return button;
     }
 
-    private Label CreateChip(string text, MediaFamily? family, bool active)
+    private Button CreateChip(string text, MediaFamily? family, bool active)
     {
-        var chip = new Label
-        {
-            Text = text,
-            AutoSize = true,
-            Font = s_chipFont,
-            Padding = new Padding(10, 4, 10, 4),
-            Margin = new Padding(0, 0, 6, 0),
-            Cursor = Cursors.Hand,
-            TextAlign = ContentAlignment.MiddleCenter,
-            BackColor = active ? FrameShiftTheme.AccentSoft : FrameShiftTheme.PageBackground,
-            ForeColor = active ? FrameShiftTheme.AccentText : FrameShiftTheme.TextSecondary
-        };
-
+        var chip = FrameShiftUiFactory.CreateMeasuredActionButton(text, active, 84);
+        chip.AccessibleDescription = active ? "Selected filter" : "Filter actions by media type";
         chip.Click += (_, _) =>
         {
             _familyFilter = family;
             Rebuild();
+            _chipsPanel.Controls.OfType<Button>().FirstOrDefault(b => b.Text == text)?.Focus();
         };
-
         return chip;
     }
 
+    private bool _arranging;
+    private void ArrangeActions()
+    {
+        if (_arranging) return;
+        _arranging = true;
+        try
+        {
+            var gap = FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.LineGap);
+            var width = Math.Max(1, _content.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - gap);
+            foreach (Control control in _content.Controls)
+            {
+                control.Margin = new Padding(0, gap, gap, 0);
+                control.MaximumSize = new Size(width, 0);
+                if (control is Button)
+                {
+                    control.Size = control.GetPreferredSize(new Size(width, 0));
+                }
+            }
+        }
+        finally { _arranging = false; }
+    }
+
+    private static void DisposeChildren(Control parent)
+    {
+        while (parent.Controls.Count > 0) parent.Controls[0].Dispose();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) _toolTip.Dispose();
+        base.Dispose(disposing);
+    }
     private static string CategoryLabel(ActionCategory category) => category switch
     {
         ActionCategory.Video => "Video",

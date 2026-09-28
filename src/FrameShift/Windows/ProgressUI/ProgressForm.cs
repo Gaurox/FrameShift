@@ -12,7 +12,7 @@ using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.ProgressUI;
 
-public sealed class ProgressForm : Form, IProgressReporter
+public sealed partial class ProgressForm : Form, IProgressReporter
 {
     private static bool s_donationBannerDismissed;
 
@@ -27,25 +27,16 @@ public sealed class ProgressForm : Form, IProgressReporter
     private static Color AccentColor => FrameShiftTheme.AccentText;
     private static readonly Color DangerColor = Color.FromArgb(198, 40, 40);
 
-    private static readonly Font s_font9 = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_fontSemibold9 = new("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_fontSemibold11 = new("Segoe UI Semibold", 11F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_fontSemibold16 = new("Segoe UI Semibold", 16F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_font10 = new("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point);
 
-    private readonly Label _eyebrowLabel;
     private readonly Label _currentFileLabel;
     private readonly Label _currentActionLabel;
-    private readonly Label _statusLabel;
-    private readonly Label _queueTitleLabel;
-    private readonly Label _queueHintLabel;
+    private readonly TextBox _statusLabel;
     private readonly Label _percentLabel;
     private readonly Label _etaLabel;
     private readonly ProgressBar _progressBar;
     private readonly DataGridView _queueGrid;
     private readonly Button _cancelButton;
     private readonly Panel _donationPanel;
-    private readonly RowStyle _donationRowStyle;
     private readonly Dictionary<string, DataGridViewRow> _queueRows = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _queueItemPaths = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _queueItemIdsByPath = new(StringComparer.OrdinalIgnoreCase);
@@ -61,211 +52,130 @@ public sealed class ProgressForm : Form, IProgressReporter
 
     public ProgressForm()
     {
-        FrameShiftWindowChrome.Apply(this, "FrameShift Progress");
-        StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(920, 560);
-        Size = new Size(1060, 640);
-        Font = s_font9;
-        BackColor = PageBackgroundColor;
-
-        var rootLayout = new TableLayoutPanel
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(1000, 920), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, "FrameShift - Progress");
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Progress", "No file selected",
+            IconPaths.AppIcon, IconPaths.AppIcon, "▶");
+        _currentActionLabel = header.TitleLabel;
+        _currentFileLabel = header.SubtitleLabel;
+        _statusLabel = new TextBox
         {
-            Dock = DockStyle.Fill,
-            BackColor = PageBackgroundColor,
-            Padding = new Padding(24),
-            ColumnCount = 1,
-            RowCount = 4
+            Multiline = true, ReadOnly = true, WordWrap = true, AutoSize = false,
+            ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None,
+            Dock = DockStyle.Fill, Margin = Padding.Empty,
+            BackColor = FrameShiftTheme.Surface, ForeColor = BodyColor,
+            Text = "Waiting...", AccessibleName = "Full task or selected file details"
         };
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 188F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        _donationRowStyle = new RowStyle(SizeType.Absolute, s_donationBannerDismissed ? 0F : 48F);
-        rootLayout.RowStyles.Add(_donationRowStyle);
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
-
-        var headerPanel = CreateSurfacePanel(new Padding(24, 20, 24, 20));
-
-        _eyebrowLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 18,
-            ForeColor = AccentColor,
-            Font = s_fontSemibold9,
-            Text = "Current task"
-        };
-
-        _currentActionLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 34,
-            ForeColor = TitleColor,
-            Font = s_fontSemibold16,
-            Text = "No active task"
-        };
-
-        _currentFileLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 24,
-            ForeColor = BodyColor,
-            Font = s_font10,
-            AutoEllipsis = true,
-            Text = "No file selected"
-        };
-
-        _statusLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 24,
-            ForeColor = BodyColor,
-            Text = "Waiting..."
-        };
-
+        _statusLabel.Name = "progressStatus";
         _progressBar = new ProgressBar
         {
-            Dock = DockStyle.Top,
-            Height = 10,
-            Margin = new Padding(0, 12, 0, 0),
-            Minimum = 0,
-            Maximum = 1000,
-            Style = ProgressBarStyle.Continuous
+            Dock = DockStyle.Top, Margin = Padding.Empty, Minimum = 0, Maximum = 1000,
+            Style = ProgressBarStyle.Marquee, Name = "taskProgress"
         };
-
-        _percentLabel = new Label
+        _percentLabel = FrameShiftUiFactory.CreateWrappingLabel("—");
+        _percentLabel.ForeColor = AccentColor;
+        _percentLabel.TextAlign = ContentAlignment.MiddleRight;
+        _etaLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _etaLabel.TextAlign = ContentAlignment.TopRight;
+        _etaLabel.Visible = false;
+        _etaLabel.TextChanged += (_, _) => _etaLabel.Visible = !string.IsNullOrWhiteSpace(_etaLabel.Text);
+        var metrics = new TableLayoutPanel
         {
-            Dock = DockStyle.Left,
-            Width = 80,
-            ForeColor = TitleColor,
-            Font = s_fontSemibold9,
-            Text = "0%"
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 2, RowCount = 1, Dock = DockStyle.Top, Margin = Padding.Empty, Size = Size.Empty
         };
-
-        _etaLabel = new Label
+        metrics.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        metrics.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        metrics.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        metrics.Controls.Add(_stateLabel, 0, 0);
+        metrics.Controls.Add(_percentLabel, 1, 0);
+        _stateLabel.Anchor = AnchorStyles.Left;
+        _stateLabel.Dock = DockStyle.None;
+        var taskSection = FrameShiftUiFactory.CreateSection("Activity",
+            FrameShiftUiFactory.CreateVerticalStack(metrics, _progressBar, _etaLabel));
+        taskSection.BackColor = FrameShiftTheme.AccentSoft;
+        Font? summaryFont = null;
+        Font? percentFont = null;
+        void SummaryFonts()
         {
-            Dock = DockStyle.Right,
-            Width = 280,
-            TextAlign = ContentAlignment.TopRight,
-            ForeColor = MutedColor,
-            Text = string.Empty
-        };
-
-        var metricsPanel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 24,
-            Padding = new Padding(0, 10, 0, 0)
-        };
-        metricsPanel.Controls.Add(_etaLabel);
-        metricsPanel.Controls.Add(_percentLabel);
-
-        var headerFlow = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 5,
-            BackColor = SurfaceColor
-        };
-        headerFlow.RowStyles.Add(new RowStyle(SizeType.Absolute, 22F));
-        headerFlow.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
-        headerFlow.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
-        headerFlow.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));
-        headerFlow.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
-        headerFlow.Controls.Add(_eyebrowLabel, 0, 0);
-        headerFlow.Controls.Add(_currentActionLabel, 0, 1);
-        headerFlow.Controls.Add(_currentFileLabel, 0, 2);
-        headerFlow.Controls.Add(_statusLabel, 0, 3);
-
-        var progressStack = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = SurfaceColor
-        };
-        progressStack.Controls.Add(metricsPanel);
-        progressStack.Controls.Add(_progressBar);
-        headerFlow.Controls.Add(progressStack, 0, 4);
-        headerPanel.Controls.Add(headerFlow);
-
-        var queuePanel = CreateSurfacePanel(new Padding(0));
-
-        _queueTitleLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 28,
-            ForeColor = TitleColor,
-            Font = s_fontSemibold11,
-            Text = "Queue"
-        };
-
-        _queueHintLabel = new Label
-        {
-            Dock = DockStyle.Top,
-            Height = 22,
-            ForeColor = MutedColor,
-            Text = "Click the red cross to remove a queued file before it starts."
-        };
-
+            var oldSummary = summaryFont;
+            var oldPercent = percentFont;
+            summaryFont = new Font(Font, FontStyle.Bold);
+            percentFont = new Font(Font.FontFamily, Font.SizeInPoints * 1.5f, FontStyle.Bold);
+            _stateLabel.Font = _detailsContext.Font = summaryFont;
+            _percentLabel.Font = percentFont;
+            oldSummary?.Dispose();
+            oldPercent?.Dispose();
+        }
+        FontChanged += (_, _) => SummaryFonts();
+        Disposed += (_, _) => { summaryFont?.Dispose(); percentFont?.Dispose(); };
+        SummaryFonts();
         _queueGrid = CreateQueueGrid();
+        _queueGrid.Name = "progressQueue";
         _queueGrid.CellContentClick += QueueGridOnCellContentClick;
         _queueGrid.CellFormatting += QueueGridOnCellFormatting;
         _queueGrid.RowPrePaint += QueueGridOnRowPrePaint;
-
-        var queueHeaderPanel = new Panel
+        _queueGrid.SelectionChanged += (_, _) =>
         {
-            Dock = DockStyle.Top,
-            Height = 66,
-            Padding = new Padding(24, 18, 24, 8),
-            BackColor = SurfaceColor
+            if (_queueGrid.Focused) SelectCurrentRowDetails();
         };
-        queueHeaderPanel.Controls.Add(_queueHintLabel);
-        queueHeaderPanel.Controls.Add(_queueTitleLabel);
-
-        var divider = new Panel
+        _queueGrid.CellClick += (_, e) =>
         {
-            Dock = DockStyle.Top,
-            Height = 1,
-            BackColor = DividerColor
+            if (e.RowIndex >= 0 && e.ColumnIndex >= 0 && _queueGrid.Columns[e.ColumnIndex].Name != "Remove")
+                SelectCurrentRowDetails();
         };
-
-        queuePanel.Controls.Add(_queueGrid);
-        queuePanel.Controls.Add(divider);
-        queuePanel.Controls.Add(queueHeaderPanel);
-
+        var workspace = CreateDetailsWorkspace();
         _donationPanel = CreateDonationPanel();
         _donationPanel.Visible = !s_donationBannerDismissed;
-
-        _cancelButton = FrameShiftUiFactory.CreateActionButton("Cancel all", primary: false, width: 120);
-        _cancelButton.Height = 38;
+        var body = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top, ColumnCount = 1, RowCount = 3, Margin = Padding.Empty
+        };
+        body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        body.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        body.Controls.Add(taskSection, 0, 0);
+        body.Controls.Add(workspace, 0, 1);
+        body.Controls.Add(_donationPanel, 0, 2);
+        var viewport = FrameShiftDialogLayout.CreateScrollBody(body);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel all", false);
         _cancelButton.ForeColor = DangerColor;
-        _cancelButton.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        _cancelButton.FlatAppearance.MouseDownBackColor = FrameShiftTheme.AccentSoftHover;
-        _cancelButton.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
         _cancelButton.Click += (_, _) =>
         {
-            if (_allowUserClose)
+            if (_allowUserClose) CloseSafely();
+            else RequestCancel();
+        };
+        CancelButton = _cancelButton;
+        Controls.Add(FrameShiftDialogLayout.CreateShell(header, viewport,
+            FrameShiftDialogLayout.CreateActions(_cancelButton), null));
+        var arranging = false;
+        void LayoutBody()
+        {
+            if (arranging || IsDisposed) return;
+            arranging = true;
+            try
             {
-                CloseSafely();
-                return;
+                var gap = FrameShiftUiMetrics.ToPixels(body, FrameShiftUiMetrics.BlockGap);
+                taskSection.Margin = new Padding(0, 0, 0, gap);
+                _donationPanel.Margin = new Padding(0, gap, 0, 0);
+                _progressBar.Height = FrameShiftUiMetrics.ToPixels(body, 12);
+                var width = Math.Max(1, viewport.ClientSize.Width);
+                var required = taskSection.GetPreferredSize(new Size(width, 0)).Height + gap
+                    + workspace.MinimumSize.Height;
+                if (!s_donationBannerDismissed)
+                    required += _donationPanel.GetPreferredSize(new Size(width, 0)).Height + gap;
+                body.Height = Math.Max(viewport.ClientSize.Height, required);
             }
-
-            RequestCancel();
-        };
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = PageBackgroundColor
-        };
-        footerPanel.Controls.Add(_cancelButton);
-        footerPanel.SizeChanged += (_, _) =>
-        {
-            _cancelButton.Location = new Point(footerPanel.ClientSize.Width - _cancelButton.Width, 16);
-        };
-
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(queuePanel, 0, 1);
-        rootLayout.Controls.Add(_donationPanel, 0, 2);
-        rootLayout.Controls.Add(footerPanel, 0, 3);
-        Controls.Add(rootLayout);
-
+            finally { arranging = false; }
+        }
+        viewport.SizeChanged += (_, _) => LayoutBody();
+        body.Layout += (_, _) => LayoutBody();
+        body.DpiChangedAfterParent += (_, _) => LayoutBody();
+        workspace.Layout += (_, _) => LayoutBody();
+        ResumeLayout(true);
+        LayoutBody();
         FormClosing += (_, e) =>
         {
             AppLogger.LogStatic(
@@ -370,13 +280,15 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         RunOnUiThread(() =>
         {
+            _progressBar.Style = ProgressBarStyle.Continuous;
             _allowUserClose = true;
             _cancelButton.Enabled = true;
             _cancelButton.Text = "Close";
+            AcceptButton = _cancelButton;
             _cancelButton.ForeColor = TitleColor;
             if (!string.IsNullOrWhiteSpace(message))
             {
-                _statusLabel.Text = message;
+                ShowLiveMessage(_cancellationRequested ? "canceled" : _liveState is "failed" or "canceled" ? _liveState : "finished", message);
             }
         });
     }
@@ -385,6 +297,7 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         RunOnUiThread(() =>
         {
+            _selectedDetailId = null;
             _queueGrid.Rows.Clear();
             _queueRows.Clear();
             _queueItemPaths.Clear();
@@ -442,7 +355,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         {
             if (!string.IsNullOrWhiteSpace(currentAction))
             {
-                _currentActionLabel.Text = currentAction;
+                _currentActionLabel.Text = $"FrameShift - {currentAction}";
             }
 
             if (!string.IsNullOrWhiteSpace(currentFile))
@@ -450,6 +363,7 @@ public sealed class ProgressForm : Form, IProgressReporter
                 _currentFileLabel.Text = Path.GetFileName(currentFile);
             }
 
+            _progressBar.Style = ProgressBarStyle.Continuous;
             var clampedValue = Math.Clamp(progressValue, 0, 1000);
             _progressBar.Value = clampedValue;
 
@@ -460,12 +374,10 @@ public sealed class ProgressForm : Form, IProgressReporter
             var currentItemIsCanceling = !string.IsNullOrWhiteSpace(currentFile) && IsQueueItemCancellationRequested(currentFile);
             _etaLabel.Text = currentItemIsCanceling ? string.Empty : etaText ?? string.Empty;
 
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                _statusLabel.Text = currentItemIsCanceling
-                    ? "Canceling current file..."
-                    : AppendEta(message, etaText);
-            }
+            var liveMessage = currentItemIsCanceling ? "Canceling current file..."
+                : !string.IsNullOrWhiteSpace(message) ? message
+                : string.Equals(_liveFile, currentFile, StringComparison.OrdinalIgnoreCase) ? _liveMessage : "Processing...";
+            ShowLiveMessage(currentItemIsCanceling ? "canceling" : "processing", liveMessage, currentFile);
 
             if (!string.IsNullOrWhiteSpace(currentFile) && !currentItemIsCanceling)
             {
@@ -478,7 +390,10 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         RunOnUiThread(() =>
         {
-            _statusLabel.Text = string.IsNullOrWhiteSpace(message) ? state : message;
+            ShowLiveMessage(state, string.IsNullOrWhiteSpace(message) ? state : message);
+            if (state.Equals("failed", StringComparison.OrdinalIgnoreCase) || state.Equals("canceled", StringComparison.OrdinalIgnoreCase)
+                || state.Equals("done", StringComparison.OrdinalIgnoreCase) || state.Equals("completed", StringComparison.OrdinalIgnoreCase))
+                _progressBar.Style = ProgressBarStyle.Continuous;
             if (!string.Equals(state, "processing", StringComparison.OrdinalIgnoreCase))
             {
                 _etaLabel.Text = string.Empty;
@@ -494,6 +409,8 @@ public sealed class ProgressForm : Form, IProgressReporter
             if (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase))
             {
                 ResetProgressDisplay();
+                if (string.IsNullOrEmpty(_liveFile) || string.Equals(_liveFile, currentFile, StringComparison.OrdinalIgnoreCase))
+                    ShowLiveMessage(state, message ?? "Processing failed.", currentFile);
             }
         });
     }
@@ -559,92 +476,16 @@ public sealed class ProgressForm : Form, IProgressReporter
         }
     }
 
-    private static Panel CreateSurfacePanel(Padding padding)
-    {
-        var panel = FrameShiftUiFactory.CreateFramedPanel(
-            SurfaceColor,
-            FrameShiftTheme.PrimaryBlue,
-            FrameShiftUiMetrics.PanelCornerRadius);
-        panel.Dock = DockStyle.Fill;
-        panel.Padding = padding;
-        return panel;
-    }
-
     private Panel CreateDonationPanel()
     {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = PageBackgroundColor,
-            Margin = new Padding(0)
-        };
-
-        var separator = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 1,
-            BackColor = DividerColor
-        };
-
-        var label = new Label
-        {
-            Text = "FrameShift is free. Support development ❤️",
-            ForeColor = MutedColor,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoSize = true,
-            Margin = new Padding(0, 6, 10, 0)
-        };
-
-        var donateButton = FrameShiftUiFactory.CreateActionButton("Donate", primary: false, width: 92);
-        donateButton.Height = 30;
-        donateButton.Click += (_, _) => OpenDonationLink();
-
-        var closeBannerButton = new Button
-        {
-            Text = "Close banner",
-            FlatStyle = FlatStyle.Flat,
-            ForeColor = MutedColor,
-            BackColor = Color.Transparent,
-            Cursor = Cursors.Hand,
-            Width = 112,
-            Height = 30,
-            Anchor = AnchorStyles.Right | AnchorStyles.Top,
-            Location = new Point(0, 9)
-        };
-        closeBannerButton.FlatAppearance.BorderSize = 0;
-        closeBannerButton.FlatAppearance.MouseOverBackColor = Color.Transparent;
-        closeBannerButton.Click += (_, _) => DismissDonationBanner();
-
-        var leftFlow = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Left,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            WrapContents = false,
-            FlowDirection = FlowDirection.LeftToRight,
-            Margin = new Padding(0)
-        };
-        leftFlow.Controls.Add(label);
-        leftFlow.Controls.Add(donateButton);
-
-        var contentPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(0, 8, 0, 0)
-        };
-        contentPanel.Controls.Add(leftFlow);
-        contentPanel.Controls.Add(closeBannerButton);
-        contentPanel.SizeChanged += (_, _) =>
-        {
-            closeBannerButton.Left = contentPanel.ClientSize.Width - closeBannerButton.Width;
-            leftFlow.Top = Math.Max(0, (contentPanel.ClientSize.Height - leftFlow.Height) / 2);
-        };
-
-        panel.Controls.Add(contentPanel);
-        panel.Controls.Add(separator);
-        return panel;
+        var label = FrameShiftUiFactory.CreateWrappingLabel("FrameShift is free. Support development ❤️");
+        var donate = FrameShiftUiFactory.CreateMeasuredActionButton("Donate", false, 92);
+        donate.Click += (_, _) => OpenDonationLink();
+        var dismiss = FrameShiftUiFactory.CreateMeasuredActionButton("Close banner", false);
+        dismiss.Name = "dismissDonation";
+        dismiss.Click += (_, _) => DismissDonationBanner();
+        return FrameShiftUiFactory.CreateChoiceRow(label, donate, dismiss);
     }
-
     private static DataGridView CreateQueueGrid()
     {
         var grid = new DataGridView
@@ -657,7 +498,8 @@ public sealed class ProgressForm : Form, IProgressReporter
             MultiSelect = false,
             ReadOnly = true,
             RowHeadersVisible = false,
-            ColumnHeadersVisible = false,
+            ColumnHeadersVisible = true,
+            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
             BackgroundColor = SurfaceColor,
@@ -667,36 +509,43 @@ public sealed class ProgressForm : Form, IProgressReporter
             EnableHeadersVisualStyles = false
         };
 
+        // A selected cell also selects its column header. Keep that header neutral
+        // instead of inheriting the saturated Windows Highlight selection color.
+        grid.ColumnHeadersDefaultCellStyle.BackColor = SurfaceColor;
+        grid.ColumnHeadersDefaultCellStyle.ForeColor = BodyColor;
+        grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = SurfaceColor;
+        grid.ColumnHeadersDefaultCellStyle.SelectionForeColor = BodyColor;
         grid.DefaultCellStyle.BackColor = SurfaceColor;
-        grid.DefaultCellStyle.ForeColor = BodyColor;
-        grid.DefaultCellStyle.SelectionBackColor = FrameShiftTheme.AccentSoft;
+        grid.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+        grid.DefaultCellStyle.ForeColor = TitleColor;
+        grid.DefaultCellStyle.SelectionBackColor = FrameShiftTheme.PageBackground;
         grid.DefaultCellStyle.SelectionForeColor = TitleColor;
         grid.DefaultCellStyle.Padding = new Padding(0, 6, 0, 6);
-        grid.DefaultCellStyle.Font = s_font9;
+
         grid.RowTemplate.Height = 40;
         grid.ScrollBars = ScrollBars.Vertical;
 
         grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "FileName",
+            Name = "FileName", HeaderText = "File",
             AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
             FillWeight = 45
         });
         grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "State",
+            Name = "State", HeaderText = "Status",
             Width = 120,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None
         });
         grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "Details",
+            Name = "Details", Visible = false,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
             FillWeight = 55
         });
         grid.Columns.Add(new DataGridViewButtonColumn
         {
-            Name = "Remove",
+            Name = "Remove", HeaderText = "",
             Width = 44,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
             Text = "×",
@@ -704,13 +553,11 @@ public sealed class ProgressForm : Form, IProgressReporter
             FlatStyle = FlatStyle.Flat,
             DefaultCellStyle = new DataGridViewCellStyle
             {
-                BackColor = SurfaceColor,
-                ForeColor = FrameShiftTheme.AccentText,
-                SelectionBackColor = FrameShiftTheme.AccentSoft,
-                SelectionForeColor = FrameShiftTheme.AccentText
+                Alignment = DataGridViewContentAlignment.MiddleCenter
             }
         });
 
+        FrameShiftGridUi.Apply(grid, ("State", 120), ("Remove", 44));
         return grid;
     }
 
@@ -719,6 +566,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         var rowIndex = _queueGrid.Rows.Add(Path.GetFileName(item), state, details, "×");
         var row = _queueGrid.Rows[rowIndex];
         row.Tag = queueItemId;
+        row.Cells[0].ToolTipText = item;
         _queueRows[queueItemId] = row;
         _queueItemPaths[queueItemId] = item;
         if (!_queueItemIdsByPath.TryGetValue(item, out var queueItemIds))
@@ -761,6 +609,7 @@ public sealed class ProgressForm : Form, IProgressReporter
         }
 
         _queueGrid.InvalidateRow(row.Index);
+        if (_selectedDetailId == queueItemId) RefreshDetails();
     }
 
     private void QueueGridOnCellContentClick(object? sender, DataGridViewCellEventArgs e)
@@ -810,9 +659,16 @@ public sealed class ProgressForm : Form, IProgressReporter
         if (columnName == "State")
         {
             var state = Convert.ToString(e.Value) ?? string.Empty;
+            e.Value = state.ToLowerInvariant() switch
+            {
+                "queued" => "Waiting", "processing" => "Processing", "done" or "completed" => "Completed",
+                "failed" => "Failed", "canceling" => "Canceling…", "canceled" => "Canceled", _ => state
+            };
+            e.FormattingApplied = true;
             if (e.CellStyle is not null)
             {
                 e.CellStyle.ForeColor = GetStateColor(state);
+                e.CellStyle.SelectionForeColor = e.CellStyle.ForeColor;
             }
         }
 
@@ -825,7 +681,8 @@ public sealed class ProgressForm : Form, IProgressReporter
                 string.Equals(state, "processing", StringComparison.OrdinalIgnoreCase);
             if (e.CellStyle is not null)
             {
-                e.CellStyle.ForeColor = enabled ? DangerColor : DividerColor;
+                e.CellStyle.ForeColor = !enabled ? DividerColor
+                    : string.Equals(state, "processing", StringComparison.OrdinalIgnoreCase) ? DangerColor : MutedColor;
                 e.CellStyle.SelectionForeColor = e.CellStyle.ForeColor;
                 e.CellStyle.SelectionBackColor = _queueGrid.DefaultCellStyle.SelectionBackColor;
                 e.CellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
@@ -838,14 +695,15 @@ public sealed class ProgressForm : Form, IProgressReporter
         using var pen = new Pen(DividerColor);
         var rowBounds = _queueGrid.GetRowDisplayRectangle(e.RowIndex, false);
         var bounds = new Rectangle(0, rowBounds.Bottom - 1, _queueGrid.ClientSize.Width, 1);
-        e.Graphics.DrawLine(pen, bounds.Left + 24, bounds.Top, bounds.Right - 24, bounds.Top);
+        var inset = FrameShiftUiMetrics.ToPixels(_queueGrid, FrameShiftUiMetrics.OuterPadding);
+        e.Graphics.DrawLine(pen, bounds.Left + inset, bounds.Top, bounds.Right - inset, bounds.Top);
     }
 
     private static Color GetStateColor(string state)
     {
         return state.ToLowerInvariant() switch
         {
-            "done" => Color.FromArgb(28, 116, 70),
+            "done" or "completed" => Color.FromArgb(28, 116, 70),
             "failed" => DangerColor,
             "canceled" => MutedColor,
             "canceling" => DangerColor,
@@ -858,15 +716,16 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         RunOnUiThread(() =>
         {
-            _statusLabel.Text = message;
+            ShowLiveMessage("canceling", message);
             _etaLabel.Text = string.Empty;
         });
     }
 
     private void ResetProgressDisplay()
     {
+        _progressBar.Style = ProgressBarStyle.Continuous;
         _progressBar.Value = 0;
-        _percentLabel.Text = "0%";
+        _percentLabel.Text = "—";
         _etaLabel.Text = string.Empty;
     }
 
@@ -968,6 +827,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             return;
         }
 
+        if (_selectedDetailId == queueItemId) _selectedDetailId = null;
         _queueGrid.Rows.Remove(row);
         RemoveQueueRowMappings(queueItemId);
         lock (_removedQueueItems)
@@ -975,6 +835,7 @@ public sealed class ProgressForm : Form, IProgressReporter
             _removedQueueItems.Add(queueItemId);
         }
 
+        RefreshDetails();
         QueueItemRemoveRequested?.Invoke(this, queueItemId);
     }
 
@@ -1038,16 +899,6 @@ public sealed class ProgressForm : Form, IProgressReporter
         return true;
     }
 
-    private static string AppendEta(string message, string? etaText)
-    {
-        if (string.IsNullOrWhiteSpace(etaText))
-        {
-            return message;
-        }
-
-        return $"{message} | {etaText}";
-    }
-
     private void RunOnUiThread(Action action)
     {
         if (IsDisposed || Disposing)
@@ -1100,7 +951,7 @@ public sealed class ProgressForm : Form, IProgressReporter
     {
         s_donationBannerDismissed = true;
         _donationPanel.Visible = false;
-        _donationRowStyle.Height = 0F;
+
         PerformLayout();
     }
 

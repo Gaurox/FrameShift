@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -22,8 +21,6 @@ public sealed class FileQueuePanel : UserControl
     private const string MediaFileFilter =
         "Media files|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v;*.mp3;*.wav;*.wave;*.flac;*.m4a;*.ogg;*.aac;*.wma;*.png;*.jpg;*.jpeg;*.webp;*.bmp|All files|*.*";
 
-    private static readonly Font s_countFont = new("Segoe UI Semibold", 10F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_bodyFont = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
 
     private readonly FileQueueModel _model = new();
     private readonly DataGridView _grid;
@@ -31,6 +28,7 @@ public sealed class FileQueuePanel : UserControl
 
     public FileQueuePanel()
     {
+        AutoScaleMode = AutoScaleMode.Inherit;
         BackColor = FrameShiftTheme.Surface;
         ForeColor = FrameShiftTheme.TextPrimary;
         AllowDrop = true;
@@ -45,12 +43,27 @@ public sealed class FileQueuePanel : UserControl
         _grid.DragDrop += OnDragDrop;
 
         var header = BuildHeader(out _countLabel);
-        var hint = BuildDropHint();
-
-        Controls.Add(_grid);
-        Controls.Add(hint);
-        Controls.Add(header);
-
+        var hint = FrameShiftUiFactory.CreateWrappingLabel("Drop files here to add · Delete removes selected files");
+        var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        root.Controls.Add(header, 0, 0);
+        root.Controls.Add(_grid, 0, 1);
+        root.Controls.Add(hint, 0, 2);
+        Controls.Add(root);
+        void Metrics()
+        {
+            root.Padding = FrameShiftUiMetrics.ToPixels(FrameShiftUiMetrics.StandardSectionPadding, DeviceDpi);
+            var gap = FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.BlockGap);
+            header.Margin = new Padding(0, 0, 0, gap);
+            _grid.Margin = Padding.Empty;
+            hint.Margin = new Padding(0, gap, 0, 0);
+        }
+        HandleCreated += (_, _) => Metrics();
+        DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
         DragEnter += OnDragEnter;
         DragDrop += OnDragDrop;
 
@@ -166,6 +179,7 @@ public sealed class FileQueuePanel : UserControl
         var kind = MediaFileClassifier.Classify(fullPath);
         var rowIndex = _grid.Rows.Add(KindLabel(kind), Path.GetFileName(fullPath), "×");
         _grid.Rows[rowIndex].Tag = fullPath;
+        _grid.Rows[rowIndex].Cells["FileName"].ToolTipText = fullPath;
     }
 
     private void OnCellContentClick(object? sender, DataGridViewCellEventArgs e)
@@ -287,68 +301,13 @@ public sealed class FileQueuePanel : UserControl
 
     private Panel BuildHeader(out Label countLabel)
     {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 44,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = new Padding(12, 8, 8, 8)
-        };
-
-        countLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Font = s_countFont,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true
-        };
-
-        var buttons = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Right,
-            AutoSize = true,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            BackColor = FrameShiftTheme.Surface,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
-        };
-
-        var btnAdd = CreateHeaderButton("Add…");
-        var btnClear = CreateHeaderButton("Clear");
-        btnAdd.Click += (_, _) => BrowseForFiles();
-        btnClear.Click += (_, _) => Clear();
-        buttons.Controls.Add(btnAdd);
-        buttons.Controls.Add(btnClear);
-
-        panel.Controls.Add(countLabel);
-        panel.Controls.Add(buttons);
-        return panel;
+        countLabel = FrameShiftUiFactory.CreateWrappingLabel("No files yet");
+        var add = FrameShiftUiFactory.CreateMeasuredActionButton("Add…", false);
+        var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear", false);
+        add.Click += (_, _) => BrowseForFiles();
+        clear.Click += (_, _) => Clear();
+        return FrameShiftUiFactory.CreateVerticalStack(countLabel, FrameShiftUiFactory.CreateChoiceRow(add, clear));
     }
-
-    private static Button CreateHeaderButton(string text)
-    {
-        var button = new Button
-        {
-            Text = text,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Height = 26,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.AccentText,
-            Cursor = Cursors.Hand,
-            Margin = new Padding(6, 0, 0, 0),
-            Padding = new Padding(10, 3, 10, 3),
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-        button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        button.FlatAppearance.BorderSize = 1;
-        button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-        return button;
-    }
-
     private void BrowseForFiles()
     {
         using var dialog = new OpenFileDialog
@@ -363,37 +322,6 @@ public sealed class FileQueuePanel : UserControl
         {
             AddFiles(dialog.FileNames);
         }
-    }
-
-    private static Panel BuildDropHint()
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 40,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = new Padding(12, 4, 12, 10)
-        };
-
-        var hint = new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = "Drop files here to add",
-            Font = s_bodyFont,
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleCenter,
-            BackColor = FrameShiftTheme.PageBackground
-        };
-
-        hint.Paint += (_, e) =>
-        {
-            var rect = new Rectangle(0, 0, hint.Width - 1, hint.Height - 1);
-            using var pen = new Pen(FrameShiftTheme.SurfaceBorder) { DashStyle = DashStyle.Dash };
-            e.Graphics.DrawRectangle(pen, rect);
-        };
-
-        panel.Controls.Add(hint);
-        return panel;
     }
 
     private static DataGridView CreateGrid()
@@ -424,7 +352,6 @@ public sealed class FileQueuePanel : UserControl
         grid.DefaultCellStyle.SelectionBackColor = FrameShiftTheme.AccentSoft;
         grid.DefaultCellStyle.SelectionForeColor = FrameShiftTheme.TextPrimary;
         grid.DefaultCellStyle.Padding = new Padding(0, 6, 0, 6);
-        grid.DefaultCellStyle.Font = s_bodyFont;
         grid.RowTemplate.Height = 36;
 
         grid.Columns.Add(new DataGridViewTextBoxColumn
@@ -457,6 +384,7 @@ public sealed class FileQueuePanel : UserControl
             }
         });
 
+        FrameShiftGridUi.Apply(grid, ("Kind", 64), ("Remove", 40));
         return grid;
     }
 

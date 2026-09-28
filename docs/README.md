@@ -20,6 +20,7 @@ Documentation centrale du projet FrameShift.
 - [Dark / Light Theme Implementation](DARK_LIGHT_THEME_IMPLEMENTATION.md)
 - [UI Audit and Standardization Plan — 2026-09-28](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md)
 - [UI Phase C — Manual Pilot Tests](UI_PHASE_C_MANUAL_TESTS.md)
+- [UI Phase D1 — Manual Tests](UI_PHASE_D1_MANUAL_TESTS.md)
 - [Add Subtitles to Video Notes](ADD_SUBTITLES_TO_VIDEO.md)
 - [Join Videos Notes](JOIN_VIDEOS.md)
 - [Create Subtitle File Notes](CREATE_SUBTITLES.md)

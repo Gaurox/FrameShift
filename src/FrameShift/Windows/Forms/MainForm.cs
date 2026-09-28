@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -14,13 +13,10 @@ namespace FrameShift.Windows.Forms;
 /// Drop-driven hub: a file queue on the left and the actions applicable to what is
 /// queued/selected on the right. Files arrive via drag-and-drop, "Add…", or a launch
 /// selection. Clicking an action launches a child FrameShift.exe on the whole scope
-/// (no 15-file Explorer cap). Shows a centered drop zone while the queue is empty.
+/// (no 15-file Explorer cap). Shows a drop zone while the queue is empty.
 /// </summary>
 public sealed class MainForm : Form
 {
-    private static readonly Font s_titleFont = new("Segoe UI Semibold", 15F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_emptyTitleFont = new("Segoe UI Semibold", 15F, FontStyle.Regular, GraphicsUnit.Point);
-    private static readonly Font s_bodyFont = new("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
 
     private readonly FileQueuePanel _queuePanel;
     private readonly ActionsPanel _actionsPanel;
@@ -32,12 +28,13 @@ public sealed class MainForm : Form
     {
     }
 
-    public MainForm(IEnumerable<string> startupPaths)
+    public MainForm(IEnumerable<string> startupPaths) : this(startupPaths, null) { }
+    internal MainForm(IEnumerable<string> startupPaths, Action<ActionInvokedEventArgs>? actionHandler)
     {
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(1000, 680), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift");
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(780, 540);
-        Size = new Size(920, 620);
         BackColor = FrameShiftTheme.PageBackground;
         AllowDrop = true;
         DragEnter += OnDragEnter;
@@ -48,9 +45,9 @@ public sealed class MainForm : Form
         _queuePanel.SelectionChanged += (_, _) => RefreshActions();
 
         _actionsPanel = new ActionsPanel { Dock = DockStyle.Fill };
-        _actionsPanel.ActionInvoked += OnActionInvoked;
+        _actionsPanel.ActionInvoked += actionHandler is null ? OnActionInvoked : (_, e) => actionHandler(e);
 
-        // Note: Panel1MinSize/Panel2MinSize are deliberately left at their small defaults.
+        // Note: Panel minima start at zero to allow layout before the control is realized.
         // Setting large min sizes before the control is realized throws during layout
         // ("SplitterDistance must be between Panel1MinSize and Width - Panel2MinSize").
         _split = new SplitContainer
@@ -58,7 +55,8 @@ public sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Orientation = Orientation.Vertical,
             BackColor = FrameShiftTheme.SurfaceBorder,
-            SplitterWidth = 1,
+            SplitterWidth = 10,
+            Panel1MinSize = 0, Panel2MinSize = 0,
             Visible = false
         };
         _split.Panel1.BackColor = FrameShiftTheme.Surface;
@@ -72,20 +70,26 @@ public sealed class MainForm : Form
         {
             Dock = DockStyle.Fill,
             BackColor = FrameShiftTheme.PageBackground,
-            Padding = new Padding(16, 8, 16, 8)
+            Margin = Padding.Empty
         };
         body.Controls.Add(_split);
         body.Controls.Add(_emptyState);
 
-        Controls.Add(BuildTitleBar());
-        Controls.Add(BuildFooter());
-        Controls.Add(body);
-        // Fill must be behind the docked title/footer; re-add body last keeps it filling.
-        body.BringToFront();
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift", $"v{Application.ProductVersion}",
+            IconPaths.AppIcon, IconPaths.AppIcon, "F");
+        var settings = FrameShiftUiFactory.CreateMeasuredActionButton("Settings", false);
+        settings.Click += (_, _) => { using var dialog = new SettingsForm(); dialog.ShowDialog(this); };
+        var close = FrameShiftUiFactory.CreateMeasuredActionButton("Close", true);
+        close.Click += (_, _) => Close();
+        CancelButton = close;
+        Controls.Add(FrameShiftDialogLayout.CreateShell(header, body,
+            FrameShiftDialogLayout.CreateActions(settings, close),
+            FrameShiftUiFactory.CreateStatusMessage("Outputs are saved next to each source file · nothing is uploaded")));
         _split.BringToFront();
-
+        _split.SizeChanged += (_, _) => SetSplitterDistance();
+        _split.DpiChangedAfterParent += (_, _) => SetSplitterDistance();
         Load += (_, _) => UpdateState();
-
+        ResumeLayout(true);
         var initial = ExpandPaths(startupPaths);
         if (initial.Count > 0)
         {
@@ -116,25 +120,22 @@ public sealed class MainForm : Form
         }
     }
 
+    private bool _arrangingSplit;
     private void SetSplitterDistance()
     {
-        if (_split.Width <= 0)
+        if (_arrangingSplit) return;
+        _arrangingSplit = true;
+        try
         {
-            return;
+            _split.Orientation = _split.Width < FrameShiftUiMetrics.ToPixels(this, 640)
+                ? Orientation.Horizontal : Orientation.Vertical;
+            var extent = _split.Orientation == Orientation.Vertical ? _split.Width : _split.Height;
+            if (extent < 20) return;
+            _split.SplitterWidth = Math.Min(extent / 4, FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.BlockGap));
+            _split.SplitterDistance = Math.Clamp((int)(extent * 0.4), 0, extent - _split.SplitterWidth);
         }
-
-        const int leftMin = 200;
-        const int rightMin = 280;
-        var target = (int)(_split.Width * 0.4);
-        var max = _split.Width - rightMin - _split.SplitterWidth;
-        if (max < leftMin)
-        {
-            return;
-        }
-
-        _split.SplitterDistance = Math.Clamp(target, leftMin, max);
+        finally { _arrangingSplit = false; }
     }
-
     private void OnActionInvoked(object? sender, ActionInvokedEventArgs e)
     {
         try
@@ -202,160 +203,13 @@ public sealed class MainForm : Form
         return result;
     }
 
-    private Panel BuildTitleBar()
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 48,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = new Padding(16, 0, 12, 0)
-        };
-
-        var title = new Label
-        {
-            AutoSize = true,
-            Location = new Point(16, 12),
-            Text = "FrameShift",
-            Font = s_titleFont,
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-
-        var version = new Label
-        {
-            AutoSize = true,
-            Location = new Point(title.Right + 120, 18),
-            Text = $"v{Application.ProductVersion}",
-            Font = s_bodyFont,
-            ForeColor = FrameShiftTheme.TextMuted
-        };
-
-        var settings = new Button
-        {
-            Text = "Settings",
-            Dock = DockStyle.Right,
-            Width = 96,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.AccentText,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-        settings.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        settings.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-        settings.Click += (_, _) =>
-        {
-            using var dialog = new SettingsForm();
-            dialog.ShowDialog(this);
-        };
-
-        var separator = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 1,
-            BackColor = FrameShiftTheme.SurfaceBorder
-        };
-
-        panel.Controls.Add(title);
-        panel.Controls.Add(version);
-        panel.Controls.Add(settings);
-        panel.Controls.Add(separator);
-        return panel;
-    }
-
-    private static Panel BuildFooter()
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 26,
-            BackColor = FrameShiftTheme.PageBackground,
-            Padding = new Padding(18, 0, 18, 0)
-        };
-
-        panel.Controls.Add(new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = "Outputs are saved next to each source file · nothing is uploaded",
-            Font = s_bodyFont,
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        return panel;
-    }
-
     private Panel BuildEmptyState()
     {
-        var host = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 3,
-            BackColor = FrameShiftTheme.PageBackground
-        };
-        host.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        host.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        host.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-
-        var box = new FlowLayoutPanel
-        {
-            Anchor = AnchorStyles.None,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = new Padding(48, 34, 48, 34)
-        };
-        box.Paint += (_, e) =>
-        {
-            var rect = new Rectangle(0, 0, box.Width - 1, box.Height - 1);
-            using var pen = new Pen(FrameShiftTheme.PrimaryBlue) { DashStyle = DashStyle.Dash };
-            e.Graphics.DrawRectangle(pen, rect);
-        };
-
-        var title = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.None,
-            Text = "Drop files here",
-            Font = s_emptyTitleFont,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Margin = new Padding(0, 0, 0, 6)
-        };
-
-        var subtitle = new Label
-        {
-            AutoSize = true,
-            Anchor = AnchorStyles.None,
-            Text = "or use Browse — videos, audio, images",
-            Font = s_bodyFont,
-            ForeColor = FrameShiftTheme.TextMuted,
-            Margin = new Padding(0, 0, 0, 14)
-        };
-
-        var browse = new Button
-        {
-            Text = "Browse…",
-            Anchor = AnchorStyles.None,
-            Width = FrameShiftUiMetrics.PrimaryButtonWidth,
-            Height = FrameShiftUiMetrics.FooterButtonHeight,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.SecondaryBlue,
-            ForeColor = Color.White,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI Semibold", 9F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-        browse.FlatAppearance.BorderColor = FrameShiftTheme.SecondaryBlue;
-        browse.FlatAppearance.MouseOverBackColor = FrameShiftTheme.PrimaryBlue;
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse…", true);
         browse.Click += (_, _) => _queuePanel.PromptForFiles();
-
-        box.Controls.Add(title);
-        box.Controls.Add(subtitle);
-        box.Controls.Add(browse);
-
-        host.Controls.Add(box, 0, 1);
-        return host;
+        return FrameShiftDialogLayout.CreateScrollBody(FrameShiftUiFactory.CreateSection("Drop files here",
+            FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateWrappingLabel("Add videos, audio or images to see the available actions."),
+                FrameShiftUiFactory.CreateChoiceRow(browse))));
     }
 }

@@ -195,6 +195,8 @@ tests/
 - [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)
 - [Dark / Light Theme Implementation](docs/DARK_LIGHT_THEME_IMPLEMENTATION.md)
 - [Code File Index](docs/CODE_FILE_INDEX.md)
+- [UI/DPI Development Plan](docs/UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md)
+- [UI Phase D1 — Manual Tests](docs/UI_PHASE_D1_MANUAL_TESTS.md)
 - [RIFE Interpolation Notes](docs/RIFE_INTERPOLATION_NOTES.md)
 - [Upscale Video Implementation](docs/UPSCALE_VIDEO_PLAN.md)
 - [Third-Party Model Licences](THIRD_PARTY_NOTICES.md)

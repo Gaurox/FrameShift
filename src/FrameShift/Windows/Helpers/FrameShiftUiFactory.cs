@@ -71,18 +71,18 @@ public static class FrameShiftUiFactory
     }
 
     /// <summary>Content must report its preferred height (e.g. an auto-sized table of fields).</summary>
-    public static TableLayoutPanel CreateSection(string title, Control content)
+    public static TableLayoutPanel CreateSection(string title, Control content, bool fill = false)
     {
         var section = new TableLayoutPanel
         {
-            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top,
+            AutoSize = !fill, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = fill ? DockStyle.Fill : DockStyle.Top,
             ColumnCount = 1, RowCount = 2, Margin = Padding.Empty, BackColor = FrameShiftTheme.Surface, Size = Size.Empty
         };
         section.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         section.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        section.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        section.RowStyles.Add(fill ? new RowStyle(SizeType.Percent, 100) : new RowStyle(SizeType.AutoSize));
         var label = new Label { Text = title, AutoSize = true, Dock = DockStyle.Fill, Margin = Padding.Empty, ForeColor = FrameShiftTheme.AccentText };
-        content.Dock = DockStyle.Top;
+        content.Dock = fill ? DockStyle.Fill : DockStyle.Top;
         section.Controls.Add(label, 0, 0);
         section.Controls.Add(content, 0, 1);
         void Metrics()
