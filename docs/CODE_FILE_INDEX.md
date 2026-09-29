@@ -307,6 +307,8 @@ Responsabilités UI partagées :
 
 Unit tests actifs :
 - `tests/FrameShift.Tests/UiD1Tests.cs` — fenêtres D1 cachées, redimensionnement, progression, annulation et périmètre des actions.
+- `tests/FrameShift.Tests/UiD2Tests.cs` — variantes D2 cachées, réglages, dimensions, champs liés et retours tardifs des aperçus après fermeture.
+- `tests/FrameShift.UiSamples/D2LauncherForm.cs` — recette manuelle des 12 fenêtres D2 via `TEST_PHASE_D2.cmd`, réglages interceptés et aperçus réels.
 - `tests/FrameShift.UiSamples/D1LauncherForm.cs` — recette manuelle D1 via `TEST_PHASE_D1.cmd` ; états simulés et actions Main interceptées.
 - `tests/FrameShift.Tests/ChangePitchSettingsTests.cs`
 - `tests/FrameShift.Tests/AddSubtitlesToVideoPlannerTests.cs`

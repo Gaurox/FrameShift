@@ -4,7 +4,7 @@ Date : 29 septembre 2026. Base : `5b62534`, modifications D1 du dossier de déve
 
 Périmètre : Progress, Main avec sa file et ses actions, Settings, Media Info. Les standards validés en B/C restent la référence. D2/D3 attendent la validation de ce lot, conformément à l'audit.
 
-**État de validation :** interfaces D1 validées par l'utilisateur à **100 %**, après les derniers ajustements de Progress. Les essais **150/200/300 %** restent à effectuer ; conserver les vérifications complémentaires ci-dessous.
+**État de validation :** interfaces D1 validées par l'utilisateur à **100/150/200/300 %**, sur le rendu final du commit `c26a723`. Les essais multi-écran, texte Windows agrandi et relecture des pilotes C après D1 sont également confirmés par « je valide aussi ». **Recette D1 validée.** La procédure ci-dessous reste disponible pour les régressions futures.
 
 ## Ouvrir les fenêtres
 

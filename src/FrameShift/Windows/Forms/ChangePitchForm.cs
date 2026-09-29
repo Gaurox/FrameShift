@@ -22,8 +22,7 @@ public sealed class ChangePitchForm : Form
         [(+1, "+1st"), (+3, "+3st"), (+5, "+5st"), (+7, "+7st"), (+12, "+12st")];
 
     private readonly string _inputPath;
-    private readonly string _ffmpegPath;
-    private readonly FfmpegRunner _ffmpegRunner;
+    private readonly Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<FfmpegRunResult>> _runPreview;
 
     private readonly TrackBar _trackBar;
     private readonly TextBox _textSemitones;
@@ -38,173 +37,70 @@ public sealed class ChangePitchForm : Form
     private string? _previewPath;
     private System.Windows.Forms.Timer? _previewTimer;
     private bool _previewing;
+    private bool _closing;
+    private CancellationTokenSource? _previewCts;
 
     public ChangePitchForm(string inputPath, string ffmpegPath, FfmpegRunner ffmpegRunner)
+        : this(inputPath, ffmpegPath, ffmpegRunner, null) { }
+
+    internal ChangePitchForm(string inputPath, string ffmpegPath, FfmpegRunner ffmpegRunner,
+        Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<FfmpegRunResult>>? runPreview)
     {
         _inputPath = inputPath;
-        _ffmpegPath = ffmpegPath;
-        _ffmpegRunner = ffmpegRunner;
-
+        _runPreview = runPreview ?? ((arguments, duration, token) => ffmpegRunner.RunAsync(
+            ffmpegPath, arguments, duration, null, inputPath, "Change Pitch", "Audio", token));
+        var title = "Change Pitch";
         var iconPath = IconPaths.ContextMenuIco("change-pitch-audio-icon.ico");
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Change Pitch");
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 454);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        var header = FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift - Change Pitch",
-            $"Source: {Path.GetFileName(inputPath)}",
-            iconPath,
-            IconPaths.AppIcon,
-            "♪");
-        Controls.Add(header);
-
-        // Pitch amount section: y=82, h=190
-        var pitchSection = FrameShiftUiFactory.CreateFixedSection(
-            new Point(12, 82), new Size(536, 190), "Pitch amount");
-        Controls.Add(pitchSection);
-
-        _trackBar = new TrackBar
-        {
-            Location = new Point(12, 32),
-            Size = new Size(512, 45),
-            Minimum = -12,
-            Maximum = 12,
-            Value = 0,
-            SmallChange = 1,
-            LargeChange = 3,
-            TickFrequency = 1,
-            TickStyle = TickStyle.BottomRight,
-            AutoSize = false
-        };
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 600), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {title}");
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", $"Source: {Path.GetFileName(inputPath)}",
+            iconPath, IconPaths.AppIcon, "♪");
+        _infoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _trackBar = new TrackBar { Name = "pitchSlider", Minimum = -12, Maximum = 12, Value = 0,
+            SmallChange = 1, LargeChange = 3, TickFrequency = 1, AutoSize = true };
         _trackBar.ValueChanged += (_, _) => OnTrackBarChanged();
-        pitchSection.Controls.Add(_trackBar);
-
-        var semiLabel = new Label
-        {
-            Location = new Point(18, 87),
-            Size = new Size(70, 26),
-            Text = "Semitones:",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        pitchSection.Controls.Add(semiLabel);
-
-        _textSemitones = FrameShiftUiFactory.CreateValueTextBox(textAlign: HorizontalAlignment.Center);
-        _textSemitones.Text = "0";
-        var semiHost = FrameShiftUiFactory.CreateFixedTextInputHost(_textSemitones, new Point(92, 83), new Size(68, 30));
-        pitchSection.Controls.Add(semiHost);
-        _textSemitones.KeyDown += (_, e) =>
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.SuppressKeyPress = true;
-                ApplySemitonesFromText();
-            }
-        };
+        _textSemitones = new TextBox { Name = "semitones", Text = "0" };
+        _textPercent = new TextBox { Name = "percent", Text = "100" };
         _textSemitones.Leave += (_, _) => ApplySemitonesFromText();
-
-        var eqLabel = new Label
-        {
-            Location = new Point(166, 87),
-            Size = new Size(18, 26),
-            Text = "=",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleCenter
-        };
-        pitchSection.Controls.Add(eqLabel);
-
-        _textPercent = FrameShiftUiFactory.CreateValueTextBox(textAlign: HorizontalAlignment.Center);
-        _textPercent.Text = "100.00";
-        var pctHost = FrameShiftUiFactory.CreateFixedTextInputHost(_textPercent, new Point(188, 83), new Size(72, 30));
-        pitchSection.Controls.Add(pctHost);
-        _textPercent.KeyDown += (_, e) =>
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.SuppressKeyPress = true;
-                ApplyPercentFromText();
-            }
-        };
         _textPercent.Leave += (_, _) => ApplyPercentFromText();
-
-        var pctSuffix = new Label
-        {
-            Location = new Point(264, 87),
-            Size = new Size(16, 26),
-            Text = "%",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        pitchSection.Controls.Add(pctSuffix);
-
-        var rangeHint = new Label
-        {
-            Location = new Point(288, 87),
-            Size = new Size(242, 26),
-            Text = "Manual input: −24 to +24 semitones",
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        pitchSection.Controls.Add(rangeHint);
-
-        AddPresetRow(pitchSection, NegativePresets, y: 121);
-        AddPresetRow(pitchSection, PositivePresets, y: 155);
-
-        // Options section: y=284, h=56
-        var optionsSection = FrameShiftUiFactory.CreateFixedSection(
-            new Point(12, 284), new Size(536, 56), "Options");
-        Controls.Add(optionsSection);
-
-        _checkKeepDuration = new CheckBox
-        {
-            Text = "Keep original duration (pitch only — uses rubberband, no tempo change)",
-            Location = new Point(18, 28),
-            Size = new Size(500, 22),
-            Checked = true,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            FlatStyle = FlatStyle.Standard
-        };
+        _textSemitones.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplySemitonesFromText(); } };
+        _textPercent.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplyPercentFromText(); } };
+        _checkKeepDuration = new CheckBox { Name = "keepDuration", Text = "Keep original duration", AutoSize = true, Checked = true };
         _checkKeepDuration.CheckedChanged += (_, _) => RefreshInfoLabel();
-        optionsSection.Controls.Add(_checkKeepDuration);
-
-        // Info card: y=352, h=44
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 352), new Size(536, 44));
-        Controls.Add(infoCard);
-
-        _infoLabel = new Label
+        var negative = FrameShiftUiFactory.CreateChoiceRow();
+        var positive = FrameShiftUiFactory.CreateChoiceRow();
+        foreach (var (semitones, label) in NegativePresets.Concat(PositivePresets))
         {
-            Location = new Point(12, 13),
-            Size = new Size(512, 18),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true
-        };
-        infoCard.Controls.Add(_infoLabel);
-
-        // Footer buttons: y=408
-        _buttonPreview = FrameShiftUiFactory.CreateFixedActionButton("Preview 5s", new Point(12, 408), new Size(108, 34), primary: false);
-        _buttonPreview.Click += async (_, _) => await PreviewAsync().ConfigureAwait(true);
-        Controls.Add(_buttonPreview);
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(292, 408), new Size(120, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var applyButton = FrameShiftUiFactory.CreateFixedActionButton("Apply", new Point(422, 408), new Size(126, 34), primary: true);
-        applyButton.DialogResult = DialogResult.OK;
-        Controls.Add(applyButton);
-
-        AcceptButton = applyButton;
-        CancelButton = cancelButton;
-
-        FormClosing += (_, _) => CleanupPreview();
-
+            var button = FrameShiftUiFactory.CreateMeasuredActionButton(label, false, 72);
+            button.Click += (_, _) => SetSemitones(semitones);
+            (semitones < 0 ? negative : positive).Controls.Add(button);
+        }
+        var content = FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateSection("Pitch", FrameShiftUiFactory.CreateVerticalStack(
+                _trackBar, FrameShiftUiFactory.CreateFieldRow("&Semitones", _textSemitones, null, 120),
+                FrameShiftUiFactory.CreateFieldRow("&Pitch", _textPercent, "%", 120),
+                FrameShiftUiFactory.CreateWrappingLabel("Slider: −12 to +12 semitones. Manual input: −24 to +24."))),
+            FrameShiftUiFactory.CreateSection("Presets", FrameShiftUiFactory.CreateVerticalStack(negative, positive)),
+            FrameShiftUiFactory.CreateSection("Options", _checkKeepDuration));
+        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
+        _buttonPreview.Name = "previewButton";
+        _buttonPreview.Click += async (_, _) => await PreviewAsync();
+        var previewSection = FrameShiftUiFactory.CreateSection("Preview", FrameShiftUiFactory.CreateVerticalStack(
+            _buttonPreview, _infoLabel));
+        content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        content.Controls.Add(previewSection, 0, content.RowCount++);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        var apply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        apply.DialogResult = DialogResult.OK;
+        AcceptButton = apply;
+        CancelButton = cancel;
+        var layout = FrameShiftDialogLayout.Create(header, content, FrameShiftDialogLayout.CreateActions(cancel, apply));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         RefreshInfoLabel();
+        ResumeLayout(true);
     }
 
     public ChangePitchSettings? Selection { get; private set; }
@@ -218,21 +114,7 @@ public sealed class ChangePitchForm : Form
         }
 
         base.OnFormClosing(e);
-    }
-
-    private void AddPresetRow(Panel parent, (int Semitones, string Label)[] presets, int y)
-    {
-        const int ButtonWidth = 92;
-        const int ButtonGap = 6;
-        var x = 18;
-        foreach (var (semitones, label) in presets)
-        {
-            var captured = semitones;
-            var btn = FrameShiftUiFactory.CreateFixedActionButton(label, new Point(x, y), new Size(ButtonWidth, 28), primary: false);
-            btn.Click += (_, _) => SetSemitones(captured);
-            parent.Controls.Add(btn);
-            x += ButtonWidth + ButtonGap;
-        }
+        if (!e.Cancel) StopPreviewForClose();
     }
 
     private void SetSemitones(double semitones)
@@ -312,14 +194,29 @@ public sealed class ChangePitchForm : Form
         _infoLabel.Text = $"Output: {sign}{_semitones:0.##} semitones ({pct:0.##}%) — {modeText}. Output saved next to source.";
     }
 
+    private void StopPreviewForClose()
+    {
+        _closing = true;
+        _previewCts?.Cancel();
+        CleanupPreview();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) StopPreviewForClose();
+        base.Dispose(disposing);
+    }
+
     private async Task PreviewAsync()
     {
-        if (_previewing)
+        if (_previewing || _closing)
         {
             return;
         }
 
         _previewing = true;
+        using var request = new CancellationTokenSource();
+        _previewCts = request;
         _buttonPreview.Enabled = false;
         try
         {
@@ -330,17 +227,12 @@ public sealed class ChangePitchForm : Form
                 _checkKeepDuration.Checked);
 
             var tempPath = Path.Combine(Path.GetTempPath(), $"fs_pitch_preview_{Guid.NewGuid():N}.wav");
+            _previewPath = tempPath;
             var args = BuildPreviewArguments(_inputPath, tempPath, settings);
 
-            var result = await _ffmpegRunner.RunAsync(
-                _ffmpegPath,
-                args,
-                TimeSpan.FromSeconds(30),
-                null,
-                _inputPath,
-                "Change Pitch",
-                "Audio",
-                CancellationToken.None).ConfigureAwait(true);
+            var result = await _runPreview(args, TimeSpan.FromSeconds(30), request.Token).ConfigureAwait(true);
+
+            request.Token.ThrowIfCancellationRequested();
 
             if (result.ExitCode != 0 || !File.Exists(tempPath))
             {
@@ -364,7 +256,9 @@ public sealed class ChangePitchForm : Form
         finally
         {
             _previewing = false;
-            _buttonPreview.Enabled = true;
+            if (_closing) CleanupPreview();
+            _previewCts = null;
+            if (!_closing && !IsDisposed) _buttonPreview.Enabled = true;
         }
     }
 
@@ -414,7 +308,7 @@ public sealed class ChangePitchForm : Form
         if (!string.IsNullOrWhiteSpace(_previewPath))
         {
             ConversionActionHelper.DeleteIfExists(_previewPath);
-            _previewPath = null;
+            if (!_previewing) _previewPath = null;
         }
     }
 }

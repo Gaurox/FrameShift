@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 29 septembre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 implémentée et vérifiée automatiquement, recette visuelle en attente. D2/D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 29 septembre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 implémentée, recette manuelle en attente ; D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -591,9 +591,9 @@ Un GO autorise la migration, **pas la publication de `PerMonitorV2` ni une annon
 
 **Incidents de validation consignés :** le premier passage parallèle a échoué sur deux assertions de layout B/C ; les sept cas concernés repassent isolément sans changement de code produit, puis les 37 cas B/C passent dans la suite séquentielle. L'interférence exacte du passage parallèle reste à isoler ; les résultats ne prouvent pas une validation DPI réelle. Le premier passage séquentiel a révélé une course préexistante du test RawVideo : lecture du marqueur PID pendant son écriture exclusive. Le helper de test attend désormais un PID lisible/valide ; le processus décodeur du test concerné est libéré même si la préparation échoue. Les deux processus factices laissés par l'échec ont été identifiés puis arrêtés. Aucun changement dans les runners ou le Core.
 
-**Validation manuelle actualisée :** interfaces D1 validées à 100 % par l'utilisateur après les derniers ajustements de Progress. Restent à vérifier : 150/200/300 %, focus/clavier, clair/sombre, transitions et défilements, déplacement multi-écran et texte Windows agrandi. Le lanceur `TEST_PHASE_D1.cmd` ouvre les vrais formulaires avec états simulés pour Progress et intercepte les actions de Main. Settings reste réel ; sa recette le précise. Les états simulés ne certifient pas de nouveaux exports ou téléchargements.
+**Validation manuelle actualisée :** interfaces D1 validées par l'utilisateur à 100/150/200/300 % sur le rendu final du commit `c26a723`. Les contrôles complémentaires (multi-écran, texte Windows agrandi et relecture des pilotes C après D1) sont également validés par le retour utilisateur « je valide aussi ». Le lanceur `TEST_PHASE_D1.cmd` ouvre les vrais formulaires avec états simulés pour Progress et intercepte les actions de Main. Settings reste réel ; sa recette le précise. Les états simulés ne certifient pas de nouveaux exports ou téléchargements.
 
-**Décision : interfaces D1 validées à 100 %, qualification DPI encore en attente. Critères de sortie de D non atteints.** Conformément au découpage validé, D2 puis D3 restent à réaliser après validation du lot précédent. Aucun lancement de E, aucune installation, capture ou prise de contrôle du bureau.
+**Décision : D1 validée sur son périmètre, recette manuelle et contrôles complémentaires confirmés. Lot prêt pour la suite D2 ; critères de sortie de D complète non atteints tant que D2/D3 restent à réaliser.** Conformément au découpage validé, D2 puis D3 restent à réaliser après validation du lot précédent. Aucun lancement de E, aucune installation, capture ou prise de contrôle du bureau.
 
 #### Retour D1 et refonte de Progress — 29 septembre 2026
 
@@ -637,6 +637,48 @@ Build application/lanceur réussi sans avertissement ni erreur ; **8 tests D1 r�
 #### Validation visuelle à 100 % et sauvegarde Git
 
 L'utilisateur confirme : « ok les ui sont validées en 100% commite. demain je testerai avec les mise à l'échelle ». La validation couvre le rendu final des interfaces D1, y compris Files sobre et la zone erreur réduite. Les essais 150/200/300 % sont encore à réaliser par l'utilisateur ; aucune validation DPI supplémentaire ni clôture de D1 n'est déduite de ce retour. D2/D3 et E restent en attente. Commit du lot D1 demandé, sans publication.
+
+#### Confirmation des échelles après le commit D1
+
+Référence : `c26a723`. L'utilisateur confirme : « fenetres validées dans toutes les echelles ». Cette confirmation clôt les essais visuels des fenêtres D1 aux quatre paliers prévus (100/150/200/300 %), après validation du design final à 100 %. Aucun défaut restant signalé sur ces paliers.
+
+Ce retour ne confirme pas séparément le déplacement entre écrans à DPI différents, la taille du texte Windows indépendante de l'échelle, ni le nouveau passage des pilotes C après les extensions communes de D1. Ces points restent identifiés dans la recette ; aucune configuration supplémentaire n'est déclarée testée. D2/D3 et E ne sont pas lancées dans cette mise à jour documentaire. Aucun code modifié et aucun build/test rejoué ; les résultats techniques précédents restent applicables.
+
+#### Clôture de la recette D1
+
+Après la confirmation des quatre échelles, l'utilisateur répond « je valide aussi » aux vérifications restantes explicitement citées : déplacement entre écrans, texte Windows agrandi et vérification des cinq pilotes C après D1. Ces contrôles sont donc validés sur le rendu du commit `c26a723`. Aucun défaut restant signalé sur le périmètre D1 testé.
+
+Le lot D1 dispose de ses résultats de builds/tests consignés plus haut et de la validation manuelle complète. D1 est validée ; D2 est le prochain lot. D2/D3 et E à G ne sont pas commencées par cette clôture documentaire. Aucun changement de code, build/test supplémentaire, installation ou publication. Les limites précédentes (distribution installée, configuration Release, exports/IA et configurations hors recette) restent inchangées.
+
+#### Exécution D2 — après validation D1
+
+**Autorisation :** « ok go D2 », puis « termine D2 ». Base de code `c26a723` ; la clôture documentaire de D1 reste incluse dans les modifications locales. Analyse suivie d'une migration des **12 fenêtres D2** et de leurs variantes, sans migration D3/E ni publication.
+
+| Groupe | Réalisation |
+|---|---|
+| Conversion | Bandeau/footer communs ; formats/profils et descriptions mesurés ; variante sans profil conservée. |
+| Compression multiple, Audio/Video | Radios exclusifs pour le mode batch ; trois qualités sur une ligne lorsque la largeur le permet, comme Compress Image ; cible compacte et ComboBox KB/MB native. Profils, conversion en octets et restrictions audio conservés. |
+| Resize Image/Video | Migration de la base existante ; champs pixels/pourcentages compacts, ratio et préréglages conservés ; boutons espacés avec retour à la ligne. Aucune nouvelle base de formulaire. |
+| Pitch/Speed | Curseur natif, champs compacts, préréglages mesurés, aperçu regroupé avec son résumé ; valeurs et options audio conservées. Aperçu annulé à la fermeture/Dispose, retour tardif bloqué et nettoyage du temporaire repris après la fin du writer. |
+| Rotate/Flip Image/Video | Aperçu extensible ; transformations et timeline sous l'image ; footer commun. Chargement Image asynchrone, y compris WebP ; chargement Video annulable existant conservé. Erreur lisible dans la fenêtre ; Apply dépend d'un aperçu chargé et d'une transformation. |
+| Convert to Icon | Options regroupées dans le rail adaptable, neuf vignettes dans une grille avec retour à la ligne ; dimensions visuelles sensibles au DPI, tailles ICO métier inchangées. Select all/Clear all ne reconstruisent les aperçus qu'une fois. |
+| Add Subtitles, picker uniquement | Radios classiques, chemin extensible, formats acceptés dynamiques et Browse mesuré. L'éditeur Burn Subtitles reste en E. |
+
+**Socle partagé :** les tests de texte agrandi ont reproduit une hauteur de message restée à 23 pixels dans les rangées AutoSize. `FrameShiftStatusMessage` réserve désormais explicitement sa hauteur mesurée après changement de texte, police, largeur ou DPI, avec le plafond existant de 96 unités logiques. Les consommateurs B/C/D1 ont été rejoués. Aucun autre nouveau composant générique ni modification du Core/runners ; Release conserve sa configuration DPI antérieure.
+
+**Vérifications :**
+
+- Builds application et UiSamples : succès, **0 avertissement, 0 erreur**.
+- **26 nouveaux cas D2** : 15 variantes/layouts natifs cachés, sélections Conversion/Subtitles, compression/unités, ratio pixels/pourcentages, Pitch/Speed, transformations Image, tailles ICO et trois scénarios de retour tardif d'aperçu après fermeture. Les trois scénarios injectent le résultat du runner sans lecture audio ni lancement de lecteur externe.
+- Suite séquentielle sans affichage : **522 réussis, 5 ignorés média/IA, 0 échec**, 527 cas sélectionnés. Inclut les cas B/C/D1 et D2. Les **12 cas affichant des fenêtres restent exclus**, distincts des cinq skips. Trace : `scratch/phase-d2/d2-final.trx`.
+- Contrôle caché du lanceur : succès ; **PerMonitorV2, 96 DPI réellement observés, Visible=false**. Trace : `scratch/phase-d2/hidden-pmv2.json`. Aucun palier Windows changé ou simulé.
+- `git diff --check` : aucune erreur d'espacement. Aucun installateur, capture ou contrôle du bureau.
+
+**Incidents résolus :** le premier passage D2 a signalé dix assertions de hauteur du message commun ; corrigées comme indiqué ci-dessus. Un test de rotation comparait deux objets métier par identité alors que leurs valeurs étaient identiques ; assertion corrigée pour comparer angle et miroirs. La suite finale ne contient plus d'échec.
+
+**Recette livrée :** `TEST_PHASE_D2.cmd`, [procédure D2](UI_PHASE_D2_MANUAL_TESTS.md). Le lanceur ouvre les formulaires réels, intercepte leur validation et affiche les réglages ; il n'exporte pas les médias. Les aperçus lisent les sources, Preview 5s écrit un temporaire et Speed Video peut ouvrir le lecteur habituel après un clic utilisateur. Les modifications de préférences Windows restent manuelles.
+
+**Décision : implémentation D2 terminée et vérifiée automatiquement ; validation utilisateur à 100 %, puis 150/200/300 % et contrôles complémentaires encore attendus.** Les tests de police agrandie ne sont pas une certification DPI réelle. D3 ne commence pas avant validation du lot. Le support DPI global, les exports réels de chaque variante, la distribution installée et les configurations hors recette ne sont pas déclarés validés par ce passage.
 
 ### E — Éditeurs restants — P1
 
@@ -759,7 +801,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 implémentée en attente de recette, D2/D3 et E à G non commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 implémentée et vérifiée automatiquement, recette manuelle en attente ; D3 et E à G non commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

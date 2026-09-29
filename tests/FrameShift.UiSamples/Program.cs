@@ -43,6 +43,14 @@ internal static class Program
                     if (launcher.Visible) throw new InvalidOperationException("D1 launcher must stay hidden during checks.");
                     results.Add(new { d1Launcher = true, dpi = launcher.DeviceDpi, highDpiMode = Application.HighDpiMode.ToString(), visible = launcher.Visible });
                 }
+                using (var launcher = new D2LauncherForm())
+                {
+                    CreateHiddenHandles(launcher);
+                    launcher.PerformAutoScale();
+                    launcher.PerformLayout();
+                    if (launcher.Visible) throw new InvalidOperationException("D2 launcher must stay hidden during checks.");
+                    results.Add(new { d2Launcher = true, dpi = launcher.DeviceDpi, highDpiMode = Application.HighDpiMode.ToString(), visible = launcher.Visible });
+                }
                 File.WriteAllText(args[1], System.Text.Json.JsonSerializer.Serialize(results, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 return 0;
             }
@@ -53,7 +61,8 @@ internal static class Program
             }
         }
         InitializeSampleApplication();
-        Application.Run(args.Contains("--d1") ? new D1LauncherForm()
+        Application.Run(args.Contains("--d2") ? new D2LauncherForm()
+            : args.Contains("--d1") ? new D1LauncherForm()
             : args.Contains("--pilots") ? new PilotLauncherForm() : new SampleForm(editor: false));
         return 0;
     }

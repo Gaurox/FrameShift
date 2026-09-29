@@ -21,114 +21,44 @@ internal sealed class AddSubtitlesToVideoPickerForm : Form
         string? initialSubtitleFilePath,
         string? initialDirectory)
     {
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(680, 500), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, "FrameShift - Add Subtitles to Video");
         _initialDirectory = initialDirectory;
-
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Add Subtitles to Video", IconPaths.AddSubtitlesVideoAiIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
-        ClientSize = new Size(560, 420);
-
-        Controls.Add(FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift - Add Subtitles to Video",
-            $"Source: {sourceLabel}",
-            IconPaths.AddSubtitlesVideoAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "S"));
-
-        var modeSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 82), new Size(536, 118), "Mode");
-        Controls.Add(modeSection);
-
-        _selectableTrackRadio = new RadioButton
-        {
-            Location = new Point(18, 32),
-            Size = new Size(500, 22),
-            Text = "Selectable Subtitle Track",
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Checked = initialMode == AddSubtitlesToVideoMode.SelectableTrack
-        };
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Add Subtitles to Video", $"Source: {sourceLabel}",
+            IconPaths.AddSubtitlesVideoAiIcon, IconPaths.FrameShiftAiIcon, "S");
+        _selectableTrackRadio = new RadioButton { Name = "selectableTrack", Text = "Selectable Subtitle Track", AutoSize = true,
+            Checked = initialMode == AddSubtitlesToVideoMode.SelectableTrack };
+        _burnIntoVideoRadio = new RadioButton { Name = "burnIntoVideo", Text = "Burn Subtitles Into Video", AutoSize = true,
+            Checked = initialMode == AddSubtitlesToVideoMode.BurnIntoVideo };
+        var modes = FrameShiftUiFactory.CreateSection("Mode", FrameShiftUiFactory.CreateVerticalStack(
+            _selectableTrackRadio, FrameShiftUiFactory.CreateWrappingLabel("Adds a subtitle track without re-encoding video or audio in the normal case."),
+            _burnIntoVideoRadio, FrameShiftUiFactory.CreateWrappingLabel("Renders subtitles into the image and re-encodes the video.")));
+        _subtitlePathTextBox = new TextBox { Name = "subtitlePath", ReadOnly = true, Text = initialSubtitleFilePath ?? "" };
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse…", false);
+        browse.Click += (_, _) => BrowseSubtitleFile();
+        _subtitleFormatsLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        var content = FrameShiftUiFactory.CreateVerticalStack(modes,
+            FrameShiftUiFactory.CreateSection("Subtitle file", FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateFieldRow("&File", _subtitlePathTextBox), browse, _subtitleFormatsLabel)));
         _selectableTrackRadio.CheckedChanged += (_, _) => RefreshSubtitleFormatHint();
-        modeSection.Controls.Add(_selectableTrackRadio);
-
-        modeSection.Controls.Add(new Label
-        {
-            Location = new Point(40, 54),
-            Size = new Size(478, 16),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "Adds a subtitle track without re-encoding video or audio in the normal case."
-        });
-
-        _burnIntoVideoRadio = new RadioButton
-        {
-            Location = new Point(18, 76),
-            Size = new Size(500, 22),
-            Text = "Burn Subtitles Into Video",
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Checked = initialMode == AddSubtitlesToVideoMode.BurnIntoVideo
-        };
         _burnIntoVideoRadio.CheckedChanged += (_, _) => RefreshSubtitleFormatHint();
-        modeSection.Controls.Add(_burnIntoVideoRadio);
-
-        modeSection.Controls.Add(new Label
-        {
-            Location = new Point(40, 98),
-            Size = new Size(478, 16),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "Renders subtitles into the image and re-encodes the video."
-        });
-
-        var subtitleSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 212), new Size(536, 106), "Subtitle File");
-        Controls.Add(subtitleSection);
-
-        _subtitlePathTextBox = FrameShiftUiFactory.CreateValueTextBox(readOnly: true);
-        _subtitlePathTextBox.Text = initialSubtitleFilePath ?? string.Empty;
-        subtitleSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_subtitlePathTextBox, new Point(18, 34), new Size(384, 32)));
-
-        var browseButton = FrameShiftUiFactory.CreateFixedActionButton("Browse...", new Point(412, 34), new Size(106, 32), primary: false);
-        browseButton.Click += (_, _) => BrowseSubtitleFile();
-        subtitleSection.Controls.Add(browseButton);
-
-        _subtitleFormatsLabel = new Label
-        {
-            Location = new Point(18, 74),
-            Size = new Size(500, 18),
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        subtitleSection.Controls.Add(_subtitleFormatsLabel);
-
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 330), new Size(536, 42));
-        Controls.Add(infoCard);
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(12, 10),
-            Size = new Size(512, 20),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "FrameShift always writes a unique output next to the source video and cleans partial files on failure."
-        });
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, 380), new Size(120, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var applyButton = FrameShiftUiFactory.CreateFixedActionButton("Continue", new Point(408, 380), new Size(140, 34), primary: true);
-        applyButton.DialogResult = DialogResult.OK;
-        applyButton.Click += (_, e) =>
-        {
-            if (!ValidateSelection())
-            {
-                DialogResult = DialogResult.None;
-            }
-        };
-        Controls.Add(applyButton);
-
-        AcceptButton = applyButton;
-        CancelButton = cancelButton;
-
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        cancel.Name = "cancelButton";
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton("Continue", true);
+        primary.Name = "primaryButton";
+        primary.DialogResult = DialogResult.OK;
+        AcceptButton = primary;
+        CancelButton = cancel;
+        var layout = FrameShiftDialogLayout.Create(header, content,
+            FrameShiftDialogLayout.CreateActions(cancel, primary),
+            FrameShiftUiFactory.CreateStatusMessage("Creates a new file next to the source video. The original is preserved."));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
+        primary.Click += (_, _) => { if (!ValidateSelection()) DialogResult = DialogResult.None; };
         RefreshSubtitleFormatHint();
+        ResumeLayout(true);
     }
 
     public AddSubtitlesToVideoSettings SelectedSettings =>

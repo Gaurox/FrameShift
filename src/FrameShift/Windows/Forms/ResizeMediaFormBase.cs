@@ -26,132 +26,61 @@ public abstract class ResizeMediaFormBase : Form
 
     protected ResizeMediaFormBase(string functionName, string sourcePath, int originalWidth, int originalHeight, string fallbackGlyph)
     {
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 500), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {functionName}");
         _originalWidth = originalWidth;
         _originalHeight = originalHeight;
         _ratio = (double)originalWidth / originalHeight;
         _mediaKindLabel = functionName;
-
-        var isImageResize = functionName.Equals("Resize Image", StringComparison.OrdinalIgnoreCase);
-        var windowTitle = isImageResize
-            ? "FrameShift - Resize image"
-            : $"FrameShift - {functionName}";
-        FrameShiftWindowChrome.Apply(this, windowTitle);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 472);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        Controls.Add(FrameShiftUiFactory.CreateFixedHeader(
-            $"FrameShift - {functionName}",
-            $"Source: {Path.GetFileName(sourcePath)}",
-            IconPaths.ResizeImageVideoIcon,
-            IconPaths.AppIcon,
-            fallbackGlyph));
-
-        var originalSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 82), new Size(536, 62), "Original size");
-        Controls.Add(originalSection);
-        originalSection.Controls.Add(new Label
-        {
-            AutoSize = false,
-            Location = new Point(18, 30),
-            Size = new Size(260, 20),
-            Text = $"{originalWidth} x {originalHeight} px",
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Regular, GraphicsUnit.Point)
-        });
-
-        var sizeSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 156), new Size(536, 112), "New size");
-        Controls.Add(sizeSection);
-
-        sizeSection.Controls.Add(CreateFieldLabel("Width", 18, 33));
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {functionName}",
+            $"{Path.GetFileName(sourcePath)}    Original: {originalWidth} × {originalHeight} px",
+            IconPaths.ResizeImageVideoIcon, IconPaths.AppIcon, fallbackGlyph);
         _textWidthPx = CreateValueTextBox("widthPx");
-        sizeSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_textWidthPx, new Point(74, 28), new Size(92, 30)));
-        sizeSection.Controls.Add(CreateUnitLabel("px", 174, 33));
-
-        _textWidthPct = CreateValueTextBox("widthPct");
-        sizeSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_textWidthPct, new Point(240, 28), new Size(72, 30)));
-        sizeSection.Controls.Add(CreateUnitLabel("%", 320, 33));
-
-        sizeSection.Controls.Add(CreateFieldLabel("Height", 18, 69));
         _textHeightPx = CreateValueTextBox("heightPx");
-        sizeSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_textHeightPx, new Point(74, 64), new Size(92, 30)));
-        sizeSection.Controls.Add(CreateUnitLabel("px", 174, 69));
-
+        _textWidthPct = CreateValueTextBox("widthPct");
         _textHeightPct = CreateValueTextBox("heightPct");
-        sizeSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_textHeightPct, new Point(240, 64), new Size(72, 30)));
-        sizeSection.Controls.Add(CreateUnitLabel("%", 320, 69));
-
-        _checkLockRatio = new CheckBox
+        _checkLockRatio = new CheckBox { Name = "keepRatio", Text = "Keep ratio", Checked = true, AutoSize = true };
+        var dimensions = FrameShiftUiFactory.CreateSection("New size", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("&Width", _textWidthPx, "px", 120),
+            FrameShiftUiFactory.CreateFieldRow("Width scale", _textWidthPct, "%", 120),
+            FrameShiftUiFactory.CreateFieldRow("&Height", _textHeightPx, "px", 120),
+            FrameShiftUiFactory.CreateFieldRow("Height scale", _textHeightPct, "%", 120), _checkLockRatio));
+        var presets = FrameShiftUiFactory.CreateChoiceRow();
+        foreach (var scale in new[] { 0.5, 0.75, 1.5, 2.0, 4.0 })
         {
-            Text = "Keep ratio",
-            Checked = true,
-            Location = new Point(376, 46),
-            Size = new Size(120, 24),
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-        sizeSection.Controls.Add(_checkLockRatio);
-
-        var presetsSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 280), new Size(536, 76), "Quick scale");
-        Controls.Add(presetsSection);
-
-        var presetScales = new[] { 0.5, 0.75, 1.5, 2.0, 4.0 };
-        var presetX = 18;
-        for (var i = 0; i < presetScales.Length; i++)
-        {
-            var scale = presetScales[i];
-            var button = FrameShiftUiFactory.CreateFixedActionButton(
-                FormatScaleButtonText(scale),
-                new Point(presetX + (i * 84), 30),
-                new Size(72, 30),
-                primary: false);
+            var button = FrameShiftUiFactory.CreateMeasuredActionButton(FormatScaleButtonText(scale), false, 72);
             button.Click += (_, _) => ApplyScalePreset(scale);
-            presetsSection.Controls.Add(button);
+            presets.Controls.Add(button);
         }
-
-        var resetButton = FrameShiftUiFactory.CreateFixedActionButton("Reset", new Point(438, 30), new Size(80, 30), primary: false);
-        resetButton.Click += (_, _) =>
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false, 80);
+        reset.Click += (_, _) =>
         {
             _checkLockRatio.Checked = true;
             SetAllFields(_originalWidth, _originalHeight);
             _textWidthPx.Focus();
             _textWidthPx.SelectAll();
         };
-        presetsSection.Controls.Add(resetButton);
-
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 368), new Size(536, 44));
-        infoCard.Controls.Add(new Label
-        {
-            AutoSize = false,
-            Location = new Point(16, 12),
-            Size = new Size(504, 18),
-            Text = $"The resized {_mediaKindLabel.ToLowerInvariant()} is created next to the original file with unique naming.",
-            ForeColor = FrameShiftTheme.TextSecondary
-        });
-        Controls.Add(infoCard);
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, 426), new Size(120, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var okButton = FrameShiftUiFactory.CreateFixedActionButton("OK", new Point(408, 426), new Size(140, 34), primary: true);
-        okButton.DialogResult = DialogResult.OK;
-        Controls.Add(okButton);
-
-        AcceptButton = okButton;
-        CancelButton = cancelButton;
-
+        presets.Controls.Add(reset);
+        var content = FrameShiftUiFactory.CreateVerticalStack(dimensions,
+            FrameShiftUiFactory.CreateSection("Quick scale", presets));
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        cancel.Name = "cancelButton";
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        primary.Name = "primaryButton";
+        primary.DialogResult = DialogResult.OK;
+        AcceptButton = primary;
+        CancelButton = cancel;
+        var layout = FrameShiftDialogLayout.Create(header, content,
+            FrameShiftDialogLayout.CreateActions(cancel, primary),
+            FrameShiftUiFactory.CreateStatusMessage("Creates a resized file next to the original with unique naming."));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         RegisterFieldHandlers();
         SetAllFields(_originalWidth, _originalHeight);
-
-        Shown += (_, _) =>
-        {
-            _textWidthPx.Focus();
-            _textWidthPx.SelectAll();
-        };
+        Shown += (_, _) => { _textWidthPx.Focus(); _textWidthPx.SelectAll(); };
+        ResumeLayout(true);
     }
 
     public ResizeSettings? Selection { get; private set; }
@@ -445,36 +374,15 @@ public abstract class ResizeMediaFormBase : Form
         }
     }
 
-    private static Label CreateFieldLabel(string text, int x, int y)
-    {
-        return new Label
-        {
-            Text = text,
-            Location = new Point(x, y),
-            Size = new Size(50, 23),
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-    }
-
-    private static Label CreateUnitLabel(string text, int x, int y)
-    {
-        return new Label
-        {
-            Text = text,
-            Location = new Point(x, y),
-            Size = new Size(24, 23),
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-    }
-
     private static TextBox CreateValueTextBox(string tag)
     {
         return new TextBox
         {
-            BorderStyle = BorderStyle.None,
+            BorderStyle = BorderStyle.FixedSingle,
             BackColor = FrameShiftTheme.Surface,
             ForeColor = FrameShiftTheme.TextPrimary,
             TextAlign = HorizontalAlignment.Right,
+            Name = tag,
             Tag = tag
         };
     }

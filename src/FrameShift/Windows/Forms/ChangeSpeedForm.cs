@@ -32,8 +32,7 @@ public sealed class ChangeSpeedForm : Form
     private const double UiMaxFactor = SliderMax / 100.0;
 
     private readonly string _inputPath;
-    private readonly string _ffmpegPath;
-    private readonly FfmpegRunner _ffmpegRunner;
+    private readonly Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<FfmpegRunResult>> _runPreview;
     private readonly ChangeSpeedMediaKind _mediaKind;
     private readonly double _sourceDurationSeconds;
     private readonly bool _hasAudio;
@@ -54,223 +53,79 @@ public sealed class ChangeSpeedForm : Form
     private System.Windows.Forms.Timer? _previewTimer;
     private string? _previewVideoPath;
     private bool _previewing;
+    private bool _closing;
+    private CancellationTokenSource? _previewCts;
 
-    public ChangeSpeedForm(
-        string inputPath,
-        string ffmpegPath,
-        FfmpegRunner ffmpegRunner,
-        ChangeSpeedMediaKind mediaKind,
-        double sourceDurationSeconds,
-        bool hasAudio,
-        int sampleRate)
+    public ChangeSpeedForm(string inputPath, string ffmpegPath, FfmpegRunner ffmpegRunner,
+        ChangeSpeedMediaKind mediaKind, double sourceDurationSeconds, bool hasAudio, int sampleRate)
+        : this(inputPath, ffmpegPath, ffmpegRunner, mediaKind, sourceDurationSeconds, hasAudio, sampleRate, null) { }
+
+    internal ChangeSpeedForm(string inputPath, string ffmpegPath, FfmpegRunner ffmpegRunner,
+        ChangeSpeedMediaKind mediaKind, double sourceDurationSeconds, bool hasAudio, int sampleRate,
+        Func<IReadOnlyList<string>, TimeSpan, CancellationToken, Task<FfmpegRunResult>>? runPreview)
     {
         _inputPath = inputPath;
-        _ffmpegPath = ffmpegPath;
-        _ffmpegRunner = ffmpegRunner;
+        _runPreview = runPreview ?? ((arguments, duration, token) => ffmpegRunner.RunAsync(
+            ffmpegPath, arguments, duration, null, inputPath, mediaKind == ChangeSpeedMediaKind.Audio ? "Change Audio Speed" : "Change Video Speed",
+                mediaKind == ChangeSpeedMediaKind.Audio ? "Audio" : "Video", token));
         _mediaKind = mediaKind;
         _sourceDurationSeconds = sourceDurationSeconds;
         _hasAudio = hasAudio;
         _sampleRate = sampleRate;
-
         var isAudio = mediaKind == ChangeSpeedMediaKind.Audio;
-        var functionTitle = isAudio ? "Change Audio Speed" : "Change Video Speed";
-        var iconFileName = isAudio ? "change-audio-speed-audio-icon.ico" : "change-video-speed-video-icon.ico";
-        var iconPath = IconPaths.ContextMenuIco(iconFileName);
-
-        FrameShiftWindowChrome.Apply(this, $"FrameShift - {functionTitle}");
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 490);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        // ── Header ─────────────────────────────────────────────────────────────
-        var header = FrameShiftUiFactory.CreateFixedHeader(
-            $"FrameShift - {functionTitle}",
-            $"Source: {Path.GetFileName(inputPath)}",
-            iconPath,
-            IconPaths.AppIcon,
-            isAudio ? "♪" : "▶");
-        Controls.Add(header);
-
-        // ── Speed section (y=82, h=225) ─────────────────────────────────────────
-        var speedSection = FrameShiftUiFactory.CreateFixedSection(
-            new Point(12, 82), new Size(536, 225), "Speed");
-        Controls.Add(speedSection);
-
-        // Original duration info
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(18, 36),
-            Size = new Size(500, 20),
-            Text = $"Original duration: {FormatDuration(sourceDurationSeconds)}",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        // Slider left/right endpoint labels
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(18, 74),
-            Size = new Size(36, 20),
-            Text = "25%",
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        _trackBar = new TrackBar
-        {
-            Location = new Point(56, 62),
-            Size = new Size(406, 45),
-            Minimum = SliderMin,
-            Maximum = SliderMax,
-            Value = 100,
-            SmallChange = 1,
-            LargeChange = 25,
-            TickFrequency = 25,
-            TickStyle = TickStyle.BottomRight,
-            AutoSize = false
-        };
+        var title = isAudio ? "Change Audio Speed" : "Change Video Speed";
+        var iconPath = IconPaths.ContextMenuIco(isAudio ? "change-audio-speed-audio-icon.ico" : "change-video-speed-video-icon.ico");
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 600), new Size(380, 300));
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {title}");
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", $"Source: {Path.GetFileName(inputPath)}",
+            iconPath, IconPaths.AppIcon, "♪");
+        _infoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _trackBar = new TrackBar { Name = "speedSlider", Minimum = SliderMin, Maximum = SliderMax, Value = 100,
+            SmallChange = 1, LargeChange = 25, TickFrequency = 25, AutoSize = true };
+        _textPercent = new TextBox { Name = "percent", Text = "100" };
+        _textDuration = new TextBox { Name = "duration", Text = FormatDuration(sourceDurationSeconds) };
+        _checkKeepPitch = new CheckBox { Name = "keepPitch", Text = "Keep original audio pitch", AutoSize = true,
+            Checked = isAudio || hasAudio, Enabled = isAudio || hasAudio };
         _trackBar.ValueChanged += (_, _) => OnTrackBarChanged();
-        speedSection.Controls.Add(_trackBar);
-
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(464, 74),
-            Size = new Size(54, 20),
-            Text = "400%",
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleRight
-        });
-
-        // Speed % row (y=115)
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(18, 115),
-            Size = new Size(52, 28),
-            Text = "Speed:",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        _textPercent = FrameShiftUiFactory.CreateValueTextBox(textAlign: HorizontalAlignment.Right);
-        _textPercent.Text = "100";
-        var pctHost = FrameShiftUiFactory.CreateFixedTextInputHost(_textPercent, new Point(74, 115), new Size(76, 28));
-        speedSection.Controls.Add(pctHost);
-
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(154, 118),
-            Size = new Size(18, 22),
-            Text = "%",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(180, 118),
-            Size = new Size(240, 22),
-            Text = "Range: 25% to 400%",
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        // Target duration row (y=151)
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(18, 151),
-            Size = new Size(52, 28),
-            Text = "Target:",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        _textDuration = FrameShiftUiFactory.CreateValueTextBox(textAlign: HorizontalAlignment.Left);
-        _textDuration.Text = FormatDuration(sourceDurationSeconds);
-        var durHost = FrameShiftUiFactory.CreateFixedTextInputHost(_textDuration, new Point(74, 151), new Size(142, 28));
-        speedSection.Controls.Add(durHost);
-
-        speedSection.Controls.Add(new Label
-        {
-            Location = new Point(222, 154),
-            Size = new Size(170, 22),
-            Text = "sec or hh:mm:ss",
-            ForeColor = FrameShiftTheme.TextMuted,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-
-        // Preset buttons (y=187)
-        var presets = isAudio ? AudioPresets : VideoPresets;
-        AddPresetRow(speedSection, presets, y: 187);
-
-        // Attach text events after initial values are set
         _textPercent.TextChanged += (_, _) => OnPercentTextChanged();
         _textPercent.Leave += (_, _) => ReformatPercentOnLeave();
         _textDuration.TextChanged += (_, _) => OnDurationTextChanged();
         _textDuration.Leave += (_, _) => ReformatDurationOnLeave();
-
-        // ── Options section (y=319, h=56) ───────────────────────────────────────
-        var optionsSection = FrameShiftUiFactory.CreateFixedSection(
-            new Point(12, 319), new Size(536, 56), "Options");
-        Controls.Add(optionsSection);
-
-        var keepPitchText = isAudio
-            ? "Keep original pitch (uses atempo — tempo changes, pitch preserved)"
-            : "Keep original audio pitch (uses atempo — tempo changes, pitch preserved)";
-
-        _checkKeepPitch = new CheckBox
-        {
-            Text = keepPitchText,
-            Location = new Point(18, 28),
-            Size = new Size(500, 22),
-            Checked = true,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            FlatStyle = FlatStyle.Standard
-        };
-        if (!isAudio && !hasAudio)
-        {
-            _checkKeepPitch.Checked = false;
-            _checkKeepPitch.Enabled = false;
-        }
         _checkKeepPitch.CheckedChanged += (_, _) => RefreshInfoLabel();
-        optionsSection.Controls.Add(_checkKeepPitch);
-
-        // ── Info card (y=387, h=44) ─────────────────────────────────────────────
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 387), new Size(536, 44));
-        Controls.Add(infoCard);
-
-        _infoLabel = new Label
+        var presets = FrameShiftUiFactory.CreateChoiceRow();
+        foreach (var (percent, label) in isAudio ? AudioPresets : VideoPresets)
         {
-            Location = new Point(12, 13),
-            Size = new Size(512, 18),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true
-        };
-        infoCard.Controls.Add(_infoLabel);
-
-        // ── Footer buttons (y=443) ──────────────────────────────────────────────
-        var previewLabel = isAudio ? "Preview 5s" : "Preview 10s";
-        _buttonPreview = FrameShiftUiFactory.CreateFixedActionButton(previewLabel, new Point(12, 443), new Size(116, 34), primary: false);
-        _buttonPreview.Click += async (_, _) => await PreviewAsync().ConfigureAwait(true);
-        Controls.Add(_buttonPreview);
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(298, 443), new Size(120, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var applyButton = FrameShiftUiFactory.CreateFixedActionButton("Apply", new Point(428, 443), new Size(120, 34), primary: true);
-        applyButton.DialogResult = DialogResult.OK;
-        Controls.Add(applyButton);
-
-        AcceptButton = applyButton;
-        CancelButton = cancelButton;
-        FormClosing += (_, _) => CleanupPreview();
-
+            var button = FrameShiftUiFactory.CreateMeasuredActionButton(label, false, 72);
+            button.Click += (_, _) => SetSpeedFactor(percent / 100.0);
+            presets.Controls.Add(button);
+        }
+        var content = FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateSection("Speed", FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateWrappingLabel($"Original duration: {FormatDuration(sourceDurationSeconds)}"),
+                _trackBar, FrameShiftUiFactory.CreateFieldRow("&Speed", _textPercent, "%", 120),
+                FrameShiftUiFactory.CreateFieldRow("&Target duration", _textDuration, null, 180),
+                FrameShiftUiFactory.CreateWrappingLabel("Speed: 25% to 400%. Duration: seconds or hh:mm:ss."))),
+            FrameShiftUiFactory.CreateSection("Presets", presets),
+            FrameShiftUiFactory.CreateSection("Options", _checkKeepPitch));
+        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
+        _buttonPreview.Name = "previewButton";
+        _buttonPreview.Click += async (_, _) => await PreviewAsync();
+        var previewSection = FrameShiftUiFactory.CreateSection("Preview", FrameShiftUiFactory.CreateVerticalStack(
+            _buttonPreview, _infoLabel));
+        content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        content.Controls.Add(previewSection, 0, content.RowCount++);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        var apply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        apply.DialogResult = DialogResult.OK;
+        AcceptButton = apply;
+        CancelButton = cancel;
+        var layout = FrameShiftDialogLayout.Create(header, content, FrameShiftDialogLayout.CreateActions(cancel, apply));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         RefreshInfoLabel();
+        ResumeLayout(true);
     }
 
     public ChangeSpeedSettings? Selection { get; private set; }
@@ -284,28 +139,10 @@ public sealed class ChangeSpeedForm : Form
                 _checkKeepPitch.Checked);
         }
         base.OnFormClosing(e);
+        if (!e.Cancel) StopPreviewForClose();
     }
 
     // ── Preset buttons ──────────────────────────────────────────────────────────
-
-    private void AddPresetRow(Panel parent, (int Percent, string Label)[] presets, int y)
-    {
-        var count = presets.Length;
-        var buttonWidth = count <= 6 ? 76 : 56;
-        var gap = count <= 6 ? 8 : 6;
-        var x = 18;
-
-        foreach (var (pct, label) in presets)
-        {
-            var factor = pct / 100.0;
-            var btn = FrameShiftUiFactory.CreateFixedActionButton(label, new Point(x, y), new Size(buttonWidth, 26), primary: false);
-            btn.Click += (_, _) => SetSpeedFactor(factor);
-            parent.Controls.Add(btn);
-            x += buttonWidth + gap;
-        }
-    }
-
-    // ── Speed value management ──────────────────────────────────────────────────
 
     private void SetSpeedFactor(double factor)
     {
@@ -488,21 +325,36 @@ public sealed class ChangeSpeedForm : Form
 
     // ── Preview ─────────────────────────────────────────────────────────────────
 
+    private void StopPreviewForClose()
+    {
+        _closing = true;
+        _previewCts?.Cancel();
+        CleanupPreview();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) StopPreviewForClose();
+        base.Dispose(disposing);
+    }
+
     private async Task PreviewAsync()
     {
-        if (_previewing) return;
+        if (_previewing || _closing) return;
         _previewing = true;
+        using var request = new CancellationTokenSource();
+        _previewCts = request;
         _buttonPreview.Enabled = false;
 
         try
         {
             if (_mediaKind == ChangeSpeedMediaKind.Audio)
             {
-                await PreviewAudioAsync().ConfigureAwait(true);
+                await PreviewAudioAsync(request.Token).ConfigureAwait(true);
             }
             else
             {
-                await PreviewVideoAsync().ConfigureAwait(true);
+                await PreviewVideoAsync(request.Token).ConfigureAwait(true);
             }
         }
         catch
@@ -512,11 +364,13 @@ public sealed class ChangeSpeedForm : Form
         finally
         {
             _previewing = false;
-            _buttonPreview.Enabled = true;
+            if (_closing) CleanupPreview();
+            _previewCts = null;
+            if (!_closing && !IsDisposed) _buttonPreview.Enabled = true;
         }
     }
 
-    private async Task PreviewAudioAsync()
+    private async Task PreviewAudioAsync(CancellationToken token)
     {
         CleanupAudioPreview();
 
@@ -525,17 +379,12 @@ public sealed class ChangeSpeedForm : Form
             _checkKeepPitch.Checked);
 
         var tempPath = Path.Combine(Path.GetTempPath(), $"fs_speed_preview_{Guid.NewGuid():N}.wav");
+        _previewAudioPath = tempPath;
         var args = BuildAudioPreviewArguments(_inputPath, tempPath, settings, _sampleRate);
 
-        var result = await _ffmpegRunner.RunAsync(
-            _ffmpegPath,
-            args,
-            TimeSpan.FromSeconds(30),
-            null,
-            _inputPath,
-            "Change Audio Speed",
-            "Audio",
-            CancellationToken.None).ConfigureAwait(true);
+        var result = await _runPreview(args, TimeSpan.FromSeconds(30), token).ConfigureAwait(true);
+
+        token.ThrowIfCancellationRequested();
 
         if (result.ExitCode != 0 || !File.Exists(tempPath))
         {
@@ -553,7 +402,7 @@ public sealed class ChangeSpeedForm : Form
         _previewTimer.Start();
     }
 
-    private async Task PreviewVideoAsync()
+    private async Task PreviewVideoAsync(CancellationToken token)
     {
         if (!string.IsNullOrWhiteSpace(_previewVideoPath))
         {
@@ -566,17 +415,12 @@ public sealed class ChangeSpeedForm : Form
             _checkKeepPitch.Checked);
 
         var tempPath = Path.Combine(Path.GetTempPath(), $"fs_speed_preview_{Guid.NewGuid():N}.mp4");
+        _previewVideoPath = tempPath;
         var args = BuildVideoPreviewArguments(_inputPath, tempPath, settings, _hasAudio, _sampleRate);
 
-        var result = await _ffmpegRunner.RunAsync(
-            _ffmpegPath,
-            args,
-            TimeSpan.FromSeconds(60),
-            null,
-            _inputPath,
-            "Change Video Speed",
-            "Video",
-            CancellationToken.None).ConfigureAwait(true);
+        var result = await _runPreview(args, TimeSpan.FromSeconds(60), token).ConfigureAwait(true);
+
+        token.ThrowIfCancellationRequested();
 
         if (result.ExitCode != 0 || !File.Exists(tempPath))
         {
@@ -611,7 +455,7 @@ public sealed class ChangeSpeedForm : Form
         if (!string.IsNullOrWhiteSpace(_previewAudioPath))
         {
             ConversionActionHelper.DeleteIfExists(_previewAudioPath);
-            _previewAudioPath = null;
+            if (!_previewing) _previewAudioPath = null;
         }
     }
 
@@ -622,7 +466,7 @@ public sealed class ChangeSpeedForm : Form
         if (!string.IsNullOrWhiteSpace(_previewVideoPath))
         {
             try { ConversionActionHelper.DeleteIfExists(_previewVideoPath); } catch { }
-            _previewVideoPath = null;
+            if (!_previewing) _previewVideoPath = null;
         }
     }
 

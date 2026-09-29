@@ -127,16 +127,24 @@ Les aperçus Cut sont désormais asynchrones, annulables et sérialisés dans `C
 
 Voir [la procédure manuelle C](UI_PHASE_C_MANUAL_TESTS.md) et [le bilan de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md#c--cinq-fenêtres-pilotes--p1). Les paliers Windows 100/150/200/300 % des pilotes sont validés par l'utilisateur ; le déplacement multi-écran et les autres scénarios manuels ont également été confirmés (« ok tout validé »). La validation B concerne les démonstrations du socle.
 
-## Extension D1 — en attente de recette visuelle
+## Extension D1 — recette validée
 
 Les mêmes métriques s'appliquent désormais à Progress, Main, Settings et Media Info. `CreateActions(params Button[])` couvre aussi une seule commande Close/Cancel ; les commandes d'un même footer restent de taille identique. `CreateSection(..., fill: true)` permet à une file ou à une zone de texte de remplir l'espace disponible sans faire croître tout le formulaire avec son contenu. `FrameShiftGridUi` mesure les lignes des files selon la police et remet leurs colonnes fixes à l'échelle depuis les valeurs logiques.
 
 Main conserve son séparateur file/actions, réorienté verticalement sous 640 unités logiques de largeur. Les filtres sont des boutons natifs mesurés. Progress adapte sa zone centrale à la file, au statut et au soutien ; un défilement de secours apparaît lorsque leur hauteur minimale ne tient plus, avec Cancel all / Close hors de cette zone. Settings ajuste sa hauteur à l'ouverture ; Media Info garde le défilement de son texte monospacé. Les handlers métier sont conservés.
 
-Recette : double-clic sur `TEST_PHASE_D1.cmd`, puis [procédure D1](UI_PHASE_D1_MANUAL_TESTS.md). Les paliers Windows de D1 ne sont pas encore validés ; la suite automatique inclut toujours les 37 cas du socle et des pilotes B/C.
+Recette : double-clic sur `TEST_PHASE_D1.cmd`, puis [procédure D1](UI_PHASE_D1_MANUAL_TESTS.md). Les paliers Windows 100/150/200/300 % de D1 sont validés par l'utilisateur ; la suite automatique inclut toujours les 37 cas du socle et des pilotes B/C.
 
 Après les retours utilisateur sur l'erreur longue et le refus du panneau latéral, Progress sépare un résumé d'état mesuré du texte intégral. `ProgressForm.Details.cs` compose toujours une file au-dessus d'un panneau Messages & details de pleine largeur. Le texte natif multiligne remplit la surface disponible, avec au moins six lignes et 110 unités logiques de hauteur réservées ; le panneau occupe 30 % du corps file/détails, contre 60 % avant la réduction demandée, Copy details et retour au suivi courant. La sélection d'une occurrence de file conserve son diagnostic pendant les mises à jour des autres fichiers. Activity utilise le fond bleu doux du thème, une hiérarchie typographique état/pourcentage et masque la ligne ETA quand elle est vide. La file indique son effectif, utilise des libellés d'état lisibles et un fond uniforme. Le bandeau commun, les commandes et les espacements figés restent les mêmes. Cette adaptation reste locale à Progress ; le composant de statut court des autres dialogues n'est pas modifié.
 
 Dans Files, les lignes et l'en-tête partagent le fond Surface, sans alternance. Les noms utilisent TextPrimary ; les en-têtes et états ordinaires restent secondaires. La sélection utilise uniquement PageBackground, une nuance neutre discrète, sans bleu de sélection. La colonne × hérite des fonds de ligne et de sélection ; le retrait en attente utilise TextMuted, le rouge distingue l'annulation d'un traitement actif. Les couleurs des états restent lisibles et cohérentes lorsque la ligne est sélectionnée.
 
-Validation utilisateur D1 : rendu final des interfaces accepté à 100 %. Les essais 150/200/300 % restent en attente ; cette validation visuelle ne clôt pas la qualification DPI du lot.
+Validation utilisateur D1 : rendu final du commit `c26a723` accepté à 100/150/200/300 %. Les essais multi-écran, texte Windows agrandi et relecture des pilotes C après D1 sont également validés par le retour utilisateur « je valide aussi ». D1 est validée ; D2 est le prochain lot. La phase D complète reste en cours.
+
+## Extension D2 — prête pour recette
+
+Les douze fenêtres D2 utilisent les mêmes bandeaux, footers et métriques. Les dialogues compacts ajustent leur hauteur initiale au contenu avec défilement de secours. Resize conserve sa base existante et les coordonnées média ; Rotate/Flip utilise le shell avec commandes sous l'aperçu ; Convert to Icon utilise le rail adaptable et une grille de vignettes repliable. Les sélections métier sont conservées, sans nouvelle base générique de formulaire.
+
+`FrameShiftStatusMessage` réserve explicitement sa hauteur mesurée dans les tables AutoSize après changement de texte/police/largeur/DPI, toujours plafonnée à 96 unités logiques. Cette correction a été contrôlée sur B/C/D1 dans la suite de 522 tests réussis et 5 ignorés. Les 26 cas D2 comprennent les retours tardifs d'aperçus Pitch/Speed après annulation. Les runners du Core ne sont pas modifiés.
+
+La recette commence à 100 % avec `TEST_PHASE_D2.cmd` et [la procédure D2](UI_PHASE_D2_MANUAL_TESTS.md). Les échelles réelles, transitions et vérifications manuelles de D2 restent à valider par l'utilisateur ; aucun support global Release n'est annoncé.

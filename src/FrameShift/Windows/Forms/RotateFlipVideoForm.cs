@@ -29,10 +29,6 @@ public sealed class RotateFlipVideoForm : Form
     private readonly System.Windows.Forms.Timer _debounceTimer;
     private Bitmap? _originalBitmap;
     private Bitmap? _displayBitmap;
-    private Bitmap? _iconRotateCcw;
-    private Bitmap? _iconRotateCw;
-    private Bitmap? _iconFlipH;
-    private Bitmap? _iconFlipV;
     private RotateAngle _currentAngle = RotateAngle.None;
     private bool _flipH;
     private bool _flipV;
@@ -48,126 +44,39 @@ public sealed class RotateFlipVideoForm : Form
     {
         _inputPath = inputPath;
         _ffmpegPath = ffmpegPath;
-        _probe = probe;
         _ffmpegRunner = ffmpegRunner;
-
+        _probe = probe;
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(900, 740), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Rotate / Flip Video");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 640);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        Controls.Add(CreateHeader(inputPath));
-
-        // Preview section (536px wide = 560 - 2×12)
-        // height 328: 28 header + 212 panel + 12 gap + 18 hint + 8 gap + 36 seek + 14 bottom
-        var previewSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 82), new Size(536, 328), "Preview");
-        Controls.Add(previewSection);
-
-        _previewPanel = new Panel
-        {
-            Location = new Point(12, 28),
-            Size = new Size(512, 212),
-            BackColor = Color.FromArgb(32, 32, 32)
-        };
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Rotate / Flip Video", $"Source: {Path.GetFileName(inputPath)}",
+            IconPaths.ContextMenuIco("rotate-video-image-icon.ico"), IconPaths.AppIcon, "↻");
+        _previewPanel = new Panel { Name = "preview", Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32) };
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
-        previewSection.Controls.Add(_previewPanel);
-
-        var timelineHint = new Label
-        {
-            Location = new Point(12, 252),
-            Size = new Size(512, 18),
-            Text = "Drag the slider to preview another moment of the video.",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-        previewSection.Controls.Add(timelineHint);
-
-        _timelineBar = new SeekTrackBar
-        {
-            Location = new Point(12, 278),
-            Size = new Size(512, 36),
-            Minimum = 0,
-            Maximum = 1000,
-            TickFrequency = 100,
-            SmallChange = 5,
-            LargeChange = 50
-        };
-        _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-        previewSection.Controls.Add(_timelineBar);
-
-        // Transform section
-        var transformSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, 422), new Size(536, 104), "Transform");
-        Controls.Add(transformSection);
-
-        _iconRotateCcw = TryLoadButtonIcon(IconPaths.RotateFlipIco("rotate-left-icon.ico"));
-        _iconRotateCw = TryLoadButtonIcon(IconPaths.RotateFlipIco("rotate-right-icon.ico"));
-        _iconFlipH = TryLoadButtonIcon(IconPaths.RotateFlipIco("flip-horizontal-icon.ico"));
-        _iconFlipV = TryLoadButtonIcon(IconPaths.RotateFlipIco("flip-vertical-icon.ico"));
-
-        // 4 × 122px + 3 × 8px gap = 512px = section inner width
-        const int btnW = 122;
-        const int btnH = 36;
-        const int btnGap = 8;
-        const int btnStartX = 12;
-        const int btnY = 30;
-
-        _rotateCcwButton = CreateTransformButton("Rotate CCW", _iconRotateCcw, new Point(btnStartX, btnY), new Size(btnW, btnH));
-        _rotateCwButton = CreateTransformButton("Rotate CW", _iconRotateCw, new Point(btnStartX + btnW + btnGap, btnY), new Size(btnW, btnH));
-        _flipHButton = CreateTransformButton("Flip H", _iconFlipH, new Point(btnStartX + ((btnW + btnGap) * 2), btnY), new Size(btnW, btnH));
-        _flipVButton = CreateTransformButton("Flip V", _iconFlipV, new Point(btnStartX + ((btnW + btnGap) * 3), btnY), new Size(btnW, btnH));
-
-        _rotateCcwButton.Click += (_, _) => ApplyRotate(clockwise: false);
-        _rotateCwButton.Click += (_, _) => ApplyRotate(clockwise: true);
+        _previewPanel.Resize += (_, _) => _previewPanel.Invalidate();
+        _rotateCcwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↶ Rotate left", false);
+        _rotateCwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↷ Rotate right", false);
+        _flipHButton = FrameShiftUiFactory.CreateMeasuredActionButton("↔ Flip horizontal", false);
+        _flipVButton = FrameShiftUiFactory.CreateMeasuredActionButton("↕ Flip vertical", false);
+        _rotateCcwButton.Click += (_, _) => ApplyRotate(false);
+        _rotateCwButton.Click += (_, _) => ApplyRotate(true);
         _flipHButton.Click += (_, _) => ApplyFlipH();
         _flipVButton.Click += (_, _) => ApplyFlipV();
-
-        transformSection.Controls.Add(_rotateCcwButton);
-        transformSection.Controls.Add(_rotateCwButton);
-        transformSection.Controls.Add(_flipHButton);
-        transformSection.Controls.Add(_flipVButton);
-
-        _summaryLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(12, 76),
-            Size = new Size(512, 18),
-            ForeColor = FrameShiftTheme.TextMuted,
-            Text = "No transforms applied"
-        };
-        transformSection.Controls.Add(_summaryLabel);
-
-        // Info card
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 538), new Size(536, 44));
-        Controls.Add(infoCard);
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(16, 13),
-            Size = new Size(504, 18),
-            Text = "The transformed video is created next to the original file.",
-            ForeColor = FrameShiftTheme.TextSecondary
-        });
-
-        // Footer buttons — right-aligned in 560px form
-        // Apply: x = 560 - 12 - 140 = 408
-        // Cancel: x = 408 - 10 - 110 = 288
-        // Reset: x = 288 - 10 - 100 = 178
-        const int footerY = 594;
-
-        var resetButton = FrameShiftUiFactory.CreateFixedActionButton("Reset", new Point(178, footerY), new Size(100, 34), primary: false);
-        resetButton.Click += (_, _) => ResetTransforms();
-        Controls.Add(resetButton);
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(288, footerY), new Size(110, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        _applyButton = FrameShiftUiFactory.CreateFixedActionButton("Apply", new Point(408, footerY), new Size(140, 34), primary: true);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        reset.Click += (_, _) => ResetTransforms();
+        _summaryLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading preview…");
+        var transforms = FrameShiftUiFactory.CreateSection("Transform", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateChoiceRow(_rotateCcwButton, _rotateCwButton, _flipHButton, _flipVButton, reset), _summaryLabel));
+        _timelineBar = new SeekTrackBar { Name = "timeline", Minimum = 0, Maximum = 1000,
+            TickFrequency = 100, SmallChange = 5, LargeChange = 50, AutoSize = true };
+        _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
+        var timeline = FrameShiftUiFactory.CreateSection("Preview position", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateWrappingLabel("Drag the slider to preview another moment of the video."), _timelineBar));
+        var options = FrameShiftUiFactory.CreateVerticalStack(timeline, transforms);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        _applyButton = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
         _applyButton.Enabled = false;
         _applyButton.Click += (_, _) =>
         {
@@ -175,34 +84,20 @@ public sealed class RotateFlipVideoForm : Form
             DialogResult = DialogResult.OK;
             Close();
         };
-        Controls.Add(_applyButton);
-
         AcceptButton = _applyButton;
-        CancelButton = cancelButton;
-
+        CancelButton = cancel;
+        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header,
+            FrameShiftUiFactory.CreateSection("Preview", _previewPanel, fill: true), options,
+            FrameShiftDialogLayout.CreateActions(cancel, _applyButton)));
         _debounceTimer = new System.Windows.Forms.Timer { Interval = 140 };
         _debounceTimer.Tick += async (_, _) =>
         {
             _debounceTimer.Stop();
-            await LoadPreviewFrameAsync(_pendingPreviewSeconds).ConfigureAwait(true);
+            await LoadPreviewFrameAsync(_pendingPreviewSeconds);
         };
-
-        Shown += async (_, _) =>
-        {
-            _timelineBar.Value = 0;
-            _pendingPreviewSeconds = 0.0;
-            await LoadPreviewFrameAsync(0.0).ConfigureAwait(true);
-        };
-
-        FormClosing += (_, _) =>
-        {
-            _closing = true;
-            _debounceTimer.Stop();
-            _previewLoadCts?.Cancel();
-            _previewLoadCts?.Dispose();
-            _previewLoadCts = null;
-            DisposeAll();
-        };
+        Shown += async (_, _) => await LoadPreviewFrameAsync(0);
+        FormClosing += (_, _) => StopPreview();
+        ResumeLayout(true);
     }
 
     public RotateFlipSettings? Selection { get; private set; }
@@ -228,8 +123,7 @@ public sealed class RotateFlipVideoForm : Form
         }
 
         _previewLoadCts?.Cancel();
-        _previewLoadCts?.Dispose();
-        var localCts = new CancellationTokenSource();
+        using var localCts = new CancellationTokenSource();
         _previewLoadCts = localCts;
 
         try
@@ -251,7 +145,7 @@ public sealed class RotateFlipVideoForm : Form
             _originalBitmap?.Dispose();
             _originalBitmap = newBitmap;
 
-            RefreshDisplayBitmap();
+            RefreshPreview();
         }
         catch (OperationCanceledException)
         {
@@ -266,11 +160,11 @@ public sealed class RotateFlipVideoForm : Form
             if (!_closing && !IsDisposed)
             {
                 var errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Rotate / Flip Video"));
-                MessageBox.Show(this, errorMessage, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                DialogResult = DialogResult.Cancel;
-                Close();
+                _summaryLabel.Text = errorMessage;
+                _applyButton.Enabled = false;
             }
         }
+        finally { if (ReferenceEquals(_previewLoadCts, localCts)) _previewLoadCts = null; }
     }
 
     private void ApplyRotate(bool clockwise)
@@ -321,7 +215,7 @@ public sealed class RotateFlipVideoForm : Form
         var settings = new RotateFlipSettings(_currentAngle, _flipH, _flipV);
         _summaryLabel.Text = settings.BuildTransformSummary();
         _summaryLabel.ForeColor = settings.IsIdentity ? FrameShiftTheme.TextMuted : FrameShiftTheme.TextPrimary;
-        _applyButton.Enabled = !settings.IsIdentity;
+        _applyButton.Enabled = _originalBitmap is not null && !settings.IsIdentity;
         UpdateTransformButtonHighlights();
     }
 
@@ -399,90 +293,30 @@ public sealed class RotateFlipVideoForm : Form
         e.Graphics.DrawImage(_displayBitmap, bounds);
     }
 
+    private void StopPreview()
+    {
+        _closing = true;
+        _previewLoadCts?.Cancel();
+        _debounceTimer.Stop();
+        DisposeAll();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            StopPreview();
+            _debounceTimer.Dispose();
+        }
+        base.Dispose(disposing);
+    }
+
     private void DisposeAll()
     {
         _originalBitmap?.Dispose();
         _originalBitmap = null;
         _displayBitmap?.Dispose();
         _displayBitmap = null;
-        _iconRotateCcw?.Dispose();
-        _iconRotateCcw = null;
-        _iconRotateCw?.Dispose();
-        _iconRotateCw = null;
-        _iconFlipH?.Dispose();
-        _iconFlipH = null;
-        _iconFlipV?.Dispose();
-        _iconFlipV = null;
     }
 
-    private Control CreateHeader(string inputPath)
-    {
-        var durationText = _probe.Duration.HasValue
-            ? $"    Duration: {FormatDuration(_probe.Duration.Value.TotalSeconds)}"
-            : string.Empty;
-        var subtitle = $"Source: {_probe.VideoWidth} x {_probe.VideoHeight} px{durationText}";
-        return FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift - Rotate / Flip Video",
-            subtitle,
-            IconPaths.ContextMenuIco("rotate-video-image-icon.ico"),
-            IconPaths.AppIcon,
-            "↻");
-    }
-
-    private static string FormatDuration(double seconds)
-    {
-        var hours = (int)Math.Floor(seconds / 3600);
-        var remaining = seconds - (hours * 3600);
-        var minutes = (int)Math.Floor(remaining / 60);
-        var secs = (int)Math.Floor(remaining - (minutes * 60));
-        return hours > 0
-            ? $"{hours}:{minutes:D2}:{secs:D2}"
-            : $"{minutes}:{secs:D2}";
-    }
-
-    private static Button CreateTransformButton(string text, Bitmap? icon, Point location, Size size)
-    {
-        var button = new Button
-        {
-            Text = text,
-            Location = location,
-            Size = size,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-            Padding = new Padding(4, 0, 6, 0)
-        };
-        button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        button.FlatAppearance.BorderSize = 1;
-
-        if (icon is not null)
-        {
-            button.Image = icon;
-            button.ImageAlign = ContentAlignment.MiddleLeft;
-            button.TextAlign = ContentAlignment.MiddleRight;
-            button.TextImageRelation = TextImageRelation.ImageBeforeText;
-        }
-
-        return button;
-    }
-
-    private static Bitmap? TryLoadButtonIcon(string icoPath)
-    {
-        if (!File.Exists(icoPath))
-        {
-            return null;
-        }
-
-        try
-        {
-            using var icon = new Icon(icoPath, 20, 20);
-            return icon.ToBitmap();
-        }
-        catch
-        {
-            return null;
-        }
-    }
 }

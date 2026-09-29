@@ -24,113 +24,48 @@ public sealed class ConversionPickerForm : Form
         string? initialProfileId = null,
         string primaryButtonText = "Convert")
     {
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(600, 500), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, title);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
-        var formHeight = profiles.Count > 0 ? 402 : 304;
-        ClientSize = new Size(560, formHeight);
-
-        var header = CreateHeader(title, sourceLabel);
-        Controls.Add(header);
-
-        var targetSection = CreateSectionPanel("Target format", new Point(12, 82), new Size(536, 92));
-        Controls.Add(targetSection);
-
-        var targetLabel = new Label
-        {
-            AutoSize = true,
-            Location = new Point(16, 33),
-            Text = "Target",
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-        targetSection.Controls.Add(targetLabel);
-
-        _targetCombo = FrameShiftUiFactory.CreateFixedComboBox(new Point(96, 27), new Size(412, 24));
+        var header = FrameShiftUiFactory.CreateHeader(title, $"Source: {sourceLabel}",
+            IconPaths.ConvertVideoIcon, IconPaths.AppIcon, "▶");
+        _targetCombo = new ComboBox { Name = "target", DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var target in targets)
-        {
             _targetCombo.Items.Add(new ComboItem(target.DisplayName, target.Id, target.Description));
-        }
         _targetCombo.SelectedIndex = FindIndexById(_targetCombo, initialTargetId);
-        _targetCombo.SelectedIndexChanged += (_, _) => UpdateDescription();
-        targetSection.Controls.Add(_targetCombo);
-
-        _descriptionLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(16, 60),
-            Size = new Size(504, 18),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = description
-        };
-        targetSection.Controls.Add(_descriptionLabel);
-
-        Label? profileLabel = null;
+        _descriptionLabel = FrameShiftUiFactory.CreateWrappingLabel(description);
+        var content = FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateSection("Target format", FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateFieldRow("&Target", _targetCombo), _descriptionLabel)));
         if (profiles.Count > 0)
         {
-            profileLabel = new Label
-            {
-                AutoSize = true,
-                Location = new Point(16, 33),
-                Text = "Profile",
-                ForeColor = FrameShiftTheme.TextPrimary
-            };
-
-            var profileSection = CreateSectionPanel("Encoding profile", new Point(12, 186), new Size(536, 92));
-            profileSection.Controls.Add(profileLabel);
-
-            _profileCombo = FrameShiftUiFactory.CreateFixedComboBox(new Point(96, 27), new Size(412, 24));
+            _profileCombo = new ComboBox { Name = "profile", DropDownStyle = ComboBoxStyle.DropDownList };
             foreach (var profile in profiles)
-            {
                 _profileCombo.Items.Add(new ComboItem(profile.DisplayName, profile.Id, profile.Description));
-            }
             _profileCombo.SelectedIndex = FindIndexById(_profileCombo, initialProfileId);
+            _profileDescriptionLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+            var section = FrameShiftUiFactory.CreateSection("Encoding profile", FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateFieldRow("&Profile", _profileCombo), _profileDescriptionLabel));
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            content.Controls.Add(section, 0, content.RowCount++);
             _profileCombo.SelectedIndexChanged += (_, _) => UpdateDescription();
-            profileSection.Controls.Add(_profileCombo);
-
-            _profileDescriptionLabel = new Label
-            {
-                AutoSize = false,
-                Location = new Point(16, 60),
-                Size = new Size(504, 18),
-                ForeColor = FrameShiftTheme.TextSecondary,
-                Text = profiles[0].Description
-            };
-            profileSection.Controls.Add(_profileDescriptionLabel);
-
-            Controls.Add(profileSection);
         }
-
-        var infoY = profiles.Count > 0 ? 290 : 186;
-        var infoCard = CreateInfoCard(new Point(12, infoY), new Size(536, 44));
-        Controls.Add(infoCard);
-
-        var infoLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(16, 12),
-            Size = new Size(504, 18),
-            Text = "The output is created next to the original file.",
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        infoCard.Controls.Add(infoLabel);
-
-        var cancelY = formHeight - 46;
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, cancelY), new Size(120, 34), primary: false);
-        cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var convertButton = FrameShiftUiFactory.CreateFixedActionButton(primaryButtonText, new Point(408, cancelY), new Size(140, 34), primary: true);
-        convertButton.DialogResult = DialogResult.OK;
-        Controls.Add(convertButton);
-
-        AcceptButton = convertButton;
-        CancelButton = cancelButton;
+        _targetCombo.SelectedIndexChanged += (_, _) => UpdateDescription();
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        cancel.Name = "cancelButton";
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton(primaryButtonText, true);
+        primary.Name = "primaryButton";
+        primary.DialogResult = DialogResult.OK;
+        AcceptButton = primary;
+        CancelButton = cancel;
+        var layout = FrameShiftDialogLayout.Create(header, content,
+            FrameShiftDialogLayout.CreateActions(cancel, primary),
+            FrameShiftUiFactory.CreateStatusMessage("The output is created next to the original file."));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         UpdateDescription();
+        ResumeLayout(true);
     }
 
     public ConversionSelection? Selection
@@ -146,26 +81,6 @@ public sealed class ConversionPickerForm : Form
             var profile = _profileCombo is null ? null : (_profileCombo.SelectedItem as ComboItem)?.Value;
             return new ConversionSelection(target, profile);
         }
-    }
-
-    private static Panel CreateHeader(string title, string sourceLabel)
-    {
-        return FrameShiftUiFactory.CreateFixedHeader(
-            title,
-            $"Source: {sourceLabel}",
-            IconPaths.ConvertVideoIcon,
-            IconPaths.AppIcon,
-            "▶");
-    }
-
-    private static Panel CreateSectionPanel(string title, Point location, Size size)
-    {
-        return FrameShiftUiFactory.CreateFixedSection(location, size, title);
-    }
-
-    private static Panel CreateInfoCard(Point location, Size size)
-    {
-        return FrameShiftUiFactory.CreateFixedInfoCard(location, size);
     }
 
     private void UpdateDescription()
