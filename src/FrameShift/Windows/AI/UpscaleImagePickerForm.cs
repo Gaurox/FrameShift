@@ -17,8 +17,7 @@ namespace FrameShift.Windows.AI;
 /// </summary>
 public class UpscaleImagePickerForm : Form
 {
-    private readonly ContextMenuStrip _modelMenu;
-    private readonly Label _selectorLabel;
+    private readonly ComboBox _modelSelector;
     private readonly Label _descriptionLabel;
     private string _selectedModelId;
 
@@ -57,100 +56,38 @@ public class UpscaleImagePickerForm : Form
         _allowCustom = allowCustomSize && sourceWidth > 0 && sourceHeight > 0;
         _ratio = _allowCustom ? (double)sourceWidth / sourceHeight : 1d;
 
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 500), new Size(400, 300));
         string actionTitle = videoMode ? "Upscale Video" : "Upscale Image";
         string actionIcon = videoMode ? IconPaths.UpscaleVideoAiIcon : IconPaths.UpscaleImageAiIcon;
-        FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", actionIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
-
-        const int modelTop = 82;
-        const int modelHeight = 116;
-        int scaleTop = modelTop + modelHeight + 12;
-        const int scaleHeight = 128;
-        int infoTop = scaleTop + scaleHeight + 12;
-        int buttonsTop = infoTop + 46 + 12;
-        ClientSize = new Size(560, buttonsTop + 34 + 12);
-
-        Controls.Add(FrameShiftUiFactory.CreateFixedHeader(
-            $"FrameShift - {actionTitle}",
-            $"Source: {sourceLabel}",
-            actionIcon,
-            IconPaths.FrameShiftAiIcon,
-            "AI"));
-
-        // --- Model section -----------------------------------------------------------------------
-        var modelSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, modelTop), new Size(536, modelHeight), "Model");
-        Controls.Add(modelSection);
-
-        _modelMenu = new ContextMenuStrip
+        FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", $"Source: {sourceLabel}",
+            actionIcon, IconPaths.FrameShiftAiIcon, "AI");
+        _modelSelector = new ComboBox { Name = "model", DropDownStyle = ComboBoxStyle.DropDownList, DisplayMember = "DisplayName" };
+        foreach (var model in models) _modelSelector.Items.Add(model);
+        _descriptionLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _modelSelector.SelectedIndexChanged += (_, _) =>
         {
-            AutoSize = false,
-            ShowImageMargin = false,
-            RenderMode = ToolStripRenderMode.System,
-            Width = 160
+            if (_modelSelector.SelectedItem is UpscaleModelDefinition model) SelectModel(model.Id);
         };
-
-        var selectorPanel = CreateSelectorPanel(new Point(18, 32), new Size(500, 30), out _selectorLabel, _modelMenu);
-        modelSection.Controls.Add(selectorPanel);
-
-        _descriptionLabel = new Label
-        {
-            Location = new Point(18, 70),
-            Size = new Size(500, 36),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true
-        };
-        modelSection.Controls.Add(_descriptionLabel);
-
-        foreach (var model in models)
-        {
-            var captured = model;
-            var item = new ToolStripMenuItem($"{captured.DisplayName}  —  x{captured.ScaleFactor}") { Tag = captured.Id };
-            item.Click += (_, _) => SelectModel(captured.Id);
-            _modelMenu.Items.Add(item);
-        }
-
-        SelectModel(initial.Id);
-
-        // --- Scale section -----------------------------------------------------------------------
-        var scaleSection = FrameShiftUiFactory.CreateFixedSection(new Point(12, scaleTop), new Size(536, scaleHeight), "Scale");
-        Controls.Add(scaleSection);
-
-        _scale2 = CreateScaleRadio("2x", new Point(18, 32), 56);
-        _scale3 = CreateScaleRadio("3x", new Point(82, 32), 56);
-        _scale4 = CreateScaleRadio("4x", new Point(146, 32), 56);
-        _scaleCustom = CreateScaleRadio("Custom size", new Point(210, 32), 120);
+        _modelSelector.SelectedItem = initial;
+        var modelSection = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("&Model", _modelSelector), _descriptionLabel));
+        _scale2 = CreateScaleRadio("2x");
+        _scale3 = CreateScaleRadio("3x");
+        _scale4 = CreateScaleRadio("4x");
+        _scaleCustom = CreateScaleRadio("Custom size");
         _scale4.Checked = true;
-        scaleSection.Controls.AddRange([_scale2, _scale3, _scale4, _scaleCustom]);
-
-        scaleSection.Controls.Add(CreateFieldLabel("Width", 18, 69));
-        _widthBox = CreateValueTextBox();
-        scaleSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_widthBox, new Point(66, 64), new Size(80, 30)));
-        scaleSection.Controls.Add(CreateUnitLabel("px", 150, 69));
-
-        scaleSection.Controls.Add(CreateFieldLabel("Height", 190, 69));
-        _heightBox = CreateValueTextBox();
-        scaleSection.Controls.Add(FrameShiftUiFactory.CreateFixedTextInputHost(_heightBox, new Point(246, 64), new Size(80, 30)));
-        scaleSection.Controls.Add(CreateUnitLabel("px", 330, 69));
-
-        var hint = new Label
-        {
-            Location = new Point(18, 102),
-            Size = new Size(500, 18),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            AutoEllipsis = true,
-            Text = _allowCustom
-                ? $"Aspect locked to the source. Maximum {_sourceWidth * 4} x {_sourceHeight * 4} px (x4)."
-                : $"Custom size needs a single {(videoMode ? "video" : "image")}; x2 / x3 / x4 still apply to every selected file."
-        };
-        scaleSection.Controls.Add(hint);
-
         _scaleCustom.Enabled = _allowCustom;
+        _widthBox = new TextBox { Name = "width", TextAlign = HorizontalAlignment.Right };
+        _heightBox = new TextBox { Name = "height", TextAlign = HorizontalAlignment.Right };
+        var scaleSection = FrameShiftUiFactory.CreateSection("Scale", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateChoiceRow(_scale2, _scale3, _scale4, _scaleCustom),
+            FrameShiftUiFactory.CreateFieldRow("&Width", _widthBox, "px", 128),
+            FrameShiftUiFactory.CreateFieldRow("&Height", _heightBox, "px", 128),
+            FrameShiftUiFactory.CreateWrappingLabel(_allowCustom
+                ? $"Aspect locked to the source. Maximum {_sourceWidth * 4} × {_sourceHeight * 4} px (x4)."
+                : $"Custom size needs a single {(videoMode ? "video" : "image")}; x2 / x3 / x4 still apply to every selected file.")));
         _scale2.CheckedChanged += (_, _) => RefreshCustomEnabled();
         _scale3.CheckedChanged += (_, _) => RefreshCustomEnabled();
         _scale4.CheckedChanged += (_, _) => RefreshCustomEnabled();
@@ -158,34 +95,21 @@ public class UpscaleImagePickerForm : Form
         _widthBox.TextChanged += (_, _) => OnWidthTyped();
         _heightBox.TextChanged += (_, _) => OnHeightTyped();
         RefreshCustomEnabled();
-
-        // --- Info + buttons ----------------------------------------------------------------------
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, infoTop), new Size(536, 46));
-        Controls.Add(infoCard);
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(12, 8),
-            Size = new Size(512, 30),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = videoMode
-                ? "The upscaled video keeps its frame rate and audio when supported. " +
-                  "The AI model is downloaded once if it is not already installed."
-                : "The upscaled image is saved as a new PNG next to the source. " +
-                  "The AI model is downloaded once if it is not already installed."
-        });
-
-        var cancelButton = FrameShiftUiFactory.CreateFixedActionButton("Cancel", new Point(278, buttonsTop), new Size(120, 34), primary: false);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
         cancelButton.DialogResult = DialogResult.Cancel;
-        Controls.Add(cancelButton);
-
-        var upscaleButton = FrameShiftUiFactory.CreateFixedActionButton("Upscale", new Point(408, buttonsTop), new Size(140, 34), primary: true);
+        var upscaleButton = FrameShiftUiFactory.CreateMeasuredActionButton("Upscale", true);
         upscaleButton.DialogResult = DialogResult.OK;
-        Controls.Add(upscaleButton);
-
         AcceptButton = upscaleButton;
         CancelButton = cancelButton;
+        var status = FrameShiftUiFactory.CreateStatusMessage(videoMode
+            ? "The upscaled video keeps its frame rate and audio when supported. The AI model is downloaded once if it is not already installed."
+            : "The upscaled image is saved as a new PNG next to the source. The AI model is downloaded once if it is not already installed.");
+        var root = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(modelSection, scaleSection),
+            FrameShiftDialogLayout.CreateActions(cancelButton, upscaleButton), status);
+        Controls.Add(root);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, root);
+        ResumeLayout(true);
     }
-
     /// <summary>The chosen model id, or null when the dialog was cancelled.</summary>
     public string? SelectedModelId => DialogResult == DialogResult.OK ? _selectedModelId : null;
 
@@ -276,7 +200,6 @@ public class UpscaleImagePickerForm : Form
         var model = UpscaleModelCatalog.GetById(modelId) ??
             (_videoMode ? UpscaleModelCatalog.GetDefaultVideo() : UpscaleModelCatalog.GetDefault());
         _selectedModelId = model.Id;
-        _selectorLabel.Text = $"{model.DisplayName}  —  x{model.ScaleFactor}";
         _descriptionLabel.Text = model.Summary;
     }
 
@@ -285,89 +208,8 @@ public class UpscaleImagePickerForm : Form
     private static int? TryParsePositiveInt(string? text) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) && value > 0 ? value : null;
 
-    private static RadioButton CreateScaleRadio(string text, Point location, int width) => new()
+    private static RadioButton CreateScaleRadio(string text) => new()
     {
-        Text = text,
-        Location = location,
-        Size = new Size(width, 24),
-        ForeColor = FrameShiftTheme.TextPrimary,
-        BackColor = Color.Transparent,
-        UseVisualStyleBackColor = true
+        Text = text, AutoSize = true, ForeColor = FrameShiftTheme.TextPrimary, UseVisualStyleBackColor = true
     };
-
-    private static Label CreateFieldLabel(string text, int x, int y) => new()
-    {
-        Text = text,
-        Location = new Point(x, y),
-        Size = new Size(46, 23),
-        ForeColor = FrameShiftTheme.TextPrimary
-    };
-
-    private static Label CreateUnitLabel(string text, int x, int y) => new()
-    {
-        Text = text,
-        Location = new Point(x, y),
-        Size = new Size(22, 23),
-        ForeColor = FrameShiftTheme.TextSecondary
-    };
-
-    private static TextBox CreateValueTextBox() => new()
-    {
-        BorderStyle = BorderStyle.None,
-        BackColor = FrameShiftTheme.Surface,
-        ForeColor = FrameShiftTheme.TextPrimary,
-        TextAlign = HorizontalAlignment.Right
-    };
-
-    private Panel CreateSelectorPanel(Point location, Size size, out Label valueLabel, ContextMenuStrip menu)
-    {
-        var panel = FrameShiftUiFactory.CreateFramedPanel(
-            location, size, FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, FrameShiftUiMetrics.InputCornerRadius);
-        panel.Padding = new Padding(8, 5, 8, 5);
-        panel.Cursor = Cursors.Hand;
-        panel.Click += (_, _) => ShowSizedMenu(panel, menu);
-
-        valueLabel = new Label
-        {
-            AutoSize = false,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand
-        };
-        valueLabel.Click += (_, _) => ShowSizedMenu(panel, menu);
-        panel.Controls.Add(valueLabel);
-
-        var arrowLabel = new Label
-        {
-            AutoSize = false,
-            Dock = DockStyle.Right,
-            Width = 16,
-            Text = "▾",
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Cursor = Cursors.Hand
-        };
-        arrowLabel.Click += (_, _) => ShowSizedMenu(panel, menu);
-        panel.Controls.Add(arrowLabel);
-
-        return panel;
-    }
-
-    private static void ShowSizedMenu(Control anchor, ContextMenuStrip menu)
-    {
-        var menuWidth = Math.Max(anchor.Width, 160);
-        menu.Width = menuWidth;
-
-        foreach (ToolStripItem item in menu.Items)
-        {
-            item.AutoSize = false;
-            item.Width = Math.Max(0, menuWidth - 2);
-        }
-
-        var preferredHeight = menu.GetPreferredSize(new Size(menuWidth, int.MaxValue)).Height;
-        menu.Size = new Size(menuWidth, preferredHeight);
-
-        menu.Show(anchor, new Point(0, anchor.Height));
-    }
 }

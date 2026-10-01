@@ -1,8 +1,4 @@
-using System;
-using System.Drawing;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using FrameShift.Core.AI;
 using FrameShift.Core.Logging;
 using FrameShift.Windows.Helpers;
@@ -15,10 +11,15 @@ public sealed class DownloadModelForm : Form
     private readonly Label _statusLabel;
     private readonly ProgressBar _progressBar;
     private readonly Label _progressTextLabel;
+    private readonly TextBox _errorDetails;
+    private readonly TableLayoutPanel _errorSection;
+    private readonly TableLayoutPanel _root;
     private readonly Button _downloadButton;
     private readonly Button _cancelButton;
     private CancellationTokenSource? _cancellationSource;
+    private Task? _downloadTask;
     private bool _downloadInProgress;
+    private bool _closingRequested;
 
     public DownloadModelForm(
         string featureTitle,
@@ -30,106 +31,81 @@ public sealed class DownloadModelForm : Form
         Func<IProgress<AiModelDownloadProgress>, CancellationToken, Task> downloadAction)
     {
         _downloadAction = downloadAction;
-
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 380), new Size(400, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift AI - Download model", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 300);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        var header = FrameShiftUiFactory.CreateFixedHeader(
-            featureTitle,
-            featureSubtitle,
-            preferredIconPath,
-            IconPaths.FrameShiftAiIcon,
-            "AI");
-        Controls.Add(header);
-
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(
-            new Point(12, 82),
-            new Size(536, 52));
-        infoCard.Controls.Add(new Label
+        var header = FrameShiftUiFactory.CreateHeader(featureTitle, featureSubtitle,
+            preferredIconPath, IconPaths.FrameShiftAiIcon, "AI");
+        var info = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateWrappingLabel($"{modelDisplayName} — {modelSizeBytes / (1024L * 1024L)} MB"),
+            FrameShiftUiFactory.CreateWrappingLabel($"License: {modelLicense}")));
+        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel($"Ready to download — approximately {modelSizeBytes / (1024L * 1024L)} MB");
+        _progressBar = new ProgressBar { Name = "downloadProgress", Dock = DockStyle.Top, Maximum = 100, Style = ProgressBarStyle.Continuous };
+        _progressTextLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        var activity = FrameShiftUiFactory.CreateSection("Download",
+            FrameShiftUiFactory.CreateVerticalStack(_statusLabel, _progressBar, _progressTextLabel));
+        _errorDetails = new TextBox
         {
-            Location = new Point(10, 8),
-            Size = new Size(516, 18),
-            Text = $"Model: {modelDisplayName}  —  {modelSizeBytes / (1024L * 1024L)} MB",
-            ForeColor = FrameShiftTheme.TextSecondary
-        });
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(10, 26),
-            Size = new Size(516, 18),
-            Text = $"License: {modelLicense}",
-            ForeColor = FrameShiftTheme.TextMuted
-        });
-        Controls.Add(infoCard);
-
-        _statusLabel = new Label
-        {
-            Location = new Point(12, 150),
-            Size = new Size(536, 20),
-            Text = $"Ready to download — approximately {modelSizeBytes / (1024L * 1024L)} MB",
-            ForeColor = FrameShiftTheme.TextSecondary
+            Name = "errorDetails", Multiline = true, ReadOnly = true, WordWrap = true, ScrollBars = ScrollBars.Vertical,
+            BorderStyle = BorderStyle.None, BackColor = FrameShiftTheme.Surface, ForeColor = FrameShiftTheme.TextPrimary,
+            AccessibleName = "Download error details", Dock = DockStyle.Top
         };
-        Controls.Add(_statusLabel);
-
-        _progressBar = new ProgressBar
+        void Metrics()
         {
-            Location = new Point(12, 178),
-            Size = new Size(536, 22),
-            Minimum = 0,
-            Maximum = 100,
-            Value = 0,
-            Style = ProgressBarStyle.Continuous
-        };
-        Controls.Add(_progressBar);
-
-        _progressTextLabel = new Label
-        {
-            Location = new Point(12, 208),
-            Size = new Size(536, 18),
-            Text = string.Empty,
-            ForeColor = FrameShiftTheme.TextMuted
-        };
-        Controls.Add(_progressTextLabel);
-
-        _cancelButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Cancel",
-            new Point(278, 254),
-            new Size(120, 34),
-            primary: false);
-        Controls.Add(_cancelButton);
-
-        _downloadButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Download",
-            new Point(408, 254),
-            new Size(140, 34),
-            primary: true);
-        Controls.Add(_downloadButton);
-
-        _downloadButton.Click += OnDownloadClick;
+            _progressBar.Height = FrameShiftUiMetrics.ToPixels(_progressBar, 20);
+            _errorDetails.MinimumSize = new Size(0, Math.Max(FrameShiftUiMetrics.ToPixels(_errorDetails, 140), _errorDetails.Font.Height * 7));
+            _errorDetails.Height = _errorDetails.MinimumSize.Height;
+        }
+        _errorDetails.HandleCreated += (_, _) => Metrics();
+        _errorDetails.FontChanged += (_, _) => Metrics();
+        _errorDetails.DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
+        _errorSection = FrameShiftUiFactory.CreateSection("Error details — select text to copy", _errorDetails);
+        _errorSection.Visible = false;
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _downloadButton = FrameShiftUiFactory.CreateMeasuredActionButton("Download", true);
+        _downloadButton.Click += async (_, _) => await StartDownloadAsync();
         _cancelButton.Click += OnCancelClick;
+        AcceptButton = _downloadButton;
+        CancelButton = _cancelButton;
+        _root = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(info, activity, _errorSection),
+            FrameShiftDialogLayout.CreateActions(_cancelButton, _downloadButton));
+        Controls.Add(_root);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, _root);
         FormClosing += OnFormClosing;
+        ResumeLayout(true);
     }
 
-    private async void OnDownloadClick(object? sender, EventArgs e)
+    // Also used by hidden tests with an injected download action; never starts on opening.
+    internal Task StartDownloadAsync()
     {
-        _downloadButton.Enabled = false;
+        if (_downloadInProgress || _closingRequested || IsDisposed) return _downloadTask ?? Task.CompletedTask;
         _downloadInProgress = true;
+        _downloadButton.Enabled = false;
+        _cancelButton.Enabled = true;
+        _cancelButton.Text = "Cancel";
+        _errorSection.Visible = false;
+        _errorDetails.Clear();
+        _progressBar.Value = 0;
+        _statusLabel.Text = "Starting download…";
         _cancellationSource = new CancellationTokenSource();
+        _downloadTask = RunDownloadAsync(_cancellationSource);
+        return _downloadTask;
+    }
 
+    private async Task RunDownloadAsync(CancellationTokenSource source)
+    {
         try
         {
-            var progress = new Progress<AiModelDownloadProgress>(OnProgressReport);
-            await _downloadAction(progress, _cancellationSource.Token);
-
-            if (IsDisposed || Disposing)
-                return;
-
+            var progress = new Progress<AiModelDownloadProgress>(p =>
+            {
+                if (ReferenceEquals(source, _cancellationSource) && !source.IsCancellationRequested
+                    && _downloadInProgress && !_closingRequested && !IsDisposed && !Disposing)
+                    OnProgressReport(p);
+            });
+            await _downloadAction(progress, source.Token);
+            source.Token.ThrowIfCancellationRequested();
+            if (IsDisposed || Disposing || _closingRequested) return;
             _progressBar.Value = 100;
             _statusLabel.Text = "Download complete.";
             DialogResult = DialogResult.OK;
@@ -137,79 +113,81 @@ public sealed class DownloadModelForm : Form
         }
         catch (OperationCanceledException)
         {
-            if (!IsDisposed && !Disposing)
+            if (!IsDisposed && !Disposing && !_closingRequested)
             {
                 _progressBar.Value = 0;
-                _progressTextLabel.Text = string.Empty;
+                _progressTextLabel.Text = "";
                 _statusLabel.Text = "Download cancelled.";
-                _downloadButton.Enabled = true;
-                _cancelButton.Enabled = true;
                 _cancelButton.Text = "Close";
-            }
-        }
-        catch (InvalidDataException ex)
-        {
-            if (!IsDisposed && !Disposing)
-            {
-                _statusLabel.Text = ex.Message;
-                _downloadButton.Enabled = true;
-                AppLogger.LogStatic("DownloadModelForm: integrity error. " + ex);
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            if (!IsDisposed && !Disposing)
-            {
-                _statusLabel.Text = "Network error — check your connection and try again.";
-                _downloadButton.Enabled = true;
-                AppLogger.LogStatic("DownloadModelForm: network error. " + ex);
             }
         }
         catch (Exception ex)
         {
-            if (!IsDisposed && !Disposing)
+            AppLogger.LogStatic("DownloadModelForm: download failed. " + ex);
+            if (!IsDisposed && !Disposing && !_closingRequested)
             {
-                _statusLabel.Text = "Download failed — check your connection and try again.";
-                _downloadButton.Enabled = true;
-                AppLogger.LogStatic("DownloadModelForm: unexpected error. " + ex);
+                _statusLabel.Text = ex is InvalidDataException ? "Model verification failed."
+                    : ex is HttpRequestException ? "Network error — check your connection and try again."
+                    : "Download failed — see details below.";
+                _errorDetails.Text = ex.ToString();
+                _errorDetails.SelectionStart = 0;
+                _errorDetails.SelectionLength = 0;
+                _errorSection.Visible = true;
+                _cancelButton.Text = "Close";
+                if (WindowState == FormWindowState.Normal) FrameShiftDialogLayout.FitInitialHeight(this, _root);
             }
         }
         finally
         {
             _downloadInProgress = false;
-            _cancellationSource?.Dispose();
-            _cancellationSource = null;
+            source.Dispose();
+            if (ReferenceEquals(source, _cancellationSource)) _cancellationSource = null;
+            if (!IsDisposed && !Disposing)
+            {
+                _downloadButton.Enabled = !_closingRequested;
+                _cancelButton.Enabled = !_closingRequested;
+                if (_closingRequested)
+                {
+                    DialogResult = DialogResult.Cancel;
+                    Close();
+                }
+            }
         }
     }
 
     private void OnCancelClick(object? sender, EventArgs e)
     {
-        if (_downloadInProgress && _cancellationSource != null)
-        {
-            _cancelButton.Enabled = false;
-            _cancellationSource.Cancel();
-        }
-        else
-        {
-            DialogResult = DialogResult.Cancel;
-            Close();
-        }
+        if (_downloadInProgress) RequestCancellation();
+        else { DialogResult = DialogResult.Cancel; Close(); }
+    }
+
+    private void RequestCancellation()
+    {
+        _cancelButton.Enabled = false;
+        _statusLabel.Text = _closingRequested ? "Closing — waiting for download cleanup…" : "Cancelling…";
+        _cancellationSource?.Cancel();
     }
 
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
-        _cancellationSource?.Cancel();
+        if (!_downloadInProgress) return;
+        // A completed successful download is allowed to close. All other routes wait for cleanup.
+        if (DialogResult == DialogResult.OK && !_closingRequested) return;
+        e.Cancel = true;
+        _closingRequested = true;
+        RequestCancellation();
     }
 
-    private void OnProgressReport(AiModelDownloadProgress p)
+    private void OnProgressReport(AiModelDownloadProgress progress)
     {
-        if (IsDisposed || Disposing)
-            return;
+        _progressBar.Value = Math.Clamp(progress.Percent, 0, 100);
+        _progressTextLabel.Text = progress.Status;
+        if (progress.Percent > 0) _statusLabel.Text = $"Downloading… {progress.Percent}%";
+    }
 
-        _progressBar.Value = Math.Clamp(p.Percent, 0, 100);
-        _progressTextLabel.Text = p.Status;
-
-        if (p.Percent > 0)
-            _statusLabel.Text = $"Downloading... {p.Percent}%";
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) { _closingRequested = true; _cancellationSource?.Cancel(); }
+        base.Dispose(disposing);
     }
 }

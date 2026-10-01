@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 1er octobre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 du commit `c7bd8ed` validée par l'utilisateur à 100/150/200/300 % ; GO reçu pour la suite D3. E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 1er octobre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 du commit `c7bd8ed` validée par l'utilisateur à 100/150/200/300 %, consignation committée `d8bd717`. D3 implémentée et validée visuellement par l'utilisateur à 100/150/200/300 % ; contrôles complémentaires non confirmés séparément. Les 24 fenêtres D sont migrées et leur rendu accepté aux quatre paliers. E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -719,6 +719,44 @@ Référence : `c7bd8ed`. L'utilisateur confirme « tout est validé dans toutes 
 
 **D2 validée sur la recette déclarée ; sauvegarde Git demandée et passage à D3 autorisé.** Le multi-écran, la taille du texte indépendante et les exports réels ne sont pas confirmés séparément dans ce dernier retour ; ils restent des contrôles à conserver pour la qualification finale. L'application installée, le mode DPI Release et les configurations hors recette ne sont pas certifiés. La phase D complète attend encore D3 ; E à G restent hors de ce passage.
 
+#### Exécution D3 — 1er octobre 2026
+
+**Autorisation :** « tout est validé dans toutes les mises a léchelle. commite et on passe à la suite ». La validation D2 est sauvegardée séparément sous `d8bd717` avant les changements de code D3. Les huit fenêtres IA prévues sont migrées localement ; E à G restent hors réalisation.
+
+| Fenêtres | Adaptation réalisée |
+|---|---|
+| Remove Noise Audio / Video | Bandeau complet, quatre cartes radio natives mesurées dans un même parent, défilement et footer standard. Présentation mutualisée dans un helper local léger ; pas de nouvelle base de formulaire. Case stéréo native mesurée, désactivée sur mono. Nom complet transmis au bandeau pour ellipse/copie. Erreur d'aperçu dans le statut sélectionnable. `OnnxFormLifetime`, annulation, lecture audio et nettoyage conservés. |
+| Separate Audio | Stems en cases natives, engine en radios exclusives, descriptions mesurées. Même sélection et fallback CPU quand GPU indisponible ; Separate désactivé sans stem. |
+| RIFE | Remplacement des panneaux/labels et menus maison par trois ComboBox natifs (modèle/cible/playback). Champs FPS compacts, réglages audio et calculs conservés. Aucun modèle ou runner exécuté par l'ouverture du picker. |
+| Upscale Image / Video | Sélecteur modèle natif, radios de facteur et champs personnalisés compacts, textes mesurés. Catalogues image/vidéo, synchronisation du ratio et borne x1..x4 conservés ; la variante vidéo hérite toujours du picker existant. Taille custom indisponible sur sélection multiple. Chrome IA commune avec icône de fonction dans le bandeau. |
+| Download Model | Informations et progression mesurées, détail d'erreur natif multiligne de pleine largeur, au moins sept lignes / 140 unités logiques. Cancel annule puis réactive Close/retry ; fermeture par croix attend la tâche et son nettoyage sans bloquer le fil UI. Retour tardif d'une tentative terminée/annulée ignoré. Action de téléchargement injectée et downloaders du Core conservés. |
+| BRIA | Instructions mesurées et chemin copiable, liens secondaires séparés, commandes standard. Re-check ne réinjecte plus de bornes fixes ; Missing/Mismatch/Valid et Use anyway conservés, sans téléchargement BRIA. |
+
+**Constats et limites :** les anciens placements fixes, sélecteurs sans navigation native et réassignations de footer sont confirmés par lecture puis supprimés sur ce lot. La fermeture immédiate de Download pendant une tâche active est également confirmée dans l'ancien code ; la nouvelle attente est vérifiée avec une tâche injectée retardée. Aucun défaut de rendu réel D3 n'est prétendu reproduit par ces tests. Re-check BRIA conserve son callback synchrone de checksum : une pause lors de la lecture d'un gros fichier reste un risque confirmé par lecture, sans mesure réelle dans cette recette. Pas de modification des actions, downloaders, runners, modèles, CLI, installation ou mode DPI Release.
+
+**Vérifications :**
+
+- Build application puis UiSamples réussi : **0 avertissement, 0 erreur**.
+- **26 tests D3 réussis, 0 échec** : 13 variantes de fenêtres avec handles natifs cachés, ouverture compacte sans scrollbar inutile, footer et boutons accessibles après réduction/agrandissement de police ; exclusivité des choix, mono/stéréo, engine, catalogues, ratio, FPS/audio, routes BRIA, erreur longue/retry et durée de vie Download/Remove Noise. Trace : `scratch/phase-d3/d3-targeted-final.trx`.
+- Premier passage ciblé : 25 réussites et une erreur de nombre de paramètres dans l'invocation réfléchie du handler privé de fermeture Download. Test corrigé pour passer sender + événement ; aucun correctif produit induit par cet incident. Deux avertissements d'analyse xUnit corrigés.
+- Suite séquentielle sans affichage : **565 réussis, 5 ignorés média/IA, 0 échec**, 570 cas sélectionnés, dont B/C/D1/D2 et D3. Les 12 cas affichant des fenêtres restent exclus, distincts des cinq skips. Trace : `scratch/phase-d3/d3-regression.trx`.
+- Dernière revue locale BRIA : l'action Use anyway est retirée du footer en état Missing, afin de ne réserver aucune rangée vide. Elle est réinsérée en Mismatch et libérée même lorsqu'elle est détachée. Build vert et test BRIA ciblé réussi après cette correction ; trace `scratch/phase-d3/d3-bria-actions.trx`. Aucun composant commun modifié par cette correction.
+- Contrôle du lanceur sans affichage : PMv2 reçu à **96 DPI**, six démonstrations/lanceurs avec `Visible=false`. Trace : `scratch/phase-d3/hidden-pmv2.json`. Le résultat ne simule pas 150/200/300 %.
+
+**Recette livrée :** double-clic sur `TEST_PHASE_D3.cmd`, [procédure D3](UI_PHASE_D3_MANUAL_TESTS.md). Les six pickers réels rapportent les réglages sans export final ; Preview Remove Noise est facultatif et nécessite un modèle déjà installé. Download et vérification BRIA sont explicitement simulés, sans réseau ou fichier modèle. La simulation GPU de Separate n'est pas une détection matérielle. Les liens BRIA ne s'ouvrent que sur clic manuel.
+
+**Décision : implémentation D3 livrée pour validation du design à 100 %, puis essais réels aux autres échelles et contrôles complémentaires.** Les vérifications cachées ne clôturent pas la recette utilisateur, D3 ou D complète. Les résultats d'inférence/export, acquisitions réelles de modèles, application installée et DPI Release restent à qualifier avant publication. Aucun démarrage E à G ni contrôle du bureau.
+
+#### Validation visuelle D3 et bilan de migration D — 1er octobre 2026
+
+L'utilisateur confirme : « je valide toutes les fenetres dans toutes les mises a l'échelle ». Cette déclaration valide le rendu des huit fenêtres D3 du build de développement livré après `d8bd717`, à **100/150/200/300 %**. Aucun défaut visuel restant n'est signalé sur ce périmètre. Les changements D3 sont encore locaux, sans commit de réalisation à cette date.
+
+**Bilan : les 24 fenêtres et variantes prévues en D1/D2/D3 utilisent le socle commun et sont acceptées visuellement aux quatre échelles.** Les résultats automatiques précédents restent applicables : builds verts, 26 cas D3 réussis, suite de non-régression à 565 réussites/5 skips, puis contrôle ciblé du footer BRIA. Aucun code changé ni build/test supplémentaire nécessaire pour cette consignation.
+
+Le dernier retour ne confirme pas séparément les manipulations métier, clavier, annulation/erreurs du simulateur, l'aperçu réel Remove Noise, les transitions multi-écran ou la taille du texte indépendante. Conserver ces contrôles dans la recette et la qualification finale, sans les annoncer exécutés manuellement. Les scénarios Download/BRIA injectés ne prouvent aucun téléchargement réel ni checksum ; le risque de pause du re-check BRIA reste documenté. L'application installée, les exports et le mode DPI Release ne sont pas certifiés.
+
+**D3 validée pour le rendu UI/DPI déclaré.** La migration et l'acceptation visuelle de D sont achevées ; la qualification complète conserve les limites ci-dessus. Le prochain lot prévu est E, les sept éditeurs restants. Cette confirmation seule ne démarre pas E à G et ne crée pas de nouveau commit.
+
 ### E — Éditeurs restants — P1
 
 - **Objectif :** achever les migrations en garantissant espace de travail adaptable, interaction précise et absence de confusion entre DPI et coordonnées média.
@@ -840,7 +878,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 validée à 100/150/200/300 %, passage à D3 autorisé ; E à G non commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 et D3 validées visuellement à 100/150/200/300 %, avec leurs limites de recette consignées ; E à G non commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

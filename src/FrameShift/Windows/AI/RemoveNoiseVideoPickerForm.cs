@@ -16,16 +16,9 @@ namespace FrameShift.Windows.AI;
 public sealed class RemoveNoiseVideoPickerForm : Form
 {
     private string _selectedStrength = RemoveNoiseVideoSettings.StrengthMaximum;
-    private bool _updatingStrength;
     private readonly CheckBox _stereoCheckBox;
-    private Panel _lightTile   = null!;
-    private Panel _normalTile  = null!;
-    private Panel _strongTile  = null!;
-    private Panel _maximumTile = null!;
-    private RadioButton _lightRadio   = null!;
-    private RadioButton _normalRadio  = null!;
-    private RadioButton _strongRadio  = null!;
-    private RadioButton _maximumRadio = null!;
+    private readonly RadioButton[] _strengthChoices;
+    private readonly FrameShift.Windows.Controls.FrameShiftStatusMessage _previewStatus;
     private readonly Button _cancelButton;
     private readonly Button _denoiseButton;
     private readonly Button _previewButton;
@@ -55,126 +48,44 @@ public sealed class RemoveNoiseVideoPickerForm : Form
         if (previewSourcePath != null && ffmpegPath != null)
             _ffmpegRunner = new FfmpegRunner(new AppLogger());
 
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(640, 440), new Size(400, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Noise (Video)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterParent;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 384);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        var header = FrameShiftUiFactory.CreateFixedHeader(
-            "FrameShift - Remove Noise (Video)",
-            $"Source: {sourceLabel}",
-            IconPaths.RemoveNoiseAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "AI");
-        Controls.Add(header);
-
-        var strengthSection = FrameShiftUiFactory.CreateFixedSection(
-            new Point(12, 82),
-            new Size(536, 142),
-            "Noise reduction strength");
-        Controls.Add(strengthSection);
-
-        _lightTile   = CreateStrengthTile("Light",   "Noticeable noise, lightly reduced", new Point(13,  32), RemoveNoiseVideoSettings.StrengthLight,   false, out _lightRadio);
-        _normalTile  = CreateStrengthTile("Normal",  "Balanced noise reduction",           new Point(143, 32), RemoveNoiseVideoSettings.StrengthNormal,  false, out _normalRadio);
-        _strongTile  = CreateStrengthTile("Strong",  "Aggressive noise reduction",         new Point(273, 32), RemoveNoiseVideoSettings.StrengthStrong,  false, out _strongRadio);
-        _maximumTile = CreateStrengthTile("Maximum", "Maximum cleanup",                    new Point(403, 32), RemoveNoiseVideoSettings.StrengthMaximum, true,  out _maximumRadio);
-
-        strengthSection.Controls.AddRange([_lightTile, _normalTile, _strongTile, _maximumTile]);
-
-        var hintLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(18, 102),
-            Size = new Size(500, 18),
-            ForeColor = FrameShiftTheme.AccentText,
-            Text = "Higher strength removes more noise. Maximum may affect natural audio characteristics."
-        };
-        strengthSection.Controls.Add(hintLabel);
-
-        _lightRadio.CheckedChanged   += (_, _) => SelectStrength(RemoveNoiseVideoSettings.StrengthLight,   _lightTile,   _normalTile, _strongTile, _maximumTile);
-        _normalRadio.CheckedChanged  += (_, _) => SelectStrength(RemoveNoiseVideoSettings.StrengthNormal,  _lightTile,   _normalTile, _strongTile, _maximumTile);
-        _strongRadio.CheckedChanged  += (_, _) => SelectStrength(RemoveNoiseVideoSettings.StrengthStrong,  _lightTile,   _normalTile, _strongTile, _maximumTile);
-        _maximumRadio.CheckedChanged += (_, _) => SelectStrength(RemoveNoiseVideoSettings.StrengthMaximum, _lightTile,   _normalTile, _strongTile, _maximumTile);
-
-        _stereoCheckBox = new CheckBox
-        {
-            AutoSize = true,
-            Location = new Point(20, 234),
-            Text = "Stereo processing  —  2× longer, processes L and R channels independently",
-            ForeColor = sourceIsStereo ? FrameShiftTheme.TextPrimary : FrameShiftTheme.TextSecondary,
-            Enabled = sourceIsStereo,
-            Checked = false,
-            FlatStyle = FlatStyle.Flat
-        };
-        Controls.Add(_stereoCheckBox);
-
-        var stereoHintLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(42, 254),
-            Size = new Size(494, 16),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = sourceIsStereo
-                ? "L and R channels are denoised separately, then merged back."
-                : "Source audio is mono — stereo processing is not available."
-        };
-        Controls.Add(stereoHintLabel);
-
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(new Point(12, 278), new Size(536, 44));
-        Controls.Add(infoCard);
-
-        var infoLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(16, 11),
-            Size = new Size(504, 18),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "Audio will be processed at 48 kHz. Video stream is copied without re-encoding."
-        };
-        infoCard.Controls.Add(infoLabel);
-
-        _previewButton = FrameShiftUiFactory.CreateFixedActionButton("▶  Preview", new Point(12, 328), new Size(130, 34), primary: false);
+        var header = FrameShiftUiFactory.CreateHeader(
+            "FrameShift - Remove Noise (Video)", $"Source: {sourceLabel}",
+            IconPaths.RemoveNoiseAiIcon, IconPaths.FrameShiftAiIcon, "AI");
+        var strength = RemoveNoisePickerUi.CreateStrengthSection(value => _selectedStrength = value, out _strengthChoices);
+        var channels = RemoveNoisePickerUi.CreateStereoSection(sourceIsStereo, out _stereoCheckBox);
+        _previewStatus = FrameShiftUiFactory.CreateStatusMessage("Audio will be processed at 48 kHz. Video stream is copied without re-encoding.");
+        _previewButton = FrameShiftUiFactory.CreateMeasuredActionButton("▶  Preview", false);
         _previewButton.Enabled = _ffmpegRunner != null;
-        _previewButton.Click  += async (_, _) => await StartPreviewAsync().ConfigureAwait(true);
-        Controls.Add(_previewButton);
-
-        _cancelButton  = FrameShiftUiFactory.CreateFixedActionButton("Cancel",  new Point(278, 328), new Size(120, 34), primary: false);
-        _denoiseButton = FrameShiftUiFactory.CreateFixedActionButton("Denoise", new Point(408, 328), new Size(140, 34), primary: true);
+        _previewButton.Click += async (_, _) => await StartPreviewAsync().ConfigureAwait(true);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _denoiseButton = FrameShiftUiFactory.CreateMeasuredActionButton("Denoise", true);
         _cancelButton.Click += (_, _) => RequestClose(DialogResult.Cancel);
         _denoiseButton.Click += (_, _) => RequestClose(DialogResult.OK);
-        Controls.Add(_cancelButton);
-        Controls.Add(_denoiseButton);
-
         AcceptButton = _denoiseButton;
         CancelButton = _cancelButton;
+        var root = FrameShiftDialogLayout.Create(header,
+            FrameShiftUiFactory.CreateVerticalStack(strength, channels),
+            FrameShiftDialogLayout.CreateActions(_previewButton, _cancelButton, _denoiseButton), _previewStatus);
+        Controls.Add(root);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, root);
         FormClosing += OnFormClosing;
         FormClosed += (_, _) => _lifetime.Dispose();
 
-        SelectStrength(RemoveNoiseVideoSettings.StrengthMaximum, _lightTile, _normalTile, _strongTile, _maximumTile);
+        ResumeLayout(true);
     }
 
     public string? SelectedStrength => _selectedStrength;
     public bool ProcessStereo => _stereoCheckBox.Checked;
-
-    protected override void OnShown(EventArgs e)
-    {
-        base.OnShown(e);
-        FrameShiftUiLayout.AutoSizeAndPositionFooterButtons(this, _cancelButton, _denoiseButton);
-        _previewButton.SetBounds(12, _cancelButton.Top, _previewButton.Width, _cancelButton.Height);
-    }
 
     public static string BuildSourceLabel(IReadOnlyList<string> inputPaths)
     {
         if (inputPaths.Count == 1)
         {
             var name = Path.GetFileName(inputPaths[0]);
-            const int max = 72;
-            return name.Length <= max ? name : $"{name[..34]}...{name[^30..]}";
+            return name;
         }
 
         return $"{inputPaths.Count} selected files";
@@ -260,7 +171,7 @@ public sealed class RemoveNoiseVideoPickerForm : Form
         catch (Exception ex)
         {
             if (!ct.IsCancellationRequested && CanUpdateUi)
-                MessageBox.Show($"Preview failed: {ex.Message}", "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                _previewStatus.Text = $"Preview failed: {ex.Message}";
         }
         finally
         {
@@ -340,110 +251,8 @@ public sealed class RemoveNoiseVideoPickerForm : Form
         _cancelButton.Enabled = false;
         _denoiseButton.Enabled = false;
         _stereoCheckBox.Enabled = false;
-        _lightTile.Enabled = false;
-        _normalTile.Enabled = false;
-        _strongTile.Enabled = false;
-        _maximumTile.Enabled = false;
+        foreach (var choice in _strengthChoices) choice.Enabled = false;
     }
-
-    private void SelectStrength(string strength, params Panel[] tiles)
-    {
-        if (_updatingStrength) return;
-        _updatingStrength = true;
-        try
-        {
-            _selectedStrength = strength;
-            _lightRadio.Checked   = strength.Equals(RemoveNoiseVideoSettings.StrengthLight,   StringComparison.OrdinalIgnoreCase);
-            _normalRadio.Checked  = strength.Equals(RemoveNoiseVideoSettings.StrengthNormal,  StringComparison.OrdinalIgnoreCase);
-            _strongRadio.Checked  = strength.Equals(RemoveNoiseVideoSettings.StrengthStrong,  StringComparison.OrdinalIgnoreCase);
-            _maximumRadio.Checked = strength.Equals(RemoveNoiseVideoSettings.StrengthMaximum, StringComparison.OrdinalIgnoreCase);
-            foreach (var tile in tiles)
-                tile.Invalidate();
-        }
-        finally
-        {
-            _updatingStrength = false;
-        }
-    }
-
-    private Panel CreateStrengthTile(
-        string title,
-        string description,
-        Point location,
-        string strengthId,
-        bool selected,
-        out RadioButton radio)
-    {
-        var tile = new Panel
-        {
-            Location = location,
-            Size = new Size(120, 58),
-            Cursor = Cursors.Hand
-        };
-
-        radio = new RadioButton
-        {
-            Location = new Point(8, 8),
-            Size = new Size(14, 14),
-            Checked = selected,
-            FlatStyle = FlatStyle.Flat,
-            TabStop = true
-        };
-        radio.FlatAppearance.BorderSize = 0;
-
-        var titleLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(26, 6),
-            Size = new Size(86, 18),
-            Text = title,
-            Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point),
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-
-        var descLabel = new Label
-        {
-            AutoSize = false,
-            Location = new Point(8, 28),
-            Size = new Size(104, 22),
-            Text = description,
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-
-        tile.Controls.AddRange([radio, titleLabel, descLabel]);
-
-        tile.Paint += (_, e) =>
-        {
-            var isSelected = _selectedStrength.Equals(strengthId, StringComparison.OrdinalIgnoreCase);
-            var borderColor = isSelected ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.PrimaryBlue;
-            var pen = new Pen(borderColor, isSelected ? 2f : 1f);
-            var rect = new Rectangle(0, 0, tile.Width - 1, tile.Height - 1);
-            const int radius = 4;
-            using var path = RoundedRectPath(rect, radius);
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            e.Graphics.DrawPath(pen, path);
-            pen.Dispose();
-        };
-
-        var capturedRadio = radio;
-        tile.Click       += (_, _) => capturedRadio.Checked = true;
-        descLabel.Click  += (_, _) => capturedRadio.Checked = true;
-        titleLabel.Click += (_, _) => capturedRadio.Checked = true;
-
-        return tile;
-    }
-
-    private static System.Drawing.Drawing2D.GraphicsPath RoundedRectPath(Rectangle rect, int radius)
-    {
-        var path = new System.Drawing.Drawing2D.GraphicsPath();
-        path.AddArc(rect.X, rect.Y, radius * 2, radius * 2, 180, 90);
-        path.AddArc(rect.Right - radius * 2, rect.Y, radius * 2, radius * 2, 270, 90);
-        path.AddArc(rect.Right - radius * 2, rect.Bottom - radius * 2, radius * 2, radius * 2, 0, 90);
-        path.AddArc(rect.X, rect.Bottom - radius * 2, radius * 2, radius * 2, 90, 90);
-        path.CloseFigure();
-        return path;
-    }
-
     private static void TryDeletePreviewTemp(string? path)
     {
         if (string.IsNullOrWhiteSpace(path)) return;

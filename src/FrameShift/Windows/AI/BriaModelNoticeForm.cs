@@ -24,11 +24,6 @@ public enum BriaModelStatus
 // mismatch (strict pin, warn-only fallback) the user may also run the file anyway.
 public sealed class BriaModelNoticeForm : Form
 {
-    private const int ButtonWidth = 116;
-    private const int ButtonHeight = 34;
-    private const int ButtonGap = 10;
-    private const int ButtonBottomMargin = 18;
-
     private readonly string _infoPageUrl;
     private readonly string _modelFolder;
     private readonly Func<BriaModelStatus> _recheck;
@@ -40,6 +35,7 @@ public sealed class BriaModelNoticeForm : Form
     private readonly Button _recheckButton;
     private readonly Button _useAnywayButton;
     private readonly Button _cancelButton;
+    private readonly FlowLayoutPanel _actions;
 
     private BriaModelStatus _status;
 
@@ -60,103 +56,42 @@ public sealed class BriaModelNoticeForm : Form
         _recheck = recheck;
         _status = initialStatus;
 
-        FrameShiftWindowChrome.Apply(
-            this,
-            "FrameShift AI - Remove Background (BRIA)",
-            IconPaths.RemoveBackgroundAiIcon,
-            IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(652, 392);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-
-        var usableWidth = ClientSize.Width - (2 * FrameShiftUiMetrics.OuterPadding);
-
-        var header = FrameShiftUiFactory.CreateFixedHeader(
-            "Remove Background (BRIA)",
-            "Manual model installation required — not included with FrameShift",
-            IconPaths.RemoveBackgroundAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "AI");
-        header.Width = usableWidth;
-        Controls.Add(header);
-
-        _messageLabel = new Label
-        {
-            Location = new Point(FrameShiftUiMetrics.OuterPadding, 82),
-            Size = new Size(usableWidth, 96),
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        Controls.Add(_messageLabel);
-
-        var infoCard = FrameShiftUiFactory.CreateFixedInfoCard(
-            new Point(FrameShiftUiMetrics.OuterPadding, 184),
-            new Size(usableWidth, 70));
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(10, 8),
-            Size = new Size(usableWidth - 20, 18),
-            Text = $"Expected file: {expectedFileName}   (approx. {approxSizeText})",
-            ForeColor = FrameShiftTheme.TextSecondary
-        });
-        infoCard.Controls.Add(new Label
-        {
-            Location = new Point(10, 28),
-            Size = new Size(usableWidth - 20, 34),
-            Text = $"Target folder: {modelFolder}",
-            ForeColor = FrameShiftTheme.TextMuted
-        });
-        Controls.Add(infoCard);
-
-        _statusLabel = new Label
-        {
-            Location = new Point(FrameShiftUiMetrics.OuterPadding, 262),
-            Size = new Size(usableWidth, 36),
-            Text = string.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        Controls.Add(_statusLabel);
-
-        _openPageButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Open BRIA page", Point.Empty, new Size(ButtonWidth, ButtonHeight), primary: true);
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(680, 460), new Size(400, 300));
+        FrameShiftWindowChrome.Apply(this, "FrameShift AI - Remove Background (BRIA)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Remove Background (BRIA)",
+            "Manual model installation required", IconPaths.RemoveBackgroundAiIcon, IconPaths.FrameShiftAiIcon, "AI");
+        _messageLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        var instructions = FrameShiftUiFactory.CreateSection("Model installation", FrameShiftUiFactory.CreateVerticalStack(
+            _messageLabel,
+            FrameShiftUiFactory.CreateStatusMessage($"Expected file: {expectedFileName} (approx. {approxSizeText})\r\nTarget folder: {modelFolder}")));
+        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _openPageButton = FrameShiftUiFactory.CreateMeasuredActionButton("Open BRIA page", false);
         _openPageButton.Click += OnOpenPageClick;
-        Controls.Add(_openPageButton);
-
-        _openFolderButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Open folder", Point.Empty, new Size(ButtonWidth, ButtonHeight), primary: false);
+        _openFolderButton = FrameShiftUiFactory.CreateMeasuredActionButton("Open folder", false);
         _openFolderButton.Click += OnOpenFolderClick;
-        Controls.Add(_openFolderButton);
-
-        _recheckButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Re-check", Point.Empty, new Size(ButtonWidth, ButtonHeight), primary: false);
+        var links = FrameShiftUiFactory.CreateChoiceRow(_openPageButton, _openFolderButton);
+        _recheckButton = FrameShiftUiFactory.CreateMeasuredActionButton("Re-check", true);
         _recheckButton.Click += OnRecheckClick;
-        Controls.Add(_recheckButton);
-
-        _useAnywayButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Use anyway", Point.Empty, new Size(ButtonWidth, ButtonHeight), primary: false);
+        _useAnywayButton = FrameShiftUiFactory.CreateMeasuredActionButton("Use anyway", false);
         _useAnywayButton.Click += (_, _) =>
         {
             Proceed = true;
             DialogResult = DialogResult.OK;
             Close();
         };
-        Controls.Add(_useAnywayButton);
-
-        _cancelButton = FrameShiftUiFactory.CreateFixedActionButton(
-            "Cancel", Point.Empty, new Size(ButtonWidth, ButtonHeight), primary: false);
-        _cancelButton.Click += (_, _) =>
-        {
-            DialogResult = DialogResult.Cancel;
-            Close();
-        };
-        Controls.Add(_cancelButton);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _cancelButton.DialogResult = DialogResult.Cancel;
         CancelButton = _cancelButton;
-
+        AcceptButton = _recheckButton;
+        _actions = FrameShiftDialogLayout.CreateActions(_cancelButton, _useAnywayButton, _recheckButton);
+        var root = FrameShiftDialogLayout.Create(header,
+            FrameShiftUiFactory.CreateVerticalStack(instructions, links, _statusLabel),
+            _actions);
+        Controls.Add(root);
         ApplyStatus(_status);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, root);
+        ResumeLayout(true);
     }
 
     private void ApplyStatus(BriaModelStatus status)
@@ -172,28 +107,14 @@ public sealed class BriaModelNoticeForm : Form
               "Download it manually from BRIA's official Hugging Face page, review BRIA's " +
               "documentation and licensing, place the file in the folder below, then click Re-check.";
 
-        _useAnywayButton.Visible = status == BriaModelStatus.Mismatch;
-        LayoutButtons();
-    }
-
-    private void LayoutButtons()
-    {
-        var visible = new List<Button> { _openPageButton, _openFolderButton, _recheckButton };
-        if (_status == BriaModelStatus.Mismatch)
+        // The shared action bar measures its controls; remove an unavailable action
+        // rather than reserving an empty button slot or wrapped row for it.
+        if (status == BriaModelStatus.Mismatch)
         {
-            visible.Add(_useAnywayButton);
+            if (!_actions.Controls.Contains(_useAnywayButton)) _actions.Controls.Add(_useAnywayButton);
+            _actions.Controls.SetChildIndex(_useAnywayButton, 1);
         }
-        visible.Add(_cancelButton);
-
-        var count = visible.Count;
-        var totalWidth = (count * ButtonWidth) + ((count - 1) * ButtonGap);
-        var startX = (ClientSize.Width - totalWidth) / 2;
-        var y = ClientSize.Height - ButtonHeight - ButtonBottomMargin;
-
-        for (var i = 0; i < count; i++)
-        {
-            visible[i].SetBounds(startX + (i * (ButtonWidth + ButtonGap)), y, ButtonWidth, ButtonHeight);
-        }
+        else _actions.Controls.Remove(_useAnywayButton);
     }
 
     private void OnRecheckClick(object? sender, EventArgs e)
@@ -261,5 +182,12 @@ public sealed class BriaModelNoticeForm : Form
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        // It can be detached from the footer in the Missing state.
+        if (disposing) _useAnywayButton.Dispose();
+        base.Dispose(disposing);
     }
 }
