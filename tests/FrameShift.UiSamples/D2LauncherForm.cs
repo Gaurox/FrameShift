@@ -31,7 +31,9 @@ internal sealed class D2LauncherForm : Form
             var fixtures = Path.Combine(dir.FullName, "scratch", "phase-a");
             if (!Directory.Exists(fixtures)) continue;
             _video.Text = Directory.EnumerateFiles(fixtures, "*.mp4").FirstOrDefault() ?? "";
-            _audio.Text = Directory.EnumerateFiles(fixtures, "*.wav").FirstOrDefault() ?? "";
+            _audio.Text = Directory.EnumerateFiles(fixtures).FirstOrDefault(path =>
+                CompressAudioSettings.IsTargetSizeSupportedForExtension(Path.GetExtension(path).ToLowerInvariant()))
+                ?? Directory.EnumerateFiles(fixtures, "*.wav").FirstOrDefault() ?? "";
             _image.Text = Directory.EnumerateFiles(fixtures, "*.png").FirstOrDefault() ?? "";
             break;
         }
@@ -61,7 +63,7 @@ internal sealed class D2LauncherForm : Form
             _launchButtons.Add(button);
             buttons.Controls.Add(button);
         }
-        _result = FrameShiftUiFactory.CreateStatusMessage("OK / Apply affiche uniquement les réglages. Aucun export final. Les aperçus lisent vos sources ; Preview 5s produit un fichier temporaire et peut ouvrir le lecteur vidéo habituel.");
+        _result = FrameShiftUiFactory.CreateStatusMessage("OK / Apply affiche uniquement les réglages. Aucun export final. Pour la taille cible audio, choisir un MP3, M4A ou OGG. Preview 5s produit un temporaire et peut ouvrir le lecteur vidéo habituel.");
         var close = FrameShiftUiFactory.CreateMeasuredActionButton("Fermer", false);
         close.Click += (_, _) => Close();
         CancelButton = close;

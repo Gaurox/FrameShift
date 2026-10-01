@@ -167,23 +167,18 @@ public sealed class RotateFlipImageForm : Form
         _summaryLabel.Text = settings.BuildTransformSummary();
         _summaryLabel.ForeColor = settings.IsIdentity ? FrameShiftTheme.TextMuted : FrameShiftTheme.TextPrimary;
         _applyButton.Enabled = _originalBitmap is not null && !settings.IsIdentity;
-        UpdateTransformButtonHighlights();
+        UpdateTransformButtons();
         _previewPanel.Invalidate();
     }
 
-    private void UpdateTransformButtonHighlights()
+    private void UpdateTransformButtons()
     {
-        UpdateButtonActiveState(_rotateCwButton, _currentAngle != RotateAngle.None);
-        UpdateButtonActiveState(_rotateCcwButton, _currentAngle != RotateAngle.None);
-        UpdateButtonActiveState(_flipHButton, _flipH);
-        UpdateButtonActiveState(_flipVButton, _flipV);
-    }
-
-    private static void UpdateButtonActiveState(Button button, bool active)
-    {
-        button.BackColor = active ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface;
-        button.ForeColor = active ? FrameShiftTheme.AccentText : FrameShiftTheme.TextPrimary;
-        button.FlatAppearance.BorderColor = active ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.PrimaryBlue;
+        // Rotation buttons perform a step; only mirrors have an on/off state.
+        // Keep the standard palette and express the persistent state with a check mark.
+        _flipHButton.Text = _flipH ? "↔ Flip horizontal ✓" : "↔ Flip horizontal";
+        _flipVButton.Text = _flipV ? "↕ Flip vertical ✓" : "↕ Flip vertical";
+        _flipHButton.AccessibleDescription = _flipH ? "Horizontal mirror enabled" : "Horizontal mirror disabled";
+        _flipVButton.AccessibleDescription = _flipV ? "Vertical mirror enabled" : "Vertical mirror disabled";
     }
 
     private static Bitmap BuildTransformedBitmap(Bitmap source, RotateFlipSettings settings)

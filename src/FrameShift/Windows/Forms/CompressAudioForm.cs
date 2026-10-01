@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows.Forms;
 using FrameShift.Windows.Helpers;
 using FrameShift.Windows.Controls;
+using FrameShift.Core.Actions;
 
 namespace FrameShift.Windows.Forms;
 
@@ -27,7 +28,7 @@ public sealed class CompressAudioForm : Form
         high.CheckedChanged += (_, _) => { if (high.Checked) _selectedProfileId = "high"; };
         balanced.CheckedChanged += (_, _) => { if (balanced.Checked) _selectedProfileId = "balanced"; };
         small.CheckedChanged += (_, _) => { if (small.Checked) _selectedProfileId = "small"; };
-        var supported = sourceExtension is ".mp3" or ".m4a" or ".ogg";
+        var supported = CompressAudioSettings.IsTargetSizeSupportedForExtension(sourceExtension);
         _checkTarget = new CheckBox { Name = "useTarget", Text = "Target file size (optional)", AutoSize = true, Enabled = supported };
         _textTarget = new TextBox { Name = "targetSize", ReadOnly = true, Enabled = supported };
         _unitSelector = new ComboBox { Name = "targetUnit", DropDownStyle = ComboBoxStyle.DropDownList, Enabled = false };
@@ -40,9 +41,10 @@ public sealed class CompressAudioForm : Form
         };
         var content = FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateSection("Compression profile", FrameShiftUiFactory.CreateChoiceRow(high, balanced, small)),
-            FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(_checkTarget,
+            FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateChoiceRow(_checkTarget),
                 FrameShiftUiFactory.CreateFieldWithUnit("&Size", _textTarget, _unitSelector),
-                FrameShiftUiFactory.CreateWrappingLabel(supported ? "Best-effort target" : "Target size is not available for this format."))));
+                FrameShiftUiFactory.CreateWrappingLabel(supported ? "Approximate target size; the original format is kept."
+                    : $"Target size is available for MP3, M4A and OGG only. {sourceExtension.TrimStart('.').ToUpperInvariant()} uses the quality profile above."))));
         var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
         cancel.DialogResult = DialogResult.Cancel;
         cancel.Name = "cancelButton";

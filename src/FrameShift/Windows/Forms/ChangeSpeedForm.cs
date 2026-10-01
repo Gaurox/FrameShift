@@ -28,6 +28,7 @@ public sealed class ChangeSpeedForm : Form
     // Slider visual range used by the UI.
     private const int SliderMin = 25;
     private const int SliderMax = 400;
+    private const int PresetButtonWidth = 72;
     private const double UiMinFactor = SliderMin / 100.0;
     private const double UiMaxFactor = SliderMax / 100.0;
 
@@ -75,8 +76,11 @@ public sealed class ChangeSpeedForm : Form
         var isAudio = mediaKind == ChangeSpeedMediaKind.Audio;
         var title = isAudio ? "Change Audio Speed" : "Change Video Speed";
         var iconPath = IconPaths.ContextMenuIco(isAudio ? "change-audio-speed-audio-icon.ico" : "change-video-speed-video-icon.ico");
+        var initialWidth = isAudio ? 640 : Math.Max(640,
+            VideoPresets.Length * (PresetButtonWidth + FrameShiftUiMetrics.LineGap)
+            + 2 * FrameShiftUiMetrics.OuterPadding + FrameShiftUiMetrics.StandardSectionPadding.Horizontal);
         SuspendLayout();
-        FrameShiftWindowPolicy.Initialize(this, new Size(640, 600), new Size(380, 300));
+        FrameShiftWindowPolicy.Initialize(this, new Size(initialWidth, 600), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, $"FrameShift - {title}");
         var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", $"Source: {Path.GetFileName(inputPath)}",
             iconPath, IconPaths.AppIcon, "♪");
@@ -94,9 +98,10 @@ public sealed class ChangeSpeedForm : Form
         _textDuration.Leave += (_, _) => ReformatDurationOnLeave();
         _checkKeepPitch.CheckedChanged += (_, _) => RefreshInfoLabel();
         var presets = FrameShiftUiFactory.CreateChoiceRow();
+        presets.Name = "speedPresets";
         foreach (var (percent, label) in isAudio ? AudioPresets : VideoPresets)
         {
-            var button = FrameShiftUiFactory.CreateMeasuredActionButton(label, false, 72);
+            var button = FrameShiftUiFactory.CreateMeasuredActionButton(label, false, PresetButtonWidth);
             button.Click += (_, _) => SetSpeedFactor(percent / 100.0);
             presets.Controls.Add(button);
         }
@@ -107,7 +112,7 @@ public sealed class ChangeSpeedForm : Form
                 FrameShiftUiFactory.CreateFieldRow("&Target duration", _textDuration, null, 180),
                 FrameShiftUiFactory.CreateWrappingLabel("Speed: 25% to 400%. Duration: seconds or hh:mm:ss."))),
             FrameShiftUiFactory.CreateSection("Presets", presets),
-            FrameShiftUiFactory.CreateSection("Options", _checkKeepPitch));
+            FrameShiftUiFactory.CreateSection("Options", FrameShiftUiFactory.CreateChoiceRow(_checkKeepPitch)));
         _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
         _buttonPreview.Name = "previewButton";
         _buttonPreview.Click += async (_, _) => await PreviewAsync();

@@ -10,10 +10,10 @@ namespace FrameShift.Windows.Forms;
 
 public abstract class ResizeMediaFormBase : Form
 {
+    private const int DimensionFieldWidth = 128;
     private readonly int _originalWidth;
     private readonly int _originalHeight;
     private readonly double _ratio;
-    private readonly string _mediaKindLabel;
 
     private bool _updatingFields;
     private string? _activeEditField;
@@ -32,7 +32,6 @@ public abstract class ResizeMediaFormBase : Form
         _originalWidth = originalWidth;
         _originalHeight = originalHeight;
         _ratio = (double)originalWidth / originalHeight;
-        _mediaKindLabel = functionName;
         var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {functionName}",
             $"{Path.GetFileName(sourcePath)}    Original: {originalWidth} × {originalHeight} px",
             IconPaths.ResizeImageVideoIcon, IconPaths.AppIcon, fallbackGlyph);
@@ -42,10 +41,7 @@ public abstract class ResizeMediaFormBase : Form
         _textHeightPct = CreateValueTextBox("heightPct");
         _checkLockRatio = new CheckBox { Name = "keepRatio", Text = "Keep ratio", Checked = true, AutoSize = true };
         var dimensions = FrameShiftUiFactory.CreateSection("New size", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("&Width", _textWidthPx, "px", 120),
-            FrameShiftUiFactory.CreateFieldRow("Width scale", _textWidthPct, "%", 120),
-            FrameShiftUiFactory.CreateFieldRow("&Height", _textHeightPx, "px", 120),
-            FrameShiftUiFactory.CreateFieldRow("Height scale", _textHeightPct, "%", 120), _checkLockRatio));
+            CreateDimensionsGrid(), FrameShiftUiFactory.CreateChoiceRow(_checkLockRatio)));
         var presets = FrameShiftUiFactory.CreateChoiceRow();
         foreach (var scale in new[] { 0.5, 0.75, 1.5, 2.0, 4.0 })
         {
@@ -84,6 +80,56 @@ public abstract class ResizeMediaFormBase : Form
     }
 
     public ResizeSettings? Selection { get; private set; }
+
+    private TableLayoutPanel CreateDimensionsGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Name = "dimensionsGrid", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top, Margin = Padding.Empty, ColumnCount = 4, RowCount = 3, Size = Size.Empty
+        };
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var row = 0; row < 3; row++) grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel("Pixels (px)"), 1, 0);
+        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel("Scale (%)"), 2, 0);
+        grid.Controls.Add(new Label { Text = "&Width", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 1);
+        grid.Controls.Add(new Label { Text = "&Height", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
+        grid.Controls.Add(_textWidthPx, 1, 1);
+        grid.Controls.Add(_textWidthPct, 2, 1);
+        grid.Controls.Add(_textHeightPx, 1, 2);
+        grid.Controls.Add(_textHeightPct, 2, 2);
+        foreach (var (box, caption, index) in new[]
+        {
+            (_textWidthPx, "Width in pixels", 0), (_textWidthPct, "Width scale in percent", 1),
+            (_textHeightPx, "Height in pixels", 2), (_textHeightPct, "Height scale in percent", 3)
+        })
+        {
+            box.Dock = DockStyle.Fill;
+            box.AccessibleName = caption;
+            box.TabIndex = index;
+        }
+        void Metrics()
+        {
+            var gap = FrameShiftUiMetrics.ToPixels(grid, FrameShiftUiMetrics.LineGap);
+            foreach (Control child in grid.Controls)
+                child.Margin = new Padding(0, 0, gap, gap);
+            var labelsWidth = grid.Controls.Cast<Control>().Where(c => grid.GetColumn(c) == 0)
+                .Max(c => c.GetPreferredSize(Size.Empty).Width + gap);
+            // Keep four compact, equal inputs; the empty column absorbs unused space.
+            var columnWidth = Math.Min(FrameShiftUiMetrics.ToPixels(grid, DimensionFieldWidth) + gap,
+                Math.Max(gap + 1, (grid.ClientSize.Width - labelsWidth) / 2));
+            grid.ColumnStyles[1].Width = grid.ColumnStyles[2].Width = columnWidth;
+        }
+        grid.HandleCreated += (_, _) => Metrics();
+        grid.DpiChangedAfterParent += (_, _) => Metrics();
+        grid.FontChanged += (_, _) => Metrics();
+        grid.SizeChanged += (_, _) => Metrics();
+        Metrics();
+        return grid;
+    }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {

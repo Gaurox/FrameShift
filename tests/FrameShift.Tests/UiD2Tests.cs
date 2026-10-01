@@ -15,6 +15,63 @@ namespace FrameShift.Tests;
 // Hidden native controls only. Font stress does not simulate Windows DPI transitions.
 public sealed class UiD2Tests
 {
+    private readonly Xunit.Abstractions.ITestOutputHelper _output;
+    public UiD2Tests(Xunit.Abstractions.ITestOutputHelper output) => _output = output;
+    [Theory]
+    [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)]
+    [InlineData(4)] [InlineData(5)] [InlineData(6)] [InlineData(7)]
+    [InlineData(8)] [InlineData(12)] [InlineData(13)] [InlineData(14)]
+    public void CompactWindows_DoNotReserveEmptySpaceAtOpening(int variant)
+    {
+        StaTest.Run(() =>
+        {
+            using var fixture = new ImageFixture();
+            using var form = Create(variant, fixture.Path);
+            Handles(form);
+            Invoke(form, "OnLoad", EventArgs.Empty);
+            Layout(form);
+            var root = (TableLayoutPanel)form.Controls[0];
+            var viewport = (Panel)root.GetControlFromPosition(0, 1)!;
+            var content = viewport.Controls[0];
+            _output.WriteLine($"variant={variant} client={form.ClientSize}, viewport={viewport.Bounds}, content={content.Bounds}");
+            foreach (var status in Descendants(form).OfType<FrameShiftStatusMessage>())
+                Assert.InRange(status.Height, status.GetPreferredSize(new Size(status.Width, 0)).Height,
+                    status.GetPreferredSize(new Size(status.Width, 0)).Height + 1);
+            Assert.InRange(viewport.ClientSize.Height - content.Height, 0, FrameShiftUiMetrics.BlockGap);
+            Assert.False(viewport.VerticalScroll.Visible);
+            if (variant == 8)
+            {
+                var presets = Named<FrameShiftFlowRow>(form, "speedPresets");
+                var buttons = presets.Controls.Cast<Control>().ToArray();
+                Assert.Equal(8, buttons.Length);
+                Assert.All(buttons, button => Assert.Equal(buttons[0].Top, button.Top));
+                Assert.All(buttons, button => Assert.True(presets.ClientRectangle.Contains(button.Bounds)));
+            }
+            Assert.False(form.Visible);
+        });
+    }
+
+    [Fact]
+    public void SpeedAudio_KeepPitchHasAUsableHitAreaAndCanToggle()
+    {
+        StaTest.Run(() =>
+        {
+            using var form = new ChangeSpeedForm("Audio.wav", "missing.exe", Runner(), ChangeSpeedMediaKind.Audio, 60, true, 48000);
+            Handles(form);
+            Invoke(form, "OnLoad", EventArgs.Empty);
+            Layout(form);
+            var check = Named<CheckBox>(form, "keepPitch");
+            Assert.True(check.Enabled);
+            Assert.True(check.Height >= check.GetPreferredSize(Size.Empty).Height, $"checkbox={check.Bounds}, parent={check.Parent!.Bounds}");
+            Assert.True(check.Parent!.ClientRectangle.Contains(check.Bounds), $"checkbox={check.Bounds}, parent={check.Parent.Bounds}");
+            Invoke(check, "OnClick", EventArgs.Empty);
+            Assert.False(check.Checked);
+            Invoke(check, "OnClick", EventArgs.Empty);
+            Assert.True(check.Checked);
+            Assert.False(form.Visible);
+        });
+    }
+
     [Theory]
     [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)]
     [InlineData(4)] [InlineData(5)] [InlineData(6)] [InlineData(7)]
@@ -90,7 +147,12 @@ public sealed class UiD2Tests
             var cards = Descendants(form).OfType<FrameShiftChoiceCard>().ToArray();
             cards[2].Checked = true;
             Assert.Single(cards, c => c.Checked);
-            Named<CheckBox>(form, "useTarget").Checked = true;
+            var target = Named<CheckBox>(form, "useTarget");
+            Assert.True(target.Enabled);
+            Invoke(target, "OnClick", EventArgs.Empty);
+            Assert.True(target.Checked);
+            Assert.False(Named<TextBox>(form, "targetSize").ReadOnly);
+            Assert.True(Named<ComboBox>(form, "targetUnit").Enabled);
             Named<TextBox>(form, "targetSize").Text = "1,5";
             Named<ComboBox>(form, "targetUnit").SelectedItem = "MB";
             form.DialogResult = DialogResult.OK;
@@ -232,6 +294,17 @@ public sealed class UiD2Tests
             using var fixture = new ImageFixture();
             using var form = new ConvertToIconForm(fixture.Path, fixture.Path);
             Handles(form);
+            Invoke(form, "OnLoad", EventArgs.Empty);
+            Layout(form);
+            var sizesSection = Named<CheckBox>(form, "size32").Parent!.Parent!.Parent!;
+            var iconLayout = sizesSection.Parent!;
+            Assert.IsAssignableFrom<TableLayoutPanel>(iconLayout);
+            Assert.Equal(3, ((TableLayoutPanel)iconLayout).ColumnCount);
+            var previewsSection = iconLayout.Controls.Cast<Control>().Last();
+            Assert.True(sizesSection.Right <= previewsSection.Left);
+            Assert.False(((Panel)form.Controls[0].Controls[1]).VerticalScroll.Visible);
+            var initialHeight = form.ClientSize.Height;
+            for (var i = 0; i < 3; i++) { Layout(form); Assert.Equal(initialHeight, form.ClientSize.Height); }
             Invoke(form, "SetAllSizes", false);
             Named<CheckBox>(form, "size32").Checked = true;
             Named<CheckBox>(form, "size256").Checked = true;
@@ -242,8 +315,64 @@ public sealed class UiD2Tests
             var tiles = Descendants(form).OfType<PictureBox>().Where(p => p.AccessibleName?.StartsWith("Preview ") == true).ToArray();
             Assert.Equal(ConvertToIconSettings.GetSupportedSizes().Count, tiles.Length);
             Assert.All(tiles, p => Assert.True(p.Parent!.Right <= p.Parent.Parent!.ClientSize.Width));
+            form.Font = SystemFonts.MessageBoxFont;
+            form.ClientSize = new Size(900, 600);
+            Layout(form);
+            Assert.Equal(3, ((TableLayoutPanel)iconLayout).ColumnCount);
             Invoke(form, "ConfirmSelection");
             Assert.Equal(new[] { 32, 256 }, form.Selection!.Sizes);
+            Assert.False(form.Visible);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void Resize_FourInputsHaveIdenticalSizesAndStayInTwoRows(bool video)
+    {
+        StaTest.Run(() =>
+        {
+            using ResizeMediaFormBase form = video ? new ResizeVideoForm("Vidéo.mp4", 1920, 1080) : new ResizeImageForm("Image.png", 1920, 1080);
+            Handles(form);
+            using var large = new Font("Segoe UI", 18);
+            foreach (var width in new[] { 640, 480, 1100, 640 })
+            {
+                form.Font = width == 480 ? large : SystemFonts.MessageBoxFont;
+                form.ClientSize = new Size(width, 640);
+                Layout(form);
+                var boxes = new[] { Named<TextBox>(form, "widthPx"), Named<TextBox>(form, "widthPct"), Named<TextBox>(form, "heightPx"), Named<TextBox>(form, "heightPct") };
+                Assert.All(boxes, box => Assert.Equal(boxes[0].Size, box.Size));
+                Assert.Equal(FrameShiftUiMetrics.ToPixels(form, 128), boxes[0].Width);
+                Assert.Equal(boxes[0].Left, boxes[2].Left);
+                Assert.Equal(boxes[1].Left, boxes[3].Left);
+                Assert.Equal(boxes[0].Top, boxes[1].Top);
+                Assert.Equal(boxes[2].Top, boxes[3].Top);
+                Assert.True(boxes[0].Right < boxes[1].Left);
+                Assert.True(boxes[0].Bottom < boxes[2].Top);
+                Assert.All(boxes, box => Assert.True(box.Parent!.ClientRectangle.Contains(box.Bounds)));
+            }
+            Assert.False(form.Visible);
+        });
+    }
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void Rotate_CommandsKeepStandardColorsAcrossTransformChanges(bool video)
+    {
+        StaTest.Run(() =>
+        {
+            using var fixture = new ImageFixture();
+            using var form = Create(video ? 10 : 9, fixture.Path);
+            var buttons = Descendants(form).OfType<Button>().Where(b => b.Text.Contains("Rotate") || b.Text.Contains("Flip")).ToArray();
+            Assert.Equal(4, buttons.Length);
+            var colors = buttons.Select(b => (b.BackColor, b.ForeColor, b.FlatAppearance.BorderColor)).ToArray();
+            Invoke(form, "ApplyRotate", true);
+            Invoke(form, "ApplyFlipH");
+            Invoke(form, "ApplyFlipV");
+            Assert.All(buttons.Where(b => b.Text.Contains("Flip")), b => Assert.Contains("✓", b.Text));
+            Assert.Equal(colors, buttons.Select(b => (b.BackColor, b.ForeColor, b.FlatAppearance.BorderColor)).ToArray());
+            Invoke(form, "ResetTransforms");
+            Assert.Equal(colors, buttons.Select(b => (b.BackColor, b.ForeColor, b.FlatAppearance.BorderColor)).ToArray());
+            Assert.All(buttons, b => Assert.DoesNotContain("✓", b.Text));
             Assert.False(form.Visible);
         });
     }

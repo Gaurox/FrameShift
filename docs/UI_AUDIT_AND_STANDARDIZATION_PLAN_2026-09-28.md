@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 29 septembre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 implémentée, recette manuelle en attente ; D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 1er octobre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 ajustée depuis `d83a9e4` et validée par l'utilisateur à 100 % ; essais DPI et contrôles complémentaires en attente. D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -680,6 +680,39 @@ Le lot D1 dispose de ses résultats de builds/tests consignés plus haut et de l
 
 **Décision : implémentation D2 terminée et vérifiée automatiquement ; validation utilisateur à 100 %, puis 150/200/300 % et contrôles complémentaires encore attendus.** Les tests de police agrandie ne sont pas une certification DPI réelle. D3 ne commence pas avant validation du lot. Le support DPI global, les exports réels de chaque variante, la distribution installée et les configurations hors recette ne sont pas déclarés validés par ce passage.
 
+#### Ajustements D2 — 1er octobre 2026, premier retour à 100 %
+
+**Retour utilisateur :** trop de vide en bas des dialogues, notamment compression multiple/audio ; cible audio et case Keep original de Speed Audio impossibles à cocher ; quatre saisies Resize à aligner en 2 × 2 ; couleurs Rotate jugées aléatoires ; ancien agencement Icon jugé plus ergonomique. Ce retour porte uniquement sur 100 % et ne vaut pas validation du lot.
+
+**Constats vérifiés et corrections :**
+
+| Point | Preuve et ajustement |
+|---|---|
+| Vide des dialogues | Reproduit dans les mesures natives cachées : messages d'une ligne avec hauteur préférée 19 px mais hauteur réelle 49 à 94 px, dont 79 px pour compression multiple et 94 px pour audio. Le composant gardait la hauteur provisoire malgré la diminution de son minimum. Sa hauteur native diminue désormais avec la mesure ; le fit utilise cette mesure. Relevés après ajustement : client compression multiple 600 × 358, audio 600 × 486 à 96 DPI, sans défilement ni vide réservé dans le corps. Ces relevés ne sont pas des captures visuelles. |
+| Cible audio | La désactivation sur WAV/FLAC est confirmée dans l'UI et le Core ; le lanceur proposait un WAV. La cible reste prise en charge pour MP3/M4A/OGG, avec une explication explicite pour les autres formats. La rangée de case native est mesurée ; son clic logique active saisie et unité dans les tests. Un MP3 d'essai a été préparé via `FfmpegRunner` depuis le WAV de `scratch/phase-a`, sans écrasement, et le lanceur privilégie un format compatible. |
+| Speed Audio | Le défaut de clic n'a pas été reproduit dans les contrôles cachés : case activée, cochée par défaut, bascule décochée/recochée par le handler natif, bornes mesurées accessibles. L'option utilise désormais une rangée de choix mesurée, également appliquée à Pitch et aux cibles de compression. Le clic souris réel et Tab/Espace restent à reconfirmer par l'utilisateur. |
+| Resize Image/Video | Grille commune : largeur/hauteur en rangées, pixels/pourcentages en colonnes, quatre saisies de dimensions strictement identiques. Colonnes remesurées à la largeur, à la police et au DPI ; pixel d'arrondi absorbé dans une colonne vide. Ratio, préréglages et valeurs métier conservés. |
+| Rotate Image/Video | Le code colorait simultanément les deux commandes de rotation et les miroirs actifs. Les quatre commandes gardent désormais la palette standard ; ✓ identifie les miroirs actifs, le résumé conserve l'angle. Tests de plusieurs transformations et Reset sans changement de couleurs persistantes. |
+| Convert to Icon | Retour au regroupement historique : liste de tailles à gauche, Fit/Fill et fond au centre, neuf aperçus à droite. Mise en page mesurée en trois, deux puis une colonne selon la largeur ; hauteur initiale ajustée, footer commun, sélection des vignettes et tailles ICO inchangées. Aucun retour aux hauteurs physiques fixes de l'ancienne fenêtre. |
+
+**Vérifications :**
+
+- Build application et lanceur : **0 avertissement, 0 erreur**.
+- **43 cas D2 réussis**, dont 17 cas ajoutés pour hauteurs compactes, bascule de case Speed, alignement strict Resize et couleurs Rotate ; le cas Icon contrôle aussi le retour à trois colonnes après réduction/agrandissement. Trace : `scratch/phase-d2/d2-feedback-layout.trx`.
+- Suite de non-régression sans affichage : **539 réussis, 5 ignorés média/IA, 0 échec**, 544 sélectionnés ; 12 cas affichant des fenêtres exclus. Trace : `scratch/phase-d2/d2-feedback-regression.trx`. La dernière liaison FontChanged de la grille Resize a ensuite été vérifiée par ses deux cas ciblés réussis ; aucun élargissement facultatif supplémentaire.
+- Contrôle caché du lanceur : PMv2, 96 DPI, fenêtres invisibles, sortie 0. Trace : `scratch/phase-d2/hidden-feedback-pmv2.json`.
+- Recette D2 et documentation du socle mises à jour. Aucun contrôle du bureau, capture automatisée, changement de réglages Windows ou lancement D3/E.
+
+**Décision : ajustements livrés pour une nouvelle recette utilisateur à 100 %.** Aucune validation visuelle de cette révision ni validation DPI D2 n'est déduite des tests cachés. Utiliser `TEST_PHASE_D2.cmd` ; le clic de la case Speed Audio reste expressément à confirmer. Les standards de bandeau, marges et footer restent ceux validés en B/C/D1.
+
+**Second retour à 100 % — préréglages Speed Video et largeur Resize :** la largeur initiale de Speed Video est calculée pour ses huit boutons et les espacements communs, soit 688 unités logiques actuellement. Les huit préréglages tiennent sur une rangée à l'ouverture ; ils peuvent se replier quand la largeur disponible diminue. Les quatre saisies Resize sont bornées à 128 unités logiques, environ deux fois moins larges que le premier rendu 2 × 2, sans étirement lors de l'agrandissement. Elles gardent des dimensions identiques et diminuent ensemble en espace réduit. Contrôles ciblés natifs cachés : **32 réussis, 0 échec**, avec vérification de la rangée de préréglages, de la largeur compacte, des valeurs métier et de l'accessibilité des footers ; trace `scratch/phase-d2/d2-compact-fields-presets.trx`. Build du lanceur/application : **0 avertissement, 0 erreur**. Nouvelle validation utilisateur à 100 % attendue ; essais DPI D2 toujours en attente.
+
+#### Validation D2 à 100 % — 1er octobre 2026
+
+L'utilisateur confirme : « ok tout validé en 100%/ committe ». La validation couvre les fenêtres D2 après les ajustements, notamment les huit préréglages Speed Video sur une ligne, les champs Resize compacts en 2 × 2, les cases de saisie/options, les couleurs Rotate et le regroupement Icon. Le défaut de clic Speed Audio n'est plus signalé après cette recette.
+
+**D2 validée à 100 % ; commit des ajustements demandé.** Les essais 150/200/300 %, les transitions entre écrans à DPI différents, le texte Windows agrandi et les contrôles complémentaires restent en attente. Cette confirmation ne qualifie pas les exports réels, l'application installée ou le mode DPI Release ; elle ne clôt pas D2 ni la phase D complète. Les builds et tests consignés ci-dessus restent applicables ; aucun code modifié ni nouveau build/test nécessaire pour cette consignation. D3 et E à G ne sont pas lancées.
+
 ### E — Éditeurs restants — P1
 
 - **Objectif :** achever les migrations en garantissant espace de travail adaptable, interaction précise et absence de confusion entre DPI et coordonnées média.
@@ -801,7 +834,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 implémentée et vérifiée automatiquement, recette manuelle en attente ; D3 et E à G non commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 ajustée et validée à 100 %, essais DPI et contrôles complémentaires en attente ; D3 et E à G non commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

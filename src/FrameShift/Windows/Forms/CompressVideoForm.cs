@@ -40,7 +40,7 @@ public sealed class CompressVideoForm : Form
         };
         var content = FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateSection("Compression profile", FrameShiftUiFactory.CreateChoiceRow(high, balanced, small)),
-            FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(_checkTarget,
+            FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateChoiceRow(_checkTarget),
                 FrameShiftUiFactory.CreateFieldWithUnit("&Size", _textTarget, _unitSelector),
                 FrameShiftUiFactory.CreateWrappingLabel(supported ? "Best-effort target" : "Target size is not available for this format."))));
         var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);

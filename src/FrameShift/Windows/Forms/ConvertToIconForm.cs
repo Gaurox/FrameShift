@@ -16,7 +16,6 @@ public sealed class ConvertToIconForm : Form
 {
     private const int TilePreviewCanvasSize = 74;
     private const int TilePreviewSizeCap = 68;
-    private readonly string _sourcePath;
     private readonly Image _sourceImage;
     private readonly List<CheckBox> _sizeChecks = [];
     private readonly List<PreviewTile> _previewTiles = [];
@@ -28,8 +27,6 @@ public sealed class ConvertToIconForm : Form
 
     public ConvertToIconForm(string sourcePath, string previewImagePath)
     {
-        _sourcePath = sourcePath;
-
         try
         {
             _sourceImage = Image.FromFile(previewImagePath);
@@ -40,7 +37,7 @@ public sealed class ConvertToIconForm : Form
         }
 
         SuspendLayout();
-        FrameShiftWindowPolicy.Initialize(this, new Size(1000, 720), new Size(380, 300));
+        FrameShiftWindowPolicy.Initialize(this, new Size(900, 600), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Convert to Icon");
         var header = FrameShiftUiFactory.CreateHeader("FrameShift - Convert to Icon", $"Source: {Path.GetFileName(sourcePath)}",
             IconPaths.ContextMenuIco("convert-icon-image-icon.ico"), IconPaths.AppIcon, "ICO");
@@ -49,22 +46,25 @@ public sealed class ConvertToIconForm : Form
         _radioTransparent = new RadioButton { Text = "Transparent", Checked = true, AutoSize = true };
         _radioWhite = new RadioButton { Text = "White", AutoSize = true };
         _radioBlack = new RadioButton { Text = "Black", AutoSize = true };
-        var sizes = FrameShiftUiFactory.CreateChoiceRow();
+        var sizes = FrameShiftUiFactory.CreateVerticalStack();
         foreach (var size in ConvertToIconSettings.GetSupportedSizes())
         {
             var check = new CheckBox { Text = $"{size} x {size}", Name = $"size{size}", Checked = true, AutoSize = true };
             check.CheckedChanged += (_, _) => { if (!_updatingSizes) UpdatePreviewTiles(); };
             _sizeChecks.Add(check);
-            sizes.Controls.Add(check);
+            sizes.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            sizes.Controls.Add(check, 0, sizes.RowCount++);
+            check.Dock = DockStyle.Top;
         }
-        var all = FrameShiftUiFactory.CreateMeasuredActionButton("Select all", false);
-        var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear all", false);
+        var all = FrameShiftUiFactory.CreateMeasuredActionButton("Select all", false, 80);
+        var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear all", false, 80);
         all.Click += (_, _) => SetAllSizes(true);
         clear.Click += (_, _) => SetAllSizes(false);
-        var options = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Sizes", FrameShiftUiFactory.CreateVerticalStack(sizes, FrameShiftUiFactory.CreateChoiceRow(all, clear))),
-            FrameShiftUiFactory.CreateSection("Fit mode", FrameShiftUiFactory.CreateChoiceRow(_radioFit, _radioFill)),
-            FrameShiftUiFactory.CreateSection("Background", FrameShiftUiFactory.CreateChoiceRow(_radioTransparent, _radioWhite, _radioBlack)));
+        var sizesSection = FrameShiftUiFactory.CreateSection("Sizes",
+            FrameShiftUiFactory.CreateVerticalStack(sizes, FrameShiftUiFactory.CreateChoiceRow(all, clear)));
+        var settings = FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateSection("Fit mode", FrameShiftUiFactory.CreateVerticalStack(_radioFit, _radioFill)),
+            FrameShiftUiFactory.CreateSection("Background", FrameShiftUiFactory.CreateVerticalStack(_radioTransparent, _radioWhite, _radioBlack)));
         var tiles = FrameShiftUiFactory.CreateChoiceRow();
         foreach (var size in ConvertToIconSettings.GetSupportedSizes())
         {
@@ -80,10 +80,13 @@ public sealed class ConvertToIconForm : Form
         convert.Click += (_, _) => ConfirmSelection();
         AcceptButton = convert;
         CancelButton = cancel;
-        var preview = FrameShiftDialogLayout.CreateScrollBody(FrameShiftUiFactory.CreateSection("Preview", tiles));
-        Controls.Add(FrameShiftEditorShellUi.Create(header, preview,
-            FrameShiftDialogLayout.CreateActions(cancel, convert), options,
-            FrameShiftUiFactory.CreateStatusMessage("The ICO file is created next to the original image.")));
+        var content = new IconContentLayout(sizesSection, settings,
+            FrameShiftUiFactory.CreateSection("Preview — click a size to include or skip it", tiles));
+        var layout = FrameShiftDialogLayout.Create(header, content,
+            FrameShiftDialogLayout.CreateActions(cancel, convert),
+            FrameShiftUiFactory.CreateStatusMessage("The ICO file is created next to the original image."));
+        Controls.Add(layout);
+        Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         UpdatePreviewTiles();
         ResumeLayout(true);
     }
@@ -121,19 +124,20 @@ public sealed class ConvertToIconForm : Form
         var picture = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Anchor = AnchorStyles.None,
             AccessibleName = $"Preview {size} pixels", TabStop = false };
         var sizeLabel = FrameShiftUiFactory.CreateWrappingLabel($"{size} × {size}");
-        var stateLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        sizeLabel.TextAlign = stateLabel.TextAlign = ContentAlignment.MiddleCenter;
-        var tile = FrameShiftUiFactory.CreateVerticalStack(picture, sizeLabel, stateLabel);
+        sizeLabel.TextAlign = ContentAlignment.MiddleCenter;
+        var tile = FrameShiftUiFactory.CreateVerticalStack(picture, sizeLabel);
         tile.Dock = DockStyle.None;
         picture.Dock = DockStyle.None;
         tile.BackColor = FrameShiftTheme.Surface;
         tile.Cursor = Cursors.Hand;
         void Metrics()
         {
-            var width = FrameShiftUiMetrics.ToPixels(tile, 124);
+            var width = FrameShiftUiMetrics.ToPixels(tile, 108);
             tile.MinimumSize = new Size(width, 0);
             picture.Size = new Size(FrameShiftUiMetrics.ToPixels(tile, TilePreviewCanvasSize), FrameShiftUiMetrics.ToPixels(tile, TilePreviewCanvasSize));
             tile.Padding = new Padding(FrameShiftUiMetrics.ToPixels(tile, 8));
+            picture.Margin = new Padding(0, 0, 0, FrameShiftUiMetrics.ToPixels(tile, FrameShiftUiMetrics.LineGap));
+            sizeLabel.Margin = Padding.Empty;
         }
         tile.HandleCreated += (_, _) => Metrics();
         tile.DpiChangedAfterParent += (_, _) => Metrics();
@@ -142,9 +146,8 @@ public sealed class ConvertToIconForm : Form
         tile.Click += Toggle;
         picture.Click += Toggle;
         sizeLabel.Click += Toggle;
-        stateLabel.Click += Toggle;
         FrameShiftUiPainter.AttachRoundedBorder(tile, FrameShiftTheme.SurfaceBorder, FrameShiftUiMetrics.PanelCornerRadius);
-        return new PreviewTile(size, tile, picture, sizeLabel, stateLabel);
+        return new PreviewTile(size, tile, picture, sizeLabel);
     }
 
     private void UpdatePreviewTiles()
@@ -163,8 +166,7 @@ public sealed class ConvertToIconForm : Form
 
             tile.Panel.BackColor = isChecked ? FrameShiftTheme.Surface : FrameShiftTheme.PageBackground;
             tile.SizeLabel.ForeColor = isChecked ? FrameShiftTheme.TextPrimary : FrameShiftTheme.TextMuted;
-            tile.StateLabel.ForeColor = isChecked ? FrameShiftTheme.AccentText : FrameShiftTheme.TextMuted;
-            tile.StateLabel.Text = isChecked ? "Included" : "Skipped";
+            tile.SizeLabel.Text = isChecked ? $"✓ {tile.Size} × {tile.Size}" : $"{tile.Size} × {tile.Size}";
         }
     }
 
@@ -314,5 +316,83 @@ public sealed class ConvertToIconForm : Form
         return bitmap;
     }
 
-    private sealed record PreviewTile(int Size, Panel Panel, PictureBox PictureBox, Label SizeLabel, Label StateLabel);
+    // The familiar sizes / settings / previews arrangement, with measured rows and a narrow fallback.
+    private sealed class IconContentLayout : TableLayoutPanel
+    {
+        private readonly Control _sizes;
+        private readonly Control _settings;
+        private readonly Control _previews;
+        private bool _arranging;
+        private int _mode = -1;
+
+        public IconContentLayout(Control sizes, Control settings, Control previews)
+        {
+            _sizes = sizes;
+            _settings = settings;
+            _previews = previews;
+            AutoSize = true;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            Dock = DockStyle.Top;
+            Margin = Padding.Empty;
+            Controls.AddRange([sizes, settings, previews]);
+        }
+
+        private (int Mode, int SizesWidth, int SettingsWidth, int Gap) MeasureColumns(int width)
+        {
+            var gap = FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.OuterPadding);
+            var sizesWidth = Math.Max(FrameShiftUiMetrics.ToPixels(this, 200), _sizes.GetPreferredSize(Size.Empty).Width);
+            var settingsWidth = Math.Max(FrameShiftUiMetrics.ToPixels(this, 170), _settings.GetPreferredSize(Size.Empty).Width);
+            var mode = width >= sizesWidth + settingsWidth + FrameShiftUiMetrics.ToPixels(this, 360) + 2 * gap ? 3
+                : width >= sizesWidth + settingsWidth + gap ? 2 : 1;
+            return (mode, sizesWidth, settingsWidth, gap);
+        }
+
+        public override Size GetPreferredSize(Size proposedSize)
+        {
+            if (_sizes is null) return base.GetPreferredSize(proposedSize);
+            var width = Math.Max(1, proposedSize.Width > 1 ? proposedSize.Width : ClientSize.Width);
+            var (mode, sizesWidth, settingsWidth, gap) = MeasureColumns(width);
+            int Height(Control control, int available) => control.GetPreferredSize(new Size(Math.Max(1, available), 0)).Height;
+            var height = mode == 3 ? Math.Max(Math.Max(Height(_sizes, sizesWidth), Height(_settings, settingsWidth)), Height(_previews, width - sizesWidth - settingsWidth - 2 * gap))
+                : mode == 2 ? Math.Max(Height(_sizes, sizesWidth), Height(_settings, width - sizesWidth - gap)) + gap + Height(_previews, width)
+                : Height(_sizes, width) + gap + Height(_settings, width) + gap + Height(_previews, width);
+            return new Size(width, height);
+        }
+
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            if (_sizes is null || _arranging) { base.OnLayout(e); return; }
+            _arranging = true;
+            try
+            {
+                var (mode, sizesWidth, settingsWidth, gap) = MeasureColumns(ClientSize.Width);
+                if (_mode != mode)
+                {
+                    _mode = mode;
+                    ColumnStyles.Clear();
+                    RowStyles.Clear();
+                    ColumnCount = mode;
+                    RowCount = mode == 3 ? 1 : mode == 2 ? 2 : 3;
+                    for (var column = 0; column < ColumnCount; column++)
+                        ColumnStyles.Add(new ColumnStyle(column == ColumnCount - 1 ? SizeType.Percent : SizeType.Absolute, column == ColumnCount - 1 ? 100 : 0));
+                    for (var row = 0; row < RowCount; row++) RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    SetColumnSpan(_previews, 1);
+                    SetCellPosition(_sizes, new TableLayoutPanelCellPosition(0, 0));
+                    SetCellPosition(_settings, new TableLayoutPanelCellPosition(mode == 1 ? 0 : 1, mode == 1 ? 1 : 0));
+                    SetCellPosition(_previews, new TableLayoutPanelCellPosition(mode == 3 ? 2 : 0, mode == 1 ? 2 : mode == 2 ? 1 : 0));
+                    if (mode == 2) SetColumnSpan(_previews, 2);
+                }
+                if (mode > 1) ColumnStyles[0].Width = sizesWidth + gap;
+                if (mode == 3) ColumnStyles[1].Width = settingsWidth + gap;
+                _sizes.Margin = mode > 1 ? new Padding(0, 0, gap, mode == 2 ? gap : 0) : new Padding(0, 0, 0, gap);
+                _settings.Margin = mode == 3 ? new Padding(0, 0, gap, 0) : new Padding(0, 0, 0, gap);
+                _previews.Margin = Padding.Empty;
+                _sizes.Dock = _settings.Dock = _previews.Dock = DockStyle.Top;
+                base.OnLayout(e);
+            }
+            finally { _arranging = false; }
+        }
+    }
+
+    private sealed record PreviewTile(int Size, Panel Panel, PictureBox PictureBox, Label SizeLabel);
 }

@@ -38,7 +38,9 @@ public static class FrameShiftDialogLayout
                     {
                         // Native editors can keep a minimum actual height larger than their text measurement.
                         var preferred = control.GetPreferredSize(new Size(available, 0));
-                        height += Math.Max(control.Height, preferred.Height) + control.Margin.Vertical;
+                        var measuredHeight = control is FrameShiftStatusMessage
+                            ? preferred.Height : Math.Max(control.Height, preferred.Height);
+                        height += measuredHeight + control.Margin.Vertical;
                     }
                 }
                 var maximum = Math.Max(1, workingArea.Height - (form.Height - form.ClientSize.Height));

@@ -75,6 +75,9 @@ public sealed class FrameShiftStatusMessage : TextBox
             // Reserve the measured height explicitly, still capped by GetPreferredSize.
             var height = GetPreferredSize(new Size(Math.Max(1, Width), 0)).Height;
             if (MinimumSize.Height != height) MinimumSize = new Size(0, height);
+            // A multiline native edit does not shrink itself when its minimum decreases.
+            // Drop the provisional wrapped height as soon as the real width is known.
+            if (Height != height) Height = height;
         }
         finally { _measuringHeight = false; }
     }

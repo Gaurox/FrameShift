@@ -82,7 +82,7 @@ public sealed class ChangePitchForm : Form
                 FrameShiftUiFactory.CreateFieldRow("&Pitch", _textPercent, "%", 120),
                 FrameShiftUiFactory.CreateWrappingLabel("Slider: −12 to +12 semitones. Manual input: −24 to +24."))),
             FrameShiftUiFactory.CreateSection("Presets", FrameShiftUiFactory.CreateVerticalStack(negative, positive)),
-            FrameShiftUiFactory.CreateSection("Options", _checkKeepDuration));
+            FrameShiftUiFactory.CreateSection("Options", FrameShiftUiFactory.CreateChoiceRow(_checkKeepDuration)));
         _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
         _buttonPreview.Name = "previewButton";
         _buttonPreview.Click += async (_, _) => await PreviewAsync();
