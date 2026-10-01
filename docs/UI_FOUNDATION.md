@@ -141,7 +141,7 @@ Dans Files, les lignes et l'en-tête partagent le fond Surface, sans alternance.
 
 Validation utilisateur D1 : rendu final du commit `c26a723` accepté à 100/150/200/300 %. Les essais multi-écran, texte Windows agrandi et relecture des pilotes C après D1 sont également validés par le retour utilisateur « je valide aussi ». D1 est validée ; D2 est le prochain lot. La phase D complète reste en cours.
 
-## Extension D2 — validée à 100 %
+## Extension D2 — validée à 100/150/200/300 %
 
 Les douze fenêtres D2 utilisent les mêmes bandeaux, footers et métriques. Les dialogues compacts ajustent leur hauteur initiale au contenu avec défilement de secours. Resize conserve sa base existante et les coordonnées média ; Rotate/Flip utilise le shell avec commandes sous l'aperçu. Après le retour à 100 % du 1er octobre, Resize présente quatre saisies de taille identique en grille 2 × 2 ; les boutons Rotate conservent la palette standard, avec ✓ sur les miroirs actifs. Convert to Icon retrouve trois colonnes tailles/réglages/aperçus, repliables en deux puis une colonne, dans le dialogue mesuré commun. Les sélections métier sont conservées, sans nouvelle base générique de formulaire.
 
@@ -151,4 +151,4 @@ La révision du 1er octobre fait également diminuer la hauteur native du messag
 
 Au second retour à 100 %, les quatre saisies Resize sont bornées à 128 unités logiques, environ la moitié de leur largeur du premier rendu 2 × 2. Elles ne grandissent plus avec l'espace libre ; elles peuvent diminuer ensemble si nécessaire. Speed Video calcule sa largeur initiale pour les huit boutons de préréglage, leurs écarts et les marges communes (688 unités logiques avec les libellés actuels) ; le retour à la ligne reste disponible en espace réduit.
 
-Le 1er octobre, l'utilisateur confirme « ok tout validé en 100%/ committe » après les derniers ajustements. Les fenêtres D2 sont validées à 100 %, y compris les cases d'options et les derniers agencements Speed/Resize. La [procédure D2](UI_PHASE_D2_MANUAL_TESTS.md) et `TEST_PHASE_D2.cmd` restent disponibles pour la suite : 150/200/300 %, transitions entre écrans, texte Windows agrandi et contrôles complémentaires restent en attente ; aucun support global Release n'est annoncé.
+Le 1er octobre, l'utilisateur confirme « ok tout validé en 100%/ committe » après les derniers ajustements, puis « tout est validé dans toutes les mises a léchelle. commite et on passe à la suite ». Les fenêtres D2 du commit `c7bd8ed` sont validées à 100/150/200/300 %, y compris les cases d'options et les derniers agencements Speed/Resize. Passage à D3 autorisé. La [procédure D2](UI_PHASE_D2_MANUAL_TESTS.md) et `TEST_PHASE_D2.cmd` restent disponibles pour rejouer les contrôles ; les transitions entre écrans et le texte Windows agrandi ne sont pas confirmés séparément par ce dernier retour. Aucun support global Release n'est annoncé.

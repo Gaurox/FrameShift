@@ -4,7 +4,7 @@ Date : 28 septembre 2026. Référence examinée : commit `cccc644`, version déc
 
 **Orientation validée : conserver WinForms/.NET 8 et consolider la couche commune existante.** Le problème principal est la coexistence de plusieurs règles de dimensionnement, certaines incompatibles avec le DPI et la taille du texte. Une collection de constantes et une palette partagée ne suffisent pas : les composants communs doivent aussi prendre en charge leur disposition, leur mesure et leurs interactions.
 
-**Statut au 1er octobre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 ajustée depuis `d83a9e4` et validée par l'utilisateur à 100 % ; essais DPI et contrôles complémentaires en attente. D3 et E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
+**Statut au 1er octobre 2026 : A/B/C validées ; GO D reçu après le commit `5b62534`. D1 validée : vérifications automatiques et recette manuelle, y compris 100/150/200/300 %, multi-écran, texte agrandi et relecture des pilotes C. D2 du commit `c7bd8ed` validée par l'utilisateur à 100/150/200/300 % ; GO reçu pour la suite D3. E à G non commencées.** Les sections 2 à 5 conservent les constats de l'audit initial; les sections 6 à 10 fixent les règles et le déroulement du chantier. Les relevés d'exécution figurent sous chaque phase. Ce document ne certifie pas un support DPI global ni le rendu en 4K.
 
 **Parcours obligatoire : A → validation → B → validation → C → GO/NO-GO → D → E → F → G.** Les preuves de validation et les décisions de passage seront consignées au fil de l'exécution; la validation de cette feuille de route ne vaut pas validation technique des phases.
 
@@ -713,6 +713,12 @@ L'utilisateur confirme : « ok tout validé en 100%/ committe ». La validation 
 
 **D2 validée à 100 % ; commit des ajustements demandé.** Les essais 150/200/300 %, les transitions entre écrans à DPI différents, le texte Windows agrandi et les contrôles complémentaires restent en attente. Cette confirmation ne qualifie pas les exports réels, l'application installée ou le mode DPI Release ; elle ne clôt pas D2 ni la phase D complète. Les builds et tests consignés ci-dessus restent applicables ; aucun code modifié ni nouveau build/test nécessaire pour cette consignation. D3 et E à G ne sont pas lancées.
 
+#### Confirmation des échelles D2 et passage à D3 — 1er octobre 2026
+
+Référence : `c7bd8ed`. L'utilisateur confirme « tout est validé dans toutes les mises a léchelle. commite et on passe à la suite ». Après la validation à 100 %, les essais des fenêtres D2 à 150/200/300 % sont donc validés, sans défaut restant signalé. Les builds et tests précédents restent applicables ; cette consignation ne modifie pas le code et ne nécessite pas de les rejouer.
+
+**D2 validée sur la recette déclarée ; sauvegarde Git demandée et passage à D3 autorisé.** Le multi-écran, la taille du texte indépendante et les exports réels ne sont pas confirmés séparément dans ce dernier retour ; ils restent des contrôles à conserver pour la qualification finale. L'application installée, le mode DPI Release et les configurations hors recette ne sont pas certifiés. La phase D complète attend encore D3 ; E à G restent hors de ce passage.
+
 ### E — Éditeurs restants — P1
 
 - **Objectif :** achever les migrations en garantissant espace de travail adaptable, interaction précise et absence de confusion entre DPI et coordonnées média.
@@ -834,7 +840,7 @@ Checklist à intégrer au développement et à la revue :
 | Charges et découpage précis des lots | Recalibrer au bilan C | Les anciennes fourchettes de l'audit ne sont pas des engagements; conserver les sept phases et leur ordre. |
 | Publication de l'activation globale `PerMonitorV2` | Décision en G | Le développement/test en B/C et le GO de migration ne valent pas autorisation ni preuve de publication. |
 
-Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 ajustée et validée à 100 %, essais DPI et contrôles complémentaires en attente ; D3 et E à G non commencées.
+Les sujets différés de 7.1 restent hors réalisation obligatoire, sauf les améliorations esthétiques des pilotes explicitement autorisées et consignées sous C. Le suivi des validations est ajouté sous chaque phase, sans empiler une nouvelle version concurrente de la feuille de route. A et B sont validées sur leurs périmètres documentés; C est validée sur les cinq pilotes et sa recette manuelle ; GO D reçu, D1 validée à 100/150/200/300 % avec ses contrôles complémentaires ; D2 validée à 100/150/200/300 %, passage à D3 autorisé ; E à G non commencées.
 
 ## 11. Points d'entrée dans le dépôt
 

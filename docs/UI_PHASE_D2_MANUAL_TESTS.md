@@ -1,6 +1,6 @@
 # Phase D2 — recette des dialogues
 
-Base du lot : `d83a9e4`, après validation complète de D1. Révision du 1er octobre 2026 : hauteurs compactes, grille Resize 2 × 2 avec saisies compactes, préréglages Speed Video sur une ligne, états Rotate sobres et agencement Icon proche de l'ancien. **Rendu et recette à 100 % validés par l'utilisateur le 1er octobre** (« ok tout validé en 100%/ committe »). Les essais aux autres échelles et les contrôles complémentaires restent en attente. D2 comprend 12 fenêtres ; Conversion et Speed ont plusieurs variantes, Resize Image/Video partagent leur base existante.
+Base du lot : `d83a9e4`, après validation complète de D1. Révision du 1er octobre 2026, commit `c7bd8ed` : hauteurs compactes, grille Resize 2 × 2 avec saisies compactes, préréglages Speed Video sur une ligne, états Rotate sobres et agencement Icon proche de l'ancien. **Rendu et recette validés par l'utilisateur à 100/150/200/300 % le 1er octobre** (« tout est validé dans toutes les mises a léchelle. commite et on passe à la suite »). Passage à D3 autorisé. Multi-écran et taille du texte indépendante ne sont pas confirmés séparément dans ce retour ; conserver ces contrôles pour la qualification finale. D2 comprend 12 fenêtres ; Conversion et Speed ont plusieurs variantes, Resize Image/Video partagent leur base existante.
 
 ## Ouvrir le lanceur
 
