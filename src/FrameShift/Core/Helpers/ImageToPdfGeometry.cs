@@ -703,35 +703,35 @@ public static class ImageToPdfGeometry
         return GetPreviewPageRect(canvasWidth, canvasHeight, page, scale);
     }
 
-    public static RectangleF GetPreviewPageRect(Size canvasSize, PageDefinition page, float previewScale)
+    public static RectangleF GetPreviewPageRect(Size canvasSize, PageDefinition page, float previewScale, float previewPadding = PreviewPadding)
     {
-        return GetPreviewPageRect(canvasSize.Width, canvasSize.Height, page, previewScale);
+        return GetPreviewPageRect(canvasSize.Width, canvasSize.Height, page, previewScale, previewPadding);
     }
 
-    public static RectangleF GetPreviewPageRect(int canvasWidth, int canvasHeight, PageDefinition page, float previewScale)
+    public static RectangleF GetPreviewPageRect(int canvasWidth, int canvasHeight, PageDefinition page, float previewScale, float previewPadding = PreviewPadding)
     {
         var width = Math.Max(1f, (float)(page.WidthPoints * previewScale));
         var height = Math.Max(1f, (float)(page.HeightPoints * previewScale));
-        var x = Math.Max(PreviewPadding, (canvasWidth - width) / 2f);
-        var y = Math.Max(PreviewPadding, (canvasHeight - height) / 2f);
+        var x = Math.Max(previewPadding, (canvasWidth - width) / 2f);
+        var y = Math.Max(previewPadding, (canvasHeight - height) / 2f);
         return new RectangleF(x, y, width, height);
     }
 
-    public static Size GetPreviewCanvasSize(Size viewportSize, PageDefinition page, float previewScale)
+    public static Size GetPreviewCanvasSize(Size viewportSize, PageDefinition page, float previewScale, float previewPadding = PreviewPadding)
     {
-        var width = (int)Math.Ceiling((page.WidthPoints * previewScale) + (PreviewPadding * 2f));
-        var height = (int)Math.Ceiling((page.HeightPoints * previewScale) + (PreviewPadding * 2f));
+        var width = (int)Math.Ceiling((page.WidthPoints * previewScale) + (previewPadding * 2f));
+        var height = (int)Math.Ceiling((page.HeightPoints * previewScale) + (previewPadding * 2f));
         width = Math.Max(Math.Max(1, viewportSize.Width), width);
         height = Math.Max(Math.Max(1, viewportSize.Height), height);
         return new Size(Math.Max(1, width), Math.Max(1, height));
     }
 
-    public static float CalculateFitPreviewScale(Size canvasSize, PageDefinition page)
+    public static float CalculateFitPreviewScale(Size canvasSize, PageDefinition page, float previewPadding = PreviewPadding)
     {
         var canvasWidth = Math.Max(1, canvasSize.Width);
         var canvasHeight = Math.Max(1, canvasSize.Height);
-        var availableWidth = Math.Max(1f, canvasWidth - (PreviewPadding * 2f));
-        var availableHeight = Math.Max(1f, canvasHeight - (PreviewPadding * 2f));
+        var availableWidth = Math.Max(1f, canvasWidth - (previewPadding * 2f));
+        var availableHeight = Math.Max(1f, canvasHeight - (previewPadding * 2f));
         return (float)Math.Min(availableWidth / page.WidthPoints, availableHeight / page.HeightPoints);
     }
 

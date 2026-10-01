@@ -37,6 +37,13 @@ internal sealed class JoinVideosTimelineControl : Control
         SetStyle(ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
     }
 
+    private int Pixels(int logical) => FrameShiftUiMetrics.ToPixels(this, logical);
+    private int MeasuredTileHeight => Math.Max(Pixels(TileHeight), Pixels(ThumbnailHeight + 30) + 2 * Font.Height);
+    internal int PreferredTimelineHeight => MeasuredTileHeight + Pixels(TileTop * 2);
+
+    protected override void OnDpiChangedAfterParent(EventArgs e) { base.OnDpiChangedAfterParent(e); RebuildLayout(); }
+    protected override void OnFontChanged(EventArgs e) { base.OnFontChanged(e); if (_tileBounds is not null) RebuildLayout(); }
+
     public event EventHandler? SelectedIndexChanged;
 
     public event EventHandler<JoinVideosTimelineMoveEventArgs>? MoveRequested;
@@ -123,8 +130,8 @@ internal sealed class JoinVideosTimelineControl : Control
         if ((_isDragging || _isExternalDragHover) && _dragInsertionIndex >= 0)
         {
             var markerX = GetInsertionMarkerX(_dragInsertionIndex);
-            using var pen = new Pen(FrameShiftTheme.SecondaryBlue, 3F);
-            e.Graphics.DrawLine(pen, markerX, TileTop + 2, markerX, TileTop + TileHeight - 2);
+            using var pen = new Pen(FrameShiftTheme.SecondaryBlue, Pixels(3));
+            e.Graphics.DrawLine(pen, markerX, Pixels(TileTop + 2), markerX, Pixels(TileTop) + MeasuredTileHeight - Pixels(2));
         }
     }
 
@@ -157,7 +164,7 @@ internal sealed class JoinVideosTimelineControl : Control
             return;
         }
 
-        if (!_isDragging && Math.Abs(e.X - _mouseDownPoint.X) < 5 && Math.Abs(e.Y - _mouseDownPoint.Y) < 5)
+        if (!_isDragging && Math.Abs(e.X - _mouseDownPoint.X) < Pixels(5) && Math.Abs(e.Y - _mouseDownPoint.Y) < Pixels(5))
         {
             return;
         }
@@ -217,7 +224,7 @@ internal sealed class JoinVideosTimelineControl : Control
         var x = 0;
         for (var index = 0; index < _items.Count; index++)
         {
-            _tileBounds.Add(new Rectangle(x, TileTop, widths[index], TileHeight));
+            _tileBounds.Add(new Rectangle(x, Pixels(TileTop), widths[index], MeasuredTileHeight));
             x += widths[index];
         }
 
@@ -302,7 +309,7 @@ internal sealed class JoinVideosTimelineControl : Control
         return widths;
     }
 
-    private static void DrawTile(Graphics graphics, Rectangle bounds, JoinVideoTimelineItem item, bool selected, bool dragging)
+    private void DrawTile(Graphics graphics, Rectangle bounds, JoinVideoTimelineItem item, bool selected, bool dragging)
     {
         if (bounds.Width <= 0)
         {
@@ -316,32 +323,32 @@ internal sealed class JoinVideosTimelineControl : Control
             background = FrameShiftTheme.AccentSoftHover;
         }
 
-        if (bounds.Width < 4)
+        if (bounds.Width < Pixels(4))
         {
             using var narrowFill = new SolidBrush(background);
             graphics.FillRectangle(narrowFill, bounds);
             return;
         }
 
-        using var path = CreateRoundedRectangle(bounds, Math.Min(7, Math.Max(1, bounds.Width / 2)));
+        using var path = CreateRoundedRectangle(bounds, Math.Min(Pixels(7), Math.Max(1, bounds.Width / 2)));
         using var fill = new SolidBrush(background);
-        using var borderPen = new Pen(border, selected ? 2F : 1F);
+        using var borderPen = new Pen(border, selected ? Pixels(2) : Pixels(1));
         graphics.FillPath(fill, path);
         graphics.DrawPath(borderPen, path);
 
-        if (bounds.Width <= TilePadding * 2)
+        if (bounds.Width <= Pixels(TilePadding) * 2)
         {
             return;
         }
 
-        var previewBounds = new Rectangle(bounds.X + TilePadding, bounds.Y + TilePadding, bounds.Width - (TilePadding * 2), ThumbnailHeight);
+        var previewBounds = new Rectangle(bounds.X + Pixels(TilePadding), bounds.Y + Pixels(TilePadding), bounds.Width - Pixels(TilePadding * 2), Pixels(ThumbnailHeight));
         DrawPreview(graphics, previewBounds, item.Thumbnail);
 
-        var nameBounds = new Rectangle(bounds.X + TilePadding, previewBounds.Bottom + 6, bounds.Width - (TilePadding * 2), 19);
+        var nameBounds = new Rectangle(bounds.X + Pixels(TilePadding), previewBounds.Bottom + Pixels(6), bounds.Width - Pixels(TilePadding * 2), Math.Max(Pixels(19), Font.Height));
         TextRenderer.DrawText(
             graphics,
             Path.GetFileName(item.SourcePath),
-            SystemFonts.MessageBoxFont,
+            Font,
             nameBounds,
             FrameShiftTheme.TextPrimary,
             TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine | TextFormatFlags.Left);
@@ -349,20 +356,21 @@ internal sealed class JoinVideosTimelineControl : Control
         var details = item.IsLoaded
             ? item.LoadError ?? FormatDuration(item.DurationSeconds)
             : "Inspecting...";
-        var detailBounds = new Rectangle(bounds.X + TilePadding, nameBounds.Bottom + 2, bounds.Width - (TilePadding * 2), 18);
+        var detailBounds = new Rectangle(bounds.X + Pixels(TilePadding), nameBounds.Bottom + Pixels(2), bounds.Width - Pixels(TilePadding * 2), Math.Max(Pixels(18), Font.Height));
         TextRenderer.DrawText(
             graphics,
             details,
-            SystemFonts.MessageBoxFont,
+            Font,
             detailBounds,
             item.LoadError is null ? FrameShiftTheme.TextSecondary : Color.Firebrick,
             TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine | TextFormatFlags.Left);
     }
 
-    private static void DrawPreview(Graphics graphics, Rectangle bounds, Bitmap? bitmap)
+    private void DrawPreview(Graphics graphics, Rectangle bounds, Bitmap? bitmap)
     {
-        using var path = CreateRoundedRectangle(bounds, 4);
-        graphics.SetClip(path);
+        using var path = CreateRoundedRectangle(bounds, Math.Min(Pixels(4), Math.Max(1, bounds.Width / 2)));
+        var saved = graphics.Save();
+        graphics.SetClip(path, CombineMode.Intersect);
         if (bitmap is null)
         {
             using var placeholder = new SolidBrush(FrameShiftTheme.AccentSoft);
@@ -370,7 +378,7 @@ internal sealed class JoinVideosTimelineControl : Control
             TextRenderer.DrawText(
                 graphics,
                 "No preview",
-                SystemFonts.MessageBoxFont,
+                Font,
                 bounds,
                 FrameShiftTheme.TextMuted,
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
@@ -384,7 +392,7 @@ internal sealed class JoinVideosTimelineControl : Control
             graphics.DrawImage(bitmap, destination);
         }
 
-        graphics.ResetClip();
+        graphics.Restore(saved);
         using var border = new Pen(FrameShiftTheme.SurfaceBorder);
         graphics.DrawPath(border, path);
     }

@@ -14,6 +14,7 @@ using FrameShift.Core.Actions;
 using FrameShift.Core.FFmpeg;
 using FrameShift.Core.Helpers;
 using FrameShift.Windows.Helpers;
+using FrameShift.Windows.Controls;
 
 namespace FrameShift.Windows.Forms;
 
@@ -22,7 +23,7 @@ public sealed class ImageToPdfForm : Form
     private const int MaximumImageDimension = 16384;
     private const long MaximumImagePixels = 64_000_000;
     private const int MaximumHistoryEntries = 60;
-    private const float SnapTolerancePreview = 12f;
+    private float SnapTolerancePreview => FrameShiftUiMetrics.ToPixels(_previewPanel, 12);
     private const float MinimumPreviewScale = 0.20f;
     private const float MaximumPreviewScale = 5.00f;
     private const float PreviewZoomStep = 1.12f;
@@ -62,6 +63,16 @@ public sealed class ImageToPdfForm : Form
     private readonly CheckBox _rulersCheckBox;
     private readonly CheckBox _inchesCheckBox;
     private readonly Label _selectionLabel;
+    private readonly CancellationTokenSource _imageCancellation = new();
+    private Task _imageImportTask = Task.CompletedTask;
+    private readonly Control _editorBody;
+    private readonly TextBox _loadStatus;
+    private readonly IReadOnlyList<string> _initialPaths;
+    private bool _initialStarted;
+    private bool _closing;
+    private bool _allowClose;
+    private bool _resourcesDisposed;
+    private int _pendingImports;
     private int _selectedIndex = -1;
     private ImageToPdfGeometry.PageDefinition _pageDefinition;
     private float _previewScale;
@@ -111,108 +122,34 @@ public sealed class ImageToPdfForm : Form
         _ffmpegRunner = ffmpegRunner;
         _pageDefinition = ImageToPdfGeometry.GetPageDefinition(ImageToPdfSettings.DefaultPageFormat);
 
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(1280, 940), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Image to PDF");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        MinimumSize = new Size(1080, 760);
-        ClientSize = new Size(1280, 860);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         KeyPreview = true;
-        _toolTip = new ToolTip
-        {
-            ShowAlways = true,
-            InitialDelay = 150,
-            ReshowDelay = 100,
-            AutoPopDelay = 6000
-        };
-
-        var rootLayout = FrameShiftEditorShellUi.CreateRootLayout();
-
-        var headerPanel = CreateHeaderPanel(inputPaths);
-        var contentLayout = FrameShiftEditorShellUi.CreateTwoPaneContentLayout(
-            FrameShiftUiMetrics.WideEditorRailWidth,
-            out var leftHost,
-            out var rightHost);
-
-        _previewPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            BackColor = FrameShiftTheme.AccentSoft,
-            TabStop = true
-        };
+        _initialPaths = inputPaths.ToArray();
+        _toolTip = new ToolTip { ShowAlways = true, InitialDelay = 150, ReshowDelay = 100, AutoPopDelay = 6000 };
+        _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = FrameShiftTheme.AccentSoft, TabStop = true, AutoScroll = true, AllowDrop = true };
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;
         _previewPanel.MouseMove += PreviewPanelOnMouseMove;
         _previewPanel.MouseUp += PreviewPanelOnMouseUp;
         _previewPanel.MouseWheel += PreviewPanelOnMouseWheel;
-        _previewPanel.AllowDrop = true;
         _previewPanel.DragEnter += PreviewPanelOnDragEnter;
         _previewPanel.DragOver += PreviewPanelOnDragOver;
         _previewPanel.DragDrop += PreviewPanelOnDragDrop;
-        _previewPanel.AutoScroll = true;
-        _previewPanel.SizeChanged += (_, _) =>
-        {
-            UpdatePreviewCanvasLayout();
-            _previewPanel.Invalidate();
-        };
-        _previewPanel.MouseEnter += (_, _) =>
-        {
-            if (!_previewPanel.ContainsFocus)
-            {
-                _previewPanel.Focus();
-            }
-        };
-        _previewPanel.MouseLeave += (_, _) =>
-        {
-            if (_interactionMode == ImageInteractionMode.None)
-            {
-                _previewPanel.Cursor = Cursors.Default;
-            }
-        };
-
-        var previewSection = CreatePreviewSection(out var previewContentHost);
-        previewSection.Margin = Padding.Empty;
-        previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-        previewContentHost.Controls.Add(_previewPanel);
-
-        var sidePanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoScroll = false,
-            BackColor = FrameShiftTheme.PageBackground
-        };
-
-        var sideContent = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            ColumnCount = 1,
-            RowCount = 6,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty
-        };
-        sideContent.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        sideContent.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
+        _previewPanel.SizeChanged += (_, _) => { UpdatePreviewCanvasLayout(); _previewPanel.Invalidate(); };
+        _previewPanel.DpiChangedAfterParent += (_, _) => { UpdatePreviewCanvasLayout(); _previewPanel.Invalidate(); };
+        _previewPanel.MouseEnter += (_, _) => { if (!_previewPanel.ContainsFocus) _previewPanel.Focus(); };
+        _previewPanel.MouseLeave += (_, _) => { if (_interactionMode == ImageInteractionMode.None) _previewPanel.Cursor = Cursors.Default; };
         _buttonAddImage = CreateToolbarButton("Add image");
         _buttonDeleteImage = CreateToolbarButton("Remove selected");
         _buttonFitPage = CreateToolbarButton("Fit page");
         _buttonCenter = CreateToolbarButton("Center");
         _buttonCrop = CreateToolbarButton("Crop");
-        _buttonPrint = CreateToolbarButton("Print");
-        _buttonExport = CreateToolbarButton("Export");
+        _buttonPrint = FrameShiftUiFactory.CreateMeasuredActionButton("Print", false);
+        _buttonExport = FrameShiftUiFactory.CreateMeasuredActionButton("Export", true);
+        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Close", false);
         _buttonMoveBackward = CreateToolbarButton("Back 1");
         _buttonMoveForward = CreateToolbarButton("Front 1");
         _buttonSendToBack = CreateToolbarButton("To back");
@@ -221,243 +158,60 @@ public sealed class ImageToPdfForm : Form
         _buttonZoomFit = CreateToolbarButton("Fit view");
         _buttonZoomIn = CreateToolbarButton("Zoom +");
         _buttonZoomOut = CreateToolbarButton("Zoom -");
-        _buttonCancel = CreateToolbarButton("Close");
-
-        ConfigureTileButton(_buttonAddImage, "add-image-icon.ico", "Add one or more images to the current PDF page.");
-        ConfigureTileButton(_buttonDeleteImage, "remove-icon.ico", "Remove the selected image from the page.");
-        ConfigureTileButton(_buttonClearSelection, "clear-icon.ico", "Remove all images from the page.");
-        ConfigureTileButton(_buttonSendToBack, "send-to-back-icon.ico", "Send image to back.", compactBadge: true);
-        ConfigureTileButton(_buttonMoveBackward, "send-backward-icon.ico", "Move one layer backward.", compactBadge: true);
-        ConfigureTileButton(_buttonMoveForward, "bring-forward-icon.ico", "Move one layer forward.", compactBadge: true);
-        ConfigureTileButton(_buttonBringToFront, "bring-to-front-icon.ico", "Bring image to front.", compactBadge: true);
-        ApplyOrderTileStyle(_buttonSendToBack);
-        ApplyOrderTileStyle(_buttonMoveBackward);
-        ApplyOrderTileStyle(_buttonMoveForward);
-        ApplyOrderTileStyle(_buttonBringToFront);
-        ConfigureTileButton(_buttonFitPage, "fit-to-page-icon.ico", "Fit the active image inside the current page.");
-        ConfigureTileButton(_buttonCenter, "center-icon.ico", "Center the active image on the page.");
-        ConfigureTileButton(_buttonCrop, "crop-icon.ico", "Toggle crop mode for the active image.");
-        ConfigureTileButton(_buttonZoomFit, "fit-view-icon.ico", "Fit preview to the current window.");
+        ConfigureTileButton(_buttonAddImage, "add-image-icon.ico", "Add images to the page.");
+        ConfigureTileButton(_buttonDeleteImage, "remove-icon.ico", "Remove selected images.");
+        ConfigureTileButton(_buttonClearSelection, "clear-icon.ico", "Remove all images.");
+        ConfigureTileButton(_buttonSendToBack, "send-to-back-icon.ico", "Send image to back.");
+        ConfigureTileButton(_buttonMoveBackward, "send-backward-icon.ico", "Move one layer backward.");
+        ConfigureTileButton(_buttonMoveForward, "bring-forward-icon.ico", "Move one layer forward.");
+        ConfigureTileButton(_buttonBringToFront, "bring-to-front-icon.ico", "Bring image to front.");
+        ConfigureTileButton(_buttonFitPage, "fit-to-page-icon.ico", "Fit the active image inside the page.");
+        ConfigureTileButton(_buttonCenter, "center-icon.ico", "Center the active image.");
+        ConfigureTileButton(_buttonCrop, "crop-icon.ico", "Toggle crop mode.");
+        ConfigureTileButton(_buttonZoomFit, "fit-view-icon.ico", "Fit preview to the window.");
         ConfigureTileButton(_buttonZoomOut, "zoom-out-icon.ico", "Zoom out.");
         ConfigureTileButton(_buttonZoomIn, "zoom-in-icon.ico", "Zoom in.");
-        ConfigureTileButton(_buttonExport, "export-icon.ico", "Export the current layout as a single-page PDF.", wideBadge: true);
-        ConfigureTileButton(_buttonPrint, "print-icon.ico", "Print the current single-page layout.");
-        ConfigureTileButton(_buttonCancel, "cancel-icon.ico", "Close the editor without exporting.");
-        _buttonCrop.Enabled = false;
-
-        _selectionLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-
-        var libraryLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 3,
-            Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-        libraryLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        libraryLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
-        libraryLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        libraryLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        libraryLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        libraryLayout.Controls.Add(_selectionLabel, 0, 0);
-        libraryLayout.SetColumnSpan(_selectionLabel, 2);
-        libraryLayout.Controls.Add(_buttonAddImage, 0, 1);
-        libraryLayout.SetColumnSpan(_buttonAddImage, 2);
-        libraryLayout.Controls.Add(_buttonDeleteImage, 0, 2);
-        libraryLayout.Controls.Add(_buttonClearSelection, 1, 2);
-        var libraryCard = FrameShiftEditorShellUi.CreateSidebarGroup("Library", libraryLayout);
-
-        var arrangeLayout = CreateFixedHeightTileGrid(4, 64);
-        arrangeLayout.Controls.Add(_buttonSendToBack, 0, 0);
-        arrangeLayout.Controls.Add(_buttonMoveBackward, 1, 0);
-        arrangeLayout.Controls.Add(_buttonMoveForward, 2, 0);
-        arrangeLayout.Controls.Add(_buttonBringToFront, 3, 0);
-        var arrangeCard = FrameShiftEditorShellUi.CreateSidebarGroup("Order", arrangeLayout);
-
-        var pageLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 4,
-            Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-        pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92F));
-        pageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        pageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        pageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        pageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        pageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        _pageFormatComboBox = new ComboBox
-        {
-            Dock = DockStyle.Fill,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
+        _selectionLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading images...");
+        var library = FrameShiftUiFactory.CreateSection("Library", FrameShiftUiFactory.CreateVerticalStack(_selectionLabel,
+            FrameShiftUiFactory.CreateChoiceRow(_buttonAddImage, _buttonDeleteImage, _buttonClearSelection)));
+        var order = FrameShiftUiFactory.CreateSection("Order", FrameShiftUiFactory.CreateChoiceRow(
+            _buttonSendToBack, _buttonMoveBackward, _buttonMoveForward, _buttonBringToFront));
+        _heightUpDown = CreatePercentageNumericUpDown();
+        _heightUpDown.Visible = false;
+        _lockRatioCheckBox = new CheckBox { AutoSize = true, Text = "Ratio", Checked = true };
+        _snapImagesCheckBox = new CheckBox { AutoSize = true, Text = "Snap", Checked = true };
+        _rulersCheckBox = new CheckBox { AutoSize = true, Text = "Rulers", Checked = true };
+        _inchesCheckBox = new CheckBox { AutoSize = true, Text = "Inches", Enabled = false, TabStop = false };
+        _heightUpDown.Leave += (_, _) => ApplyResizeFromFields(true);
+        _heightUpDown.KeyDown += ResizeFieldOnKeyDown;
+        _snapImagesCheckBox.CheckedChanged += (_, _) => { ClearSnapGuides(); _previewPanel.Invalidate(); };
+        _rulersCheckBox.CheckedChanged += (_, _) => _previewPanel.Invalidate();
+        var active = FrameShiftUiFactory.CreateSection("Active image", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateChoiceRow(_buttonFitPage, _buttonCenter, _buttonCrop),
+            FrameShiftUiFactory.CreateChoiceRow(_lockRatioCheckBox, _snapImagesCheckBox, _rulersCheckBox, _inchesCheckBox)));
+        _pageFormatComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         _customPageWidthUpDown = CreateCentimeterNumericUpDown();
         _customPageHeightUpDown = CreateCentimeterNumericUpDown();
-
         _pageFormatComboBox.Items.AddRange([
-            new PageFormatOption("A4 portrait", "A4Portrait"),
-            new PageFormatOption("A4 landscape", "A4Landscape"),
-            new PageFormatOption("A3 portrait", "A3Portrait"),
-            new PageFormatOption("A3 landscape", "A3Landscape"),
-            new PageFormatOption("Custom", "Custom")
-        ]);
+            new PageFormatOption("A4 portrait", "A4Portrait"), new PageFormatOption("A4 landscape", "A4Landscape"),
+            new PageFormatOption("A3 portrait", "A3Portrait"), new PageFormatOption("A3 landscape", "A3Landscape"), new PageFormatOption("Custom", "Custom")]);
         _pageFormatComboBox.DisplayMember = nameof(PageFormatOption.Display);
         _pageFormatComboBox.ValueMember = nameof(PageFormatOption.Value);
         _pageFormatComboBox.SelectedIndexChanged += (_, _) => ApplyPageFormatSelection();
         _customPageWidthUpDown.ValueChanged += (_, _) => ApplyCustomPageSizeFromFields();
         _customPageHeightUpDown.ValueChanged += (_, _) => ApplyCustomPageSizeFromFields();
-
-        pageLayout.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Format", TextAlign = ContentAlignment.MiddleLeft }, 0, 0);
-        pageLayout.Controls.Add(_pageFormatComboBox, 1, 0);
-        pageLayout.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Width cm", TextAlign = ContentAlignment.MiddleLeft }, 0, 1);
-        pageLayout.Controls.Add(_customPageWidthUpDown, 1, 1);
-        pageLayout.Controls.Add(new Label { Dock = DockStyle.Fill, Text = "Height cm", TextAlign = ContentAlignment.MiddleLeft }, 0, 2);
-        pageLayout.Controls.Add(_customPageHeightUpDown, 1, 2);
-        var pageCard = FrameShiftEditorShellUi.CreateSidebarGroup("Page", pageLayout);
-
-        var activeImageLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 2,
-            Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-        activeImageLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        activeImageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        activeImageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        var activeImageButtonsLayout = CreateTileGrid(3, 1);
-        activeImageButtonsLayout.AutoSize = true;
-        activeImageButtonsLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        activeImageButtonsLayout.Controls.Add(_buttonFitPage, 0, 0);
-        activeImageButtonsLayout.Controls.Add(_buttonCenter, 1, 0);
-        activeImageButtonsLayout.Controls.Add(_buttonCrop, 2, 0);
-
-        var activeImageOptionsLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 4,
-            RowCount = 1,
-            Margin = new Padding(0),
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-        activeImageOptionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-        activeImageOptionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-        activeImageOptionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-        activeImageOptionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
-        activeImageOptionsLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        _heightUpDown = CreatePercentageNumericUpDown();
-        _heightUpDown.Visible = false;
-        _lockRatioCheckBox = new CheckBox
-        {
-            Dock = DockStyle.Fill,
-            Text = "Ratio",
-            Checked = true
-        };
-        _snapImagesCheckBox = new CheckBox
-        {
-            Dock = DockStyle.Fill,
-            Text = "Snap",
-            Checked = true
-        };
-        _rulersCheckBox = new CheckBox
-        {
-            Dock = DockStyle.Fill,
-            Text = "Rulers",
-            Checked = true
-        };
-        _inchesCheckBox = new CheckBox
-        {
-            Dock = DockStyle.Fill,
-            Text = "Inches",
-            Enabled = false,
-            TabStop = false
-        };
-
-        _heightUpDown.Leave += (_, _) => ApplyResizeFromFields(heightChanged: true);
-        _heightUpDown.KeyDown += ResizeFieldOnKeyDown;
-        _snapImagesCheckBox.CheckedChanged += (_, _) =>
-        {
-            ClearSnapGuides();
-            _previewPanel.Invalidate();
-        };
-        _rulersCheckBox.CheckedChanged += (_, _) => _previewPanel.Invalidate();
-
-        activeImageOptionsLayout.Controls.Add(_lockRatioCheckBox, 0, 0);
-        activeImageOptionsLayout.Controls.Add(_snapImagesCheckBox, 1, 0);
-        activeImageOptionsLayout.Controls.Add(_rulersCheckBox, 2, 0);
-        activeImageOptionsLayout.Controls.Add(_inchesCheckBox, 3, 0);
-
-        activeImageLayout.Controls.Add(activeImageButtonsLayout, 0, 0);
-        activeImageLayout.Controls.Add(activeImageOptionsLayout, 0, 1);
-        var activeImageCard = FrameShiftEditorShellUi.CreateSidebarGroup("Active image", activeImageLayout);
-
-        var finalActionsLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 1,
-            RowCount = 1,
-            Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-        finalActionsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        finalActionsLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-
-        var outputViewLayout = CreateTileGrid(3, 1);
-        outputViewLayout.AutoSize = true;
-        outputViewLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        outputViewLayout.Controls.Add(_buttonZoomFit, 0, 0);
-        outputViewLayout.Controls.Add(_buttonZoomOut, 1, 0);
-        outputViewLayout.Controls.Add(_buttonZoomIn, 2, 0);
-
-        var outputActionsLayout = CreateTileGrid(2, 1);
-        outputActionsLayout.AutoSize = true;
-        outputActionsLayout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        outputActionsLayout.Controls.Add(_buttonExport, 0, 0);
-        outputActionsLayout.Controls.Add(_buttonPrint, 1, 0);
-
-        finalActionsLayout.Controls.Add(outputViewLayout, 0, 0);
-        var outputCard = FrameShiftEditorShellUi.CreateSidebarGroup("Output", outputActionsLayout);
-        var viewCard = FrameShiftEditorShellUi.CreateSidebarGroup("View", finalActionsLayout);
-        viewCard.Margin = new Padding(0);
-
-        sideContent.Controls.Add(outputCard, 0, 0);
-        sideContent.Controls.Add(libraryCard, 0, 1);
-        sideContent.Controls.Add(arrangeCard, 0, 2);
-        sideContent.Controls.Add(activeImageCard, 0, 3);
-        sideContent.Controls.Add(pageCard, 0, 4);
-        sideContent.Controls.Add(viewCard, 0, 5);
-        sidePanel.Controls.Add(sideContent);
-
-        leftHost.Controls.Add(previewSection);
-        rightHost.Controls.Add(sidePanel);
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(contentLayout, 0, 2);
-        Controls.Add(rootLayout);
-        EnsureInitialWindowHeight(rootLayout, sideContent);
-
+        var page = FrameShiftUiFactory.CreateSection("Page", CreatePageFields());
+        var view = FrameShiftUiFactory.CreateSection("View", FrameShiftUiFactory.CreateChoiceRow(_buttonZoomFit, _buttonZoomOut, _buttonZoomIn));
+        _loadStatus = FrameShiftUiFactory.CreateStatusMessage("Loading images...");
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Image to PDF",
+            inputPaths.Count == 1 ? $"Source: {Path.GetFileName(inputPaths[0])}" : $"{inputPaths.Count} images selected",
+            IconPaths.ImageToPdfIco("image-to-pdf-image-icon.ico"), IconPaths.AppIcon, "PDF");
+        var root = FrameShiftEditorShellUi.Create(header,
+            FrameShiftUiFactory.CreateSection("Preview", _previewPanel, fill: true),
+            FrameShiftDialogLayout.CreateActions(_buttonCancel, _buttonPrint, _buttonExport),
+            FrameShiftUiFactory.CreateVerticalStack(library, order, active, page, view), _loadStatus, logicalRailWidth: 410);
+        _editorBody = root.GetControlFromPosition(0, 1)!;
+        Controls.Add(root);
         _buttonAddImage.Click += (_, _) => AddImagesFromDialog();
         _buttonDeleteImage.Click += (_, _) => DeleteSelectedImage();
         _buttonFitPage.Click += (_, _) => FitSelectedImageToPage();
@@ -480,79 +234,129 @@ public sealed class ImageToPdfForm : Form
         InitializePageControls();
         FitPreviewToView();
 
-        var loadedAnyInitialItem = false;
-        string? firstInitialError = null;
+        CancelButton = _buttonCancel;
+        _buttonExport.Enabled = _buttonPrint.Enabled = false;
+        Shown += async (_, _) => await StartInitialImagesAsync();
+        FormClosing += CloseAfterImportAsync;
+        ResumeLayout(true);
+    }
 
-        for (var index = 0; index < inputPaths.Count; index++)
+    internal Task StartInitialImagesAsync()
+    {
+        if (_initialStarted) return _imageImportTask;
+        _initialStarted = true;
+        return QueueImagesAsync(_initialPaths, true);
+    }
+
+    private Task QueueImagesAsync(IEnumerable<string> paths, bool initial)
+    {
+        if (_closing || IsDisposed) return Task.CompletedTask;
+        var inputs = paths.Where(path => !string.IsNullOrWhiteSpace(path)).ToArray();
+        _pendingImports++;
+        _editorBody.Enabled = false;
+        _buttonExport.Enabled = _buttonPrint.Enabled = false;
+        return _imageImportTask = ImportImagesAsync(_imageImportTask, inputs, initial);
+    }
+
+    private async Task ImportImagesAsync(Task previous, string[] paths, bool initial)
+    {
+        var token = _imageCancellation.Token;
+        var errors = new List<string>();
+        try
         {
-            var inputPath = inputPaths[index];
-            if (TryAddImageInternal(inputPath, index == 0, out var initialError, out _))
+            await previous;
+            if (_closing || IsDisposed) return;
+            var history = CaptureEditorHistoryState();
+            foreach (var path in paths)
             {
-                loadedAnyInitialItem = true;
-                continue;
+                Bitmap? decoded = null;
+                try
+                {
+                    token.ThrowIfCancellationRequested();
+                    _loadStatus.Text = $"Loading: {Path.GetFileName(path)}";
+                    if (!_bitmapCache.TryGetValue(path, out var cached))
+                    {
+                        decoded = await LoadBitmapForImportAsync(path, token);
+                        token.ThrowIfCancellationRequested();
+                        if (_closing || IsDisposed) return;
+                        cached = decoded;
+                        _bitmapCache[path] = decoded;
+                        decoded = null;
+                    }
+                    if (!TryAddBitmapItemInternal(path, cached, null, initial && _items.Count == 0, out var error, out _))
+                        throw new InvalidOperationException(error);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception ex) { errors.Add($"{Path.GetFileName(path)}: {ex.Message}"); }
+                finally { decoded?.Dispose(); }
             }
-
-            firstInitialError ??= initialError ?? MediaActionMessages.ImageToPdfItemLoadFailed(inputPath);
+            if (_closing || IsDisposed) return;
+            if (!initial) CommitHistoryIfChanged(history);
+            RefreshImageList(_items.Count - 1);
+            UpdateSelectionState(_items.Count - 1);
+            if (initial) FitPreviewToView();
+            _loadStatus.Text = errors.Count > 0 ? string.Join(Environment.NewLine, errors)
+                : "Select an image to move, resize, rotate or crop it. Export creates a PDF next to the source.";
         }
-
-        if (!loadedAnyInitialItem)
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        finally
         {
-            throw new InvalidOperationException(firstInitialError ?? MediaActionMessages.ImageToPdfItemLoadFailed(inputPaths[0]));
+            _pendingImports--;
+            if (!_closing && !IsDisposed && _pendingImports == 0)
+            {
+                _editorBody.Enabled = true;
+                _buttonExport.Enabled = _buttonPrint.Enabled = _items.Count > 0;
+            }
         }
+    }
 
-        RefreshImageList(_items.Count - 1);
-        UpdateSelectionState(_items.Count - 1);
-        FitPreviewToView();
-        FormClosed += (_, _) =>
+    private async void CloseAfterImportAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose) return;
+        e.Cancel = true;
+        if (_closing) return;
+        _closing = true;
+        var result = DialogResult;
+        _imageCancellation.Cancel();
+        Enabled = false;
+        await _imageImportTask;
+        if (IsDisposed) return;
+        // Restore the modal result after the first FormClosing has returned.
+        BeginInvoke(new Action(() =>
         {
+            if (IsDisposed) return;
+            _allowClose = true;
+            DialogResult = result;
+            Close();
+        }));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_resourcesDisposed)
+        {
+            _resourcesDisposed = true;
+            _closing = true;
+            _imageCancellation.Cancel();
             DisposeClipboardItems();
             DisposeLoadedImages();
             CleanupTemporarySourcePaths();
-        };
+            _toolTip?.Dispose();
+            _ = DisposeImageCancellationAsync();
+        }
+        base.Dispose(disposing);
     }
 
-    private Panel CreateHeaderPanel(IReadOnlyList<string> inputPaths)
+    private async Task DisposeImageCancellationAsync()
     {
-        var subtitle = inputPaths.Count == 1
-            ? $"Source: {Path.GetFileName(inputPaths[0])}"
-            : $"{inputPaths.Count} images selected";
-
-        return FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Image to PDF",
-            subtitle,
-            IconPaths.ImageToPdfIco("image-to-pdf-image-icon.ico"),
-            IconPaths.AppIcon,
-            "PDF",
-            980);
+        try { await _imageImportTask; } finally { _imageCancellation.Dispose(); }
     }
-
-    private Panel CreatePreviewSection(out Panel contentHost)
-    {
-        return FrameShiftUiFactory.CreateFillSection("Preview", out contentHost);
-    }
-
-    private void EnsureInitialWindowHeight(TableLayoutPanel rootLayout, Control sideContent)
-    {
-        rootLayout.PerformLayout();
-        sideContent.PerformLayout();
-
-        var nonClientHeight = Height - ClientSize.Height;
-        var requiredClientHeight =
-            rootLayout.Padding.Vertical +
-            FrameShiftUiMetrics.HeaderHeight +
-            FrameShiftUiMetrics.OuterPadding +
-            sideContent.PreferredSize.Height;
-
-        ClientSize = new Size(ClientSize.Width, requiredClientHeight);
-        MinimumSize = new Size(
-            MinimumSize.Width,
-            requiredClientHeight + nonClientHeight);
-    }
-
     public ImageToPdfSettings? Settings { get; private set; }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
     {
+        if (_pendingImports > 0 || _closing) return base.ProcessCmdKey(ref msg, keyData);
+
         if ((keyData == Keys.Left || keyData == Keys.Right || keyData == Keys.Up || keyData == Keys.Down) &&
             TryNudgeSelectedImage(keyData))
         {
@@ -658,94 +462,7 @@ public sealed class ImageToPdfForm : Form
         BeginInvoke(() => AddImagesFromPaths(paths));
     }
 
-    private void AddImagesFromPaths(IEnumerable<string> filePaths)
-    {
-        var paths = filePaths.Where(path => !string.IsNullOrWhiteSpace(path)).ToArray();
-        if (paths.Length == 0)
-        {
-            return;
-        }
-
-        var historyBefore = CaptureEditorHistoryState();
-        var anyAdded = false;
-        foreach (var fileName in paths)
-        {
-            if (!TryAddImageInternal(fileName, false, out var errorMessage, out _))
-            {
-                ShowError(errorMessage ?? MediaActionMessages.ImageToPdfItemLoadFailed(fileName));
-                continue;
-            }
-
-            anyAdded = true;
-        }
-
-        if (anyAdded)
-        {
-            CommitHistoryIfChanged(historyBefore);
-            RefreshImageList(_items.Count - 1);
-            UpdateSelectionState(_items.Count - 1);
-        }
-    }
-
-    private bool TryAddImageInternal(string path, bool isInitialItem, out string? errorMessage, out bool selectedNewItem)
-    {
-        errorMessage = null;
-        selectedNewItem = false;
-
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            errorMessage = MediaActionMessages.ImageFileInaccessible(path);
-            return false;
-        }
-
-        var extension = Path.GetExtension(path).ToLowerInvariant();
-        if (!IsSupportedExtension(extension))
-        {
-            errorMessage = MediaActionMessages.UnsupportedSourceFormat(extension, ImageCropSupport.GetSupportedExtensionsText());
-            return false;
-        }
-
-        try
-        {
-            if (!TryGetOrLoadBitmap(path, out var bitmap, out errorMessage) || bitmap is null)
-            {
-                return false;
-            }
-
-            return TryAddBitmapItemInternal(path, bitmap, null, isInitialItem, out errorMessage, out selectedNewItem);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            errorMessage = MediaActionMessages.ImageFileInaccessible(path);
-            return false;
-        }
-        catch (IOException)
-        {
-            errorMessage = MediaActionMessages.ImageFileInaccessible(path);
-            return false;
-        }
-        catch (ArgumentException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (ExternalException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (OutOfMemoryException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.ImageLoadFailed(path));
-            return false;
-        }
-    }
-
+    private void AddImagesFromPaths(IEnumerable<string> filePaths) => _ = QueueImagesAsync(filePaths, false);
     private bool TryAddBitmapItemInternal(
         string sourcePath,
         Bitmap bitmap,
@@ -916,7 +633,7 @@ public sealed class ImageToPdfForm : Form
             var item = _items[index];
             var previewRect = ImageToPdfGeometry.ToPreviewRect(item.Settings.ToRectangleF(), previewPageRect);
             var rotationAngle = item.Settings.GetRotationAngleDegrees();
-            var hit = ImageToPdfGeometry.GetPreviewResizeHandleHit(previewRect, rotationAngle, point, 10f);
+            var hit = ImageToPdfGeometry.GetPreviewResizeHandleHit(previewRect, rotationAngle, point, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
             if (!string.IsNullOrWhiteSpace(hit))
             {
                 itemIndex = index;
@@ -930,6 +647,11 @@ public sealed class ImageToPdfForm : Form
         return false;
     }
 
+    private bool HitRotationHandle(RectangleF rect, double angle, PointF point, float logicalDiameter)
+        => ImageToPdfGeometry.GetPreviewRotationHandleInfo(rect, angle,
+            FrameShiftUiMetrics.ToPixels(_previewPanel, 22),
+            FrameShiftUiMetrics.ToPixels(_previewPanel, (int)logicalDiameter)).HandleBounds.Contains(point);
+
     private bool TryGetSelectedRotationHandleAtPoint(PointF point, RectangleF previewPageRect, out int itemIndex)
     {
         for (var index = _items.Count - 1; index >= 0; index--)
@@ -942,7 +664,7 @@ public sealed class ImageToPdfForm : Form
             var item = _items[index];
             var previewRect = ImageToPdfGeometry.ToPreviewRect(item.Settings.ToRectangleF(), previewPageRect);
             var rotationAngle = item.Settings.GetRotationAngleDegrees();
-            if (ImageToPdfGeometry.GetPreviewRotationHandleHit(previewRect, rotationAngle, point, 12f))
+            if (HitRotationHandle(previewRect, rotationAngle, point, 12f))
             {
                 itemIndex = index;
                 return true;
@@ -1862,7 +1584,7 @@ public sealed class ImageToPdfForm : Form
 
                 using var handleBrush = new SolidBrush(Color.White);
                 using var handleBorderPen = new Pen(Color.FromArgb(34, 118, 227), 1.2f);
-                var handles = ImageToPdfGeometry.GetPreviewCropHandleRects(fullRect, crop, rotationAngle, 10f);
+                var handles = ImageToPdfGeometry.GetPreviewCropHandleRects(fullRect, crop, rotationAngle, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
                 DrawCropPreviewHandle(e.Graphics, handles.TopLeft, "TopLeft", handleBrush, handleBorderPen);
                 DrawCropPreviewHandle(e.Graphics, handles.Top, "Top", handleBrush, handleBorderPen);
                 DrawCropPreviewHandle(e.Graphics, handles.TopRight, "TopRight", handleBrush, handleBorderPen);
@@ -1883,7 +1605,7 @@ public sealed class ImageToPdfForm : Form
                 {
                     using var resizeHandleBrush = new SolidBrush(Color.White);
                     using var resizeHandleBorderPen = new Pen(Color.FromArgb(34, 118, 227), 1.2f);
-                    var resizeHandles = ImageToPdfGeometry.GetPreviewResizeHandleRects(previewRect, rotationAngle, 10f);
+                    var resizeHandles = ImageToPdfGeometry.GetPreviewResizeHandleRects(previewRect, rotationAngle, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
                     foreach (var handleRect in new[] { resizeHandles.TopLeft, resizeHandles.Top, resizeHandles.TopRight, resizeHandles.Right, resizeHandles.BottomRight, resizeHandles.Bottom, resizeHandles.BottomLeft, resizeHandles.Left })
                     {
                         e.Graphics.FillRectangle(resizeHandleBrush, handleRect);
@@ -1892,7 +1614,7 @@ public sealed class ImageToPdfForm : Form
 
                     using var rotationHandlePen = new Pen(Color.FromArgb(34, 118, 227), 1.6f);
                     using var rotationHandleBrush = new SolidBrush(Color.White);
-                    var rotationInfo = ImageToPdfGeometry.GetPreviewRotationHandleInfo(previewRect, rotationAngle, 22f, 12f);
+                    var rotationInfo = ImageToPdfGeometry.GetPreviewRotationHandleInfo(previewRect, rotationAngle, FrameShiftUiMetrics.ToPixels(_previewPanel, 22), FrameShiftUiMetrics.ToPixels(_previewPanel, 12));
                     e.Graphics.DrawLine(rotationHandlePen, rotationInfo.AxisStart, rotationInfo.HandleCenter);
                     e.Graphics.FillEllipse(rotationHandleBrush, rotationInfo.HandleBounds);
                     e.Graphics.DrawEllipse(rotationHandlePen, rotationInfo.HandleBounds);
@@ -1932,10 +1654,10 @@ public sealed class ImageToPdfForm : Form
             return;
         }
 
-        const float rulerThickness = 16f;
-        const float rulerGap = 4f;
-        const float majorTick = 7f;
-        const float minorTick = 4f;
+        var rulerThickness = FrameShiftUiMetrics.ToPixels(_previewPanel, 16);
+        var rulerGap = FrameShiftUiMetrics.ToPixels(_previewPanel, 4);
+        var majorTick = FrameShiftUiMetrics.ToPixels(_previewPanel, 7);
+        var minorTick = FrameShiftUiMetrics.ToPixels(_previewPanel, 4);
 
         if (previewPageRect.Width <= 1f || previewPageRect.Height <= 1f)
         {
@@ -1959,7 +1681,7 @@ public sealed class ImageToPdfForm : Form
         }
 
         var pixelsPerCentimeter = previewPageRect.Width / (float)_pageDefinition.WidthCentimeters;
-        var (majorStepCentimeters, showHalfCentimeters) = GetRulerSpacing(pixelsPerCentimeter);
+        var (majorStepCentimeters, showHalfCentimeters) = GetRulerSpacing(pixelsPerCentimeter * 96f / _previewPanel.DeviceDpi);
         var halfStepCentimeters = showHalfCentimeters ? majorStepCentimeters / 2.0 : 0.0;
 
         using var backgroundBrush = new SolidBrush(FrameShiftTheme.Surface);
@@ -2060,7 +1782,7 @@ public sealed class ImageToPdfForm : Form
         foreach (var value in EnumerateRulerSteps(_pageDefinition.WidthCentimeters, stepCentimeters, false))
         {
             var x = previewPageRect.X + (float)(value / _pageDefinition.WidthCentimeters * previewPageRect.Width);
-            var labelRect = new RectangleF(x - 14f, rulerRect.Top + 1f, 28f, rulerRect.Height - 2f);
+            var labelRect = new RectangleF(x - FrameShiftUiMetrics.ToPixels(_previewPanel, 14), rulerRect.Top + FrameShiftUiMetrics.ToPixels(_previewPanel, 1), FrameShiftUiMetrics.ToPixels(_previewPanel, 28), rulerRect.Height - FrameShiftUiMetrics.ToPixels(_previewPanel, 2));
             graphics.DrawString(((int)Math.Round(value)).ToString(CultureInfo.InvariantCulture), font, textBrush, labelRect, textFormat);
         }
     }
@@ -2077,7 +1799,7 @@ public sealed class ImageToPdfForm : Form
         foreach (var value in EnumerateRulerSteps(_pageDefinition.HeightCentimeters, stepCentimeters, false))
         {
             var y = previewPageRect.Y + (float)(value / _pageDefinition.HeightCentimeters * previewPageRect.Height);
-            var labelRect = new RectangleF(rulerRect.Left + 1f, y - 6f, rulerRect.Width - 2f, 12f);
+            var labelRect = new RectangleF(rulerRect.Left + FrameShiftUiMetrics.ToPixels(_previewPanel, 1), y - FrameShiftUiMetrics.ToPixels(_previewPanel, 6), rulerRect.Width - FrameShiftUiMetrics.ToPixels(_previewPanel, 2), FrameShiftUiMetrics.ToPixels(_previewPanel, 12));
             graphics.DrawString(((int)Math.Round(value)).ToString(CultureInfo.InvariantCulture), font, textBrush, labelRect, textFormat);
         }
     }
@@ -2132,7 +1854,7 @@ public sealed class ImageToPdfForm : Form
                 new RectangleF((float)visiblePageRect.X, (float)visiblePageRect.Y, (float)visiblePageRect.Width, (float)visiblePageRect.Height),
                 crop);
             var rotationAngle = activeItem.Settings.GetRotationAngleDegrees();
-            var cropHandle = ImageToPdfGeometry.GetPreviewCropHandleHit(fullRect, crop, rotationAngle, mousePoint, 10f);
+            var cropHandle = ImageToPdfGeometry.GetPreviewCropHandleHit(fullRect, crop, rotationAngle, mousePoint, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
 
             if (!string.IsNullOrWhiteSpace(cropHandle))
             {
@@ -2207,7 +1929,7 @@ public sealed class ImageToPdfForm : Form
                 return;
             }
 
-            if (ImageToPdfGeometry.GetPreviewRotationHandleHit(activeRectBeforeHitTest, activeRotationAngleBeforeHitTest, mousePoint, 12f))
+            if (HitRotationHandle(activeRectBeforeHitTest, activeRotationAngleBeforeHitTest, mousePoint, 12f))
             {
                 _interactionMode = ImageInteractionMode.Rotate;
                 _interactionStartHistoryState = CaptureEditorHistoryState();
@@ -2330,7 +2052,7 @@ public sealed class ImageToPdfForm : Form
             return;
         }
 
-        if (ImageToPdfGeometry.GetPreviewRotationHandleHit(activeRectAfterSelection, rotationAngleAfterSelection, mousePoint, 12f))
+        if (HitRotationHandle(activeRectAfterSelection, rotationAngleAfterSelection, mousePoint, 12f))
         {
             _interactionMode = ImageInteractionMode.Rotate;
             _interactionStartHistoryState = CaptureEditorHistoryState();
@@ -2541,7 +2263,7 @@ public sealed class ImageToPdfForm : Form
             {
                 var crop = activeItem.Settings.GetCrop();
                 var fullRect = ImageToPdfGeometry.GetFullRectFromVisibleRectAndCrop(activeRect, crop);
-                var cropHandle = ImageToPdfGeometry.GetPreviewCropHandleHit(fullRect, crop, rotationAngle, mousePoint, 10f);
+                var cropHandle = ImageToPdfGeometry.GetPreviewCropHandleHit(fullRect, crop, rotationAngle, mousePoint, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
                 if (!string.IsNullOrWhiteSpace(cropHandle))
                 {
                     _previewPanel.Cursor = GetCropCursor(ParseCropHandle(cropHandle));
@@ -2572,7 +2294,7 @@ public sealed class ImageToPdfForm : Form
                     var selectedItem = _items[selectedIndex];
                     var selectedRect = ImageToPdfGeometry.ToPreviewRect(selectedItem.Settings.ToRectangleF(), previewPageRect);
                     var selectedAngle = selectedItem.Settings.GetRotationAngleDegrees();
-                    if (ImageToPdfGeometry.GetPreviewRotationHandleHit(selectedRect, selectedAngle, mousePoint, 12f))
+                    if (HitRotationHandle(selectedRect, selectedAngle, mousePoint, 12f))
                     {
                         _previewPanel.Cursor = Cursors.Hand;
                         return;
@@ -2586,7 +2308,7 @@ public sealed class ImageToPdfForm : Form
                 }
             }
 
-            if (ImageToPdfGeometry.GetPreviewRotationHandleHit(activeRect, rotationAngle, mousePoint, 12f))
+            if (HitRotationHandle(activeRect, rotationAngle, mousePoint, 12f))
             {
                 _previewPanel.Cursor = Cursors.Hand;
                 return;
@@ -2594,7 +2316,7 @@ public sealed class ImageToPdfForm : Form
 
             if (!hasMultiSelection)
             {
-                var activeResizeHandle = ImageToPdfGeometry.GetPreviewResizeHandleHit(activeRect, rotationAngle, mousePoint, 10f);
+                var activeResizeHandle = ImageToPdfGeometry.GetPreviewResizeHandleHit(activeRect, rotationAngle, mousePoint, FrameShiftUiMetrics.ToPixels(_previewPanel, 10));
                 if (!string.IsNullOrWhiteSpace(activeResizeHandle))
                 {
                     _previewPanel.Cursor = GetResizeCursor(ParseResizeHandle(activeResizeHandle));
@@ -2901,9 +2623,11 @@ public sealed class ImageToPdfForm : Form
         _pageFormatComboBox.SelectedIndex = 0;
     }
 
+    private float PreviewPaddingPixels => FrameShiftUiMetrics.ToPixels(_previewPanel, 24);
+
     private void FitPreviewToView()
     {
-        _previewScale = ImageToPdfGeometry.CalculateFitPreviewScale(_previewPanel.ClientSize, _pageDefinition);
+        _previewScale = ImageToPdfGeometry.CalculateFitPreviewScale(_previewPanel.ClientSize, _pageDefinition, PreviewPaddingPixels);
         UpdatePreviewCanvasLayout();
         _previewPanel.Invalidate();
     }
@@ -2926,13 +2650,13 @@ public sealed class ImageToPdfForm : Form
             _previewScale = 1f;
         }
 
-        _previewPanel.AutoScrollMinSize = ImageToPdfGeometry.GetPreviewCanvasSize(_previewPanel.ClientSize, _pageDefinition, _previewScale);
+        _previewPanel.AutoScrollMinSize = ImageToPdfGeometry.GetPreviewCanvasSize(_previewPanel.ClientSize, _pageDefinition, _previewScale, PreviewPaddingPixels);
     }
 
     private RectangleF GetCurrentPreviewPageRect()
     {
-        var canvasSize = ImageToPdfGeometry.GetPreviewCanvasSize(_previewPanel.ClientSize, _pageDefinition, _previewScale);
-        return ImageToPdfGeometry.GetPreviewPageRect(canvasSize, _pageDefinition, _previewScale);
+        var canvasSize = ImageToPdfGeometry.GetPreviewCanvasSize(_previewPanel.ClientSize, _pageDefinition, _previewScale, PreviewPaddingPixels);
+        return ImageToPdfGeometry.GetPreviewPageRect(canvasSize, _pageDefinition, _previewScale, PreviewPaddingPixels);
     }
 
     private void ZoomPreviewAtPoint(float scale, Point clientAnchor)
@@ -3460,156 +3184,67 @@ public sealed class ImageToPdfForm : Form
 
     private bool TryGetOrLoadBitmap(string path, out Bitmap? bitmap, out string? errorMessage)
     {
-        if (_bitmapCache.TryGetValue(path, out bitmap))
-        {
-            errorMessage = null;
-            return true;
-        }
-
-        if (!TryLoadBitmapFromPath(path, out bitmap, out errorMessage) || bitmap is null)
-        {
-            return false;
-        }
-
-        _bitmapCache[path] = bitmap;
-        return true;
+        // Imported sources stay cached for undo/redo; history never decodes on the UI thread.
+        var found = _bitmapCache.TryGetValue(path, out bitmap);
+        errorMessage = found ? null : MediaActionMessages.ImageFileInaccessible(path);
+        return found;
     }
 
-    private bool TryLoadBitmapFromPath(string path, out Bitmap? bitmap, out string? errorMessage)
+    private async Task<Bitmap> LoadBitmapForImportAsync(string path, CancellationToken token)
     {
-        bitmap = null;
-        errorMessage = null;
-
+        if (!File.Exists(path)) throw new IOException(MediaActionMessages.ImageFileInaccessible(path));
         var extension = Path.GetExtension(path).ToLowerInvariant();
+        if (!IsSupportedExtension(extension))
+            throw new InvalidOperationException(MediaActionMessages.UnsupportedSourceFormat(extension, ImageCropSupport.GetSupportedExtensionsText()));
+        Bitmap? bitmap = null;
         try
         {
             if (extension == ".webp")
-            {
-                if (!TryConvertWebpToTemporaryPng(path, out var temporaryPngPath, out errorMessage))
+                bitmap = await DecodeWebpAsync(path, token);
+            else
+                bitmap = await Task.Run(() =>
                 {
-                    return false;
-                }
-
-                try
-                {
-                    using var previewImage = Image.FromFile(temporaryPngPath);
-                    if (previewImage.Width <= 0 || previewImage.Height <= 0)
-                    {
-                        errorMessage = MediaActionMessages.ImageInvalid(path);
-                        return false;
-                    }
-
-                    if (previewImage.Width > MaximumImageDimension ||
-                        previewImage.Height > MaximumImageDimension ||
-                        (long)previewImage.Width * previewImage.Height > MaximumImagePixels)
-                    {
-                        errorMessage = MediaActionMessages.ImageTooLarge(path, previewImage.Width, previewImage.Height);
-                        return false;
-                    }
-
-                    bitmap = new Bitmap(previewImage);
-                    return true;
-                }
-                finally
-                {
-                    if (File.Exists(temporaryPngPath))
-                    {
-                        File.Delete(temporaryPngPath);
-                    }
-                }
-            }
-
-            using var sourceImage = Image.FromFile(path);
-            if (sourceImage.Width <= 0 || sourceImage.Height <= 0)
-            {
-                errorMessage = MediaActionMessages.ImageInvalid(path);
-                return false;
-            }
-
-            if (sourceImage.Width > MaximumImageDimension ||
-                sourceImage.Height > MaximumImageDimension ||
-                (long)sourceImage.Width * sourceImage.Height > MaximumImagePixels)
-            {
-                errorMessage = MediaActionMessages.ImageTooLarge(path, sourceImage.Width, sourceImage.Height);
-                return false;
-            }
-
-            bitmap = new Bitmap(sourceImage);
-            return true;
+                    using var image = Image.FromFile(path);
+                    ValidateImageSize(path, image.Width, image.Height);
+                    return new Bitmap(image);
+                }, token);
+            token.ThrowIfCancellationRequested();
+            ValidateImageSize(path, bitmap.Width, bitmap.Height);
+            var result = bitmap;
+            bitmap = null;
+            return result;
         }
-        catch (UnauthorizedAccessException)
-        {
-            errorMessage = MediaActionMessages.ImageFileInaccessible(path);
-            return false;
-        }
-        catch (IOException)
-        {
-            errorMessage = MediaActionMessages.ImageFileInaccessible(path);
-            return false;
-        }
-        catch (ArgumentException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (ExternalException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (OutOfMemoryException)
-        {
-            errorMessage = MediaActionMessages.ImageInvalid(path);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.ImageLoadFailed(path));
-            return false;
-        }
+        finally { bitmap?.Dispose(); }
     }
 
-    private bool TryConvertWebpToTemporaryPng(string path, out string temporaryPngPath, out string? errorMessage)
+    private async Task<Bitmap> DecodeWebpAsync(string path, CancellationToken token)
     {
-        temporaryPngPath = string.Empty;
-        errorMessage = null;
-
-        var tempPath = Path.Combine(Path.GetTempPath(), $"frameshift_image_to_pdf_{Guid.NewGuid():N}.png");
-        var arguments = new[]
+        var temporary = Path.Combine(Path.GetTempPath(), $"frameshift_image_to_pdf_{Guid.NewGuid():N}.png");
+        try
         {
-            "-hide_banner",
-            "-loglevel", "error",
-            "-y",
-            "-i", path,
-            "-frames:v", "1",
-            tempPath
-        };
-
-        var result = _ffmpegRunner.RunAsync(
-            _ffmpegPath,
-            arguments,
-            null,
-            null,
-            null,
-            path,
-            "Image to PDF WebP Preview",
-            CancellationToken.None).GetAwaiter().GetResult();
-
-        if (result.Canceled || result.ExitCode != 0 || !File.Exists(tempPath))
-        {
-            if (File.Exists(tempPath))
+            // Fixed images must not use the video preview's -ss: seeking WebP can yield no frame.
+            var result = await _ffmpegRunner.RunAsync(_ffmpegPath,
+                ["-hide_banner", "-loglevel", "error", "-i", path, "-frames:v", "1", temporary],
+                null, null, path, "Image to PDF WebP Preview", "CPU", token);
+            token.ThrowIfCancellationRequested();
+            if (result.Canceled || result.ExitCode != 0 || !File.Exists(temporary))
+                throw new InvalidOperationException(MediaActionMessages.PreviewGenerationFailed());
+            return await Task.Run(() =>
             {
-                File.Delete(tempPath);
-            }
-
-            errorMessage = ImageCropSupport.GetFriendlyError(result.StandardError);
-            return false;
+                using var image = Image.FromFile(temporary);
+                ValidateImageSize(path, image.Width, image.Height);
+                return new Bitmap(image);
+            }, token);
         }
-
-        temporaryPngPath = tempPath;
-        return true;
+        finally { ConversionActionHelper.DeleteIfExists(temporary); }
     }
 
+    private static void ValidateImageSize(string path, int width, int height)
+    {
+        if (width <= 0 || height <= 0) throw new InvalidOperationException(MediaActionMessages.ImageInvalid(path));
+        if (width > MaximumImageDimension || height > MaximumImageDimension || (long)width * height > MaximumImagePixels)
+            throw new InvalidOperationException(MediaActionMessages.ImageTooLarge(path, width, height));
+    }
     private RectangleF ApplySnapIfEnabled(RectangleF rect, RectangleF previewPageRect)
     {
         if (!_snapImagesCheckBox.Checked)
@@ -4453,158 +4088,57 @@ public sealed class ImageToPdfForm : Form
         return new RectangleF(x, y, width, height);
     }
 
-    private Button CreateToolbarButton(string text)
+    private Button CreateToolbarButton(string text) => new FrameShiftToolTile(text, "Remove selected");
+
+    private TableLayoutPanel CreatePageFields()
     {
-        var button = new Button
+        var fields = new TableLayoutPanel
         {
-            Text = text,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, 6, 6),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextImageRelation = TextImageRelation.ImageAboveText,
-            ImageAlign = ContentAlignment.TopCenter,
-            TextAlign = ContentAlignment.BottomCenter,
-            Padding = new Padding(2, 4, 2, 3),
-            Height = 64,
-            Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point)
+            Name = "pageFields", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top, Margin = Padding.Empty, ColumnCount = 2, RowCount = 3, Size = Size.Empty
         };
-
-        button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
-        button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
-        button.FlatAppearance.MouseDownBackColor = FrameShiftTheme.AccentSoftHover;
-
-        return button;
-    }
-
-    private static void ApplyOrderTileStyle(Button button)
-    {
-        button.Height = 64;
-        button.Margin = new Padding(0, 0, 4, 0);
-        button.Padding = new Padding(1, 1, 1, 0);
-        button.Font = new Font("Segoe UI", 7F, FontStyle.Regular, GraphicsUnit.Point);
-        button.TextAlign = ContentAlignment.TopCenter;
-        button.Paint += (_, e) => PaintDisabledOrderTileText(button, e);
-    }
-
-    private static void PaintDisabledOrderTileText(Button button, PaintEventArgs e)
-    {
-        if (button.Enabled)
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var inputs = new (string Caption, Control Editor)[]
         {
-            return;
-        }
-
-        // WinForms can use the system GrayText color for disabled flat buttons,
-        // which is nearly black when the application opts into Windows dark mode.
-        // Redraw only the text area so the icon and the native disabled semantics remain intact.
-        var textHeight = TextRenderer.MeasureText(button.Text, button.Font).Height;
-        var textBounds = new Rectangle(
-            1,
-            Math.Max(1, button.ClientSize.Height - (textHeight * 2)),
-            Math.Max(0, button.ClientSize.Width - 2),
-            Math.Min(button.ClientSize.Height - 1, textHeight * 2));
-
-        using var backgroundBrush = new SolidBrush(button.BackColor);
-        e.Graphics.FillRectangle(backgroundBrush, textBounds);
-        TextRenderer.DrawText(
-            e.Graphics,
-            button.Text,
-            button.Font,
-            textBounds,
-            FrameShiftTheme.TextSecondary,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
-    }
-
-    private static TableLayoutPanel CreateTileGrid(int columns, int rows)
-    {
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = columns,
-            RowCount = rows,
-            Margin = Padding.Empty
+            ("Format", _pageFormatComboBox),
+            ("Width cm", _customPageWidthUpDown),
+            ("Height cm", _customPageHeightUpDown)
         };
-
-        for (var column = 0; column < columns; column++)
+        for (var row = 0; row < inputs.Length; row++)
         {
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / columns));
+            fields.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var (caption, editor) = inputs[row];
+            fields.Controls.Add(new Label { Text = caption, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+            editor.Dock = DockStyle.Fill;
+            editor.AccessibleName = caption;
+            editor.TabIndex = row;
+            fields.Controls.Add(editor, 1, row);
         }
-
-        for (var row = 0; row < rows; row++)
+        void Metrics()
         {
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            var gap = FrameShiftUiMetrics.ToPixels(fields, FrameShiftUiMetrics.LineGap);
+            foreach (Control child in fields.Controls)
+                child.Margin = new Padding(0, 0, fields.GetColumn(child) == 0 ? gap : 0,
+                    fields.GetRow(child) < inputs.Length - 1 ? gap : 0);
         }
-
-        return layout;
+        fields.HandleCreated += (_, _) => Metrics();
+        fields.DpiChangedAfterParent += (_, _) => Metrics();
+        Metrics();
+        return fields;
     }
-
-    private static TableLayoutPanel CreateFixedHeightTileGrid(int columns, int rowHeight)
-    {
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = columns,
-            RowCount = 1,
-            Margin = Padding.Empty,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-
-        for (var column = 0; column < columns; column++)
-        {
-            layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F / columns));
-        }
-
-        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, rowHeight));
-        return layout;
-    }
-
     private void ConfigureToolTip(Control control, string text)
     {
         _toolTip.SetToolTip(control, text);
     }
 
-    private void ConfigureTileButton(
-        Button button,
-        string iconFileName,
-        string toolTipText,
-        bool wideBadge = false,
-        bool compactBadge = false)
+    private void ConfigureTileButton(Button button, string iconFileName, string toolTipText)
     {
-        button.Image = CreateButtonBadge(iconFileName, wideBadge, compactBadge);
+        var path = IconPaths.ImageToPdfIco(iconFileName);
+        if (!File.Exists(path)) path = IconPaths.ContextMenuIco(iconFileName);
+        ((FrameShiftToolTile)button).SetIcon(path);
         ConfigureToolTip(button, toolTipText);
     }
-
-    private static Bitmap CreateButtonBadge(string iconFileName, bool wideBadge, bool compactBadge = false)
-    {
-        var badgeSize = compactBadge ? new Size(30, 30) : new Size(38, 38);
-        var bitmap = new Bitmap(badgeSize.Width, badgeSize.Height);
-        using var graphics = Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        graphics.Clear(Color.Transparent);
-
-        var iconPath = IconPaths.ImageToPdfIco(iconFileName);
-        if (!File.Exists(iconPath))
-        {
-            iconPath = IconPaths.ContextMenuIco(iconFileName);
-        }
-
-        if (File.Exists(iconPath))
-        {
-            using var icon = new Icon(iconPath);
-            var iconSize = compactBadge ? new Size(20, 20) : new Size(26, 26);
-            using var iconBitmap = new Bitmap(icon.ToBitmap(), iconSize);
-            var iconX = (badgeSize.Width - iconBitmap.Width) / 2;
-            var iconY = (badgeSize.Height - iconBitmap.Height) / 2;
-            graphics.DrawImage(iconBitmap, iconX, iconY, iconBitmap.Width, iconBitmap.Height);
-        }
-
-        return bitmap;
-    }
-
     private static ResizeHandle ParseResizeHandle(string handle)
     {
         return handle switch

@@ -46,46 +46,34 @@ public sealed class CropVideoForm : Form
     private float _previewZoom = 1f;
     private float _fitImageScale = 1f;
     private PointF _previewSourceCenter = new(0.5f, 0.5f);
-    private CancellationTokenSource? _previewLoadCts;
+    private readonly EditorPreviewLifetime _previewLifetime = new();
+    private readonly Func<double, CancellationToken, Task<Bitmap>> _capturePreview;
+    private readonly Button _okButton;
+    private bool _allowClose;
 
     public CropVideoForm(
         string inputPath,
         string ffmpegPath,
         MediaProbeResult probe,
-        FfmpegRunner ffmpegRunner)
+        FfmpegRunner ffmpegRunner) : this(inputPath, ffmpegPath, probe, ffmpegRunner, null) { }
+
+    internal CropVideoForm(string inputPath, string ffmpegPath, MediaProbeResult probe, FfmpegRunner ffmpegRunner,
+        Func<double, CancellationToken, Task<Bitmap>>? previewLoader)
     {
         _inputPath = inputPath;
         _ffmpegPath = ffmpegPath;
         _probe = probe;
         _ffmpegRunner = ffmpegRunner;
+        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(
+            ffmpegPath, ffmpegRunner, inputPath, seconds, "Crop Video Preview", token));
 
         SuspendLayout();
 
+        FrameShiftWindowPolicy.Initialize(this, new Size(1120, 720), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Crop video");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        WindowState = FormWindowState.Normal;
-        ClientSize = new Size(1120, 720);
-        MinimumSize = new Size(1020, 690);
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
         ControlHelper.SetDoubleBuffered(this);
-
         _resizeRefreshTimer = new System.Windows.Forms.Timer { Interval = 35 };
-        _resizeRefreshTimer.Tick += (_, _) =>
-        {
-            _resizeRefreshTimer.Stop();
-            RefreshPreviewLayout();
-        };
-
-        var rootLayout = FrameShiftCropEditorUi.CreateRootLayout();
-
-        var headerPanel = CreateHeaderPanel();
-
-        var contentLayout = FrameShiftCropEditorUi.CreateContentLayout(out var leftLayout, out var rightLayout);
-
+        _resizeRefreshTimer.Tick += (_, _) => { _resizeRefreshTimer.Stop(); RefreshPreviewLayout(); };
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
@@ -95,226 +83,59 @@ public sealed class CropVideoForm : Form
         _previewPanel.MouseWheel += PreviewPanelOnMouseWheel;
         _previewPanel.MouseEnter += (_, _) => _previewPanel.Focus();
         _previewPanel.Resize += (_, _) => SchedulePreviewLayoutRefresh();
+        _previewPanel.DpiChangedAfterParent += (_, _) => SchedulePreviewLayoutRefresh();
         _previewPanel.TabStop = true;
-
-        _timelineBar = new SeekTrackBar
-        {
-            Dock = DockStyle.Bottom,
-            Height = 36,
-            Minimum = 0,
-            Maximum = 1000,
-            TickFrequency = 100,
-            SmallChange = 5,
-            LargeChange = 50,
-            Margin = Padding.Empty
-        };
+        _timelineBar = new SeekTrackBar { Minimum = 0, Maximum = 1000, TickFrequency = 100, SmallChange = 5, LargeChange = 50 };
         _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-
-        var timelineHintCard = FrameShiftUiFactory.CreateFillInfoCardWithMargin(topMargin: FrameShiftUiMetrics.BlockGap);
-        timelineHintCard.Margin = Padding.Empty;
-        timelineHintCard.Padding = new Padding(10, 4, 10, 4);
-
-        var timelineHint = new Label
+        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel($"Source: {_probe.VideoWidth} × {_probe.VideoHeight} px");
+        _frameLabel = FrameShiftUiFactory.CreateWrappingLabel("Frame: loading...");
+        _sizeLabel = FrameShiftUiFactory.CreateWrappingLabel("Crop: ---");
+        _ratioButtons = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" }
+            .Select((option, index) => new RadioButton { Text = option, Tag = option, AutoSize = true, Checked = index == 0 }).ToArray();
+        foreach (var radio in _ratioButtons)
+            radio.CheckedChanged += (_, _) => { if (radio.Checked && _previewBitmap is not null) ApplyRatioToCurrentCrop(); };
+        var ratio = FrameShiftUiFactory.CreateSection("Ratio", FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
+        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton("Auto crop", false);
+        autoCrop.Click += (_, _) => ApplyAutoCrop();
+        var fit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        fit.Click += (_, _) => FitPreviewToView();
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        reset.Click += (_, _) => ResetCropRect();
+        var tools = FrameShiftUiFactory.CreateSection("Tools", FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
+        var media = FrameShiftUiFactory.CreateSection("Video", FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _frameLabel, _sizeLabel));
+        _okButton = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        _okButton.Enabled = false;
+        _okButton.Click += (_, _) =>
         {
-            Dock = DockStyle.Fill,
-            Text = "Drag the slider to preview another moment of the video.",
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        timelineHintCard.Controls.Add(timelineHint);
-        var previewSection = FrameShiftUiFactory.CreateFillSection("Preview", out var previewContentHost);
-        previewSection.Margin = Padding.Empty;
-        previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-        var previewSectionLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        previewSectionLayout.RowCount = 5;
-        previewSectionLayout.ColumnCount = 1;
-        previewSectionLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.BlockGap));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26F));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.LineGap));
-        previewSectionLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
-        previewContentHost.Controls.Add(previewSectionLayout);
-
-        var ratioOptions = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" };
-        var ratioSection = FrameShiftCropEditorUi.CreateRatioSection(
-            ratioOptions,
-            ApplyRatioToCurrentCrop,
-            out _ratioButtons,
-            out var ratioSectionHeight);
-        rightLayout.RowStyles[0] = new RowStyle(SizeType.Absolute, ratioSectionHeight);
-
-        var mediaCard = FrameShiftCropEditorUi.CreateMediaInfoCard(3);
-        var mediaLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        mediaLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        mediaLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.InfoLineHeight));
-        mediaLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.InfoLineHeight));
-        mediaLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.InfoLineHeight));
-
-        _sourceLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            Text = $"Source: {_probe.VideoWidth} x {_probe.VideoHeight} px",
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-
-        _frameLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            Text = $"Frame: {FormatTimeForDisplay(0)}",
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-
-        _sizeLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoEllipsis = true,
-            Text = "Crop: ---",
-            ForeColor = FrameShiftTheme.TextSecondary
-        };
-        mediaLayout.Controls.Add(_sourceLabel, 0, 0);
-        mediaLayout.Controls.Add(_frameLabel, 0, 1);
-        mediaLayout.Controls.Add(_sizeLabel, 0, 2);
-        mediaCard.Controls.Add(mediaLayout);
-        rightLayout.RowStyles[1] = new RowStyle(SizeType.Absolute, FrameShiftUiFactory.GetInfoCardHeight(3) + mediaCard.Margin.Vertical);
-
-        var autoCropButton = CreateActionButton("Auto crop", primary: false);
-        autoCropButton.Click += (_, _) => ApplyAutoCrop();
-
-        var fitButton = CreateActionButton("Fit", primary: false);
-        fitButton.Click += (_, _) => FitPreviewToView();
-
-        var resetButton = CreateActionButton("Reset", primary: false);
-        resetButton.Click += (_, _) => ResetCropRect();
-        var toolsSection = FrameShiftCropEditorUi.CreateToolsSection(out var toolsButtonHost, autoCropButton, fitButton, resetButton);
-
-        var okButton = CreateActionButton("OK", primary: true);
-        okButton.Size = new Size(FrameShiftUiMetrics.PrimaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight);
-        okButton.Click += (_, _) =>
-        {
-            var sourceCrop = GetSourceCropRect();
-            _selection = sourceCrop;
+            if (_previewBitmap is null) return;
+            _selection = GetSourceCropRect();
             DialogResult = DialogResult.OK;
             Close();
         };
-
-        var cancelButton = CreateActionButton("Cancel", primary: false);
-        cancelButton.Size = new Size(FrameShiftUiMetrics.SecondaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight);
-        cancelButton.Margin = Padding.Empty;
-        cancelButton.DialogResult = DialogResult.Cancel;
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        footerPanel.Controls.Add(cancelButton);
-        footerPanel.Controls.Add(okButton);
-
-        previewSectionLayout.Controls.Add(_previewPanel, 0, 0);
-        previewSectionLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        previewSectionLayout.Controls.Add(timelineHintCard, 0, 2);
-        previewSectionLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 3);
-        previewSectionLayout.Controls.Add(_timelineBar, 0, 4);
-
-        leftLayout.Controls.Add(previewSection, 0, 0);
-
-        rightLayout.Controls.Add(ratioSection, 0, 0);
-        rightLayout.Controls.Add(mediaCard, 0, 1);
-        rightLayout.Controls.Add(toolsSection, 0, 2);
-        rightLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 3);
-
-        contentLayout.Controls.Add(leftLayout, 0, 0);
-        contentLayout.Controls.Add(rightLayout, 1, 0);
-
-        headerPanel.Margin = Padding.Empty;
-        contentLayout.Margin = Padding.Empty;
-        footerPanel.Margin = Padding.Empty;
-
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(contentLayout, 0, 2);
-        rootLayout.Controls.Add(footerPanel, 0, 3);
-
-        Controls.Add(rootLayout);
-
-        AcceptButton = okButton;
-        CancelButton = cancelButton;
-
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        cancel.DialogResult = DialogResult.Cancel;
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Crop video", $"Source: {Path.GetFileName(inputPath)}",
+            IconPaths.ContextMenuIco("crop-video-image-icon.ico"), IconPaths.AppIcon, "◧");
+        var workspace = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+        workspace.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        workspace.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        workspace.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        workspace.Controls.Add(_previewPanel, 0, 0);
+        var seek = FrameShiftUiFactory.CreateVerticalStack(_timelineBar,
+            FrameShiftUiFactory.CreateWrappingLabel("Drag the slider to preview another moment."));
+        workspace.Controls.Add(seek, 0, 1);
+        Controls.Add(FrameShiftCropEditorUi.Create(header, workspace,
+            FrameShiftUiFactory.CreateVerticalStack(ratio, media, tools), cancel, _okButton));
+        AcceptButton = _okButton;
+        CancelButton = cancel;
         _debounceTimer = new System.Windows.Forms.Timer { Interval = 140 };
-        _debounceTimer.Tick += async (_, _) =>
-        {
-            _debounceTimer.Stop();
-            await LoadPreviewFrameAsync(_pendingPreviewSeconds, preserveCrop: true).ConfigureAwait(true);
-        };
-
-        Shown += async (_, _) =>
-        {
-            _timelineBar.Value = 0;
-            _pendingPreviewSeconds = 0.0;
-            await LoadPreviewFrameAsync(0.0, preserveCrop: false).ConfigureAwait(true);
-        };
-
+        _debounceTimer.Tick += async (_, _) => { _debounceTimer.Stop(); await RequestFrameAsync(_pendingPreviewSeconds, true); };
+        Shown += async (_, _) => await RequestFrameAsync(0d, false);
         ResizeBegin += (_, _) => _isLiveResize = true;
-        ResizeEnd += (_, _) =>
-        {
-            _isLiveResize = false;
-            RefreshPreviewLayout();
-        };
-
-        FormClosing += (_, _) =>
-        {
-            _closing = true;
-            _debounceTimer.Stop();
-            _resizeRefreshTimer.Stop();
-            _previewLoadCts?.Cancel();
-            _previewLoadCts?.Dispose();
-            _previewLoadCts = null;
-            DisposePreviewBitmaps();
-        };
-
-        FrameShiftCropEditorUi.WireFooterLayout(this, footerPanel, cancelButton, okButton);
-        FrameShiftCropEditorUi.WireToolLayout(this, toolsButtonHost, autoCropButton, fitButton, resetButton);
-
+        ResizeEnd += (_, _) => { _isLiveResize = false; RefreshPreviewLayout(); };
+        FormClosing += CloseAfterPreviewAsync;
         ResumeLayout(true);
     }
-
-    private Panel CreateHeaderPanel()
-    {
-        return FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Crop video",
-            $"Source: {_probe.VideoWidth} x {_probe.VideoHeight} px    Duration: {FormatTimeForDisplay(_probe.Duration?.TotalSeconds ?? 0)}",
-            IconPaths.ContextMenuIco("crop-video-image-icon.ico"),
-            IconPaths.AppIcon,
-            "◧",
-            460);
-    }
-
-    private static Button CreateActionButton(string text, bool primary)
-    {
-        return FrameShiftUiFactory.CreateActionButton(text, primary, primary ? FrameShiftUiMetrics.PrimaryButtonWidth : FrameShiftUiMetrics.SecondaryButtonWidth);
-    }
-    private static Panel CreateFramedPanel(Color backgroundColor, Color borderColor, int radius)
-    {
-        return FrameShiftUiFactory.CreateFramedPanel(backgroundColor, borderColor, radius);
-    }
-
     public VideoCropSettings? Selection => _selection;
 
     private void OnTimelineChanged()
@@ -325,87 +146,73 @@ public sealed class CropVideoForm : Form
             return;
         }
 
+        _previewLifetime.Cancel();
         _pendingPreviewSeconds = durationSeconds * (_timelineBar.Value / 1000.0);
         _debounceTimer.Stop();
         _debounceTimer.Start();
     }
 
-    private async Task LoadPreviewFrameAsync(double seconds, bool preserveCrop)
+    internal Task RequestFrameAsync(double seconds, bool preserveCrop) => _previewLifetime.RunAsync(async token =>
     {
-        if (_closing || IsDisposed)
-        {
-            return;
-        }
-
-        VideoCropSettings? oldSourceCrop = preserveCrop && _cropRect.Width > 1 && _cropRect.Height > 1 && _imageBounds.Width > 1 && _imageBounds.Height > 1
-            ? GetSourceCropRect()
-            : null;
-
-        _previewLoadCts?.Cancel();
-        _previewLoadCts?.Dispose();
-        var localPreviewLoadCts = new CancellationTokenSource();
-        _previewLoadCts = localPreviewLoadCts;
-
+        Bitmap? bitmap = null;
         try
         {
-            var newBitmap = await PreviewFrameHelper.CaptureFrameAsync(
-                _ffmpegPath,
-                _ffmpegRunner,
-                _inputPath,
-                seconds,
-                "Crop Video Preview",
-                localPreviewLoadCts.Token).ConfigureAwait(true);
-            if (_closing ||
-                IsDisposed ||
-                localPreviewLoadCts.IsCancellationRequested ||
-                !ReferenceEquals(_previewLoadCts, localPreviewLoadCts))
-            {
-                newBitmap.Dispose();
-                return;
-            }
-
+            bitmap = await _capturePreview(seconds, token);
+            token.ThrowIfCancellationRequested();
+            if (_closing || IsDisposed) return;
+            // Snapshot at application time: edits made during decoding must survive the refresh.
+            var oldSourceCrop = preserveCrop && _previewBitmap is not null ? GetSourceCropRect() : null;
             DisposePreviewBitmaps();
-            _previewBitmap = newBitmap;
-            if (Math.Abs(_previewSourceCenter.X - 0.5f) < 0.0001f &&
-                Math.Abs(_previewSourceCenter.Y - 0.5f) < 0.0001f)
-            {
-                _previewSourceCenter = new PointF(_probe.VideoWidth / 2.0f, _probe.VideoHeight / 2.0f);
-            }
+            _previewBitmap = bitmap;
+            bitmap = null;
+            if (Math.Abs(_previewSourceCenter.X - 0.5f) < 0.0001f && Math.Abs(_previewSourceCenter.Y - 0.5f) < 0.0001f)
+                _previewSourceCenter = new PointF(_probe.VideoWidth / 2f, _probe.VideoHeight / 2f);
             UpdateImageBounds();
-
-            if (oldSourceCrop is not null)
-            {
-                SetCropRectFromSource(oldSourceCrop);
-            }
-            else
-            {
-                ResetCropRect();
-            }
-
+            if (oldSourceCrop is not null) SetCropRectFromSource(oldSourceCrop); else ResetCropRect();
             UpdateFrameLabel(seconds);
             UpdateSizeLabel();
+            _okButton.Enabled = true;
             _previewPanel.Invalidate();
         }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception ex)
-        {
-            if (localPreviewLoadCts.IsCancellationRequested || !ReferenceEquals(_previewLoadCts, localPreviewLoadCts))
-            {
-                return;
-            }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex) { if (!_closing && !IsDisposed) _frameLabel.Text = $"Preview unavailable: {ex.Message}"; }
+        finally { bitmap?.Dispose(); }
+    });
 
-            if (!_closing && !IsDisposed)
-            {
-                var errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Crop Video"));
-                MessageBox.Show(this, errorMessage, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                DialogResult = DialogResult.Cancel;
-                Close();
-            }
-        }
+    private async void CloseAfterPreviewAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose) return;
+        e.Cancel = true;
+        if (_closing) return;
+        _closing = true;
+        var result = DialogResult;
+        _debounceTimer.Stop();
+        _resizeRefreshTimer.Stop();
+        Enabled = false;
+        await _previewLifetime.CloseAsync();
+        if (IsDisposed) return;
+        // Restore the modal result after the first FormClosing has returned.
+        BeginInvoke(new Action(() =>
+        {
+            if (IsDisposed) return;
+            _allowClose = true;
+            DialogResult = result;
+            Close();
+        }));
     }
 
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _closing = true;
+            _previewLifetime.Dispose();
+            _debounceTimer?.Dispose();
+            _resizeRefreshTimer?.Dispose();
+            DisposePreviewBitmaps();
+        }
+        base.Dispose(disposing);
+    }
     private void UpdateImageBounds()
     {
         if (_previewBitmap is null || _previewPanel.ClientSize.Width <= 1 || _previewPanel.ClientSize.Height <= 1)
@@ -577,7 +384,7 @@ public sealed class CropVideoForm : Form
         outer.Exclude(_cropRect);
         e.Graphics.FillRegion(overlayBrush, outer);
 
-        using var pen = new Pen(Color.White, 2);
+        using var pen = new Pen(Color.White, FrameShiftUiMetrics.ToPixels(_previewPanel, 2));
         using var accentPen = new Pen(Color.FromArgb(32, 145, 255), 1);
         using var handleBrush = new SolidBrush(Color.White);
         e.Graphics.DrawRectangle(pen, (int)_cropRect.X, (int)_cropRect.Y, (int)_cropRect.Width, (int)_cropRect.Height);
@@ -591,7 +398,8 @@ public sealed class CropVideoForm : Form
 
         foreach (var handle in GetHandles())
         {
-            e.Graphics.FillRectangle(handleBrush, handle.Point.X - 4, handle.Point.Y - 4, 8, 8);
+            var half = FrameShiftUiMetrics.ToPixels(_previewPanel, 4);
+            e.Graphics.FillRectangle(handleBrush, handle.Point.X - half, handle.Point.Y - half, 2 * half, 2 * half);
         }
     }
 
@@ -690,7 +498,8 @@ public sealed class CropVideoForm : Form
         var oldNorm = NormalizeRect(oldRect);
         var newNorm = NormalizeRect(newRect);
         var union = RectangleF.Union(oldNorm, newNorm);
-        union.Inflate(18.0f, 18.0f);
+        var panMargin = FrameShiftUiMetrics.ToPixels(_previewPanel, 18);
+        union.Inflate(panMargin, panMargin);
 
         var left = Math.Max(0, (int)Math.Floor(union.X));
         var top = Math.Max(0, (int)Math.Floor(union.Y));
@@ -707,7 +516,7 @@ public sealed class CropVideoForm : Form
 
     private string GetHitMode(PointF point)
     {
-        const float handle = 9.0f;
+        var handle = FrameShiftUiMetrics.ToPixels(_previewPanel, 9);
         foreach (var handleHit in GetHandles())
         {
             if (Math.Abs(point.X - handleHit.Point.X) <= handle && Math.Abs(point.Y - handleHit.Point.Y) <= handle)

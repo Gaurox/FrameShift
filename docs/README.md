@@ -23,6 +23,7 @@ Documentation centrale du projet FrameShift.
 - [UI Phase D1 — Manual Tests](UI_PHASE_D1_MANUAL_TESTS.md)
 - [UI Phase D2 — Manual Tests](UI_PHASE_D2_MANUAL_TESTS.md)
 - [UI Phase D3 — Manual Tests](UI_PHASE_D3_MANUAL_TESTS.md)
+- [UI Phase E — Manual Editor Tests](UI_PHASE_E_MANUAL_TESTS.md)
 - [Add Subtitles to Video Notes](ADD_SUBTITLES_TO_VIDEO.md)
 - [Join Videos Notes](JOIN_VIDEOS.md)
 - [Create Subtitle File Notes](CREATE_SUBTITLES.md)

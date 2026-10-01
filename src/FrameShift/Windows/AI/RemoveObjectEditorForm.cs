@@ -57,6 +57,7 @@ public sealed class RemoveObjectEditorForm : Form
     private bool _closingRequested;
     private bool _allowClose;
     private bool _resourcesCleaned;
+    private bool _disposeRequested;
     private DialogResult? _requestedDialogResult;
 
     // UI controls
@@ -85,75 +86,15 @@ public sealed class RemoveObjectEditorForm : Form
         ResumeLayout(false);
     }
 
+    private Task? _imageLoadTask;
+    private int _canvasDpi = 96;
+
     private void BuildUi()
     {
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Object",
-            IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        ClientSize = new Size(1100, 720);
-        MinimumSize = new Size(900, 620);
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
+        FrameShiftWindowPolicy.Initialize(this, new Size(1100, 720), new Size(480, 340));
+        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Object", IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon);
         ControlHelper.SetDoubleBuffered(this);
-
-        // Root layout — 7 rows: header / gap / content / gap / info-bar / gap / buttons
-        var root = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(FrameShiftUiMetrics.OuterPadding),
-            ColumnCount = 1,
-            RowCount = 7
-        };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.HeaderHeight)); // 0
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding)); // 1
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));                              // 2 content
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.LineGap));      // 3
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 28F));                              // 4 info bar
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.LineGap));      // 5
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));                              // 6 buttons
-
-        // Header
-        var fileInfo = new FileInfo(_inputPath);
-        using var bmpCheck = LoadImageSafe(_inputPath);
-        var dims = bmpCheck != null ? $"{bmpCheck.Width}×{bmpCheck.Height}" : "—";
-        var ext = fileInfo.Extension.TrimStart('.').ToUpperInvariant();
-        var header = FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift — Remove Object",
-            $"{fileInfo.Name} · {dims} · {ext}",
-            IconPaths.RemoveObjectAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "✂",
-            subtitleWidth: 500);
-        root.Controls.Add(header, 0, 0);
-
-        // Content: canvas + tools rail
-        var content = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = 1
-        };
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        content.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FrameShiftUiMetrics.EditorRailWidth));
-        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        root.Controls.Add(content, 0, 2);
-
-        // Info bar (row 4)
-        root.Controls.Add(BuildInfoBar(), 0, 4);
-
-        // Canvas panel (left)
-        _canvasPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, FrameShiftUiMetrics.OuterPadding, 0),
-            BackColor = Color.FromArgb(30, 30, 30),
-            TabStop = true
-        };
+        _canvasPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(30, 30, 30), TabStop = true };
         ControlHelper.SetDoubleBuffered(_canvasPanel);
         _canvasPanel.Cursor = s_hiddenCursor;
         _canvasPanel.Paint += CanvasOnPaint;
@@ -165,306 +106,105 @@ public sealed class RemoveObjectEditorForm : Form
         _canvasPanel.MouseLeave += (_, _) => { _cursorPos = null; _canvasPanel.Invalidate(); };
         _canvasPanel.KeyDown += CanvasOnKeyDown;
         _canvasPanel.Resize += (_, _) => _canvasPanel.Invalidate();
-        content.Controls.Add(_canvasPanel, 0, 0);
-
-        // Tools rail (right)
-        var rail = BuildToolsRail();
-        content.Controls.Add(rail, 1, 0);
-
-        // Buttons footer (row 6)
-        var footer = BuildFooter();
-        root.Controls.Add(footer, 0, 6);
-
-        Controls.Add(root);
-
-        Load += OnLoad;
-        Shown += (_, _) => FitToWindow();
+        _canvasPanel.HandleCreated += (_, _) => _canvasDpi = _canvasPanel.DeviceDpi;
+        _canvasPanel.DpiChangedAfterParent += (_, _) =>
+        {
+            var ratio = _canvasPanel.DeviceDpi / (float)_canvasDpi;
+            _canvasDpi = _canvasPanel.DeviceDpi;
+            _zoom *= ratio;
+            _panOffset = new PointF(_panOffset.X * ratio, _panOffset.Y * ratio);
+            UpdateZoomLabel();
+            _canvasPanel.Invalidate();
+        };
+        _btnBrush = FrameShiftUiFactory.CreateMeasuredActionButton("Brush", false);
+        _btnBrush.Click += (_, _) => SetTool(true);
+        _btnEraser = FrameShiftUiFactory.CreateMeasuredActionButton("Eraser", false);
+        _btnEraser.Click += (_, _) => SetTool(false);
+        var mode = FrameShiftUiFactory.CreateSection("Mode", FrameShiftUiFactory.CreateChoiceRow(_btnBrush, _btnEraser));
+        _brushSizeSlider = new TrackBar { Minimum = 1, Maximum = 200, Value = DefaultBrushSize, TickFrequency = 20, TickStyle = TickStyle.None };
+        _brushSizeNum = new NumericUpDown { Minimum = 1, Maximum = 200, Value = DefaultBrushSize };
+        _brushSizeSlider.ValueChanged += (_, _) => { _brushSize = _brushSizeSlider.Value; if (_brushSizeNum.Value != _brushSize) _brushSizeNum.Value = _brushSize; };
+        _brushSizeNum.ValueChanged += (_, _) => { _brushSize = (int)_brushSizeNum.Value; if (_brushSizeSlider.Value != _brushSize) _brushSizeSlider.Value = _brushSize; };
+        var size = FrameShiftUiFactory.CreateSection("Brush size", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("Diameter", _brushSizeNum, "px", 96), _brushSizeSlider));
+        _btnReset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset mask", false);
+        _btnReset.Click += (_, _) => ResetMask();
+        _btnFit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        _btnFit.Click += (_, _) => FitToWindow();
+        _zoomLabel = FrameShiftUiFactory.CreateWrappingLabel("Zoom 100%");
+        var actions = FrameShiftUiFactory.CreateSection("View & mask", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateChoiceRow(_btnReset, _btnFit), _zoomLabel));
+        _modelCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+        foreach (var def in ObjectRemovalModelCatalog.GetAll()) _modelCombo.Items.Add(new ModelComboItem(def));
+        _modelCombo.SelectedIndex = 0;
+        var model = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateFieldRow("Model", _modelCombo));
+        _progressBar = new ProgressBar { Style = ProgressBarStyle.Continuous };
+        _progressLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading image...");
+        _progressPanel = FrameShiftUiFactory.CreateSection("Activity", FrameShiftUiFactory.CreateVerticalStack(_progressBar, _progressLabel));
+        _btnCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _btnCancel.Click += (_, _) => CancelOrClose();
+        _btnApply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        _btnApply.Enabled = false;
+        _btnApply.Click += async (_, _) => await StartInferenceAsync();
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Remove Object", $"Source: {Path.GetFileName(_inputPath)}",
+            IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon, "✂");
+        Controls.Add(FrameShiftEditorShellUi.Create(header, _canvasPanel, FrameShiftDialogLayout.CreateActions(_btnCancel, _btnApply),
+            FrameShiftUiFactory.CreateVerticalStack(mode, size, actions, model, _progressPanel),
+            FrameShiftUiFactory.CreateStatusMessage("Paint over the object to remove. PNG output stays next to the source. [ ] adjusts brush size.")));
+        AcceptButton = _btnApply;
+        CancelButton = _btnCancel;
+        SetTool(true);
+        Shown += async (_, _) => await StartImageAsync();
         FormClosing += OnFormClosing;
         FormClosed += (_, _) => _lifetime.Dispose();
     }
 
-    private Panel BuildToolsRail()
+    internal Task StartImageAsync() => _imageLoadTask ??= _lifetime.RunAsync(async token =>
     {
-        // Use a plain Panel — Dock=Top on each group fills the full rail width automatically.
-        var rail = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty, AutoScroll = true };
-
-        // Groups are added top-to-bottom; CreateSidebarGroup already sets Dock=Top.
-        rail.Controls.Add(FrameShiftEditorShellUi.CreateSidebarGroup("Mode", BuildModeContent()));
-        rail.Controls.Add(FrameShiftEditorShellUi.CreateSidebarGroup("Brush Size", BuildSizeContent()));
-        rail.Controls.Add(FrameShiftEditorShellUi.CreateSidebarGroup("Actions", BuildActionsContent()));
-        rail.Controls.Add(FrameShiftEditorShellUi.CreateSidebarGroup("Model", BuildModelContent()));
-
-        _progressPanel = BuildProgressPanel();
-        _progressPanel.Dock = DockStyle.Top;
-        _progressPanel.Visible = false;
-        rail.Controls.Add(_progressPanel);
-
-        return rail;
-    }
-
-    private Panel BuildModeContent()
-    {
-        var panel = new Panel { Height = 34, AutoSize = false };
-
-        _btnBrush = new Button
-        {
-            Text = "Brush",
-            Size = new Size(110, 30),
-            Location = new Point(0, 0),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.SecondaryBlue,
-            ForeColor = Color.White,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F)
-        };
-        _btnBrush.FlatAppearance.BorderSize = 0;
-        _btnBrush.Click += (_, _) => SetTool(brush: true);
-
-        _btnEraser = new Button
-        {
-            Text = "Eraser",
-            Size = new Size(110, 30),
-            Location = new Point(118, 0),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.SurfaceBorder,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F)
-        };
-        _btnEraser.FlatAppearance.BorderSize = 0;
-        _btnEraser.Click += (_, _) => SetTool(brush: false);
-
-        panel.Controls.Add(_btnBrush);
-        panel.Controls.Add(_btnEraser);
-        return panel;
-    }
-
-    private Panel BuildSizeContent()
-    {
-        var panel = new Panel { Height = 46, AutoSize = false };
-
-        _brushSizeSlider = new TrackBar
-        {
-            Minimum = 1,
-            Maximum = 200,
-            Value = DefaultBrushSize,
-            TickFrequency = 20,
-            TickStyle = TickStyle.None,
-            Location = new Point(0, 0),
-            Size = new Size(160, 26),
-            BackColor = FrameShiftTheme.PageBackground
-        };
-        _brushSizeSlider.ValueChanged += (_, _) =>
-        {
-            _brushSize = _brushSizeSlider.Value;
-            if (_brushSizeNum.Value != _brushSize)
-                _brushSizeNum.Value = _brushSize;
-        };
-
-        _brushSizeNum = new NumericUpDown
-        {
-            Minimum = 1,
-            Maximum = 200,
-            Value = DefaultBrushSize,
-            Location = new Point(166, 2),
-            Size = new Size(60, 24),
-            Font = new Font("Segoe UI", 9F),
-            BorderStyle = BorderStyle.FixedSingle,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-        _brushSizeNum.ValueChanged += (_, _) =>
-        {
-            _brushSize = (int)_brushSizeNum.Value;
-            if (_brushSizeSlider.Value != _brushSize)
-                _brushSizeSlider.Value = _brushSize;
-        };
-
-        panel.Controls.Add(_brushSizeSlider);
-        panel.Controls.Add(_brushSizeNum);
-        return panel;
-    }
-
-    private Panel BuildActionsContent()
-    {
-        var panel = new Panel { Height = 80, AutoSize = false };
-
-        _btnReset = new Button
-        {
-            Text = "Reset Mask",
-            Size = new Size(230, 30),
-            Location = new Point(0, 0),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F)
-        };
-        _btnReset.FlatAppearance.BorderColor = FrameShiftTheme.SurfaceBorder;
-        _btnReset.Click += (_, _) => ResetMask();
-
-        _btnFit = new Button
-        {
-            Text = "Fit",
-            Size = new Size(110, 30),
-            Location = new Point(0, 38),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F)
-        };
-        _btnFit.FlatAppearance.BorderColor = FrameShiftTheme.SurfaceBorder;
-        _btnFit.Click += (_, _) => FitToWindow();
-
-        _zoomLabel = new Label
-        {
-            Text = "Zoom 100%",
-            Location = new Point(120, 44),
-            Size = new Size(110, 20),
-            Font = new Font("Segoe UI", 9F),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-
-        panel.Controls.Add(_btnReset);
-        panel.Controls.Add(_btnFit);
-        panel.Controls.Add(_zoomLabel);
-        return panel;
-    }
-
-    private Panel BuildModelContent()
-    {
-        var panel = new Panel { Height = 30, AutoSize = false };
-
-        _modelCombo = new ComboBox
-        {
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Location = new Point(0, 0),
-            Size = new Size(230, 28),
-            Font = new Font("Segoe UI", 9F),
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
-        foreach (var def in ObjectRemovalModelCatalog.GetAll())
-            _modelCombo.Items.Add(new ModelComboItem(def));
-        _modelCombo.SelectedIndex = 0;
-
-        panel.Controls.Add(_modelCombo);
-        return panel;
-    }
-
-    private Panel BuildProgressPanel()
-    {
-        var panel = new Panel
-        {
-            Width = 230,
-            Height = 54,
-            Margin = new Padding(0, 6, 0, 0)
-        };
-
-        _progressBar = new ProgressBar
-        {
-            Location = new Point(0, 0),
-            Size = new Size(230, 18),
-            Style = ProgressBarStyle.Continuous
-        };
-
-        _progressLabel = new Label
-        {
-            Location = new Point(0, 24),
-            Size = new Size(230, 18),
-            Font = new Font("Segoe UI", 8.5F),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = string.Empty
-        };
-
-        panel.Controls.Add(_progressBar);
-        panel.Controls.Add(_progressLabel);
-        return panel;
-    }
-
-    private static Panel BuildInfoBar()
-    {
-        var card = FrameShiftUiFactory.CreateFillInfoCard();
-        card.Dock = DockStyle.Fill;
-        card.Padding = new Padding(FrameShiftUiMetrics.LineGap, 0, FrameShiftUiMetrics.LineGap, 0);
-        card.Controls.Add(new Label
-        {
-            Dock = DockStyle.Fill,
-            Text = "ⓘ  Paint over the object to remove. Output saved next to the source (PNG). [ ] keys adjust brush size.",
-            Font = new Font("Segoe UI", 8.5F),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        });
-        return card;
-    }
-
-    private Panel BuildFooter()
-    {
-        var footer = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-
-        _btnCancel = new Button
-        {
-            Text = "Cancel",
-            Size = new Size(FrameShiftUiMetrics.SecondaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.Surface,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F)
-        };
-        _btnCancel.FlatAppearance.BorderColor = FrameShiftTheme.SurfaceBorder;
-        _btnCancel.Click += (_, _) => CancelOrClose();
-
-        _btnApply = new Button
-        {
-            Text = "Apply ▶",
-            Size = new Size(FrameShiftUiMetrics.PrimaryButtonWidth, FrameShiftUiMetrics.FooterButtonHeight),
-            FlatStyle = FlatStyle.Flat,
-            BackColor = FrameShiftTheme.SecondaryBlue,
-            ForeColor = Color.White,
-            Cursor = Cursors.Hand,
-            Font = new Font("Segoe UI", 9F, FontStyle.Bold)
-        };
-        _btnApply.FlatAppearance.BorderSize = 0;
-        _btnApply.Click += async (_, _) => await StartInferenceAsync().ConfigureAwait(true);
-
-        footer.Resize += (_, _) => LayoutFooter(footer);
-        Shown += (_, _) => LayoutFooter(footer);
-
-        footer.Controls.Add(_btnCancel);
-        footer.Controls.Add(_btnApply);
-        return footer;
-    }
-
-    private void LayoutFooter(Panel footer)
-    {
-        int btnY = (footer.Height - FrameShiftUiMetrics.FooterButtonHeight) / 2;
-        _btnApply.Location = new Point(footer.Width - FrameShiftUiMetrics.FooterRightPadding - _btnApply.Width, btnY);
-        _btnCancel.Location = new Point(_btnApply.Left - FrameShiftUiMetrics.FooterButtonGap - _btnCancel.Width, btnY);
-    }
-
-    // ─── Load ──────────────────────────────────────────────────────────────────
-
-    private void OnLoad(object? sender, EventArgs e)
-    {
+        Bitmap? bitmap = null;
         try
         {
-            _imageBitmap = new Bitmap(_inputPath);
-            _maskData = new bool[_imageBitmap.Width, _imageBitmap.Height];
-            // FitToWindow is called from Shown, after layout is finalized
+            var loaded = await Task.Run(() =>
+            {
+                var image = ImageBitmapHelper.LoadBitmap(_inputPath);
+                try { return (Image: image, Mask: new bool[image.Width, image.Height]); }
+                catch { image.Dispose(); throw; }
+            }, token);
+            bitmap = loaded.Image;
+            token.ThrowIfCancellationRequested();
+            if (!CanUpdateUi) return;
+            _imageBitmap = bitmap;
+            bitmap = null;
+            _maskData = loaded.Mask;
+            FitToWindow();
+            _progressPanel.Visible = false;
+            _btnApply.Enabled = true;
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         catch (Exception ex)
         {
             _logger.Log($"RemoveObjectEditorForm: failed to load image. {ex}");
-            MessageBox.Show($"Failed to load image: {ex.Message}", "FrameShift",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
-            DialogResult = DialogResult.Cancel;
-            Close();
+            if (CanUpdateUi) _progressLabel.Text = $"Image unavailable: {ex.Message}";
         }
+        finally { bitmap?.Dispose(); }
+    });
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_disposeRequested)
+        {
+            _disposeRequested = true;
+            _closingRequested = true;
+            _ = DisposeResourcesAsync();
+        }
+        base.Dispose(disposing);
     }
 
+    private async Task DisposeResourcesAsync()
+    {
+        await _lifetime.BeginClosingAsync(CleanupResourcesAsync, ex => _logger.Log($"Remove Object cleanup: {ex}"));
+        _lifetime.Dispose();
+    }
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
         if (_allowClose)
@@ -479,7 +219,7 @@ public sealed class RemoveObjectEditorForm : Form
         }
 
         _closingRequested = true;
-        _requestedDialogResult ??= DialogResult.Cancel;
+        _requestedDialogResult ??= DialogResult == DialogResult.None ? DialogResult.Cancel : DialogResult;
         SetClosingUiState();
         _closingTask = CompleteCloseAsync();
     }
@@ -516,10 +256,10 @@ public sealed class RemoveObjectEditorForm : Form
             float cx = _cursorPos.Value.X;
             float cy = _cursorPos.Value.Y;
             // Black outline for visibility on bright areas
-            using var outlinePen = new Pen(Color.FromArgb(160, 0, 0, 0), 2.5f);
+            using var outlinePen = new Pen(Color.FromArgb(160, 0, 0, 0), 2.5f * _canvasPanel.DeviceDpi / 96f);
             g.DrawEllipse(outlinePen, cx - screenRadius, cy - screenRadius, screenRadius * 2, screenRadius * 2);
             // White inner circle
-            using var circlePen = new Pen(Color.FromArgb(220, 255, 255, 255), 1.2f);
+            using var circlePen = new Pen(Color.FromArgb(220, 255, 255, 255), 1.2f * _canvasPanel.DeviceDpi / 96f);
             g.DrawEllipse(circlePen, cx - screenRadius, cy - screenRadius, screenRadius * 2, screenRadius * 2);
             // Tiny crosshair dot at center
             using var dotPen = new Pen(Color.FromArgb(200, 255, 255, 255), 1f);
@@ -738,10 +478,14 @@ public sealed class RemoveObjectEditorForm : Form
     private void SetTool(bool brush)
     {
         _isBrushMode = brush;
-        _btnBrush.BackColor = brush ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.SurfaceBorder;
+        _btnBrush.BackColor = brush ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.Surface;
         _btnBrush.ForeColor = brush ? Color.White : FrameShiftTheme.TextPrimary;
-        _btnEraser.BackColor = brush ? FrameShiftTheme.SurfaceBorder : FrameShiftTheme.SecondaryBlue;
+        _btnEraser.BackColor = brush ? FrameShiftTheme.Surface : FrameShiftTheme.SecondaryBlue;
         _btnEraser.ForeColor = brush ? FrameShiftTheme.TextPrimary : Color.White;
+        _btnBrush.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.AccentSoftHover;
+        _btnEraser.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.AccentSoftHover : FrameShiftTheme.SecondaryBlue;
+        _btnBrush.Invalidate();
+        _btnEraser.Invalidate();
     }
 
     private void ResetMask()
@@ -895,9 +639,14 @@ public sealed class RemoveObjectEditorForm : Form
             return;
         }
 
-        _allowClose = true;
-        DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
-        Close();
+        // Even completed cleanup must leave the original FormClosing first.
+        BeginInvoke(new Action(() =>
+        {
+            if (IsDisposed || Disposing) return;
+            _allowClose = true;
+            DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
+            Close();
+        }));
     }
 
     private Task CleanupResourcesAsync()
@@ -987,12 +736,6 @@ public sealed class RemoveObjectEditorForm : Form
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
-
-    private static Bitmap? LoadImageSafe(string path)
-    {
-        try { return new Bitmap(path); }
-        catch { return null; }
-    }
 
     // ─── Nested type ───────────────────────────────────────────────────────────
 

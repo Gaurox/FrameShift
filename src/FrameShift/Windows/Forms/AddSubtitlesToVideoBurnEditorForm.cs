@@ -54,8 +54,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
     private MemoryStream? _animatedPreviewStream;
     private string? _animatedPreviewGifPath;
     private string? _animatedPreviewClipPath;
-    private CancellationTokenSource? _previewRenderCts;
-    private CancellationTokenSource? _animatedPreviewCts;
+    private readonly EditorPreviewLifetime _previewLifetime = new();
+    private bool _allowClose;
     private AddSubtitlesToVideoBurnAppearance _appearance;
     private string _subtitlePath;
     private AddSubtitlesToVideoSubtitleSourceKind _sourceKind;
@@ -84,375 +84,86 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
         SuspendLayout();
 
+        FrameShiftWindowPolicy.Initialize(this, new Size(1240, 820), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Burn Subtitles Into Video", IconPaths.AddSubtitlesVideoAiIcon, IconPaths.AppIcon);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
-        MaximizeBox = true;
-        MinimizeBox = true;
-        AutoScaleMode = AutoScaleMode.Dpi;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-        BackColor = FrameShiftTheme.PageBackground;
-        ClientSize = new Size(1240, 800);
-        MinimumSize = new Size(1120, 760);
         ControlHelper.SetDoubleBuffered(this);
-
-        var rootLayout = FrameShiftCropEditorUi.CreateRootLayout();
-        var header = FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Burn Subtitles Into Video",
-            $"Source: {Path.GetFileName(inputPath)}",
-            IconPaths.AddSubtitlesVideoAiIcon,
-            IconPaths.FrameShiftAiIcon,
-            "S",
-            460);
-
-        var contentLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = 1
-        };
-        contentLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        contentLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FrameShiftUiMetrics.WideEditorRailWidth));
-        contentLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        var leftLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0, 0, FrameShiftUiMetrics.OuterPadding, 0),
-            ColumnCount = 1,
-            RowCount = 1
-        };
-        leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        leftLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-
-        var rightHost = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            AutoScroll = true
-        };
-        var rightRailLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 4
-        };
-        rightRailLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        rightRailLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        rightRailLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        rightRailLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        rightRailLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        rightHost.Controls.Add(rightRailLayout);
-
-        var previewSection = FrameShiftUiFactory.CreateFillSection("Preview", out var previewContentHost);
-        previewSection.Margin = Padding.Empty;
-        previewSection.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-
-        var previewLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 5
-        };
-        previewLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 64F));
-        previewLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.BlockGap));
-        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 92F));
-        previewContentHost.Controls.Add(previewLayout);
-
-        var previewInfoPanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = 2
-        };
-        previewInfoPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        previewInfoPanel.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        previewInfoPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        previewInfoPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-        previewLayout.Controls.Add(previewInfoPanel, 0, 0);
-
-        _sourceKindLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        previewInfoPanel.Controls.Add(_sourceKindLabel, 0, 0);
-
-        _currentTimeLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleRight
-        };
-        previewInfoPanel.Controls.Add(_currentTimeLabel, 1, 0);
-
-        _previewStatusLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        previewInfoPanel.SetColumnSpan(_previewStatusLabel, 2);
-        previewInfoPanel.Controls.Add(_previewStatusLabel, 0, 1);
-
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
         _previewPanel.Paint += PreviewPanelOnPaint;
         ControlHelper.SetDoubleBuffered(_previewPanel);
-        _previewImageBox = new PictureBox
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.Transparent,
-            SizeMode = PictureBoxSizeMode.Zoom
-        };
+        _previewImageBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom };
         _previewPanel.Controls.Add(_previewImageBox);
-        previewLayout.Controls.Add(_previewPanel, 0, 1);
-
-        previewLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 2);
-
-        var timelinePanel = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        timelinePanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        timelinePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F));
-        timelinePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-        timelinePanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32F));
-        previewLayout.Controls.Add(timelinePanel, 0, 4);
-
-        _timelineBar = new SeekTrackBar
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            Minimum = 0,
-            Maximum = 1000,
-            TickFrequency = 100,
-            SmallChange = 5,
-            LargeChange = 50
-        };
+        _sourceKindLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _currentTimeLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _previewStatusLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _previewInfoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _timelineBar = new SeekTrackBar { Minimum = 0, Maximum = 1000, TickFrequency = 100, SmallChange = 5, LargeChange = 50 };
         _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-        timelinePanel.Controls.Add(_timelineBar, 0, 0);
-
-        timelinePanel.Controls.Add(new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "Drag the slider to preview a different frame, then render a short animated loop around that position.",
-            TextAlign = ContentAlignment.MiddleLeft
-        }, 0, 1);
-
-        var animatedPreviewRow = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = 1
-        };
-        animatedPreviewRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 148F));
-        animatedPreviewRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        timelinePanel.Controls.Add(animatedPreviewRow, 0, 2);
-
-        _animatedPreviewButton = FrameShiftUiFactory.CreateActionButton("Preview Motion", primary: false, width: 148);
-        _animatedPreviewButton.Dock = DockStyle.Fill;
-        _animatedPreviewButton.Margin = Padding.Empty;
-        _animatedPreviewButton.Click += async (_, _) => await ToggleAnimatedPreviewAsync().ConfigureAwait(true);
-        animatedPreviewRow.Controls.Add(_animatedPreviewButton, 0, 0);
-
-        _previewInfoLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = new Padding(FrameShiftUiMetrics.LineGap, 0, 0, 0),
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true
-        };
-        animatedPreviewRow.Controls.Add(_previewInfoLabel, 1, 0);
-
-        leftLayout.Controls.Add(previewSection, 0, 0);
-        contentLayout.Controls.Add(leftLayout, 0, 0);
-        contentLayout.Controls.Add(rightHost, 1, 0);
-
-        var fileSection = CreateStackedSection("Subtitle Source", 164, out var fileContentHost);
-        rightRailLayout.Controls.Add(fileSection, 0, 3);
-
-        var fileLayout = CreatePropertyGrid(3);
-        fileContentHost.Controls.Add(fileLayout);
-
-        fileLayout.Controls.Add(FrameShiftUiFactory.CreateFieldLabel("File"), 0, 0);
-        _subtitlePathTextBox = FrameShiftUiFactory.CreateValueTextBox(readOnly: true);
-        fileLayout.Controls.Add(FrameShiftUiFactory.CreateTextInputHost(_subtitlePathTextBox), 1, 0);
-
-        var browseButton = FrameShiftUiFactory.CreateActionButton("Browse...", primary: false, width: 96);
-        browseButton.Dock = DockStyle.Right;
-        browseButton.Click += (_, _) => BrowseSubtitleFile();
-        var browseHost = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-        browseHost.Controls.Add(browseButton);
-        fileLayout.Controls.Add(browseHost, 1, 1);
-
-        var fileHintLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Text = "ASS input keeps its existing style. SRT and FrameShift projects use the shared temporary ASS generator.",
-            AutoEllipsis = false
-        };
-        fileLayout.Controls.Add(fileHintLabel, 0, 2);
-        fileLayout.SetColumnSpan(fileHintLabel, 2);
-
-        var styleSection = CreateStackedSection("Style", 274, out var styleContentHost);
-        rightRailLayout.Controls.Add(styleSection, 0, 2);
-
-        var styleLayout = CreatePropertyGrid(6);
-        styleContentHost.Controls.Add(styleLayout);
-
+        _animatedPreviewButton = FrameShiftUiFactory.CreateMeasuredActionButton("Preview Motion", false);
+        _animatedPreviewButton.Click += async (_, _) => await ToggleAnimatedPreviewAsync();
+        var temporal = FrameShiftUiFactory.CreateVerticalStack(_timelineBar, _currentTimeLabel,
+            FrameShiftUiFactory.CreateChoiceRow(_animatedPreviewButton), _previewStatusLabel, _previewInfoLabel);
+        var workspace = new TableLayoutPanel { Dock = DockStyle.Fill, Margin = Padding.Empty, ColumnCount = 1, RowCount = 2 };
+        workspace.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        workspace.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        workspace.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        workspace.Controls.Add(_previewPanel, 0, 0);
+        workspace.Controls.Add(temporal, 0, 1);
+        _subtitlePathTextBox = new TextBox { ReadOnly = true };
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse...", false);
+        browse.Click += (_, _) => BrowseSubtitleFile();
+        var source = FrameShiftUiFactory.CreateSection("Subtitle source", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("File", _subtitlePathTextBox),
+            FrameShiftUiFactory.CreateChoiceRow(browse), _sourceKindLabel));
         _presetCombo = CreateComboBox();
         PopulatePresetCombo(_presetCombo);
-        _presetCombo.SelectedIndexChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(styleLayout, 0, "Preset", _presetCombo);
-
         _fontCombo = CreateComboBox();
         PopulateFontCombo(_fontCombo, _appearance.FontName);
-        _fontCombo.SelectedIndexChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(styleLayout, 1, "Font", _fontCombo);
-
-        _fontSizeUpDown = CreateIntEditor(12, 240, 1);
-        _fontSizeUpDown.ValueChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(styleLayout, 2, "Size", _fontSizeUpDown);
-
         _positionCombo = CreateComboBox();
         PopulatePositionCombo(_positionCombo);
-        _positionCombo.SelectedIndexChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(styleLayout, 3, "Position", _positionCombo);
-
+        _fontSizeUpDown = CreateIntEditor(12, 240, 1);
         _marginVerticalUpDown = CreateIntEditor(0, 600, 2);
-        _marginVerticalUpDown.ValueChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(styleLayout, 4, "Vertical Margin", _marginVerticalUpDown);
-
-        _styleDisabledLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextMuted,
-            Text = "External ASS detected: preset and visual controls are disabled because the file style is preserved as-is."
-        };
-        styleLayout.Controls.Add(_styleDisabledLabel, 0, 5);
-        styleLayout.SetColumnSpan(_styleDisabledLabel, 2);
-
-        var colorsSection = CreateStackedSection("Colors & Effects", 274, out var colorsContentHost);
-        rightRailLayout.Controls.Add(colorsSection, 0, 1);
-
-        var colorsLayout = CreatePropertyGrid(6);
-        colorsContentHost.Controls.Add(colorsLayout);
-
+        _outlineUpDown = CreateDecimalEditor(0, 12, 1, 0.1M);
+        _shadowUpDown = CreateDecimalEditor(0, 12, 1, 0.1M);
+        foreach (var combo in new[] { _presetCombo, _fontCombo, _positionCombo })
+            combo.SelectedIndexChanged += (_, _) => OnAppearanceControlChanged();
+        foreach (var number in new[] { _fontSizeUpDown, _marginVerticalUpDown, _outlineUpDown, _shadowUpDown })
+            number.ValueChanged += (_, _) => OnAppearanceControlChanged();
+        _styleDisabledLabel = FrameShiftUiFactory.CreateWrappingLabel("External ASS: the existing file style is preserved.");
+        var style = FrameShiftUiFactory.CreateSection("Style", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("Preset", _presetCombo),
+            FrameShiftUiFactory.CreateFieldRow("Font", _fontCombo),
+            FrameShiftUiFactory.CreateFieldRow("Size", _fontSizeUpDown, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow("Position", _positionCombo),
+            FrameShiftUiFactory.CreateFieldRow("Vertical margin", _marginVerticalUpDown, logicalEditorWidth: 128), _styleDisabledLabel));
         _primaryColorButton = CreateColorButton();
         _primaryColorButton.Click += (_, _) => PickColor(_primaryColorButton, "Text Color");
-        AddPropertyRow(colorsLayout, 0, "Text Color", _primaryColorButton);
-
         _highlightColorButton = CreateColorButton();
         _highlightColorButton.Click += (_, _) => PickColor(_highlightColorButton, "Highlight Color");
-        AddPropertyRow(colorsLayout, 1, "Highlight", _highlightColorButton);
-
         _outlineColorButton = CreateColorButton();
         _outlineColorButton.Click += (_, _) => PickColor(_outlineColorButton, "Outline Color");
-        AddPropertyRow(colorsLayout, 2, "Outline Color", _outlineColorButton);
-
         _shadowColorButton = CreateColorButton();
         _shadowColorButton.Click += (_, _) => PickColor(_shadowColorButton, "Shadow Color");
-        AddPropertyRow(colorsLayout, 3, "Shadow Color", _shadowColorButton);
-
-        _outlineUpDown = CreateDecimalEditor(0, 12, 1, 0.1M);
-        _outlineUpDown.ValueChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(colorsLayout, 4, "Outline", _outlineUpDown);
-
-        _shadowUpDown = CreateDecimalEditor(0, 12, 1, 0.1M);
-        _shadowUpDown.ValueChanged += (_, _) => OnAppearanceControlChanged();
-        AddPropertyRow(colorsLayout, 5, "Shadow", _shadowUpDown);
-
-        var infoCard = FrameShiftUiFactory.CreateFillInfoCardWithMargin(topMargin: FrameShiftUiMetrics.OuterPadding);
-        infoCard.Dock = DockStyle.Fill;
-        infoCard.Height = 110;
-        rightRailLayout.Controls.Add(infoCard, 0, 0);
-        var infoLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        infoLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        infoLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        infoLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        infoCard.Controls.Add(infoLayout);
-
-        infoLayout.Controls.Add(new Label
-        {
-            Dock = DockStyle.Fill,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            Padding = FrameShiftUiMetrics.StandardInfoCardPadding,
-            Text = "FrameShift regenerates the preview with FFmpeg/libass after a short debounce, uses the display geometry from the video metadata, and renders a short burn preview clip for animated checks."
-        }, 0, 0);
-
-        _compatibilityWarningLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            ForeColor = Color.FromArgb(168, 72, 32),
-            Padding = new Padding(
-                FrameShiftUiMetrics.StandardInfoCardPadding.Left,
-                0,
-                FrameShiftUiMetrics.StandardInfoCardPadding.Right,
-                FrameShiftUiMetrics.StandardInfoCardPadding.Bottom),
-            Visible = false
-        };
-        infoLayout.Controls.Add(_compatibilityWarningLabel, 0, 1);
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-
-        var cancelButton = FrameShiftUiFactory.CreateActionButton("Cancel", primary: false, width: FrameShiftUiMetrics.SecondaryButtonWidth);
+        var colors = FrameShiftUiFactory.CreateSection("Colors & effects", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow("Text", _primaryColorButton),
+            FrameShiftUiFactory.CreateFieldRow("Highlight", _highlightColorButton),
+            FrameShiftUiFactory.CreateFieldRow("Outline color", _outlineColorButton),
+            FrameShiftUiFactory.CreateFieldRow("Shadow color", _shadowColorButton),
+            FrameShiftUiFactory.CreateFieldRow("Outline", _outlineUpDown, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow("Shadow", _shadowUpDown, logicalEditorWidth: 128)));
+        _compatibilityWarningLabel = FrameShiftUiFactory.CreateWrappingLabel("");
+        _compatibilityWarningLabel.ForeColor = Color.FromArgb(168, 72, 32);
+        _compatibilityWarningLabel.Visible = false;
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
         cancelButton.DialogResult = DialogResult.Cancel;
-        footerPanel.Controls.Add(cancelButton);
-
-        var applyButton = FrameShiftUiFactory.CreateActionButton("Apply", primary: true, width: FrameShiftUiMetrics.PrimaryButtonWidth);
+        var applyButton = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
         applyButton.DialogResult = DialogResult.OK;
-        applyButton.Click += (_, _) =>
-        {
-            if (!ValidateCurrentSelection())
-            {
-                DialogResult = DialogResult.None;
-            }
-        };
-        footerPanel.Controls.Add(applyButton);
-
-        rootLayout.Controls.Add(header, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(contentLayout, 0, 2);
-        rootLayout.Controls.Add(footerPanel, 0, 3);
-        Controls.Add(rootLayout);
-
+        applyButton.Click += (_, _) => { if (!ValidateCurrentSelection()) DialogResult = DialogResult.None; };
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Burn Subtitles Into Video", $"Source: {Path.GetFileName(inputPath)}",
+            IconPaths.AddSubtitlesVideoAiIcon, IconPaths.FrameShiftAiIcon, "S");
+        Controls.Add(FrameShiftEditorShellUi.Create(header, workspace, FrameShiftDialogLayout.CreateActions(cancelButton, applyButton),
+            FrameShiftUiFactory.CreateVerticalStack(source, style, colors, _compatibilityWarningLabel), logicalRailWidth: 400));
         AcceptButton = applyButton;
         CancelButton = cancelButton;
-        FrameShiftCropEditorUi.WireFooterLayout(this, footerPanel, cancelButton, applyButton);
-
         _styleControls =
         [
             _presetCombo,
@@ -486,24 +197,44 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             await Task.CompletedTask.ConfigureAwait(true);
         };
 
-        FormClosing += (_, _) =>
-        {
-            _closing = true;
-            _previewDebounceTimer.Stop();
-            _previewRenderCts?.Cancel();
-            _previewRenderCts?.Dispose();
-            _previewRenderCts = null;
-            _animatedPreviewCts?.Cancel();
-            _animatedPreviewCts?.Dispose();
-            _animatedPreviewCts = null;
-            DisposeAnimatedPreviewMedia();
-            DisposePreviewBitmap();
-            _toolTip.Dispose();
-        };
-
+        FormClosing += CloseAfterPreviewAsync;
         ResumeLayout(true);
     }
 
+    private async void CloseAfterPreviewAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose) return;
+        e.Cancel = true;
+        if (_closing) return;
+        _closing = true;
+        var result = DialogResult;
+        _previewDebounceTimer.Stop();
+        Enabled = false;
+        await _previewLifetime.CloseAsync();
+        if (IsDisposed) return;
+        // Restore the modal result after the first FormClosing has returned.
+        BeginInvoke(new Action(() =>
+        {
+            if (IsDisposed) return;
+            _allowClose = true;
+            DialogResult = result;
+            Close();
+        }));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _closing = true;
+            _previewLifetime.Dispose();
+            _previewDebounceTimer?.Dispose();
+            DisposeAnimatedPreviewMedia();
+            DisposePreviewBitmap();
+            _toolTip.Dispose();
+        }
+        base.Dispose(disposing);
+    }
     public AddSubtitlesToVideoSettings SelectedSettings =>
         new(_subtitlePath, AddSubtitlesToVideoMode.BurnIntoVideo, AddSubtitlesToVideoBurnSettings.FromAppearance(_appearance));
 
@@ -607,18 +338,10 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         _previewPanel.Invalidate();
     }
 
-    private async Task RenderPreviewAsync(double seconds)
+    internal Task RenderPreviewAsync(double seconds) => _previewLifetime.RunAsync(token => RenderFrameCoreAsync(seconds, token));
+
+    private async Task RenderFrameCoreAsync(double seconds, CancellationToken token)
     {
-        if (_closing || IsDisposed)
-        {
-            return;
-        }
-
-        _previewRenderCts?.Cancel();
-        _previewRenderCts?.Dispose();
-        var localCts = new CancellationTokenSource();
-        _previewRenderCts = localCts;
-
         AddSubtitlesToVideoPreparedSubtitleInput? preparedInput = null;
         try
         {
@@ -627,7 +350,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                     _subtitlePath,
                     _probe,
                     AddSubtitlesToVideoBurnSettings.FromAppearance(_appearance),
-                    localCts.Token)
+                    token)
                 .ConfigureAwait(true);
 
             var newBitmap = await PreviewFrameHelper.CaptureFrameAsync(
@@ -637,9 +360,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                 seconds,
                 "Add Subtitles Burn Preview",
                 AddSubtitlesToVideoAction.BuildAssVideoFilter(preparedInput.AssFilePath),
-                localCts.Token).ConfigureAwait(true);
+                token).ConfigureAwait(true);
 
-            if (_closing || IsDisposed || localCts.IsCancellationRequested || !ReferenceEquals(_previewRenderCts, localCts))
+            if (_closing || IsDisposed || token.IsCancellationRequested)
             {
                 newBitmap.Dispose();
                 return;
@@ -659,7 +382,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         }
         catch (Exception ex)
         {
-            if (localCts.IsCancellationRequested || !ReferenceEquals(_previewRenderCts, localCts))
+            if (_closing || IsDisposed || token.IsCancellationRequested)
             {
                 return;
             }
@@ -781,19 +504,18 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             return;
         }
 
+        _previewDebounceTimer.Stop();
+        DisposeAnimatedPreviewMedia();
+        await _previewLifetime.RunAsync(RenderMotionCoreAsync);
+    }
+
+    private async Task RenderMotionCoreAsync(CancellationToken token)
+    {
         _animatedPreviewBusy = true;
         _animatedPreviewButton.Enabled = false;
-        _previewDebounceTimer.Stop();
-        _previewRenderCts?.Cancel();
-        _previewRenderCts?.Dispose();
-        _previewRenderCts = null;
-        DisposeAnimatedPreviewMedia();
-
-        _animatedPreviewCts?.Cancel();
-        _animatedPreviewCts?.Dispose();
-        var localCts = new CancellationTokenSource();
-        _animatedPreviewCts = localCts;
-
+        string? clipPath = null;
+        string? gifPath = null;
+        var transferred = false;
         AddSubtitlesToVideoPreparedSubtitleInput? preparedInput = null;
         try
         {
@@ -806,12 +528,12 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                     _subtitlePath,
                     _probe,
                     AddSubtitlesToVideoBurnSettings.FromAppearance(_appearance),
-                    localCts.Token)
+                    token)
                 .ConfigureAwait(true);
 
             var plan = AddSubtitlesToVideoBurnPlanner.BuildPlan(Path.GetExtension(_inputPath), _probe);
             var clipWindow = BuildAnimatedPreviewWindow(_probe.Duration?.TotalSeconds ?? 0d, _pendingPreviewSeconds);
-            var clipPath = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_preview_{Guid.NewGuid():N}{plan.TargetExtension}");
+            clipPath = Path.Combine(Path.GetTempPath(), $"frameshift_subtitles_preview_{Guid.NewGuid():N}{plan.TargetExtension}");
             var clipArguments = AddSubtitlesToVideoAction.BuildBurnArguments(
                 _inputPath,
                 preparedInput.AssFilePath,
@@ -832,9 +554,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                 clipPath,
                 "Burn Subtitles Animated Preview",
                 "CPU",
-                localCts.Token).ConfigureAwait(true);
+                token).ConfigureAwait(true);
 
-            if (_closing || localCts.IsCancellationRequested || clipResult.Canceled)
+            if (_closing || token.IsCancellationRequested || clipResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(clipPath);
                 return;
@@ -848,14 +570,14 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                     MediaActionMessages.BurnSubtitlesToVideoFailed()));
             }
 
-            var gifPath = await PreviewFrameHelper.CreateAnimatedGifAsync(
+            gifPath = await PreviewFrameHelper.CreateAnimatedGifAsync(
                 _ffmpegPath,
                 _ffmpegRunner,
                 clipPath,
                 "Burn Subtitles Animated Preview",
-                localCts.Token).ConfigureAwait(true);
+                token).ConfigureAwait(true);
 
-            if (_closing || localCts.IsCancellationRequested || !ReferenceEquals(_animatedPreviewCts, localCts))
+            if (_closing || token.IsCancellationRequested)
             {
                 ConversionActionHelper.DeleteIfExists(gifPath);
                 ConversionActionHelper.DeleteIfExists(clipPath);
@@ -863,6 +585,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             }
 
             ApplyAnimatedPreview(gifPath, clipPath);
+            transferred = true;
             _animatedPreviewActive = true;
             _animatedPreviewButton.Text = "Stop Motion";
             _previewStatusLabel.Text = preparedInput.SourceKind == AddSubtitlesToVideoSubtitleSourceKind.Ass
@@ -875,6 +598,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         }
         catch (Exception ex)
         {
+            if (_closing || IsDisposed || token.IsCancellationRequested) return;
             _previewStatusLabel.Text = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.BurnSubtitlesToVideoFailed());
             _previewInfoLabel.Text = $"Display: {_probe.GetDisplayGeometrySummary()}";
             DisposeAnimatedPreviewMedia();
@@ -887,16 +611,18 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
                 ConversionActionHelper.DeleteIfExists(preparedInput.AssFilePath);
             }
 
-            _animatedPreviewBusy = false;
-            _animatedPreviewButton.Enabled = true;
+            if (!transferred)
+            {
+                ConversionActionHelper.DeleteIfExists(clipPath ?? string.Empty);
+                ConversionActionHelper.DeleteIfExists(gifPath ?? string.Empty);
+            }
+            if (!_closing && !IsDisposed) { _animatedPreviewBusy = false; _animatedPreviewButton.Enabled = true; }
         }
     }
 
     private void StopAnimatedPreview(bool restoreFrame)
     {
-        _animatedPreviewCts?.Cancel();
-        _animatedPreviewCts?.Dispose();
-        _animatedPreviewCts = null;
+        _previewLifetime.Cancel();
         _animatedPreviewActive = false;
         _animatedPreviewButton.Text = "Preview Motion";
         DisposeAnimatedPreviewMedia();
@@ -919,7 +645,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         stream.Write(bytes, 0, bytes.Length);
         stream.Position = 0;
 
-        _animatedPreviewImage = Image.FromStream(stream);
+        try { _animatedPreviewImage = Image.FromStream(stream); }
+        catch { stream.Dispose(); throw; }
         _animatedPreviewStream = stream;
         _animatedPreviewGifPath = gifPath;
         _animatedPreviewClipPath = clipPath;
@@ -1031,46 +758,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         _previewBitmap = null;
     }
 
-    private static Panel CreateStackedSection(string title, int height, out Panel contentHost)
-    {
-        var section = FrameShiftUiFactory.CreateFillSection(title, out contentHost);
-        section.Dock = DockStyle.Fill;
-        section.Height = height;
-        section.Margin = new Padding(0, 0, 0, FrameShiftUiMetrics.OuterPadding);
-        section.Padding = FrameShiftUiMetrics.StandardSectionPadding;
-        return section;
-    }
-
-    private static TableLayoutPanel CreatePropertyGrid(int rows)
-    {
-        var layout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 2,
-            RowCount = rows
-        };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 116F));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-
-        for (var index = 0; index < rows; index++)
-        {
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));
-        }
-
-        return layout;
-    }
-
-    private static void AddPropertyRow(TableLayoutPanel layout, int row, string labelText, Control control)
-    {
-        var label = FrameShiftUiFactory.CreateFieldLabel(labelText);
-        layout.Controls.Add(label, 0, row);
-        layout.Controls.Add(control, 1, row);
-    }
-
     private static ComboBox CreateComboBox()
     {
-        var combo = FrameShiftUiFactory.CreateFixedComboBox(Point.Empty, new Size(120, 24));
+        var combo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         combo.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         combo.Margin = new Padding(0, 4, 0, 4);
         return combo;
@@ -1082,11 +772,10 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right,
             Margin = new Padding(0, 4, 0, 4),
-            AutoSize = false,
+            AutoSize = true,
             Minimum = minimum,
             Maximum = maximum,
             Increment = increment,
-            Height = 26,
             BackColor = FrameShiftTheme.Surface,
             ForeColor = FrameShiftTheme.TextPrimary
         };
@@ -1098,12 +787,11 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right,
             Margin = new Padding(0, 4, 0, 4),
-            AutoSize = false,
+            AutoSize = true,
             Minimum = minimum,
             Maximum = maximum,
             DecimalPlaces = decimalPlaces,
             Increment = increment,
-            Height = 26,
             BackColor = FrameShiftTheme.Surface,
             ForeColor = FrameShiftTheme.TextPrimary
         };
@@ -1111,7 +799,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
     private Button CreateColorButton()
     {
-        var button = FrameShiftUiFactory.CreateActionButton("Choose...", primary: false, width: 116);
+        var button = FrameShiftUiFactory.CreateMeasuredActionButton("Choose...", false);
         button.Dock = DockStyle.Fill;
         button.Margin = Padding.Empty;
         return button;

@@ -79,208 +79,55 @@ public sealed class CutAudioForm : Form
 
         SuspendLayout();
 
+        FrameShiftWindowPolicy.Initialize(this, new Size(960, 560), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, "FrameShift - Cut Audio");
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
-        MinimizeBox = false;
-        ClientSize = new Size(960, 540);
-        MinimumSize = new Size(960, 540);
-        MaximumSize = new Size(960, 540);
-        BackColor = FrameShiftTheme.PageBackground;
-        Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
         ControlHelper.SetDoubleBuffered(this);
-
-        var rootLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Padding = new Padding(FrameShiftUiMetrics.OuterPadding),
-            ColumnCount = 1,
-            RowCount = 9,
-            Margin = Padding.Empty
-        };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.HeaderHeight));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.FooterButtonHeight));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 72F));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        rootLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.FooterButtonHeight));
-
-        var headerPanel = CreateHeaderPanel();
-
-        var editorSection = CreateSectionPanel("Selection", out var editorContentHost);
-        var editorLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 3
-        };
-        editorLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        editorLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 214F));
-        editorLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.LineGap));
-        editorLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
-
-        _wavePanel = CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
+        _wavePanel = FrameShiftUiFactory.CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
         _wavePanel.Dock = DockStyle.Fill;
-        _wavePanel.Margin = Padding.Empty;
         ControlHelper.SetDoubleBuffered(_wavePanel);
         _wavePanel.Paint += WavePanelOnPaint;
         _wavePanel.MouseDown += WavePanelOnMouseDown;
         _wavePanel.MouseMove += WavePanelOnMouseMove;
         _wavePanel.MouseUp += WavePanelOnMouseUp;
-
-        var fieldsLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 7,
-            RowCount = 2
-        };
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 44F));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 152F));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 44F));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 152F));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, FrameShiftUiMetrics.OuterPadding));
-        fieldsLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        fieldsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26F));
-        fieldsLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 26F));
-
-        var startLabel = FrameShiftUiFactory.CreateFieldLabel("Start");
-        var endLabel = FrameShiftUiFactory.CreateFieldLabel("End");
-        _labelSelection = FrameShiftUiFactory.CreateInfoValueLabel(ContentAlignment.MiddleLeft);
-        _labelSelection.ForeColor = FrameShiftTheme.TextPrimary;
-        _labelTimeline = FrameShiftUiFactory.CreateInfoValueLabel(ContentAlignment.MiddleLeft);
-        _labelTimeline.ForeColor = FrameShiftTheme.TextPrimary;
-
-        _textStart = CreateValueTextBox();
+        _wavePanel.Resize += (_, _) => _wavePanel.Invalidate();
+        _wavePanel.DpiChangedAfterParent += (_, _) => _wavePanel.Invalidate();
+        _wavePanel.AccessibleName = "Audio selection waveform";
+        _textStart = new TextBox { Name = "startTime" };
+        _textEnd = new TextBox { Name = "endTime" };
         _textStart.Leave += (_, _) => ApplyBoundaryFromText("start");
-
-        _textEnd = CreateValueTextBox();
         _textEnd.Leave += (_, _) => ApplyBoundaryFromText("end");
-
-        var startHost = FrameShiftUiFactory.CreateTextInputHost(_textStart);
-        var endHost = FrameShiftUiFactory.CreateTextInputHost(_textEnd);
-
-        fieldsLayout.Controls.Add(startLabel, 0, 0);
-        fieldsLayout.Controls.Add(startHost, 1, 0);
-        fieldsLayout.Controls.Add(endLabel, 3, 0);
-        fieldsLayout.Controls.Add(endHost, 4, 0);
-        fieldsLayout.Controls.Add(_labelSelection, 6, 0);
-        fieldsLayout.Controls.Add(_labelTimeline, 0, 1);
-        fieldsLayout.SetColumnSpan(_labelTimeline, 7);
-
-        var toolsPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-
-        _buttonPlay = CreateActionButton("Play selection", primary: false, StandardToolButtonWidth);
-        _buttonPlay.Click += async (_, _) => await StartOperationAsync(PlaySelectionAsync).ConfigureAwait(true);
-
-        _buttonStop = CreateActionButton("Stop", primary: false, 92);
+        _labelSelection = FrameShiftUiFactory.CreateWrappingLabel("");
+        _labelTimeline = FrameShiftUiFactory.CreateWrappingLabel("");
+        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel("Preparing waveform...");
+        _buttonPlay = FrameShiftUiFactory.CreateMeasuredActionButton("Play selection", false);
+        _buttonPlay.Click += async (_, _) => await StartOperationAsync(PlaySelectionAsync);
+        _buttonStop = FrameShiftUiFactory.CreateMeasuredActionButton("Stop", false);
         _buttonStop.Click += (_, _) => StopPreviewPlayer();
-
-        _buttonRemove = CreateActionButton("Remove selection", primary: false, StandardWideToolButtonWidth);
-        _buttonRemove.Click += async (_, _) => await StartOperationAsync(RemoveSelectionAsync).ConfigureAwait(true);
-
-        _buttonSilence = CreateActionButton("Silence selection", primary: false, StandardWideToolButtonWidth);
-        _buttonSilence.Click += async (_, _) => await StartOperationAsync(SilenceSelectionAsync).ConfigureAwait(true);
-
-        toolsPanel.Controls.AddRange([_buttonPlay, _buttonStop, _buttonRemove, _buttonSilence]);
-        toolsPanel.Resize += (_, _) => LayoutToolButtons(toolsPanel, _buttonPlay, _buttonStop, _buttonRemove, _buttonSilence);
-
-        editorLayout.Controls.Add(_wavePanel, 0, 0);
-        editorLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        editorLayout.Controls.Add(fieldsLayout, 0, 2);
-        editorContentHost.Controls.Add(editorLayout);
-
-        var helpCard = CreateInfoCardPanel();
-        helpCard.Margin = Padding.Empty;
-        helpCard.Padding = new Padding(FrameShiftUiMetrics.OuterPadding, FrameShiftUiMetrics.LineGap, FrameShiftUiMetrics.OuterPadding, FrameShiftUiMetrics.LineGap);
-
-        var helpLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        helpLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        helpLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-        helpLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-
-        _statusLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextPrimary,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true,
-            Text = "Preparing waveform..."
-        };
-
-        var hintLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            ForeColor = FrameShiftTheme.TextSecondary,
-            TextAlign = ContentAlignment.MiddleLeft,
-            AutoEllipsis = true,
-            Text = "Drag the start and end cursors or type exact times. Output stays next to the source with unique naming."
-        };
-
-        helpLayout.Controls.Add(_statusLabel, 0, 0);
-        helpLayout.Controls.Add(hintLabel, 0, 1);
-        helpCard.Controls.Add(helpLayout);
-
-        _buttonCut = CreateActionButton("Cut", primary: true, FrameShiftUiMetrics.PrimaryButtonWidth);
+        _buttonRemove = FrameShiftUiFactory.CreateMeasuredActionButton("Remove selection", false);
+        _buttonRemove.Click += async (_, _) => await StartOperationAsync(RemoveSelectionAsync);
+        _buttonSilence = FrameShiftUiFactory.CreateMeasuredActionButton("Silence selection", false);
+        _buttonSilence.Click += async (_, _) => await StartOperationAsync(SilenceSelectionAsync);
+        var boundaries = FrameShiftUiFactory.CreateChoiceRow(
+            FrameShiftUiFactory.CreateFieldRow("Start", _textStart, logicalEditorWidth: 152),
+            FrameShiftUiFactory.CreateFieldRow("End", _textEnd, logicalEditorWidth: 152));
+        var selection = FrameShiftUiFactory.CreateSection("Selection", FrameShiftUiFactory.CreateVerticalStack(
+            boundaries, FrameShiftUiFactory.CreateChoiceRow(_buttonPlay, _buttonStop, _buttonRemove, _buttonSilence),
+            _labelSelection, _labelTimeline, _statusLabel,
+            FrameShiftUiFactory.CreateWrappingLabel("Drag the cursors or type exact times. Output stays next to the source with unique naming.")));
+        _buttonCut = FrameShiftUiFactory.CreateMeasuredActionButton("Cut", true);
         _buttonCut.Click += (_, _) => ConfirmCut();
-
-        _buttonCancel = CreateActionButton("Cancel", primary: false, FrameShiftUiMetrics.SecondaryButtonWidth);
+        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
         _buttonCancel.Click += (_, _) => RequestClose(DialogResult.Cancel);
-
-        var footerPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty
-        };
-        footerPanel.Controls.Add(_buttonCancel);
-        footerPanel.Controls.Add(_buttonCut);
-        footerPanel.Resize += (_, _) => UpdateFooterButtonLayout(footerPanel, _buttonCancel, _buttonCut);
-
-        rootLayout.Controls.Add(headerPanel, 0, 0);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 1);
-        rootLayout.Controls.Add(editorSection, 0, 2);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 3);
-        rootLayout.Controls.Add(toolsPanel, 0, 4);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 5);
-        rootLayout.Controls.Add(helpCard, 0, 6);
-        rootLayout.Controls.Add(new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty }, 0, 7);
-        rootLayout.Controls.Add(footerPanel, 0, 8);
-
-        Controls.Add(rootLayout);
-
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Cut Audio",
+            $"Source: {Path.GetFileName(_inputPath)}    Duration: {CutAudioSettings.FormatDisplayTime(_currentDurationSeconds)}",
+            IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "A");
+        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _wavePanel, selection,
+            FrameShiftDialogLayout.CreateActions(_buttonCancel, _buttonCut)));
         AcceptButton = _buttonCut;
         CancelButton = _buttonCancel;
-
         FormClosing += CutAudioFormOnFormClosing;
         FormClosed += (_, _) => _lifetime.Dispose();
-
-        Shown += async (_, _) =>
-        {
-            LayoutToolButtons(toolsPanel, _buttonPlay, _buttonStop, _buttonRemove, _buttonSilence);
-            UpdateFooterButtonLayout(footerPanel, _buttonCancel, _buttonCut);
-            _initializationStarted = true;
-            await StartOperationAsync(InitializeWorkspaceAsync).ConfigureAwait(true);
-        };
-
+        Shown += async (_, _) => await StartWorkspaceAsync();
         SetBusyState(true, "Preparing audio workspace...");
         ResumeLayout(true);
     }
@@ -296,6 +143,13 @@ public sealed class CutAudioForm : Form
     internal bool IsInitializationStartedForTesting => _initializationStarted;
 
     internal string TemporaryRootPathForTesting => _temporaryRootPath;
+
+    internal Task StartWorkspaceAsync()
+    {
+        if (_initializationStarted) return Task.CompletedTask;
+        _initializationStarted = true;
+        return StartOperationAsync(InitializeWorkspaceAsync);
+    }
 
     private bool CanUpdateUi => !_closingRequested && !IsDisposed && !Disposing;
 
@@ -330,6 +184,7 @@ public sealed class CutAudioForm : Form
         }
 
         _closingRequested = true;
+        _requestedDialogResult ??= DialogResult == DialogResult.None ? DialogResult.Cancel : DialogResult;
         SetBusyState(true, "Closing: stopping audio processing...");
         StopPreviewPlayer();
         _closingTask = CompleteCloseAsync();
@@ -346,13 +201,17 @@ public sealed class CutAudioForm : Form
             return;
         }
 
-        _allowClose = true;
-        if (_requestedDialogResult is not null)
+        // Even completed cleanup must leave the original FormClosing first.
+        BeginInvoke(new Action(() =>
         {
-            DialogResult = _requestedDialogResult.Value;
-        }
-
-        Close();
+            if (IsDisposed || Disposing) return;
+            _allowClose = true;
+            if (_requestedDialogResult is not null)
+            {
+                DialogResult = _requestedDialogResult.Value;
+            }
+            Close();
+        }));
     }
 
     private Task CleanupTemporaryRootAfterWorkAsync()
@@ -831,17 +690,17 @@ public sealed class CutAudioForm : Form
 
         using var wavePen = new Pen(FrameShiftTheme.SecondaryBlue, 1);
         using var selectionBrush = new SolidBrush(Color.FromArgb(42, FrameShiftTheme.PrimaryBlue));
-        using var cursorStartPen = new Pen(FrameShiftTheme.SecondaryBlue, 2);
-        using var cursorEndPen = new Pen(FrameShiftTheme.SecondaryBlue, 2);
+        using var cursorStartPen = new Pen(FrameShiftTheme.SecondaryBlue, FrameShiftUiMetrics.ToPixels(_wavePanel, 2));
+        using var cursorEndPen = new Pen(FrameShiftTheme.SecondaryBlue, FrameShiftUiMetrics.ToPixels(_wavePanel, 2));
 
         if (_waveformPoints.Length > 0)
         {
-            var maxIndex = Math.Min(width, _waveformPoints.Length);
+            var maxIndex = width;
             for (var x = 0; x < maxIndex; x++)
             {
-                var amplitude = _waveformPoints[Math.Min(_waveformPoints.Length - 1, x)];
+                var amplitude = _waveformPoints[(int)Math.Round(x * (_waveformPoints.Length - 1d) / Math.Max(1, width - 1))];
                 amplitude = Math.Clamp(amplitude, 0d, 1d);
-                var lineHalf = (int)Math.Round(amplitude * ((height - 14) / 2d));
+                var lineHalf = (int)Math.Round(amplitude * ((height - FrameShiftUiMetrics.ToPixels(_wavePanel, 14)) / 2d));
                 if (lineHalf < 1)
                 {
                     lineHalf = 1;
@@ -872,12 +731,12 @@ public sealed class CutAudioForm : Form
 
         var startX = TimeToX(_startSeconds);
         var endX = TimeToX(_endSeconds);
-        if (Math.Abs(e.X - startX) <= 8)
+        if (Math.Abs(e.X - startX) <= FrameShiftUiMetrics.ToPixels(_wavePanel, 8))
         {
             _dragActive = true;
             _dragTarget = "start";
         }
-        else if (Math.Abs(e.X - endX) <= 8)
+        else if (Math.Abs(e.X - endX) <= FrameShiftUiMetrics.ToPixels(_wavePanel, 8))
         {
             _dragActive = true;
             _dragTarget = "end";
@@ -902,7 +761,7 @@ public sealed class CutAudioForm : Form
 
         var startX = TimeToX(_startSeconds);
         var endX = TimeToX(_endSeconds);
-        if (Math.Abs(e.X - startX) <= 8 || Math.Abs(e.X - endX) <= 8 || _dragActive)
+        if (Math.Abs(e.X - startX) <= FrameShiftUiMetrics.ToPixels(_wavePanel, 8) || Math.Abs(e.X - endX) <= FrameShiftUiMetrics.ToPixels(_wavePanel, 8) || _dragActive)
         {
             _wavePanel.Cursor = Cursors.SizeWE;
         }
@@ -1038,70 +897,22 @@ public sealed class CutAudioForm : Form
             MessageBoxIcon.Error);
     }
 
-    private Panel CreateHeaderPanel()
+    protected override void Dispose(bool disposing)
     {
-        return FrameShiftUiFactory.CreateFillHeader(
-            "FrameShift - Cut Audio",
-            $"Source: {Path.GetFileName(_inputPath)}    Duration: {CutAudioSettings.FormatDisplayTime(_currentDurationSeconds)}",
-            IconPaths.ContextMenuIco("cut-video-audio-icon.ico"),
-            IconPaths.AppIcon,
-            "A",
-            860);
-    }
-
-    private static Panel CreateSectionPanel(string title, out Panel contentHost)
-    {
-        return FrameShiftUiFactory.CreateFillSection(title, out contentHost);
-    }
-
-    private static TextBox CreateValueTextBox()
-    {
-        var textBox = FrameShiftUiFactory.CreateValueTextBox();
-        textBox.Margin = Padding.Empty;
-        textBox.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        textBox.Location = new Point(10, 6);
-        textBox.Width = 120;
-        return textBox;
-    }
-
-    private static Panel CreateInfoCardPanel()
-    {
-        return FrameShiftUiFactory.CreateFillInfoCard();
-    }
-
-    private static Button CreateActionButton(string text, bool primary, int width)
-    {
-        return FrameShiftUiFactory.CreateActionButton(text, primary, width);
-    }
-
-    private static void LayoutToolButtons(Control host, params Button[] buttons)
-    {
-        if (host.ClientSize.Width <= 0 || host.ClientSize.Height <= 0)
+        if (disposing)
         {
-            return;
+            _closingRequested = true;
+            StopPreviewPlayer();
+            _ = DisposeWorkspaceAsync();
         }
-
-        var x = 0;
-        var y = Math.Max(0, (host.ClientSize.Height - FrameShiftUiMetrics.FooterButtonHeight) / 2);
-        foreach (var button in buttons)
-        {
-            button.SetBounds(x, y, button.Width, FrameShiftUiMetrics.FooterButtonHeight);
-            x += button.Width + FrameShiftUiMetrics.LineGap;
-        }
+        base.Dispose(disposing);
     }
 
-    private static void UpdateFooterButtonLayout(Control footerPanel, Button cancelButton, Button okButton)
+    private async Task DisposeWorkspaceAsync()
     {
-        if (footerPanel.ClientSize.Width <= 0 || footerPanel.ClientSize.Height <= 0)
-        {
-            return;
-        }
-
-        FrameShiftUiLayout.LayoutFooterButtons(footerPanel, cancelButton, okButton, FrameShiftUiMetrics.LineGap);
+        await _lifetime.BeginClosingAsync(CleanupTemporaryRootAfterWorkAsync,
+            ex => Core.Logging.AppLogger.LogStatic($"Cut Audio cleanup: {ex}"));
+        _lifetime.Dispose();
     }
 
-    private static Panel CreateFramedPanel(Color backgroundColor, Color borderColor, int radius)
-    {
-        return FrameShiftUiFactory.CreateFramedPanel(backgroundColor, borderColor, radius);
-    }
 }

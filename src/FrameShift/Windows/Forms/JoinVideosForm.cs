@@ -43,6 +43,9 @@ internal sealed class JoinVideosForm : Form
     private int _pendingExternalDropIndex = -1;
     private bool _loading;
     private bool _disposed;
+    private bool _allowClose;
+    private Task _loadingTask = Task.CompletedTask;
+    private bool _resourcesDisposed;
 
     public JoinVideosForm(
         IReadOnlyList<string> initialPaths,
@@ -60,90 +63,37 @@ internal sealed class JoinVideosForm : Form
         _videoPicker = videoPicker ?? ShowVideoPicker;
         _uiSettingsPathForTesting = uiSettingsPathForTesting;
 
-        AutoScaleMode = AutoScaleMode.Dpi;
-        BackColor = FrameShiftTheme.PageBackground;
-        ClientSize = new Size(960, 600);
-        MinimumSize = new Size(760, 500);
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.Sizable;
+        SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(this, new Size(960, 450), new Size(480, 340));
         AllowDrop = true;
         KeyPreview = true;
         FrameShiftWindowChrome.Apply(this, "FrameShift - Join Videos");
-
-        var root = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = FrameShiftTheme.PageBackground,
-            Padding = new Padding(FrameShiftUiMetrics.OuterPadding),
-            ColumnCount = 1,
-            RowCount = 5,
-            Margin = Padding.Empty
-        };
-        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.HeaderHeight));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.BlockGap));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 58F));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, FrameShiftUiMetrics.CompactFooterHeight));
-
-        root.Controls.Add(
-            FrameShiftUiFactory.CreateFillHeader(
-                "FrameShift - Join Videos",
-                "Arrange clips on one track. Explorer may not preserve the order in which files were selected.",
-                IconPaths.ContextMenuIco("join-videos-video-icon.ico"),
-                IconPaths.AppIcon,
-                "J",
-                780),
-            0,
-            0);
-
-        var timelineSection = FrameShiftUiFactory.CreateFillSection("Timeline", out var timelineHost);
-        timelineHost.Padding = Padding.Empty;
         var toolbar = CreateTimelineToolbar(out _addButton, out _removeButton, out _clearAllButton);
+        _timelineViewport.AutoScroll = true;
         _timelineViewport.Controls.Add(_timeline);
-        var timelineLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            Margin = Padding.Empty,
-            Padding = Padding.Empty,
-            ColumnCount = 1,
-            RowCount = 2
-        };
-        timelineLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-        timelineLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
-        timelineLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        var timelineLayout = new TableLayoutPanel { Dock = DockStyle.Fill, Margin = Padding.Empty, ColumnCount = 1, RowCount = 2 };
+        timelineLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        timelineLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        timelineLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         timelineLayout.Controls.Add(toolbar, 0, 0);
         timelineLayout.Controls.Add(_timelineViewport, 0, 1);
-        timelineHost.Controls.Add(timelineLayout);
-
-        var infoCard = FrameShiftUiFactory.CreateFillInfoCard();
-        _statusLabel.Dock = DockStyle.Fill;
-        _statusLabel.TextAlign = ContentAlignment.MiddleLeft;
+        _statusLabel.AutoSize = true;
+        _statusLabel.MaximumSize = new Size(900, 0);
         _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
-        _statusLabel.AutoEllipsis = true;
-        infoCard.Controls.Add(_statusLabel);
-
-        var footer = new Panel { Dock = DockStyle.Fill, BackColor = FrameShiftTheme.PageBackground };
-        var cancelButton = FrameShiftUiFactory.CreateActionButton("Cancel", primary: false, FrameShiftUiMetrics.SecondaryButtonWidth);
-        _joinButton = FrameShiftUiFactory.CreateActionButton("Join videos", primary: true, FrameShiftUiMetrics.PrimaryButtonWidth);
+        _statusLabel.Resize += (_, _) => { };
+        var status = FrameShiftUiFactory.CreateVerticalStack(_statusLabel);
+        status.Resize += (_, _) => _statusLabel.MaximumSize = new Size(Math.Max(1, status.Width), 0);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _joinButton = FrameShiftUiFactory.CreateMeasuredActionButton("Join videos", true);
         _joinButton.Enabled = false;
-        _joinButton.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
-        cancelButton.Anchor = AnchorStyles.Right | AnchorStyles.Bottom;
-        _joinButton.Location = new Point(footer.Width - _joinButton.Width, 8);
-        cancelButton.Location = new Point(_joinButton.Left - FrameShiftUiMetrics.FooterButtonGap - cancelButton.Width, 8);
-        footer.Resize += (_, _) =>
-        {
-            _joinButton.Location = new Point(footer.ClientSize.Width - _joinButton.Width, 8);
-            cancelButton.Location = new Point(_joinButton.Left - FrameShiftUiMetrics.FooterButtonGap - cancelButton.Width, 8);
-        };
-        footer.Controls.Add(cancelButton);
-        footer.Controls.Add(_joinButton);
-
-        root.Controls.Add(timelineSection, 0, 2);
-        root.Controls.Add(infoCard, 0, 3);
-        root.Controls.Add(footer, 0, 4);
-        Controls.Add(root);
-
+        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Join Videos",
+            "Arrange clips on one track. Explorer may not preserve file selection order.",
+            IconPaths.ContextMenuIco("join-videos-video-icon.ico"), IconPaths.AppIcon, "J");
+        Controls.Add(FrameShiftEditorShellUi.Create(header,
+            FrameShiftUiFactory.CreateSection("Timeline", timelineLayout, fill: true),
+            FrameShiftDialogLayout.CreateActions(cancelButton, _joinButton), status: status));
+        AcceptButton = _joinButton;
+        CancelButton = cancelButton;
         _timeline.SelectedIndexChanged += (_, _) => UpdateSelectionState();
         _timeline.MoveRequested += (_, args) => MoveTimelineItem(args.SourceIndex, args.InsertionIndex);
         _timelineViewport.Resize += (_, _) => UpdateTimelineSize();
@@ -155,7 +105,7 @@ internal sealed class JoinVideosForm : Form
         _incomingPathsTimer.Tick += (_, _) => FlushPendingPaths();
         _removeButton.Click += (_, _) => RemoveSelectedItem();
         _clearAllButton.Click += (_, _) => ClearAllItems();
-        cancelButton.Click += (_, _) => Close();
+        cancelButton.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
         _joinButton.Click += (_, _) => ConfirmJoin();
         EnableDragDropOnControlTree(this);
         _timeline.DragOver += (_, e) =>
@@ -198,15 +148,38 @@ internal sealed class JoinVideosForm : Form
             _incomingPathsTimer.Start();
             await EnsureItemsLoadedAsync().ConfigureAwait(true);
         };
-        FormClosing += (_, _) =>
-        {
-            _disposed = true;
-            _incomingPathsTimer.Stop();
-            _loadCancellationSource.Cancel();
-        };
-        FormClosed += (_, _) => DisposeItems();
+        FormClosing += CloseAfterLoadingAsync;
+        _timeline.DpiChangedAfterParent += (_, _) => UpdateTimelineSize();
+        ResumeLayout(true);
     }
 
+    private async void CloseAfterLoadingAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose) return;
+        e.Cancel = true;
+        if (_disposed) return;
+        var result = DialogResult;
+        _disposed = true;
+        _incomingPathsTimer.Stop();
+        _loadCancellationSource.Cancel();
+        Enabled = false;
+        await _loadingTask;
+        if (IsDisposed) return;
+        // Restore the modal result after the first FormClosing has returned.
+        BeginInvoke(new Action(() =>
+        {
+            if (IsDisposed) return;
+            _allowClose = true;
+            DialogResult = result;
+            Close();
+        }));
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing) DisposeItems();
+        base.Dispose(disposing);
+    }
     public JoinVideosSettings? Settings { get; private set; }
 
     internal IReadOnlyList<string> TimelinePaths => _items.Select(item => item.SourcePath).ToArray();
@@ -262,66 +235,19 @@ internal sealed class JoinVideosForm : Form
         _ = EnsureItemsLoadedAsync();
     }
 
-    private Panel CreateTimelineToolbar(out Button addButton, out Button removeButton, out Button clearAllButton)
+    private Control CreateTimelineToolbar(out Button addButton, out Button removeButton, out Button clearAllButton)
     {
-        var toolbar = new Panel
-        {
-            Dock = DockStyle.Fill,
-            Height = 38,
-            BackColor = FrameShiftTheme.Surface,
-            Padding = new Padding(0, 0, 0, 4)
-        };
-
-        var orderLabel = new Label
-        {
-            AutoSize = true,
-            Location = new Point(0, 9),
-            Text = "Initial order:",
-            ForeColor = FrameShiftTheme.TextPrimary
-        };
         _orderComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-        _orderComboBox.FlatStyle = FlatStyle.Flat;
-        _orderComboBox.BackColor = FrameShiftTheme.Surface;
-        _orderComboBox.ForeColor = FrameShiftTheme.TextPrimary;
-        _orderComboBox.Location = new Point(79, 5);
-        _orderComboBox.Width = 190;
-        _orderComboBox.Items.AddRange([
-            "As received",
-            "Natural file name",
-            "Date created (oldest first)",
-            "Date modified (oldest first)",
-            "Custom"
-        ]);
+        _orderComboBox.Items.AddRange(["As received", "Natural file name", "Date created (oldest first)", "Date modified (oldest first)", "Custom"]);
         _orderComboBox.SelectedIndex = ResolveSortOrderIndex(LoadUiSettings().JoinVideosSortOrder);
-
-        var add = FrameShiftUiFactory.CreateActionButton("Add videos...", primary: false, 112);
-        add.Height = 28;
-        add.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        var remove = FrameShiftUiFactory.CreateActionButton("Remove", primary: false, 82);
-        remove.Height = 28;
-        remove.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        var clearAll = FrameShiftUiFactory.CreateActionButton("Clear all", primary: false, 90);
-        clearAll.Height = 28;
-        clearAll.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        addButton = add;
-        removeButton = remove;
-        clearAllButton = clearAll;
-        toolbar.Resize += (_, _) =>
-        {
-            remove.Location = new Point(toolbar.ClientSize.Width - remove.Width, 2);
-            add.Location = new Point(remove.Left - FrameShiftUiMetrics.FooterButtonGap - add.Width, 2);
-            clearAll.Location = new Point(add.Left - FrameShiftUiMetrics.FooterButtonGap - clearAll.Width, 2);
-        };
-        add.Click += (_, _) => AddVideosFromDialog();
-
-        toolbar.Controls.Add(orderLabel);
-        toolbar.Controls.Add(_orderComboBox);
-        toolbar.Controls.Add(add);
-        toolbar.Controls.Add(remove);
-        toolbar.Controls.Add(clearAll);
-        return toolbar;
+        addButton = FrameShiftUiFactory.CreateMeasuredActionButton("Add videos...", false);
+        removeButton = FrameShiftUiFactory.CreateMeasuredActionButton("Remove", false);
+        clearAllButton = FrameShiftUiFactory.CreateMeasuredActionButton("Clear all", false);
+        addButton.Click += (_, _) => AddVideosFromDialog();
+        return FrameShiftUiFactory.CreateChoiceRow(
+            FrameShiftUiFactory.CreateFieldRow("Initial order", _orderComboBox, logicalEditorWidth: 210),
+            addButton, removeButton, clearAllButton);
     }
-
     private void AddPaths(IEnumerable<string> paths, int insertionIndex = -1)
     {
         var newItems = new List<JoinVideoTimelineItem>();
@@ -361,7 +287,13 @@ internal sealed class JoinVideosForm : Form
         RefreshTimeline();
     }
 
-    private async Task EnsureItemsLoadedAsync()
+    internal Task EnsureItemsLoadedAsync()
+    {
+        if (_loading || _disposed) return _loadingTask;
+        return _loadingTask = LoadItemsAsync();
+    }
+
+    private async Task LoadItemsAsync()
     {
         if (_loading || _disposed)
         {
@@ -658,7 +590,7 @@ internal sealed class JoinVideosForm : Form
         }
 
         _timeline.Width = Math.Max(1, _timelineViewport.ClientSize.Width);
-        _timeline.Height = 182;
+        _timeline.Height = _timeline.PreferredTimelineHeight;
     }
 
     private void UpdateSelectionState()
@@ -721,6 +653,8 @@ internal sealed class JoinVideosForm : Form
 
     private void DisposeItems()
     {
+        if (_resourcesDisposed) return;
+        _resourcesDisposed = true;
         _disposed = true;
         _incomingPathsTimer.Dispose();
         _loadCancellationSource.Cancel();
@@ -728,5 +662,11 @@ internal sealed class JoinVideosForm : Form
         {
             item.DisposeThumbnail();
         }
+        _ = DisposeCancellationAsync();
+    }
+
+    private async Task DisposeCancellationAsync()
+    {
+        try { await _loadingTask; } finally { _loadCancellationSource.Dispose(); }
     }
 }

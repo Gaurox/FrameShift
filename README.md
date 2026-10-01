@@ -199,6 +199,7 @@ tests/
 - [UI Phase D1 — Manual Tests](docs/UI_PHASE_D1_MANUAL_TESTS.md)
 - [UI Phase D2 — Manual Tests](docs/UI_PHASE_D2_MANUAL_TESTS.md)
 - [UI Phase D3 — Manual Tests](docs/UI_PHASE_D3_MANUAL_TESTS.md)
+- [UI Phase E — Manual Editor Tests](docs/UI_PHASE_E_MANUAL_TESTS.md)
 - [RIFE Interpolation Notes](docs/RIFE_INTERPOLATION_NOTES.md)
 - [Upscale Video Implementation](docs/UPSCALE_VIDEO_PLAN.md)
 - [Third-Party Model Licences](THIRD_PARTY_NOTICES.md)
