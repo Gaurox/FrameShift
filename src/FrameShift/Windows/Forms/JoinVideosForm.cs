@@ -96,6 +96,7 @@ internal sealed class JoinVideosForm : Form
         CancelButton = cancelButton;
         _timeline.SelectedIndexChanged += (_, _) => UpdateSelectionState();
         _timeline.MoveRequested += (_, args) => MoveTimelineItem(args.SourceIndex, args.InsertionIndex);
+        _timeline.RemoveRequested += (_, _) => RemoveSelectedItem();
         _timelineViewport.Resize += (_, _) => UpdateTimelineSize();
         _orderComboBox.SelectedIndexChanged += (_, _) =>
         {
@@ -122,24 +123,6 @@ internal sealed class JoinVideosForm : Form
         {
             _pendingExternalDropIndex = -1;
             _timeline.ClearExternalDropIndicator();
-        };
-        KeyDown += (_, e) =>
-        {
-            if (e.KeyCode == Keys.Delete)
-            {
-                RemoveSelectedItem();
-                e.Handled = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.Left)
-            {
-                NudgeSelectedItem(-1);
-                e.Handled = true;
-            }
-            else if (e.Control && e.KeyCode == Keys.Right)
-            {
-                NudgeSelectedItem(1);
-                e.Handled = true;
-            }
         };
         Shown += async (_, _) =>
         {
@@ -414,10 +397,13 @@ internal sealed class JoinVideosForm : Form
             3 => _items.OrderBy(item => item.ModifiedUtc).ThenBy(item => Path.GetFileName(item.SourcePath), NaturalFileNameComparer.Instance),
             _ => _items
         };
+        var selected = _timeline.SelectedIndex >= 0 && _timeline.SelectedIndex < _items.Count
+            ? _items[_timeline.SelectedIndex] : null;
         var ordered = orderedQuery.ToArray();
 
         _items.Clear();
         _items.AddRange(ordered);
+        _timeline.SelectIndex(selected is null ? -1 : _items.IndexOf(selected));
         RefreshTimeline();
     }
 
@@ -508,21 +494,6 @@ internal sealed class JoinVideosForm : Form
 
         _items.Clear();
         _timeline.SelectIndex(-1);
-        RefreshTimeline();
-    }
-
-    private void NudgeSelectedItem(int direction)
-    {
-        var index = _timeline.SelectedIndex;
-        var targetIndex = index + direction;
-        if (index < 0 || targetIndex < 0 || targetIndex >= _items.Count)
-        {
-            return;
-        }
-
-        (_items[index], _items[targetIndex]) = (_items[targetIndex], _items[index]);
-        _orderComboBox.SelectedIndex = 4;
-        _timeline.SelectIndex(targetIndex);
         RefreshTimeline();
     }
 

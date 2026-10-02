@@ -10,7 +10,7 @@ La fenêtre affiche une timeline horizontale : aperçu, nom et durée de chaque 
 
 Un même chemin peut être présent plusieurs fois : chaque occurrence est conservée. L'ordre reçu depuis Explorer est affiché comme un ordre reçu, jamais comme un ordre de sélection garanti.
 
-`Suppr` retire le clip sélectionné, `Ctrl+←`/`Ctrl+→` le déplace d'une position, et « Clear all » vide la timeline. Le survol d'un clip dont la résolution ou la présence audio diffère du premier clip affiche un indice de compatibilité dans l'infobulle.
+La timeline est accessible à `Tab`. `←`/`→` et `Début`/`Fin` sélectionnent un clip ; `Ctrl+←`/`Ctrl+→` le déplacent d'une position, `Suppr` le retire. Ces commandes agissent lorsque la timeline a le focus, pour préserver les touches normales du sélecteur de tri et des autres contrôles. `Entrée`/`Espace` dans la timeline sélectionnent sans confirmer Join ; `Échap` reste l'annulation du dialogue. Changer le tri conserve le clip sélectionné à sa nouvelle position. « Clear all » vide la timeline. Le survol d'un clip dont la résolution ou la présence audio diffère du premier clip affiche un indice de compatibilité dans l'infobulle.
 
 ## Traitement
 

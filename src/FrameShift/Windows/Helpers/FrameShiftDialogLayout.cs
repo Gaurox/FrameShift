@@ -68,12 +68,16 @@ public static class FrameShiftDialogLayout
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         header.Dock = body.Dock = actions.Dock = DockStyle.Fill;
+        header.TabIndex = 0;
+        body.TabIndex = 1;
+        actions.TabIndex = 3;
         header.Margin = actions.Margin = Padding.Empty;
         root.Controls.Add(header, 0, 0);
         root.Controls.Add(body, 0, 1);
         if (status is not null)
         {
             status.Dock = DockStyle.Fill;
+            status.TabIndex = 2;
             root.Controls.Add(status, 0, 2);
         }
         root.Controls.Add(actions, 0, 3);

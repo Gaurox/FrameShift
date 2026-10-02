@@ -91,6 +91,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         _previewPanel.Paint += PreviewPanelOnPaint;
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewImageBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom };
+        _previewImageBox.AccessibleName = "Subtitles video preview";
+        _previewImageBox.TabStop = false;
         _previewPanel.Controls.Add(_previewImageBox);
         _sourceKindLabel = FrameShiftUiFactory.CreateWrappingLabel("");
         _currentTimeLabel = FrameShiftUiFactory.CreateWrappingLabel("");

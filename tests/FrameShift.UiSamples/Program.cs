@@ -75,6 +75,14 @@ internal static class Program
                     if (launcher.Visible) throw new InvalidOperationException("F2 launcher must stay hidden during checks.");
                     results.Add(new { f2Launcher = true, dpi = launcher.DeviceDpi, highDpiMode = Application.HighDpiMode.ToString(), visible = launcher.Visible });
                 }
+                using (var launcher = new F2LauncherForm(keyboardRecipe: true))
+                {
+                    CreateHiddenHandles(launcher);
+                    launcher.PerformAutoScale();
+                    launcher.PerformLayout();
+                    if (launcher.Visible) throw new InvalidOperationException("F3 launcher must stay hidden during checks.");
+                    results.Add(new { f3Launcher = true, dpi = launcher.DeviceDpi, highDpiMode = Application.HighDpiMode.ToString(), visible = launcher.Visible });
+                }
                 File.WriteAllText(args[1], System.Text.Json.JsonSerializer.Serialize(results, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
                 return 0;
             }
@@ -85,7 +93,8 @@ internal static class Program
             }
         }
         InitializeSampleApplication();
-        Application.Run(args.Contains("--f2") ? new F2LauncherForm()
+        Application.Run(args.Contains("--f3") ? new F2LauncherForm(keyboardRecipe: true)
+            : args.Contains("--f2") ? new F2LauncherForm()
             : args.Contains("--e") ? new ELauncherForm()
             : args.Contains("--d3") ? new D3LauncherForm()
             : args.Contains("--d2") ? new D2LauncherForm()

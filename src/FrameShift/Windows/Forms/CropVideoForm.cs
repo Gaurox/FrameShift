@@ -75,6 +75,8 @@ public sealed class CropVideoForm : Form
         _resizeRefreshTimer = new System.Windows.Forms.Timer { Interval = 35 };
         _resizeRefreshTimer.Tick += (_, _) => { _resizeRefreshTimer.Stop(); RefreshPreviewLayout(); };
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
+        _previewPanel.AccessibleName = "Video crop preview";
+        _previewPanel.AccessibleDescription = "Crop rectangle. Use the position and size fields to set exact coordinates.";
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;

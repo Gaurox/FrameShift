@@ -349,7 +349,10 @@ Tests et exemples UI actifs :
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 - `tests/FrameShift.Tests/FrameShiftThemeTests.cs`
 - `tests/FrameShift.Tests/UiColorStateTests.cs` — contrastes calculés, peinture en mémoire des états, remappage des overrides de grille et des états Progress.
+- `tests/FrameShift.Tests/UiKeyboardTests.cs` — commandes sur contrôles cachés, métadonnées complètes, ordre Tab, reconstruction des cibles de focus, sélection/tri/déplacement/suppression Join et glyphes accessibles des files.
+- `src/FrameShift/Windows/Controls/FrameShiftGridButtonCell.cs` — cellule native × dont le nom accessible expose l'action et le fichier ; aucun changement de dessin.
 - `tests/FrameShift.UiSamples/F2LauncherForm.cs` — recette ciblée via `TEST_PHASE_F2.cmd`, thèmes temporaires sans sauvegarde et fenêtres non modales.
+- `TEST_PHASE_F3.cmd` — réutilise ce lanceur en mode clavier avec trois copies de la vidéo test pour Join ; procédure `docs/UI_PHASE_F3_MANUAL_TESTS.md`.
 - `tests/FrameShift.Tests/JoinVideosSettingsTests.cs`
 - `tests/FrameShift.Tests/JoinVideosPlannerTests.cs`
 - `tests/FrameShift.Tests/JoinVideosFormTests.cs`

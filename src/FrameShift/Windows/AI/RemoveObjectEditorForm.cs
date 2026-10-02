@@ -95,6 +95,8 @@ public sealed class RemoveObjectEditorForm : Form
         FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Object", IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon);
         ControlHelper.SetDoubleBuffered(this);
         _canvasPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(30, 30, 30), TabStop = true };
+        _canvasPanel.AccessibleName = "Object removal mask canvas";
+        _canvasPanel.AccessibleDescription = "Image and painted removal mask. Brush, eraser and zoom controls are available in the options panel.";
         ControlHelper.SetDoubleBuffered(_canvasPanel);
         _canvasPanel.Cursor = s_hiddenCursor;
         _canvasPanel.Paint += CanvasOnPaint;

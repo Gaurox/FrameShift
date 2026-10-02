@@ -180,6 +180,7 @@ public sealed class FileQueuePanel : UserControl
         var rowIndex = _grid.Rows.Add(KindLabel(kind), Path.GetFileName(fullPath), "×");
         _grid.Rows[rowIndex].Tag = fullPath;
         _grid.Rows[rowIndex].Cells["FileName"].ToolTipText = fullPath;
+        _grid.Rows[rowIndex].Cells["Remove"].ToolTipText = $"Remove {Path.GetFileName(fullPath)}";
     }
 
     private void OnCellContentClick(object? sender, DataGridViewCellEventArgs e)
@@ -330,6 +331,8 @@ public sealed class FileQueuePanel : UserControl
         {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
+            AccessibleName = "Files queue",
+            AccessibleDescription = "Select files with the arrow keys. Delete removes selected files from the queue.",
             AllowUserToDeleteRows = false,
             AllowUserToResizeRows = false,
             AllowUserToResizeColumns = false,
@@ -370,6 +373,8 @@ public sealed class FileQueuePanel : UserControl
         grid.Columns.Add(new DataGridViewButtonColumn
         {
             Name = "Remove",
+            HeaderText = "Remove file",
+            CellTemplate = new FrameShift.Windows.Controls.FrameShiftGridButtonCell(),
             Width = 40,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
             Text = "×",

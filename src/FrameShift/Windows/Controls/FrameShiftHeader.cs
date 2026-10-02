@@ -4,7 +4,7 @@ using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.Controls;
 
-/// <summary>Measured header for auto-sized rows. Metadata remains available via tooltip and copy menu.</summary>
+/// <summary>Measured header with keyboard access to complete metadata.</summary>
 public sealed class FrameShiftHeader : Panel
 {
     public Label TitleLabel { get; }
@@ -16,6 +16,8 @@ public sealed class FrameShiftHeader : Panel
     private readonly Point _iconOffset;
     private readonly Font _titleFont = new("Segoe UI Semibold", 14F, FontStyle.Regular, GraphicsUnit.Point);
     private Size _iconSize;
+    internal Action<string> CopyDetailsText { get; set; } = Clipboard.SetText;
+    internal Action<Form, IWin32Window?> DisplayDetails { get; set; } = (dialog, owner) => dialog.ShowDialog(owner);
 
     public FrameShiftHeader(string title, string subtitle, string iconPath, string fallbackGlyph, Point iconOffset)
     {
@@ -26,16 +28,19 @@ public sealed class FrameShiftHeader : Panel
         Dock = DockStyle.Fill;
         Margin = Padding.Empty;
         BackColor = FrameShiftTheme.Surface;
+        SetStyle(ControlStyles.Selectable, true);
+        AccessibleRole = AccessibleRole.Grouping;
         _icon = new PictureBox { BackColor = FrameShiftTheme.AccentSoft, SizeMode = PictureBoxSizeMode.CenterImage, TabStop = false };
         TitleLabel = new Label { Text = title, Font = _titleFont, ForeColor = FrameShiftTheme.TextPrimary, UseMnemonic = false };
         SubtitleLabel = new Label { Text = subtitle, ForeColor = FrameShiftTheme.TextSecondary, AutoEllipsis = true, UseMnemonic = false };
         Controls.AddRange([_icon, TitleLabel, SubtitleLabel]);
         if (string.IsNullOrEmpty(iconPath))
             _icon.Controls.Add(new Label { Text = fallbackGlyph, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter });
-        _metadataMenu.Items.Add("Copy details", null, (_, _) =>
-        {
-            if (!string.IsNullOrEmpty(SubtitleLabel.Text)) Clipboard.SetText(SubtitleLabel.Text);
-        });
+        _metadataMenu.Items.Add("View details", null, (_, _) => ShowDetails());
+        var copy = new ToolStripMenuItem("Copy details") { ShortcutKeyDisplayString = "Ctrl+C" };
+        copy.Click += (_, _) => CopyDetails();
+        _metadataMenu.Items.Add(copy);
+        ContextMenuStrip = _metadataMenu;
         SubtitleLabel.ContextMenuStrip = _metadataMenu;
         SubtitleLabel.TextChanged += (_, _) => RefreshContent();
         TitleLabel.TextChanged += (_, _) => RefreshContent();
@@ -48,8 +53,80 @@ public sealed class FrameShiftHeader : Panel
     private void RefreshContent()
     {
         _toolTip.SetToolTip(SubtitleLabel, SubtitleLabel.Text);
+        TabStop = !string.IsNullOrEmpty(SubtitleLabel.Text);
+        AccessibleName = TitleLabel.Text;
+        AccessibleDescription = TabStop ? $"{SubtitleLabel.Text}. Enter: view details. Ctrl+C: copy details. Shift+F10: menu." : TitleLabel.Text;
+        SubtitleLabel.AccessibleName = "Source details";
+        SubtitleLabel.AccessibleDescription = SubtitleLabel.Text;
+        foreach (ToolStripItem item in _metadataMenu.Items) item.Enabled = TabStop;
         PerformLayout();
         Parent?.PerformLayout();
+    }
+
+    private void CopyDetails()
+    {
+        if (Enabled && TabStop) CopyDetailsText(SubtitleLabel.Text);
+    }
+
+    private void ShowDetails()
+    {
+        if (!Enabled || !TabStop) return;
+        using var dialog = new Form();
+        dialog.SuspendLayout();
+        FrameShiftWindowPolicy.Initialize(dialog, new Size(680, 320), new Size(360, 240));
+        FrameShiftWindowChrome.Apply(dialog, "FrameShift - Source details");
+        var header = new FrameShiftHeader("FrameShift - Source details", "", _iconPath, "", _iconOffset);
+        var text = new TextBox
+        {
+            Text = SubtitleLabel.Text, Multiline = true, ReadOnly = true, WordWrap = true,
+            ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, BorderStyle = BorderStyle.None,
+            BackColor = FrameShiftTheme.Surface, ForeColor = FrameShiftTheme.TextPrimary,
+            AccessibleName = "Complete source details"
+        };
+        var close = FrameShiftUiFactory.CreateMeasuredActionButton("Close", false);
+        close.DialogResult = DialogResult.Cancel;
+        dialog.AcceptButton = dialog.CancelButton = close;
+        dialog.Controls.Add(FrameShiftDialogLayout.CreateShell(header,
+            FrameShiftUiFactory.CreateSection("Source details — Ctrl+C to copy selected text", text, fill: true),
+            FrameShiftDialogLayout.CreateActions(close), null));
+        dialog.ResumeLayout(true);
+        DisplayDetails(dialog, FindForm());
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == (Keys.Control | Keys.C) && Enabled && TabStop)
+        {
+            CopyDetails();
+            return true;
+        }
+        return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    protected override bool ProcessDialogKey(Keys keyData)
+    {
+        if (keyData is Keys.Enter or Keys.Space && Enabled && TabStop)
+        {
+            ShowDetails();
+            return true;
+        }
+        return base.ProcessDialogKey(keyData);
+    }
+
+    protected override bool IsInputKey(Keys keyData)
+        => keyData is Keys.Enter or Keys.Space ? false : base.IsInputKey(keyData);
+
+    protected override void OnGotFocus(EventArgs e) { base.OnGotFocus(e); Invalidate(); }
+    protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); Invalidate(); }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        if (Focused && ShowFocusCues && Enabled)
+        {
+            var bounds = Rectangle.Inflate(ClientRectangle, -3, -3);
+            if (bounds.Width > 0 && bounds.Height > 0)
+                ControlPaint.DrawFocusRectangle(e.Graphics, bounds, FrameShiftTheme.AccentText, BackColor);
+        }
     }
 
     public override Size GetPreferredSize(Size proposedSize)

@@ -83,6 +83,7 @@ public sealed class CreateGifForm : Form
         FrameShiftWindowChrome.Apply(this, "FrameShift - Create GIF");
         ControlHelper.SetDoubleBuffered(this);
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32) };
+        _previewPanel.AccessibleName = "GIF frame preview";
         _previewBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom };
         _previewPanel.Controls.Add(_previewBox);
         _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel("Preview: waiting for first frame...");

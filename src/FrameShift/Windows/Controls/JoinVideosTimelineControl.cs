@@ -33,8 +33,12 @@ internal sealed class JoinVideosTimelineControl : Control
         BackColor = FrameShiftTheme.PageBackground;
         Height = TileHeight + (TileTop * 2);
         Cursor = Cursors.Default;
+        TabStop = true;
+        AccessibleRole = AccessibleRole.List;
+        AccessibleName = "Video clips timeline";
         ControlHelper.SetDoubleBuffered(this);
-        SetStyle(ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+        SetStyle(ControlStyles.Selectable | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
+        UpdateAccessibleDescription();
     }
 
     private int Pixels(int logical) => FrameShiftUiMetrics.ToPixels(this, logical);
@@ -47,6 +51,7 @@ internal sealed class JoinVideosTimelineControl : Control
     public event EventHandler? SelectedIndexChanged;
 
     public event EventHandler<JoinVideosTimelineMoveEventArgs>? MoveRequested;
+    public event EventHandler? RemoveRequested;
 
     public int SelectedIndex => _selectedIndex;
 
@@ -55,10 +60,11 @@ internal sealed class JoinVideosTimelineControl : Control
         _items = items;
         if (_selectedIndex >= _items.Count)
         {
-            _selectedIndex = _items.Count - 1;
+            SelectIndex(_items.Count - 1);
         }
 
         RebuildLayout();
+        UpdateAccessibleDescription();
     }
 
     public void SelectIndex(int index)
@@ -70,8 +76,86 @@ internal sealed class JoinVideosTimelineControl : Control
         }
 
         _selectedIndex = normalized;
+        UpdateAccessibleDescription();
+        if (IsHandleCreated) AccessibilityNotifyClients(AccessibleEvents.Selection, -1);
+        EnsureSelectionVisible();
         Invalidate();
         SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void UpdateAccessibleDescription()
+    {
+        var selection = _selectedIndex >= 0 && _selectedIndex < _items.Count
+            ? $"Clip {_selectedIndex + 1} of {_items.Count}: {_items[_selectedIndex].SourcePath}. {_items[_selectedIndex].LoadError}"
+            : $"{_items.Count} clips. No clip selected.";
+        AccessibleDescription = $"{selection} Left/Right, Home/End: select. Ctrl+Left/Right: move. Delete: remove selected clip.";
+    }
+
+    protected override bool IsInputKey(Keys keyData)
+    {
+        var key = keyData & Keys.KeyCode;
+        return key is Keys.Left or Keys.Right or Keys.Home or Keys.End or Keys.Enter or Keys.Space || base.IsInputKey(keyData);
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        if (!Enabled) { base.OnKeyDown(e); return; }
+        if (e.Modifiers == Keys.None && e.KeyCode is Keys.Left or Keys.Right or Keys.Home or Keys.End or Keys.Enter or Keys.Space)
+        {
+            if (_items.Count > 0)
+            {
+                var index = e.KeyCode switch
+                {
+                    Keys.Home => 0,
+                    Keys.End => _items.Count - 1,
+                    Keys.Left => Math.Max(0, _selectedIndex - 1),
+                    Keys.Right => Math.Min(_items.Count - 1, _selectedIndex + 1),
+                    _ => Math.Max(0, _selectedIndex)
+                };
+                SelectIndex(index);
+            }
+        }
+        else if (e.Modifiers == Keys.Control && e.KeyCode is Keys.Left or Keys.Right)
+        {
+            var target = _selectedIndex + (e.KeyCode == Keys.Left ? -1 : 1);
+            if (_selectedIndex >= 0 && target >= 0 && target < _items.Count)
+                MoveRequested?.Invoke(this, new JoinVideosTimelineMoveEventArgs(_selectedIndex,
+                    e.KeyCode == Keys.Left ? target : target + 1));
+        }
+        else if (e.Modifiers == Keys.None && e.KeyCode == Keys.Delete)
+        {
+            if (_selectedIndex >= 0) RemoveRequested?.Invoke(this, EventArgs.Empty);
+        }
+        else { base.OnKeyDown(e); return; }
+        e.Handled = e.SuppressKeyPress = true;
+    }
+
+    protected override void OnGotFocus(EventArgs e)
+    {
+        base.OnGotFocus(e);
+        if (_selectedIndex < 0 && _items.Count > 0) SelectIndex(0);
+        Invalidate();
+    }
+
+    protected override void OnLostFocus(EventArgs e) { base.OnLostFocus(e); Invalidate(); }
+
+    private void EnsureSelectionVisible()
+    {
+        if (_selectedIndex < 0 || _selectedIndex >= _tileBounds.Count) return;
+        var bounds = _tileBounds[_selectedIndex];
+        Control child = this;
+        for (var parent = Parent; parent is not null; child = parent, parent = parent.Parent)
+        {
+            bounds.Offset(child.Left, child.Top);
+            if (parent is not ScrollableControl { AutoScroll: true } viewport || viewport.ClientSize.Width <= 0 || viewport.ClientSize.Height <= 0)
+                continue;
+            var dx = bounds.Left < 0 || bounds.Width > viewport.ClientSize.Width ? bounds.Left : Math.Max(0, bounds.Right - viewport.ClientSize.Width);
+            var dy = bounds.Top < 0 || bounds.Height > viewport.ClientSize.Height ? bounds.Top : Math.Max(0, bounds.Bottom - viewport.ClientSize.Height);
+            if (dx == 0 && dy == 0) continue;
+            var oldPosition = viewport.AutoScrollPosition;
+            viewport.AutoScrollPosition = new Point(-oldPosition.X + dx, -oldPosition.Y + dy);
+            bounds.Offset(viewport.AutoScrollPosition.X - oldPosition.X, viewport.AutoScrollPosition.Y - oldPosition.Y);
+        }
     }
 
     internal int ShowExternalDropIndicator(int clientX)
@@ -109,6 +193,8 @@ internal sealed class JoinVideosTimelineControl : Control
     {
         base.OnPaint(e);
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        if (Focused && ShowFocusCues && _items.Count == 0)
+            ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(ClientRectangle, -3, -3), FrameShiftTheme.AccentText, BackColor);
 
         if (_items.Count == 0)
         {
@@ -125,6 +211,12 @@ internal sealed class JoinVideosTimelineControl : Control
         for (var index = 0; index < _items.Count && index < _tileBounds.Count; index++)
         {
             DrawTile(e.Graphics, _tileBounds[index], _items[index], index == _selectedIndex, index == _draggedIndex && _isDragging);
+        }
+        if (Focused && ShowFocusCues && _selectedIndex >= 0 && _selectedIndex < _tileBounds.Count)
+        {
+            var bounds = Rectangle.Inflate(_tileBounds[_selectedIndex], -3, -3);
+            if (bounds.Width > 0 && bounds.Height > 0)
+                ControlPaint.DrawFocusRectangle(e.Graphics, bounds, FrameShiftTheme.AccentText, FrameShiftTheme.AccentSoft);
         }
 
         if ((_isDragging || _isExternalDragHover) && _dragInsertionIndex >= 0)
@@ -143,6 +235,7 @@ internal sealed class JoinVideosTimelineControl : Control
             return;
         }
 
+        Focus();
         var index = GetTileIndexAt(e.Location);
         SelectIndex(index);
         if (index >= 0)

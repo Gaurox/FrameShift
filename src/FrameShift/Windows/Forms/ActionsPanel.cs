@@ -53,6 +53,9 @@ public sealed class ActionsPanel : UserControl
         {
             Dock = DockStyle.Fill,
             PlaceholderText = "Search actions",
+            AccessibleName = "Search actions",
+            AccessibleDescription = "Filter action names. Tab continues to media filters and available actions.",
+            TabIndex = 0,
             BorderStyle = BorderStyle.FixedSingle,
             BackColor = FrameShiftTheme.Surface,
             ForeColor = FrameShiftTheme.TextPrimary,
@@ -65,6 +68,7 @@ public sealed class ActionsPanel : UserControl
         };
 
         _chipsPanel = FrameShiftUiFactory.CreateChoiceRow();
+        _chipsPanel.TabIndex = 1;
 
         _content = new FlowLayoutPanel
         {
@@ -76,6 +80,7 @@ public sealed class ActionsPanel : UserControl
             Margin = Padding.Empty,
             Padding = Padding.Empty
         };
+        _content.TabIndex = 2;
 
         root.Controls.Add(_searchBox, 0, 0);
         root.Controls.Add(_chipsPanel, 0, 1);
@@ -103,8 +108,12 @@ public sealed class ActionsPanel : UserControl
         Rebuild();
     }
 
-    private void Rebuild()
+    private void Rebuild(Control? focusSource = null)
     {
+        var focused = focusSource ?? (ContainsFocus ? ActiveControl : null);
+        var wasChip = focused?.Parent == _chipsPanel;
+        var familyToRestore = wasChip ? focused?.Tag as MediaFamily? : null;
+        var actionToRestore = (focused?.Tag as ActionCatalogEntry)?.Key;
         var baseScope = _selectedFiles.Count > 0 ? _selectedFiles : _allFiles;
         var baseCounts = ActionScopeResolver.FamilyCounts(baseScope);
 
@@ -130,6 +139,19 @@ public sealed class ActionsPanel : UserControl
         {
             _content.ResumeLayout();
             ResumeLayout();
+        }
+        // Controls are rebuilt, so restore by stable identity rather than their count-dependent caption.
+        Control? target = wasChip
+            ? _chipsPanel.Controls.OfType<Button>().FirstOrDefault(b => Equals(b.Tag, familyToRestore))
+                ?? _chipsPanel.Controls.OfType<Button>().FirstOrDefault()
+            : actionToRestore is not null
+                ? _content.Controls.OfType<Button>().FirstOrDefault(b => b.Enabled && (b.Tag as ActionCatalogEntry)?.Key == actionToRestore)
+                : focused;
+        if (focused is not null)
+        {
+            target ??= _searchBox;
+            ActiveControl = target;
+            target.Focus();
         }
     }
 
@@ -223,6 +245,9 @@ public sealed class ActionsPanel : UserControl
         button.TextAlign = ContentAlignment.MiddleLeft;
         button.Enabled = availability.IsEnabled;
         button.Tag = availability.Entry;
+        button.AccessibleDescription = availability.IsEnabled
+            ? $"Applies to {availability.MatchingFileCount} matching file(s)."
+            : availability.DisabledReason;
         if (!availability.IsEnabled && !string.IsNullOrWhiteSpace(availability.DisabledReason))
         {
             _toolTip.SetToolTip(button, availability.DisabledReason);
@@ -231,6 +256,7 @@ public sealed class ActionsPanel : UserControl
         var entry = availability.Entry;
         button.Click += (_, _) =>
         {
+            if (!button.Enabled) return;
             var files = ActionScopeResolver.MatchingFiles(entry, _currentScope);
             if (files.Count > 0)
             {
@@ -244,12 +270,12 @@ public sealed class ActionsPanel : UserControl
     private Button CreateChip(string text, MediaFamily? family, bool active)
     {
         var chip = FrameShiftUiFactory.CreateMeasuredActionButton(text, active, 84);
+        chip.Tag = family;
         chip.AccessibleDescription = active ? "Selected filter" : "Filter actions by media type";
         chip.Click += (_, _) =>
         {
             _familyFilter = family;
-            Rebuild();
-            _chipsPanel.Controls.OfType<Button>().FirstOrDefault(b => b.Text == text)?.Focus();
+            Rebuild(chip);
         };
         return chip;
     }

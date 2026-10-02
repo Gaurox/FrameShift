@@ -129,6 +129,8 @@ public sealed class ImageToPdfForm : Form
         _initialPaths = inputPaths.ToArray();
         _toolTip = new ToolTip { ShowAlways = true, InitialDelay = 150, ReshowDelay = 100, AutoPopDelay = 6000 };
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = FrameShiftTheme.AccentSoft, TabStop = true, AutoScroll = true, AllowDrop = true };
+        _previewPanel.AccessibleName = "PDF page canvas";
+        _previewPanel.AccessibleDescription = "Page composition and selected image. Page dimensions and image commands are available in the options panel.";
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;

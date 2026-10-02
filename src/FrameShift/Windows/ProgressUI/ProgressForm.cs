@@ -499,6 +499,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             ReadOnly = true,
             RowHeadersVisible = false,
             ColumnHeadersVisible = true,
+            AccessibleName = "Task files queue",
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
@@ -546,6 +547,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         grid.Columns.Add(new DataGridViewButtonColumn
         {
             Name = "Remove", HeaderText = "",
+            CellTemplate = new FrameShift.Windows.Controls.FrameShiftGridButtonCell(),
             Width = 44,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,
             Text = "×",
@@ -567,6 +569,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         var row = _queueGrid.Rows[rowIndex];
         row.Tag = queueItemId;
         row.Cells[0].ToolTipText = item;
+        row.Cells[3].ToolTipText = $"Remove or cancel {Path.GetFileName(item)}";
         _queueRows[queueItemId] = row;
         _queueItemPaths[queueItemId] = item;
         if (!_queueItemIdsByPath.TryGetValue(item, out var queueItemIds))
