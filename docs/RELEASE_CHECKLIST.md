@@ -36,11 +36,13 @@ Before declaring the chantier qualified or publishing the global DPI activation 
 - Record the section 8 environment/scenario matrix from the audit for the 36 windows and their variants, with commit/binary, resolution, DPI, text size, theme, monitor and result.
 - Include keyboard/focus, dynamic options, repeated monitor transitions, previews, close/cancel/failure, unique adjacent outputs, cleanup, no orphan process and no visible console.
 - Identify functional checks not separately confirmed in D3/E; verify them without upgrading a visual approval into a functional guarantee.
-- Make and record the explicit Release DPI decision; the current application project enables `PerMonitorV2` only in Debug.
+- Make and record the explicit Release DPI decision; the 1.20.0 candidate enables `PerMonitorV2` in Debug and Release, with installed qualification still required before publication.
 - Run the canonical release workflow below, then verify that exact installed payload, native dialogs, hub/Explorer entry points and installer pages.
 - Preserve unresolved cases as explicit limits; do not mark an unexecuted scenario as passed.
 
 The compact/editor examples are development tools. Do not add them or scratch results to the installer.
+
+For 1.20.0, record candidate evidence in [the release qualification report](RELEASE_QUALIFICATION_1.20.0.md) and perform [the installed manual recipe](UI_PHASE_G_MANUAL_TESTS.md). A completed installer is a test candidate until the owner accepts it. Keep the previous published version in README until GitHub publication actually occurs.
 
 The test project permanently isolates WinForms and process-wide preference collections with xUnit collection attributes and temporary settings directories. Keep this isolation in the normal Release test command; a global `ParallelizeTestCollections=false` override is no longer required for the UI tests. F4's hidden GDI/USER profile complements the suite but does not replace the manual F recipe or the installed-payload qualification.
 

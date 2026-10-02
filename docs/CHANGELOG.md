@@ -1,8 +1,19 @@
 # Changelog
 
+## 1.20.0
+
+Release candidate prepared for installed-build qualification; not yet published.
+
+- **Shared Windows UI.** Migrated all 36 audited windows to the common WinForms layout contract: measured headers and sections, consistent margins and action buttons, content-sized compact dialogs, persistent commands and scrollable options when space is limited.
+- **DPI handling.** The application now uses `PerMonitorV2` in Debug and Release. Editor rails adapt to the available width, window limits follow the current monitor, and media coordinates remain independent of presentation scaling. Installed DPI and multi-monitor qualification is recorded separately in phase G.
+- **Practical editor layouts.** Preserved Cut Video's selection controls beneath the preview, aligned resize/PDF fields, improved speed/interpolation presets, restored the compact radio-based subtitle picker, and refreshed compression and icon conversion layouts.
+- **Progress and errors.** Harmonized the file list and selection, added a readable multiline details area below the queue with copy/current-task commands, and retained queue removal and cancellation behavior.
+- **Keyboard, themes and resources.** Improved focus handling, native option states, readable theme contrasts, and full metadata consultation/copy. Fixed owned native icon cleanup and isolated WinForms tests and process-wide preferences.
+- **Editor lifetime.** Corrected close/cancel during preview preparation, including Create GIF and Crop Video, and protected asynchronous image imports and late preview results from disposed controls.
+
 ## 1.19.1
 
-Prepared for release.
+Published on 1 September 2026.
 
 - **Crop ratios.** Added the `3:4`, `3:2`, and `2:3` presets to Crop Image and Crop Video.
 

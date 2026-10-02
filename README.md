@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.19.1** · latest published release: **1.19.0** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.20.0** (candidate under qualification) · latest published release: **1.19.1** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,7 +46,9 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-**New in 1.19.0 — Join Videos.** Arrange multiple clips on a lightweight visual timeline, then join them as one track. FrameShift uses direct concat only for a strict compatible stream signature; otherwise SDR clips normalize automatically to H.264/AAC MP4 with ratio-preserving padding and generated silence where needed. HDR mixing/normalization is refused in this first version.
+**Prepared for 1.20.0 — refreshed Windows interface.** Action dialogs and editors share consistent headers, spacing and buttons, adapt to the available screen space, and keep their main commands accessible. The release candidate also brings improved keyboard navigation, readable queue/error details, and PerMonitorV2 DPI handling. Installed-build qualification is tracked in [the release test checklist](docs/UI_PHASE_G_MANUAL_TESTS.md).
+
+**Join Videos, introduced in 1.19.0.** Arrange multiple clips on a lightweight visual timeline, then join them as one track. FrameShift uses direct concat only for a strict compatible stream signature; otherwise SDR clips normalize automatically to H.264/AAC MP4 with ratio-preserving padding and generated silence where needed. HDR mixing/normalization is refused in this first version.
 
 Alongside the Explorer right-click menu, FrameShift opens a simple drop-driven window: drag in as many files as you want and it shows only the actions that fit them, grouped by type. Each action runs on the whole selection in one pass, so large batches are no longer limited by Explorer's multi-file context-menu cap.
 

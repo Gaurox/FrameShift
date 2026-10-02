@@ -59,7 +59,7 @@ WinForms applique `AutoScaleMode.Dpi` depuis la référence 96 DPI. Le socle con
 
 Les polices sont héritées ; aucune multiplication manuelle de leur taille ou `Scale()` récursif en production. Peinture et hit-tests utilisent la même conversion ; les coordonnées média restent en secondes/frames, pixels source ou unités de page.
 
-`PerMonitorV2` est actuellement activé **en Debug uniquement** dans le projet applicatif. Le testeur l'utilise également. L'activation et la qualification de la distribution Release restent une décision de G.
+`PerMonitorV2` est activé **en Debug et Release** pour la candidate 1.20.0. Le testeur l'utilise également. La qualification de la distribution installée et la décision de publication restent suivies en G.
 
 ## 3. Bandeau et hiérarchie du texte
 

@@ -1021,6 +1021,14 @@ Cette confirmation est une preuve de recette utilisateur, distincte des **207 te
 - **Critère de sortie :** aucun P1 connu sur les configurations supportées, résultats de recette datés pour tout l'inventaire, aucune dérive cumulative DPI ni régression métier/annulation. Consigner les limites restantes et la décision de publication; ne déclarer `PerMonitorV2` validé globalement qu'au vu de cette qualification.
 - **Validation nécessaire :** recette finale complète de la section 8, tests Release et chaîne canonique `./build_installer.ps1`, puis vérification du binaire réellement installé, de ses dépendances et des entrées Explorer. Aucun publish/Inno manuel parallèle.
 
+#### Préparation de la candidate 1.20.0 — 2 octobre 2026
+
+**GO reçu :** préparer tout le nécessaire à la mise à jour 1.20.0 et remettre l'installateur terminé pour essais ; **ne pas publier**, la décision GitHub attend la vérification utilisateur. Référence de départ : `f5134c2`, phases A–F conservées avec leurs preuves.
+
+La version applicative passe à 1.20.0 et `PerMonitorV2` est activé en Debug et Release via le même initialiseur SDK. Il s'agit de l'activation de la candidate, pas d'une certification anticipée de la matrice installée. Le worker indépendant conserve sa version 1.18.1. La production doit suivre `build_installer.ps1` depuis un commit propre, avec les tests Release complets, sans installation automatique. Les tests affichants peuvent tourner sur un bureau Windows privé, sans bascule du bureau utilisateur ; cette isolation ne prouve pas les DPI réels.
+
+Résultats et identité de l'artefact : [rapport de qualification 1.20.0](RELEASE_QUALIFICATION_1.20.0.md). Vérifications utilisateur : [recette G installée](UI_PHASE_G_MANUAL_TESTS.md). Notes préparées : [release 1.20.0](RELEASE_NOTES_1.20.0.md). **G reste ouverte** jusqu'à la recette du binaire exact et la décision de publication ; aucun scénario non exécuté n'est marqué validé.
+
 **Règle de reprise :** pour chaque passage, consigner phase, commit/binaire, résultat de build/tests, scénarios exécutés, défauts et limites, puis décision de poursuite. Une validation manquante reste identifiée comme telle. Les corrections de layout, aperçus et comportement restent dans des changements séparés autant que possible. Les règles Core, runners et nommage unique ne sont pas réécrites pour les besoins du chantier UI.
 
 ## 8. Plan de validation
