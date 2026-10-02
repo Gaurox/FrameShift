@@ -15,6 +15,7 @@ using Xunit;
 namespace FrameShift.Tests;
 
 // Hidden native controls; font stress does not claim real OS DPI qualification.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiEditorTests
 {
     [StructLayout(LayoutKind.Sequential)]

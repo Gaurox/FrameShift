@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace FrameShift.Tests;
 
 // Hidden controls only: no Show(), input injection or changes to desktop DPI settings.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiPilotTests
 {
     private readonly ITestOutputHelper _output;

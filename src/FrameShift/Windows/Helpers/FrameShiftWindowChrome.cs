@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -9,37 +10,20 @@ public static class FrameShiftWindowChrome
 {
     private const int DwmwaUseImmersiveDarkMode = 20;
     private const int DwmwaUseImmersiveDarkModeBeforeWindows10Version1903 = 19;
+    private static readonly ConditionalWeakTable<Form, ChromeResources> Resources = new();
 
     public static void Apply(Form form, string title)
-    {
-        form.Text = title;
-        form.ShowIcon = true;
-        ApplyTitleBarTheme(form);
-        RefreshTheme(form);
-
-        if (File.Exists(IconPaths.AppIcon))
-        {
-            form.Icon = new Icon(IconPaths.AppIcon);
-        }
-    }
+        => Apply(form, title, IconPaths.AppIcon, string.Empty);
 
     public static void Apply(Form form, string title, string preferredIconPath, string fallbackIconPath)
     {
+        ObjectDisposedException.ThrowIf(form.IsDisposed, form);
+        var resources = Resources.GetValue(form, owner => new ChromeResources(owner));
         form.Text = title;
         form.ShowIcon = true;
-        ApplyTitleBarTheme(form);
         RefreshTheme(form);
-
-        if (!string.IsNullOrWhiteSpace(preferredIconPath) && File.Exists(preferredIconPath))
-        {
-            form.Icon = new Icon(preferredIconPath);
-            return;
-        }
-
-        if (!string.IsNullOrWhiteSpace(fallbackIconPath) && File.Exists(fallbackIconPath))
-        {
-            form.Icon = new Icon(fallbackIconPath);
-        }
+        var path = FrameShiftUiPainter.ResolveIconPath(preferredIconPath, fallbackIconPath);
+        if (!string.IsNullOrEmpty(path)) resources.ApplyIcon(form, Path.GetFullPath(path));
     }
 
     public static void RefreshTheme(Form form)
@@ -52,12 +36,40 @@ public static class FrameShiftWindowChrome
         }
     }
 
-    private static void ApplyTitleBarTheme(Form form)
+    // Only icons loaded here are owned here. A caller-assigned Icon must never be disposed by this helper.
+    private sealed class ChromeResources
     {
-        form.HandleCreated += (_, _) => TryApplyTitleBarTheme(form.Handle);
-        if (form.IsHandleCreated)
+        private Icon? _ownedIcon;
+        private string? _iconPath;
+
+        public ChromeResources(Form form)
         {
-            TryApplyTitleBarTheme(form.Handle);
+            form.HandleCreated += OnHandleCreated;
+            form.Disposed += OnDisposed;
+        }
+
+        public void ApplyIcon(Form form, string path)
+        {
+            if (string.Equals(_iconPath, path, StringComparison.OrdinalIgnoreCase) && ReferenceEquals(form.Icon, _ownedIcon)) return;
+            var next = new Icon(path);
+            try { form.Icon = next; }
+            catch { next.Dispose(); throw; }
+            var previous = _ownedIcon;
+            _ownedIcon = next;
+            _iconPath = path;
+            previous?.Dispose();
+        }
+
+        private void OnHandleCreated(object? sender, EventArgs e) => TryApplyTitleBarTheme(((Form)sender!).Handle);
+
+        private void OnDisposed(object? sender, EventArgs e)
+        {
+            var form = (Form)sender!;
+            form.HandleCreated -= OnHandleCreated;
+            form.Disposed -= OnDisposed;
+            _ownedIcon?.Dispose();
+            _ownedIcon = null;
+            Resources.Remove(form);
         }
     }
 

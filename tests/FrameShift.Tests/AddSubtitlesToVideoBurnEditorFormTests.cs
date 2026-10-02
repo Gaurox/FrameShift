@@ -10,6 +10,7 @@ using Xunit;
 
 namespace FrameShift.Tests;
 
+[Collection(WinFormsTestCollection.Name)]
 public sealed class AddSubtitlesToVideoBurnEditorFormTests
 {
     [Fact]

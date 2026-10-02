@@ -13,6 +13,7 @@ using Xunit;
 namespace FrameShift.Tests;
 
 // Native handles stay hidden. Font/width stress is not Windows DPI certification.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiD3Tests
 {
     [Theory]

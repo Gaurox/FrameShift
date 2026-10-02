@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 namespace FrameShift.Tests;
 
 // Hidden controls and in-memory painting only; no desktop input or preference-file writes.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiColorStateTests(ITestOutputHelper output)
 {
     [Theory]

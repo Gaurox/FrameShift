@@ -309,6 +309,7 @@ Responsabilités UI partagées :
 - `FrameShiftUiLayout.cs` conserve la mesure commune des boutons. Les anciens placements fixes sans consommateurs ont été retirés en F1.
 - `FrameShiftDialogLayout.cs` compose bandeau/corps/statut/actions ; `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` composent les variantes aperçu/options et temporelles, avec repli et défilement de secours. Les marges viennent du shell, sans ancien spacer concurrent.
 - `FrameShiftWindowChrome.cs` reste le point d’entrée commun pour la barre de titre, `ShowIcon` et la sélection d’icône FrameShift / FrameShift AI.
+- Il possède les icônes qu'il charge : réutilisation, remplacement et libération à `Disposed`, sans libérer les icônes empruntées à l'appelant ; abonnement unique au cycle des handles.
 - `FrameShiftTheme.cs` résout la palette `System` / `Light` / `Dark` à l'initialisation ou au changement de préférence et rafraîchit les fenêtres ouvertes du même processus ; `FrameShiftUiSettings.cs` persiste ce choix séparément des réglages IA.
 - `FrameShiftMenuRenderer.cs` applique les couleurs de la palette aux menus WinForms appartenant à FrameShift.
 - `FrameShiftWindowPolicy.cs` fixe la référence 96 DPI, `AutoScaleMode.Dpi`, la police et les minima clients reconstruits/bornés au moniteur. `FrameShiftUiMetrics.cs` convertit seulement les dimensions manuelles ; les composants mesurent le texte et le footer reste indépendant du corps défilant. `PerMonitorV2` applicatif reste limité à Debug jusqu'à la qualification G.
@@ -350,9 +351,13 @@ Tests et exemples UI actifs :
 - `tests/FrameShift.Tests/FrameShiftThemeTests.cs`
 - `tests/FrameShift.Tests/UiColorStateTests.cs` — contrastes calculés, peinture en mémoire des états, remappage des overrides de grille et des états Progress.
 - `tests/FrameShift.Tests/UiKeyboardTests.cs` — commandes sur contrôles cachés, métadonnées complètes, ordre Tab, reconstruction des cibles de focus, sélection/tri/déplacement/suppression Join et glyphes accessibles des files.
+- `tests/FrameShift.Tests/UiResourceLifetimeTests.cs` — propriété/libération natives des icônes, cache bitmap du bandeau, outils et polices communes sur contrôles cachés.
+- `tests/FrameShift.Tests/WinFormsTestCollection.cs` — isolation des classes UI et de leur dossier de préférences, sans désactiver le parallélisme des collections indépendantes.
+- `tests/FrameShift.UiSamples/UiResourceProbe.cs` — mode `--resources <json>`, profils GDI/USER après échauffement dans un processus STA caché ; aucune capture ou injection d'entrée.
 - `src/FrameShift/Windows/Controls/FrameShiftGridButtonCell.cs` — cellule native × dont le nom accessible expose l'action et le fichier ; aucun changement de dessin.
 - `tests/FrameShift.UiSamples/F2LauncherForm.cs` — recette ciblée via `TEST_PHASE_F2.cmd`, thèmes temporaires sans sauvegarde et fenêtres non modales.
 - `TEST_PHASE_F3.cmd` — réutilise ce lanceur en mode clavier avec trois copies de la vidéo test pour Join ; procédure `docs/UI_PHASE_F3_MANUAL_TESTS.md`.
+- `docs/UI_PHASE_F4_MANUAL_TESTS.md` — parcours combiné F2/F3/F4 et contrôles visibles de réouvertures/icônes avec les lanceurs existants.
 - `tests/FrameShift.Tests/JoinVideosSettingsTests.cs`
 - `tests/FrameShift.Tests/JoinVideosPlannerTests.cs`
 - `tests/FrameShift.Tests/JoinVideosFormTests.cs`

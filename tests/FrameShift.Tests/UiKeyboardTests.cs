@@ -14,6 +14,7 @@ using Xunit;
 namespace FrameShift.Tests;
 
 // Dispatch to hidden controls only. No desktop input, modal window or clipboard writes.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiKeyboardTests
 {
     [Theory]

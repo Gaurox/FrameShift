@@ -5,7 +5,7 @@ using Xunit;
 
 namespace FrameShift.Tests;
 
-[CollectionDefinition(Name)]
+[CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class FrameShiftPreferenceTestCollection : ICollectionFixture<FrameShiftTestSettingsDirectory>
 {
     public const string Name = "FrameShift preference tests";

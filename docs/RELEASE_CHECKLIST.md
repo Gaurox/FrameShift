@@ -42,6 +42,8 @@ Before declaring the chantier qualified or publishing the global DPI activation 
 
 The compact/editor examples are development tools. Do not add them or scratch results to the installer.
 
+The test project permanently isolates WinForms and process-wide preference collections with xUnit collection attributes and temporary settings directories. Keep this isolation in the normal Release test command; a global `ParallelizeTestCollections=false` override is no longer required for the UI tests. F4's hidden GDI/USER profile complements the suite but does not replace the manual F recipe or the installed-payload qualification.
+
 ## Release Build
 
 The only official release command is:

@@ -11,6 +11,7 @@ using Xunit;
 namespace FrameShift.Tests;
 
 // Native handles stay hidden. No desktop input, settings writes or media processing.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiD1Tests
 {
     [Theory]

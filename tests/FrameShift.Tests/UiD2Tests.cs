@@ -13,6 +13,7 @@ using Xunit;
 namespace FrameShift.Tests;
 
 // Hidden native controls only. Font stress does not simulate Windows DPI transitions.
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiD2Tests
 {
     private readonly Xunit.Abstractions.ITestOutputHelper _output;

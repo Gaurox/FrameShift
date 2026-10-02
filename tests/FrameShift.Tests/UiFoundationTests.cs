@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 
 namespace FrameShift.Tests;
 
+[Collection(WinFormsTestCollection.Name)]
 public sealed class UiFoundationTests
 {
     private readonly ITestOutputHelper _output;
