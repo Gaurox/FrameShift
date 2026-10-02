@@ -25,4 +25,4 @@ Commencer à **100 %**, puis refaire ce petit ensemble à **150 / 200 / 300 %**.
 
 Confirmer thème clair/sombre, repos/survol/appui/focus/désactivation, changement avec fenêtres ouvertes et échelles testées. Les captures sont facultatives. En cas de défaut, indiquer fenêtre, thème, échelle et état du contrôle.
 
-**Statut au 2 octobre 2026 :** code et vérifications automatisées consignés dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) ; recette visuelle F2 en attente. Les validations C/D/E antérieures ne valident pas automatiquement cette nouvelle palette. F3/F4 et G restent distincts.
+**Statut au 2 octobre 2026 : validée par l'utilisateur**, après remise de la liste complète des tests F2/F3/F4 : « ok c'est bon je valide tout. comitte ». Cette confirmation couvre les couleurs/états, les thèmes et les paliers 100/150/200/300 % du noyau décrit ci-dessus. Référence de recette : commit `4d3a07d`, build Debug `1.19.1`. Résultats et limites consignés dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). La qualification de distribution G reste à effectuer.

@@ -1,6 +1,6 @@
 # Phase F4 — Ressources et bilan F
 
-Le build de développement est prêt. Les tests automatiques cachés vérifient la libération des icônes, bitmaps et polices ; les compteurs GDI/USER restent stables après échauffement. Ils ne certifient pas le rendu visible ni la netteté à plusieurs DPI. Les essais F2/F3/F4 sont reportés au retour de l'utilisateur, le 2 octobre 2026.
+Le build de développement est prêt. Les tests automatiques cachés vérifient la libération des icônes, bitmaps et polices ; les compteurs GDI/USER restent stables après échauffement. Le rendu visible et la netteté à plusieurs DPI reposent sur la recette utilisateur, confirmée le 2 octobre 2026 : « ok c'est bon je valide tout. comitte ».
 
 ## Essais de ce soir, sans commande ni capture
 
@@ -17,4 +17,4 @@ Les compteurs GDI/USER ont été mesurés automatiquement dans un processus cach
 
 Indiquer simplement les thèmes et échelles testés, puis confirmer **couleurs/états F2**, **clavier/focus F3**, **réouvertures/icônes F4**. Signaler les étapes non exécutées, notamment le déplacement entre écrans si indisponible. Pour un défaut, préciser la fenêtre, l'échelle, le thème et la manipulation ; les captures restent facultatives.
 
-**Statut :** F4 est terminée sur son périmètre technique. La validation manuelle globale F attend ces essais ; G n'est pas lancée. Résultats et limites dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md).
+**Statut au 2 octobre 2026 : F2/F3/F4 validées par l'utilisateur**, sur la recette du commit `4d3a07d`, build Debug `1.19.1`. Les contrôles de thèmes/états, clavier/focus et réouvertures/icônes sont acceptés à 100/150/200/300 %. F atteint ses critères de sortie sur le périmètre retenu. La confirmation est globale, sans relevé séparé de résolution/moniteurs/taille du texte ; elle ne certifie pas la matrice ni le binaire Release de G. G n'est pas lancée. Résultats et limites dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md).

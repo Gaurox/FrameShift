@@ -1,6 +1,6 @@
 # FrameShift — Contrat du socle UI
 
-État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. Les contrastes, les compléments clavier et les ressources restent suivis en F2/F3/F4 ; la qualification de distribution relève de G.
+État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. F2/F3/F4 sont vérifiées automatiquement puis validées manuellement par l'utilisateur : F est terminée sur son périmètre retenu. La qualification de distribution relève de G, non commencée.
 
 ## Construction d'une nouvelle fenêtre
 
@@ -52,7 +52,7 @@ Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, ac
 | `CreateFieldRow` | Label natif avec mnémonique, nom accessible du champ, éditeur extensible, unité facultative. Le label long revient à la ligne et laisse de la place à l'éditeur. |
 | `CreateMeasuredActionButton` / `CreateActions` | Même taille pour validation et annulation/fermeture : base 140 × 34 logique, paire agrandie ensemble si un texte le requiert. Barre hors scroll; retour à la ligne des boutons et de leurs textes si nécessaire. Relier `AcceptButton`/`CancelButton` et leurs événements dans le formulaire. |
 | Couleurs et états F2 | `FrameShiftTheme` centralise les petits textes, les états erreur/succès et les trois fonds d'action principale lisibles avec texte blanc. La factory définit survol/appui ; le bouton peint l'état désactivé et annule un appui visuel à la perte de focus/désactivation. Le remappage préserve les styles propres aux grilles et l'héritage vide. Voir la notice thème et la recette F2. |
-| Clavier et focus F3 | Shell : bandeau, corps, statut, commandes ; annulation avant validation dans l'ordre Tab. Actions reconstruites : focus conservé par identité, repli sur Search si l'action disparaît. Join : flèches/Début/Fin sélectionnent, Ctrl+flèches déplacent, Suppr retire, Entrée/Espace sélectionnent sans confirmer ; ces commandes sont locales à la timeline. Glyphes × nommés via leurs cellules natives, canevas essentiels nommés. [Recette F3](UI_PHASE_F3_MANUAL_TESTS.md) à confirmer manuellement. |
+| Clavier et focus F3 | Shell : bandeau, corps, statut, commandes ; annulation avant validation dans l'ordre Tab. Actions reconstruites : focus conservé par identité, repli sur Search si l'action disparaît. Join : flèches/Début/Fin sélectionnent, Ctrl+flèches déplacent, Suppr retire, Entrée/Espace sélectionnent sans confirmer ; ces commandes sont locales à la timeline. Glyphes × nommés via leurs cellules natives, canevas essentiels nommés. [Recette F3](UI_PHASE_F3_MANUAL_TESTS.md) validée manuellement le 2 octobre 2026. |
 | `CreateStatusMessage` | Texte multiligne sélectionnable/copiable, lecture seule. Hauteur mesurée et plafonnée à 96 unités logiques, défilement vertical des détails longs pour préserver le footer. |
 | Ajouts dynamiques | Ajouter dans les mêmes tables de champs/sections; laisser WinForms hériter de la police et du DPI. Les composants recalculent leurs mesures/paddings dans leur contexte courant. Pas de tailles calculées à partir des anciennes bornes. |
 
@@ -78,7 +78,7 @@ Le testeur ouvre la démonstration compacte par défaut ; « Open editor sample 
 
 ```powershell
 dotnet build src/FrameShift/FrameShift.csproj --no-restore
-dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter FullyQualifiedName~UiFoundationTests -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter FullyQualifiedName~UiFoundationTests
 dotnet build tests/FrameShift.UiSamples/FrameShift.UiSamples.csproj --no-restore
 dotnet tests/FrameShift.UiSamples/bin/Debug/net8.0-windows/FrameShift.UiSamples.dll --check scratch/phase-b/samples-check.json
 ```
@@ -87,12 +87,12 @@ Le dernier appel construit des handles natifs **sans afficher de fenêtre**; les
 
 Les tests couvrent les conversions 96/144/192/288 DPI, les textes agrandis ×1/1,5/2/3, les corps longs, les commandes longues, les messages longs, les champs dynamiques, les allers-retours de largeur et les limites du dessin. Les grossissements de police sont des tests de mesure, **pas une simulation validante des changements DPI Windows**.
 
-**Isolation du banc UI :** F1 a observé des échecs variables dans les passages parallèles, y compris avec les anciens helpers ; la recette isolée des six classes UI passe **144 tests/0 échec**. Utiliser `-- xUnit.ParallelizeTestCollections=false` pour la vérification ciblée WinForms. Cette option est décrite dans la [configuration RunSettings de xUnit](https://xunit.net/docs/config-runsettings). L'isolation durable du banc et des états partagés reste à traiter en F4 ; aucune assertion n'est assouplie.
+**Isolation du banc UI :** F1 a observé des échecs variables dans les passages parallèles, y compris avec les anciens helpers ; sa recette isolée passe **144 tests/0 échec**. F4 fixe durablement l'isolation avec `WinFormsTestCollection` et la collection de préférences, sans chevauchement avec les autres collections et avec leurs dossiers de settings temporaires. Le passage normal F4 compte **207 tests/0 échec** ; le flag global `xUnit.ParallelizeTestCollections=false` n'est plus nécessaire. Aucune assertion n'est assouplie.
 
 La suite existante peut afficher des fenêtres. Le passage sans affichage utilise ce filtre, conservant les exclusions de B :
 
 ```powershell
-dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter "FullyQualifiedName!~ExplorerArrivals_BeforeAndAfterHandle&FullyQualifiedName!~AddVideosButton_AddsEveryPickerOccurrence&FullyQualifiedName!~ShownWindow_IsVisibleAndCanBeginClosing&FullyQualifiedName!~Closing_DoesNotBlockTheStaMessagePump&FullyQualifiedName!~RemoveNoisePickers_PreserveRequestedDialogResult" -- xUnit.ParallelizeTestCollections=false
+dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter "FullyQualifiedName!~ExplorerArrivals_BeforeAndAfterHandle&FullyQualifiedName!~AddVideosButton_AddsEveryPickerOccurrence&FullyQualifiedName!~ShownWindow_IsVisibleAndCanBeginClosing&FullyQualifiedName!~Closing_DoesNotBlockTheStaMessagePump&FullyQualifiedName!~RemoveNoisePickers_PreserveRequestedDialogResult"
 ```
 
 Il exclut 12 cas UI existants, distincts des 5 tests média déjà ignorés. Les réexécuter ultérieurement en environnement de recette adapté.
@@ -200,4 +200,4 @@ Le chrome possède uniquement ses icônes chargées ; les bitmaps de bandeau/out
 
 Les classes de tests WinForms rejoignent `WinFormsTestCollection`. Cette collection et celle des préférences ne s'exécutent pas en parallèle avec les autres collections, car thème, settings et GDI sont partagés dans le processus. Chacune possède un dossier de préférences temporaire ; les collections indépendantes gardent leur parallélisme. Conserver ce contrat pour les prochains tests UI plutôt que fournir un flag global à chaque commande de test.
 
-`FrameShift.UiSamples --resources <json>` est une mesure de développement cachée : handles natifs, dessin dans ses propres bitmaps et compteurs GDI/USER après échauffement. Ce mode n'affiche aucune fenêtre et ne capture pas le bureau. Il exerce le noyau chrome/composants/Main/picker/Progress, sans certifier le rendu à plusieurs DPI. Voir [le bilan F4 de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [la recette combinée de F](UI_PHASE_F4_MANUAL_TESTS.md). F4 est terminée techniquement ; les recettes manuelles F2/F3/F4 sont en attente, et G n'est pas lancé.
+`FrameShift.UiSamples --resources <json>` est une mesure de développement cachée : handles natifs, dessin dans ses propres bitmaps et compteurs GDI/USER après échauffement. Ce mode n'affiche aucune fenêtre et ne capture pas le bureau. Il exerce le noyau chrome/composants/Main/picker/Progress, sans certifier le rendu à plusieurs DPI. Voir [le bilan F4 de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [la recette combinée de F](UI_PHASE_F4_MANUAL_TESTS.md). F4 est terminée techniquement et les recettes manuelles F2/F3/F4 sont validées par l'utilisateur le 2 octobre 2026 ; G n'est pas lancé.
