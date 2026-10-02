@@ -2,7 +2,7 @@
 
 ## 1.20.0
 
-Release candidate prepared for installed-build qualification; not yet published.
+Published on 2 October 2026 after owner acceptance of the tested installer. GitHub tag: `1.20.0`.
 
 - **Shared Windows UI.** Migrated all 36 audited windows to the common WinForms layout contract: measured headers and sections, consistent margins and action buttons, content-sized compact dialogs, persistent commands and scrollable options when space is limited.
 - **DPI handling.** The application now uses `PerMonitorV2` in Debug and Release. Editor rails adapt to the available width, window limits follow the current monitor, and media coordinates remain independent of presentation scaling. Installed DPI and multi-monitor qualification is recorded separately in phase G.

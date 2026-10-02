@@ -1,6 +1,6 @@
 # FrameShift Product Guide
 
-Version de développement active : **1.20.0**, candidate non publiée (source : `src/FrameShift/FrameShift.csproj`). La qualification UI/DPI de la distribution est suivie dans [la phase G de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et sa [recette installée](UI_PHASE_G_MANUAL_TESTS.md).
+Version active : **1.20.0**, publiée le 2 octobre 2026 (source : `src/FrameShift/FrameShift.csproj`). La qualification UI/DPI de la distribution et sa portée sont consignées dans [la phase G de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et le [rapport de release](RELEASE_QUALIFICATION_1.20.0.md).
 
 Numérotation : `1.<version fonctionnelle>.<correctif>`. Une fonctionnalité démarre à `.0`; les petits
 correctifs incrémentent le dernier nombre (`1.14.1`, `1.14.2`, etc.).

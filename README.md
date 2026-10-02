@@ -34,7 +34,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.20.0** (candidate under qualification) · latest published release: **1.19.1** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.20.0** · latest published release: **[1.20.0](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,7 +46,7 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
 
-**Prepared for 1.20.0 — refreshed Windows interface.** Action dialogs and editors share consistent headers, spacing and buttons, adapt to the available screen space, and keep their main commands accessible. The release candidate also brings improved keyboard navigation, readable queue/error details, and PerMonitorV2 DPI handling. Installed-build qualification is tracked in [the release test checklist](docs/UI_PHASE_G_MANUAL_TESTS.md).
+**New in 1.20.0 — refreshed Windows interface.** Action dialogs and editors share consistent headers, spacing and buttons, adapt to the available screen space, and keep their main commands accessible. This release also brings improved keyboard navigation, readable queue/error details, and PerMonitorV2 DPI handling. Build evidence and the accepted qualification scope are recorded in [the release report](docs/RELEASE_QUALIFICATION_1.20.0.md).
 
 **Join Videos, introduced in 1.19.0.** Arrange multiple clips on a lightweight visual timeline, then join them as one track. FrameShift uses direct concat only for a strict compatible stream signature; otherwise SDR clips normalize automatically to H.264/AAC MP4 with ratio-preserving padding and generated silence where needed. HDR mixing/normalization is refused in this first version.
 
@@ -193,8 +193,8 @@ tests/
 - [Migration Plan](docs/MIGRATION_PLAN.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Release Notes 1.18.1](docs/RELEASE_NOTES_1.18.1.md)
-- [Release Notes 1.20.0 — Candidate](docs/RELEASE_NOTES_1.20.0.md)
-- [Installed Candidate Tests](docs/UI_PHASE_G_MANUAL_TESTS.md)
+- [Release Notes 1.20.0](docs/RELEASE_NOTES_1.20.0.md)
+- [Installed Release Tests](docs/UI_PHASE_G_MANUAL_TESTS.md)
 - [Release Notes 1.19.0](docs/RELEASE_NOTES_1.19.0.md)
 - [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)
 - [Dark / Light Theme Implementation](docs/DARK_LIGHT_THEME_IMPLEMENTATION.md)

@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version de développement active : `1.20.0`, candidate en qualification G (source : `src/FrameShift/FrameShift.csproj`).
+- version active : `1.20.0`, publiée le 2 octobre 2026 après acceptation de l'installateur (source : `src/FrameShift/FrameShift.csproj`).
 
 ## Stack figée
 

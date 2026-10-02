@@ -2,7 +2,7 @@
 
 ## Statut
 
-**Installateur accepté par l'utilisateur le 2 octobre 2026 ; publication GitHub autorisée et en préparation.** Le fichier validé est conservé avec les empreintes ci-dessous.
+**Installateur accepté et release publiée sur GitHub le 2 octobre 2026.** Le fichier validé est conservé avec les empreintes ci-dessous et son téléchargement public est vérifié identique.
 
 Les validations A–F restent conservées dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). Elles portent sur les builds de développement identifiés ; elles ne sont pas remplacées par une affirmation de recette de l'installation 1.20.0.
 
@@ -71,3 +71,12 @@ Après remise de l'installateur et de [la procédure G](UI_PHASE_G_MANUAL_TESTS.
 L'acceptation porte sur la candidate identifiée, sans modification de son code, de son installer ou de ses dépendances après recette. La publication est autorisée avec le tag exact **`1.20.0`** sur le commit source **`dd54287`**, et l'installateur de SHA-256 **`5B055346F20E4359249B84F64C62D3153EF0765819C996B9A51A52D557C2D6A6`**.
 
 **Portée des preuves :** le retour manuel est global. Il ne fournit pas de relevé distinct des résolutions, moniteurs, taille du texte, installations personnalisées ou résultats des cinq intégrations Whisper ignorées. Ces axes ne sont pas transformés en résultats automatiques ni en certification exhaustive de la matrice section 8. Aucun défaut P1 n'est signalé dans cette acceptation ; la décision de publication de l'artefact validé est explicite.
+
+## Publication vérifiée
+
+- [Release GitHub **1.20.0**](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0), identifiant `402150369`, publiée le **2 octobre 2026 à 22:58:40 CEST** (`2026-10-02T20:58:40Z`). Release stable, publique, marquée comme dernière version.
+- Tag annoté **`1.20.0`**, objet `2ba0838f0adb30e8aa97d43307420c3cf3a776c2`, pointant sur **`dd5428701ebe7bf62e46906ff89f49906a1a217d`**. Branche `main` poussée avec le programme et les documents de validation.
+- [Installateur téléchargeable](https://github.com/Gaurox/FrameShift/releases/download/1.20.0/FrameShift_1.20.0_Setup.exe), asset `606478277` : **167 335 254 octets**, SHA-256 GitHub identique au fichier accepté.
+- Téléchargement depuis cette release puis contrôle local : **SHA-256 `5B055346F20E4359249B84F64C62D3153EF0765819C996B9A51A52D557C2D6A6`**, taille identique ; aucune reconstruction ni substitution du binaire.
+- Description publique courte : mise à l'échelle Windows, standardisation des interfaces, détails d'erreur/clavier/stabilité. README et changelog actualisés après confirmation de publication.
+- Traces locales supplémentaires : `github-draft-metadata.json`, `github-published-metadata.json`, `github-download-verification.json`, et copie téléchargée sous `scratch/release-1.20.0/download-verification/`.

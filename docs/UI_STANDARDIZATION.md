@@ -10,7 +10,7 @@ Réconciliation F1 du 2 octobre 2026. Ce document décrit les choix visuels et e
 - [UI_DPI_AUDIT](UI_DPI_AUDIT.md) conserve l'ancien bilan à titre historique ; ses anciennes recettes de placement ne s'appliquent plus aux nouvelles fenêtres.
 - [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md) porte la qualification de distribution et la chaîne canonique de publication.
 
-Les 36 fenêtres C/D/E ont rejoint le socle et leur rendu a été accepté par l'utilisateur à 100/150/200/300 %. La portée des contrôles complémentaires reste celle consignée dans l'audit. F1 retire les chemins de compatibilité inutilisés et réconcilie ces documents. F2/F3/F4 sont vérifiées et acceptées sur leur périmètre ; G prépare la candidate installable 1.20.0, dont la recette globale et la décision de publication restent attendues.
+Les 36 fenêtres C/D/E ont rejoint le socle et leur rendu a été accepté par l'utilisateur à 100/150/200/300 %. La portée des contrôles complémentaires reste celle consignée dans l'audit. F1 retire les chemins de compatibilité inutilisés et réconcilie ces documents. F2/F3/F4 sont vérifiées et acceptées sur leur périmètre ; G a produit l'installateur 1.20.0, accepté puis publié sur GitHub. Le rapport de release conserve les résultats et les limites de preuve.
 
 ## 1. Composition commune
 
@@ -59,7 +59,7 @@ WinForms applique `AutoScaleMode.Dpi` depuis la référence 96 DPI. Le socle con
 
 Les polices sont héritées ; aucune multiplication manuelle de leur taille ou `Scale()` récursif en production. Peinture et hit-tests utilisent la même conversion ; les coordonnées média restent en secondes/frames, pixels source ou unités de page.
 
-`PerMonitorV2` est activé **en Debug et Release** pour la candidate 1.20.0. Le testeur l'utilise également. La qualification de la distribution installée et la décision de publication restent suivies en G.
+`PerMonitorV2` est activé **en Debug et Release** et distribué en 1.20.0 après acceptation utilisateur. Le testeur l'utilise également. Les résultats de qualification et la décision de publication sont consignés en G.
 
 ## 3. Bandeau et hiérarchie du texte
 

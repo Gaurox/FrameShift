@@ -1,6 +1,6 @@
 # FrameShift — Contrat du socle UI
 
-État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. F2/F3/F4 sont vérifiées automatiquement puis validées manuellement par l'utilisateur : F est terminée sur son périmètre retenu. G prépare désormais la candidate 1.20.0 ; la recette installée et la décision de publication restent attendues.
+État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. F2/F3/F4 sont vérifiées automatiquement puis validées manuellement par l'utilisateur : F est terminée sur son périmètre retenu. G a produit la release 1.20.0, acceptée par l'utilisateur et publiée avec l'installateur testé ; sa portée et les limites de preuve sont consignées dans le rapport de release.
 
 ## Construction d'une nouvelle fenêtre
 
@@ -58,7 +58,7 @@ Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, ac
 
 F1 a retiré les anciennes factories fixes, les anciens `CreateFill*`, les roots/spacers historiques et les placements de footers/sections devenus inutilisés. `FrameShiftUiLayout` conserve `MeasureActionButton`. Les panneaux de dessin `CreateFramedPanel(Color, …)` et `CreatePreviewPanel`, les shells actuels et leurs métriques gardent leurs usages validés.
 
-`PerMonitorV2` est configuré dans le `.csproj` applicatif **pour Debug et Release** et initialisé par `ApplicationConfiguration.Initialize()` avant les fenêtres. Cette activation Release appartient à la candidate 1.20.0 en qualification G ; elle ne constitue pas à elle seule une validation de la matrice installée. Le projet de démonstration utilise également `PerMonitorV2`; ce projet de test n'est pas distribué par l'installateur.
+`PerMonitorV2` est configuré dans le `.csproj` applicatif **pour Debug et Release** et initialisé par `ApplicationConfiguration.Initialize()` avant les fenêtres. Cette activation Release est distribuée en 1.20.0 après acceptation de l'installateur ; la portée des preuves reste celle du rapport G. Le projet de démonstration utilise également `PerMonitorV2`; ce projet de test n'est pas distribué par l'installateur.
 
 ## Exemples actifs pour une nouvelle fenêtre
 

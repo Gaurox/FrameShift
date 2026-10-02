@@ -1,6 +1,6 @@
 # FrameShift 1.20.0
 
-The owner accepted the installer and authorized GitHub publication on 2 October 2026. The installer identity and qualification scope are recorded in [the release report](RELEASE_QUALIFICATION_1.20.0.md).
+Published on 2 October 2026 after owner acceptance: [GitHub release 1.20.0](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0). The installer identity and qualification scope are recorded in [the release report](RELEASE_QUALIFICATION_1.20.0.md).
 
 ## GitHub release title
 
