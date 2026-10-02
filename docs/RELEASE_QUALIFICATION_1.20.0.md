@@ -2,7 +2,7 @@
 
 ## Statut
 
-**Installateur terminé le 2 octobre 2026 et disponible pour essais ; non publié.** Candidate autorisée : préparer l'installateur et remettre le programme à l'utilisateur. Publication explicitement différée jusqu'à sa vérification et son feu vert.
+**Installateur accepté par l'utilisateur le 2 octobre 2026 ; publication GitHub autorisée et en préparation.** Le fichier validé est conservé avec les empreintes ci-dessous.
 
 Les validations A–F restent conservées dans [l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). Elles portent sur les builds de développement identifiés ; elles ne sont pas remplacées par une affirmation de recette de l'installation 1.20.0.
 
@@ -64,8 +64,10 @@ Dans `scratch/release-1.20.0/`, hors distribution :
 - `FrameShift_1.20.0_Setup.exe.sha256` : empreinte de l'installateur ;
 - `document-links.json` : vérification des liens.
 
-## Vérifications installées attendues
+## Acceptation utilisateur et décision de publication
 
-Utiliser [la procédure G](UI_PHASE_G_MANUAL_TESTS.md). Les essais d'installation, de mise à jour 1.19.1, d'Explorer, de DPI réels et de sorties métier restent à confirmer par l'utilisateur sur la candidate identifiée. Aucun environnement non exécuté n'est déclaré validé.
+Après remise de l'installateur et de [la procédure G](UI_PHASE_G_MANUAL_TESTS.md), l'utilisateur confirme : **« ok validé. push le programme sur githuib et publie la release avec le tag 1.20.0 et l'installeur à télécharger »**, avec une demande de description courte.
 
-**Critères de sortie G : non atteints à ce stade.** La préparation d'un installateur ne vaut pas approbation de publication.
+L'acceptation porte sur la candidate identifiée, sans modification de son code, de son installer ou de ses dépendances après recette. La publication est autorisée avec le tag exact **`1.20.0`** sur le commit source **`dd54287`**, et l'installateur de SHA-256 **`5B055346F20E4359249B84F64C62D3153EF0765819C996B9A51A52D557C2D6A6`**.
+
+**Portée des preuves :** le retour manuel est global. Il ne fournit pas de relevé distinct des résolutions, moniteurs, taille du texte, installations personnalisées ou résultats des cinq intégrations Whisper ignorées. Ces axes ne sont pas transformés en résultats automatiques ni en certification exhaustive de la matrice section 8. Aucun défaut P1 n'est signalé dans cette acceptation ; la décision de publication de l'artefact validé est explicite.
