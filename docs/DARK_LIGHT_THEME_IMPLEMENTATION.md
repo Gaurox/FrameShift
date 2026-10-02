@@ -4,7 +4,9 @@
 
 Cette notice fige le périmètre de la première implémentation clair/sombre de FrameShift.
 
-Elle complète `PROJECT_RULES.md`, `ARCHITECTURE_FREEZE.md`, `UI_STANDARDIZATION.md` et `UI_DPI_AUDIT.md`. En cas de divergence, ces documents de référence restent prioritaires.
+Elle complète les règles projet et le [contrat UI actif](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et [l'audit UI/DPI officiel](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` conserve le bilan ancien à titre historique. Les preuves et les corrections restantes des états/contrastes sont suivies dans la phase F.
+
+Portée actuelle : la préférence System est résolue au démarrage ou au changement de préférence ; le rafraîchissement en direct concerne les fenêtres ouvertes du même processus. Cette notice ne garantit pas le suivi automatique d'un changement de thème Windows, les autres processus ou le contraste de tous les états locaux.
 
 Objectif :
 - proposer `Système`, `Clair` et `Sombre` dans les paramètres ;
@@ -76,13 +78,27 @@ Chaque nouveau processus FrameShift relit la préférence. Aucune synchronisatio
 
 `FrameShiftTheme` reste l'unique source des couleurs UI. Il expose la palette effective claire ou sombre ; les fenêtres ne choisissent jamais elles-mêmes un thème.
 
-Règles :
-- `PrimaryBlue` reste `#8EBAF3` ;
-- `SecondaryBlue` reste `#4D79B4` ;
-- aucune nouvelle couleur d'accent n'est introduite ;
-- seuls les neutres reçoivent des équivalents sombres : page, surface, bordure, textes, surface accentuée et hover ;
-- les couleurs sombres exactes sont définies uniquement dans `FrameShiftTheme` et validées par contraste avant généralisation ;
-- en mode sombre, `PrimaryBlue` peut remplacer `SecondaryBlue` pour un petit texte accentué si le contraste de ce dernier est insuffisant ; aucun remplacement local arbitraire n'est autorisé.
+Règles après F2 :
+- les bleus d'identité `PrimaryBlue` (`#8EBAF3`) et `SecondaryBlue` (`#4D79B4`) sont conservés pour le dessin ; ils ne prescrivent plus le fond d'un bouton ou la couleur d'un petit texte ;
+- les dérivés bleus lisibles sont définis uniquement dans `FrameShiftTheme`, par rôle ; aucun remplacement local arbitraire ;
+- les textes informatifs, y compris erreur/succès, suivent la palette effective ;
+- les contrôles natifs et les surfaces sobres de Files gardent leur composition.
+
+| Rôle | Clair | Sombre |
+|---|---|---|
+| `AccentText` — textes accentués, bordure de choix actif/focus | `#3C6294` | `#94BEF3` |
+| `TextMuted` — informations secondaires atténuées | `#5F6B7E` | `#B0BDCF` |
+| `ErrorText` | `#C62828` | `#FF9E9E` |
+| `SuccessText` | `#1C7446` | `#78C9A0` |
+| `PrimaryButtonBackground` — texte blanc | `#456FA5` | `#456FA5` |
+| `PrimaryButtonHover` — texte blanc | `#3D6497` | `#3D6497` |
+| `PrimaryButtonPressed` — texte blanc | `#355983` | `#355983` |
+
+La cible des textes utiles est **4,5:1** sur `Surface`, `PageBackground`, `AccentSoft` et `AccentSoftHover`. Les tests calculent la luminance sRGB des aplats, sans prétendre certifier tous les pixels anticrénelés ou l'accessibilité globale. Les captions blanches des actions principales donnent **5,16 / 6,05 / 7,22:1** au repos/survol/appui. Les textes désactivés ne constituent pas une exigence de conformité supplémentaire : le bouton commun se dessine sur `PageBackground`, avec `TextMuted` et une bordure atténuée. Les cartes radio conservent leur sélection avec un glyphe inactif.
+
+Le remappage clair ↔ sombre traite les styles généraux des grilles, les overrides de colonne, en-tête, template, ligne et cellule déjà présents. Les couleurs hors palette et les couleurs vides héritées sont conservées ; les lignes partagées ne sont pas dédoublées pour cette opération. Les états Progress mis en cache et les erreurs Join suivent les rôles sémantiques. Le rafraîchissement d'une grille n'ajoute aucune bande alternée.
+
+Preuves et état de recette : [audit F2](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [procédure F2](UI_PHASE_F2_MANUAL_TESTS.md). La validation visuelle historique ci-dessous ne vaut pas validation des nouvelles couleurs F2.
 
 Les helpers existants restent les points d'entrée :
 - `FrameShiftUiFactory` pour les contrôles standards ;
@@ -135,9 +151,9 @@ La première version n'inclut pas :
 
 - certains contrôles WinForms natifs peuvent conserver des zones claires en mode sombre ;
 - `ContextMenuStrip`, `DataGridView`, contrôles désactivés, focus clavier et sélection demandent une vérification spécifique ;
-- les couleurs mémorisées dans des champs statiques, notamment dans `ProgressForm`, peuvent figer la mauvaise palette si elles sont initialisées trop tôt ;
+- les couleurs d'état affectées à des contrôles doivent suivre le changement de palette ; F2 remappe notamment les résumés et détails mémorisés dans Progress ;
 - les handlers `Paint` et couleurs codées en dur peuvent mélanger couleur UI et couleur de contenu ;
-- le bleu secondaire fixe peut manquer de contraste comme petit texte sur certaines surfaces sombres ;
+- le bleu secondaire fixe ne doit plus remplacer `AccentText` pour un petit texte utile ;
 - l'attribut DWM de barre de titre ne réagit pas de façon identique sur toutes les versions prises en charge de Windows 10/11 ;
 - toute modification involontaire de taille ou de padding peut réintroduire une régression DPI.
 

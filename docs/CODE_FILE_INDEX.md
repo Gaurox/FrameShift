@@ -268,6 +268,16 @@ Formulaires :
 - `src/FrameShift/Windows/Forms/RotateFlipVideoForm.cs`
 
 Helpers UI :
+- `src/FrameShift/Windows/Helpers/FrameShiftWindowPolicy.cs` — politique DPI, police possédée et contraintes bornées au moniteur.
+- `src/FrameShift/Windows/Helpers/FrameShiftDialogLayout.cs` — shell compact, corps défilant, statut/actions persistants et hauteur initiale mesurée.
+- `src/FrameShift/Windows/Helpers/EditorPreviewLifetime.cs` — sérialisation/annulation des aperçus et libération des bitmaps tardifs.
+- `src/FrameShift/Windows/Controls/FrameShiftHeader.cs` — bandeau mesuré, métadonnées complètes et renouvellement DPI de l'icône.
+- `src/FrameShift/Windows/Controls/FrameShiftActionButton.cs` — bouton natif à rendu arrondi et dimensions mesurées.
+- `src/FrameShift/Windows/Controls/FrameShiftActionBar.cs` — commandes de même taille, texte long et retour à la ligne.
+- `src/FrameShift/Windows/Controls/FrameShiftFieldRow.cs` — mesure des champs et labels dans l'espace disponible.
+- `src/FrameShift/Windows/Controls/FrameShiftStatusMessage.cs` — statut natif multiligne copiable, hauteur mesurée/plafonnée.
+- `src/FrameShift/Windows/Controls/FrameShiftEditorWorkspace.cs` — rail d'options replié sous l'aperçu en largeur réduite.
+- `src/FrameShift/Windows/Controls/FrameShiftToolTile.cs` — outils PDF mesurés et bitmap d'icône possédé.
 - `src/FrameShift/Windows/Helpers/ControlHelper.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftCropEditorUi.cs`
 - `src/FrameShift/Windows/Helpers/FrameShiftEditorShellUi.cs`
@@ -296,16 +306,23 @@ Helpers UI :
 
 Responsabilités UI partagées :
 - `FrameShiftUiMetrics.cs` centralise les métriques de géométrie UI actives : marges, hauteurs standard, footer, gaps, rayons, largeurs de rail.
-- `FrameShiftUiLayout.cs` centralise les placements réutilisables sensibles à la largeur utile : sections titrées, footer, rangées de boutons.
-- `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` portent les shells communs des écrans riches avec `TableLayoutPanel`, spacer explicite et hiérarchie stable.
+- `FrameShiftUiLayout.cs` conserve la mesure commune des boutons. Les anciens placements fixes sans consommateurs ont été retirés en F1.
+- `FrameShiftDialogLayout.cs` compose bandeau/corps/statut/actions ; `FrameShiftEditorShellUi.cs` et `FrameShiftCropEditorUi.cs` composent les variantes aperçu/options et temporelles, avec repli et défilement de secours. Les marges viennent du shell, sans ancien spacer concurrent.
 - `FrameShiftWindowChrome.cs` reste le point d’entrée commun pour la barre de titre, `ShowIcon` et la sélection d’icône FrameShift / FrameShift AI.
-- `FrameShiftTheme.cs` résout une seule fois la palette effective `System` / `Light` / `Dark` avant la première fenêtre ; `FrameShiftUiSettings.cs` persiste ce choix séparément des réglages IA.
+- `FrameShiftTheme.cs` résout la palette `System` / `Light` / `Dark` à l'initialisation ou au changement de préférence et rafraîchit les fenêtres ouvertes du même processus ; `FrameShiftUiSettings.cs` persiste ce choix séparément des réglages IA.
 - `FrameShiftMenuRenderer.cs` applique les couleurs de la palette aux menus WinForms appartenant à FrameShift.
-- La stratégie DPI visible dans le code actif repose aujourd’hui sur `AutoScaleMode = AutoScaleMode.Dpi` sur les dialogues concernés, l’usage de métriques partagées et des `MinimumSize` explicites sur les écrans riches.
+- `FrameShiftWindowPolicy.cs` fixe la référence 96 DPI, `AutoScaleMode.Dpi`, la police et les minima clients reconstruits/bornés au moniteur. `FrameShiftUiMetrics.cs` convertit seulement les dimensions manuelles ; les composants mesurent le texte et le footer reste indépendant du corps défilant. `PerMonitorV2` applicatif reste limité à Debug jusqu'à la qualification G.
 
 ## Tests
 
-Unit tests actifs :
+Tests et exemples UI actifs :
+- `tests/FrameShift.Tests/UiFoundationTests.cs` — primitives, textes agrandis, bornage de fenêtre, dessin et corps défilant cachés.
+- `tests/FrameShift.Tests/UiPilotTests.cs` — géométrie et états des cinq pilotes C sans affichage.
+- `tests/FrameShift.Tests/UiD3Tests.cs` — pickers IA, fermeture/téléchargement simulé et réglages sans affichage.
+- `tests/FrameShift.Tests/UiEditorTests.cs` — sept éditeurs E, coordonnées média, fermeture modale et durée de vie des aperçus.
+- `tests/FrameShift.UiSamples/Program.cs` — exemples compacte/éditeur et mode --check caché.
+- `tests/FrameShift.UiSamples/D3LauncherForm.cs` — recette manuelle D3 via `TEST_PHASE_D3.cmd`.
+- `tests/FrameShift.UiSamples/ELauncherForm.cs` — recette manuelle des sept éditeurs via `TEST_PHASE_E.cmd`.
 - `tests/FrameShift.Tests/UiD1Tests.cs` — fenêtres D1 cachées, redimensionnement, progression, annulation et périmètre des actions.
 - `tests/FrameShift.Tests/UiD2Tests.cs` — variantes D2 cachées, réglages, dimensions, champs liés et retours tardifs des aperçus après fermeture.
 - `tests/FrameShift.UiSamples/D2LauncherForm.cs` — recette manuelle des 12 fenêtres D2 via `TEST_PHASE_D2.cmd`, réglages interceptés et aperçus réels.
@@ -331,6 +348,8 @@ Unit tests actifs :
 - `tests/FrameShift.Tests/VideoCompressionPlannerTests.cs`
 - `tests/FrameShift.Tests/VideoConversionPlannerTests.cs`
 - `tests/FrameShift.Tests/FrameShiftThemeTests.cs`
+- `tests/FrameShift.Tests/UiColorStateTests.cs` — contrastes calculés, peinture en mémoire des états, remappage des overrides de grille et des états Progress.
+- `tests/FrameShift.UiSamples/F2LauncherForm.cs` — recette ciblée via `TEST_PHASE_F2.cmd`, thèmes temporaires sans sauvegarde et fenêtres non modales.
 - `tests/FrameShift.Tests/JoinVideosSettingsTests.cs`
 - `tests/FrameShift.Tests/JoinVideosPlannerTests.cs`
 - `tests/FrameShift.Tests/JoinVideosFormTests.cs`
@@ -380,4 +399,4 @@ Assets de test utiles :
 - `UpscaleRawVideoPipeline.cs` porte le chemin rapide par défaut de `upscale-video` : FFmpeg décode/encode en `rawvideo` mémoire, `UpscaleVideoAction` garde un fallback automatique vers le pipeline BMP historique, et `UpscaleFrameProcessor.cs` réutilise maintenant ses buffers/tensors pour réduire les allocations par frame. Le profilage (juin 2026) a montré ce pipeline borné par l'inférence ONNX DirectML (copies/conversions/I/O négligeables) ; `UpscaleFrameProcessor` retourne désormais l'image upscalée sans `.Clone()` plein-frame redondant (resize in-place sur le chemin target≠natif), réduisant le pic mémoire sans changer la sortie.
 - `BackgroundRemovalEngine.cs` utilise désormais `ProcessPixelRows` + accès direct aux buffers `DenseTensor` (au lieu des indexeurs pixel `image[x,y]` / `tensor[0,c,y,x]`) pour la construction du tenseur d'entrée, la construction du masque et le composite final ; gain mesuré ×5–×22 sur ces phases CPU pour les grandes images via le chemin `fast`/Bria ; les chemins `high-resolution` restent bornés par l'inférence CPU ; sortie bit-à-bit identique.
 - `MainForm.cs` ouvre `SettingsForm.cs`, qui porte la section "AI models folder" avec Browse, Reset to default et Open folder.
-- La référence documentaire DPI/UI du projet est maintenant `docs/UI_DPI_AUDIT.md`.
+- Références UI actives : [contrat et exemples](UI_FOUNDATION.md), [standard visuel](UI_STANDARDIZATION.md), [feuille de route et preuves](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` conserve le bilan ancien à titre historique.

@@ -1,10 +1,10 @@
-# Socle UI — implémentation B
+# FrameShift — Contrat du socle UI
 
-État du 28 septembre 2026 : **B validée sur le périmètre du socle**. Builds et tests automatisés verts; huit captures manuelles des structures compacte et éditeur reçues à 100/150/200/300 %, puis validation explicite de tous les tests manuels par l'utilisateur, y compris défilement, contenu dynamique, redimensionnement, clavier, transitions entre écrans et texte Windows agrandi. Les cinq pilotes C sont validés par l'utilisateur à 100/150/200/300 % le 29 septembre 2026. La recette manuelle restante est également validée ; les critères techniques de sortie de C sont atteints, avec GO proposé pour D1. Les captures Image to PDF concernent la fonction installée historique, dont la migration est prévue en E. La [feuille de route](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) détaille les preuves et les limites conservées.
+État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. Les contrastes, les compléments clavier et les ressources restent suivis en F2/F3/F4 ; la qualification de distribution relève de G.
 
-## Construction des prochains pilotes
+## Construction d'une nouvelle fenêtre
 
-Choix retenu : composition de contrôles WinForms; aucune nouvelle base de formulaire. Réévaluer ce choix au bilan de C seulement si les pilotes démontrent un besoin.
+Choix retenu et éprouvé par C/D/E : composition de contrôles WinForms. Le formulaire compose ses options et relie la validation au métier ; la géométrie commune reste dans les composants existants.
 
 ```csharp
 SuspendLayout();
@@ -50,18 +50,33 @@ Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, ac
 | `CreateTimeline` | Variante éditeur : aperçu flexible au-dessus, commandes temporelles en dessous. Leur viewport défile si leur hauteur mesurée dépasse 60 % de l'espace intérieur disponible ; le footer reste indépendant. |
 | `CreateFieldRow` | Label natif avec mnémonique, nom accessible du champ, éditeur extensible, unité facultative. Le label long revient à la ligne et laisse de la place à l'éditeur. |
 | `CreateMeasuredActionButton` / `CreateActions` | Même taille pour validation et annulation/fermeture : base 140 × 34 logique, paire agrandie ensemble si un texte le requiert. Barre hors scroll; retour à la ligne des boutons et de leurs textes si nécessaire. Relier `AcceptButton`/`CancelButton` et leurs événements dans le formulaire. |
+| Couleurs et états F2 | `FrameShiftTheme` centralise les petits textes, les états erreur/succès et les trois fonds d'action principale lisibles avec texte blanc. La factory définit survol/appui ; le bouton peint l'état désactivé et annule un appui visuel à la perte de focus/désactivation. Le remappage préserve les styles propres aux grilles et l'héritage vide. Voir la notice thème et la recette F2. |
 | `CreateStatusMessage` | Texte multiligne sélectionnable/copiable, lecture seule. Hauteur mesurée et plafonnée à 96 unités logiques, défilement vertical des détails longs pour préserver le footer. |
 | Ajouts dynamiques | Ajouter dans les mêmes tables de champs/sections; laisser WinForms hériter de la police et du DPI. Les composants recalculent leurs mesures/paddings dans leur contexte courant. Pas de tailles calculées à partir des anciennes bornes. |
 
-Les anciennes entrées `CreateFixed*`, `CreateFillHeader`, `CreateFillSection`, `CreateRootLayout`, `LayoutFooterButtons`, etc. restent temporairement compatibles avec leurs consommateurs. Elles ne constituent pas le contrat des prochains pilotes. Migration par C/D/E, suppression des chemins inutilisés en F. Ne pas remplacer aveuglément une section à coordonnées fixes par une section AutoSize.
+F1 a retiré les anciennes factories fixes, les anciens `CreateFill*`, les roots/spacers historiques et les placements de footers/sections devenus inutilisés. `FrameShiftUiLayout` conserve `MeasureActionButton`. Les panneaux de dessin `CreateFramedPanel(Color, …)` et `CreatePreviewPanel`, les shells actuels et leurs métriques gardent leurs usages validés.
 
 `PerMonitorV2` est configuré dans le `.csproj` applicatif **uniquement pour Debug** et initialisé par `ApplicationConfiguration.Initialize()` avant les fenêtres. Release garde sa configuration antérieure. Le projet de démonstration utilise toujours `PerMonitorV2`; ce projet de test n'est pas distribué par l'installateur.
+
+## Exemples actifs pour une nouvelle fenêtre
+
+| Besoin | Exemple à suivre |
+|---|---|
+| Composition compacte minimale et contenu dynamique | [SampleForm(editor: false)](../tests/FrameShift.UiSamples/Program.cs), puis [InterpolateVideoForm](../src/FrameShift/Windows/Forms/InterpolateVideoForm.cs) pour l'ajustement de hauteur initiale |
+| Aperçu flexible avec options à rail repliable | [SampleForm(editor: true)](../tests/FrameShift.UiSamples/Program.cs), puis [CropImageForm](../src/FrameShift/Windows/Forms/CropImageForm.cs) |
+| Options temporelles sous l'aperçu | [CutVideoForm](../src/FrameShift/Windows/Forms/CutVideoForm.cs) et son helper de durée de vie |
+| Choix courts en cartes natives | [CompressImageForm](../src/FrameShift/Windows/Forms/CompressImageForm.cs) |
+| Liste radio verticale et options conditionnelles | [CreateSubtitlesPickerForm](../src/FrameShift/Windows/AI/CreateSubtitlesPickerForm.cs) |
+
+Le testeur ouvre la démonstration compacte par défaut ; « Open editor sample » ouvre la seconde structure. Son mode `--check <fichier-json>` construit les deux structures et les lanceurs **sans les afficher**. Pour une nouvelle fenêtre, reprendre la composition et les composants ; les faux champs et tailles des cas métier ne sont pas des prescriptions.
+
+[TEST_PHASE_F2.cmd](../TEST_PHASE_F2.cmd) ouvre une recette ciblée à fenêtres non modales, avec thème temporaire dans le processus et états Progress simulés. Elle réutilise les composants de production ; voir [les manipulations F2](UI_PHASE_F2_MANUAL_TESTS.md). Aucun lancement visible n'est requis pour les tests automatisés.
 
 ## Validation par commandes
 
 ```powershell
 dotnet build src/FrameShift/FrameShift.csproj --no-restore
-dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter FullyQualifiedName~UiFoundationTests
+dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter FullyQualifiedName~UiFoundationTests -- xUnit.ParallelizeTestCollections=false
 dotnet build tests/FrameShift.UiSamples/FrameShift.UiSamples.csproj --no-restore
 dotnet tests/FrameShift.UiSamples/bin/Debug/net8.0-windows/FrameShift.UiSamples.dll --check scratch/phase-b/samples-check.json
 ```
@@ -70,10 +85,12 @@ Le dernier appel construit des handles natifs **sans afficher de fenêtre**; les
 
 Les tests couvrent les conversions 96/144/192/288 DPI, les textes agrandis ×1/1,5/2/3, les corps longs, les commandes longues, les messages longs, les champs dynamiques, les allers-retours de largeur et les limites du dessin. Les grossissements de police sont des tests de mesure, **pas une simulation validante des changements DPI Windows**.
 
-La suite existante peut afficher des fenêtres. Le passage sans affichage de B utilise ce filtre :
+**Isolation du banc UI :** F1 a observé des échecs variables dans les passages parallèles, y compris avec les anciens helpers ; la recette isolée des six classes UI passe **144 tests/0 échec**. Utiliser `-- xUnit.ParallelizeTestCollections=false` pour la vérification ciblée WinForms. Cette option est décrite dans la [configuration RunSettings de xUnit](https://xunit.net/docs/config-runsettings). L'isolation durable du banc et des états partagés reste à traiter en F4 ; aucune assertion n'est assouplie.
+
+La suite existante peut afficher des fenêtres. Le passage sans affichage utilise ce filtre, conservant les exclusions de B :
 
 ```powershell
-dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter "FullyQualifiedName!~ExplorerArrivals_BeforeAndAfterHandle&FullyQualifiedName!~AddVideosButton_AddsEveryPickerOccurrence&FullyQualifiedName!~ShownWindow_IsVisibleAndCanBeginClosing&FullyQualifiedName!~Closing_DoesNotBlockTheStaMessagePump&FullyQualifiedName!~RemoveNoisePickers_PreserveRequestedDialogResult"
+dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter "FullyQualifiedName!~ExplorerArrivals_BeforeAndAfterHandle&FullyQualifiedName!~AddVideosButton_AddsEveryPickerOccurrence&FullyQualifiedName!~ShownWindow_IsVisibleAndCanBeginClosing&FullyQualifiedName!~Closing_DoesNotBlockTheStaMessagePump&FullyQualifiedName!~RemoveNoisePickers_PreserveRequestedDialogResult" -- xUnit.ParallelizeTestCollections=false
 ```
 
 Il exclut 12 cas UI existants, distincts des 5 tests média déjà ignorés. Les réexécuter ultérieurement en environnement de recette adapté.
@@ -99,7 +116,7 @@ Ces fenêtres utilisent des valeurs fictives. Aucun média, traitement FFmpeg, f
 
 ### Contrat de géométrie figé — 29 septembre 2026
 
-À réutiliser dans tous les menus lors de leur migration, sans variantes locales selon l'action ou le rôle principal/secondaire :
+À réutiliser pour toute nouvelle fenêtre et toute modification, sans variantes locales selon l'action ou le rôle principal/secondaire. Les tailles sont des références mesurées, agrandies ensemble lorsque le texte l'exige :
 
 | Élément | Référence à 96 DPI |
 |---|---|
@@ -163,7 +180,7 @@ Download Model affiche les erreurs complètes dans une zone native multiligne de
 
 Recette : double-clic sur `TEST_PHASE_D3.cmd`, puis [procédure D3](UI_PHASE_D3_MANUAL_TESTS.md). Download et BRIA sont simulés explicitement ; les pickers réels rapportent les réglages sans export. Aperçu Remove Noise facultatif avec modèle déjà installé. Le 1er octobre, l'utilisateur confirme « je valide toutes les fenetres dans toutes les mises a l'échelle » : le rendu D3 est validé à 100/150/200/300 %. Les manipulations complémentaires, le multi-écran et le texte Windows agrandi ne sont pas confirmés séparément par ce retour. Les 24 fenêtres D sont migrées et acceptées visuellement. D3 est sauvegardée sous `50a4626` le 2 octobre avant le GO E. Release et l'installateur restent hors de cette livraison.
 
-## Extension E — sept éditeurs, recette manuelle en attente
+## Extension E — sept éditeurs, rendu UI/DPI validé
 
 Cut Audio et Create GIF suivent le shell temporel validé : aperçu au-dessus, contrôles temporels en dessous, défilement de secours et commandes persistantes. Crop Video, Burn Subtitles, Remove Object et Image to PDF utilisent le shell à rail repliable. Join conserve sa timeline et ses commandes spécifiques dans le shell. Tous emploient les mêmes bandeaux, boutons et métriques ; les tailles par défaut réservent l'espace de travail utile, avec saisies bornées lorsque leur valeur est courte.
 
@@ -173,4 +190,4 @@ Après annulation d'une fermeture dans `FormClosing`, poster la fermeture finale
 
 Les coordonnées média restent séparées des mesures UI. Waveform et timeline temporelle utilisent secondes/frames ; crop et masque utilisent pixels source ; PDF conserve coordonnées normalisées et unités de page. Poignées, hit-tests, règles, snapping et marges dessinées utilisent des métriques DPI. `SeekTrackBar` calcule ses valeurs depuis le canal et les dimensions du curseur natifs. Les boutons de bibliothèque PDF utilisent `FrameShiftToolTile`, un bouton natif qui mesure sa légende et reconstruit son icône au DPI courant ; le footer reste celui des autres fenêtres.
 
-Recette : double-clic sur `TEST_PHASE_E.cmd`, puis [procédure E](UI_PHASE_E_MANUAL_TESTS.md). Les aperçus sont réels ; les validations des réglages restent sans export final dans le lanceur. Apply Remove Object et Print PDF gardent leurs opérations réelles sur clic manuel. La validation utilisateur commence par le design à 100 %, puis les paliers élevés, interactions et comparaison des sorties. Les tests cachés ne certifient pas le DPI réel. F/G restent en attente de validation E.
+Recette : double-clic sur `TEST_PHASE_E.cmd`, puis [procédure E](UI_PHASE_E_MANUAL_TESTS.md). Les aperçus sont réels ; les validations des réglages restent sans export final dans le lanceur. Apply Remove Object et Print PDF gardent leurs opérations réelles sur clic manuel. Le 2 octobre, après le commit `902f2a9`, l'utilisateur valide E « dans toutes les échélles » : le rendu des sept éditeurs est accepté à 100/150/200/300 %. Les contrôles complémentaires de la recette ne sont pas confirmés séparément par ce retour. Les tests cachés ne certifient pas le DPI réel. F1 réalise le nettoyage des anciens chemins et la réconciliation documentaire. Le suivi de F2/F3/F4 et de la qualification G reste dans l'audit.

@@ -1,6 +1,6 @@
 # Phase E — recette des sept éditeurs
 
-Lot commencé le **2 octobre 2026**, après le commit D3 `50a4626` et le GO utilisateur « commite et go pour E ». Les changements E sont dans le build de développement. Leur validation manuelle reste à faire.
+Lot commencé le **2 octobre 2026**, après le commit D3 `50a4626` et le GO utilisateur « commite et go pour E ». Les changements E et leurs correctifs sont sauvegardés sous `902f2a9`. Le même jour, l'utilisateur valide le **rendu des sept éditeurs à 100/150/200/300 %** (« E phalidé dans toutes les échélles »). Les manipulations complémentaires, le multi-écran, la taille du texte indépendante et les exports réels ne sont pas confirmés séparément. Les étapes ci-dessous restent la procédure de référence pour ces contrôles.
 
 ## Ouvrir par double-clic
 
@@ -22,7 +22,7 @@ Le blocage signalé sur Create GIF/Crop Video est corrigé dans le testeur recon
 4. Pour GIF, fermer aussi pendant **Preview GIF**. Pour Crop, fermer après avoir changé de frame et le rectangle de sélection.
 5. Réouvrir et valider avec la commande principale : les réglages doivent être rapportés au lanceur, qui doit permettre une nouvelle ouverture.
 
-Les cinq autres éditeurs ont reçu la correction du même mécanisme de fermeture. Leur recette reste à faire après confirmation de ces deux premiers cas.
+Les cinq autres éditeurs ont reçu la correction du même mécanisme de fermeture. Le rendu des sept fenêtres est désormais validé aux quatre échelles ; la vérification spécifique des routes de fermeture reste à confirmer séparément.
 
 **Image to PDF — ajustements du 2 octobre :** contrôler que « Remove selected » et les autres boutons d'outils ont les mêmes dimensions, et que les trois champs du bloc Page partagent exactement leurs bords gauche et droit, y compris après redimensionnement.
 
@@ -61,7 +61,7 @@ Le lanceur qualifie l'interface et les aperçus, pas les exports finaux. Pour co
 - annuler une opération puis fermer, vérifier le nettoyage des temporaires et l'absence de processus FFmpeg restant ;
 - vérifier qu'aucune console ne s'affiche et que les erreurs/logs sont lisibles.
 
-Une validation de la distribution installée ou de l'installateur relève de la qualification finale G et de la chaîne canonique du projet. Les contrôles cachés automatisés ne prouvent pas le rendu DPI réel ; la phase E ne sera clôturée qu'après les validations de sa recette.
+Une validation de la distribution installée ou de l'installateur relève de la qualification finale G et de la chaîne canonique du projet. Le rendu DPI réel de E est validé par le retour utilisateur du 2 octobre. Les contrôles cachés automatisés et ce retour visuel ne remplacent pas les preuves des contrôles complémentaires nécessaires à la clôture complète de la recette.
 
 ## Vérifications par commandes
 

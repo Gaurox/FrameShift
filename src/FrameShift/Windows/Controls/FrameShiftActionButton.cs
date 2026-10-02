@@ -48,6 +48,8 @@ public sealed class FrameShiftActionButton : Button
     protected override void OnMouseUp(MouseEventArgs e) { _pressed = false; base.OnMouseUp(e); Invalidate(); }
     protected override void OnKeyDown(KeyEventArgs e) { if (e.KeyCode == Keys.Space) _pressed = true; base.OnKeyDown(e); Invalidate(); }
     protected override void OnKeyUp(KeyEventArgs e) { _pressed = false; base.OnKeyUp(e); Invalidate(); }
+    protected override void OnLostFocus(EventArgs e) { _pressed = false; base.OnLostFocus(e); Invalidate(); }
+    protected override void OnEnabledChanged(EventArgs e) { _hovered = _pressed = false; base.OnEnabledChanged(e); Invalidate(); }
 
     protected override void OnPaint(PaintEventArgs e)
     {
@@ -56,16 +58,19 @@ public sealed class FrameShiftActionButton : Button
         e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
         var bounds = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
         using var path = FrameShiftUiPainter.CreateRoundedPath(bounds, FrameShiftUiMetrics.ToPixels(this, 6));
-        var color = Enabled && (_hovered || _pressed) ? FlatAppearance.MouseOverBackColor : BackColor;
+        var color = !Enabled ? FrameShiftTheme.PageBackground : _pressed ? FlatAppearance.MouseDownBackColor
+            : _hovered ? FlatAppearance.MouseOverBackColor : BackColor;
         if (color.IsEmpty) color = BackColor;
         using var fill = new SolidBrush(color);
-        using var pen = new Pen(Focused ? FrameShiftTheme.SecondaryBlue : FlatAppearance.BorderColor, FrameShiftUiMetrics.ToPixels(this, 1));
+        using var pen = new Pen(!Enabled ? FrameShiftTheme.SurfaceBorder : Focused ? FrameShiftTheme.AccentText
+            : FlatAppearance.BorderColor, FrameShiftUiMetrics.ToPixels(this, 1));
         e.Graphics.FillPath(fill, path);
         e.Graphics.DrawPath(pen, path);
         var textBounds = Rectangle.Inflate(bounds, -FrameShiftUiMetrics.ToPixels(this, 10), -FrameShiftUiMetrics.ToPixels(this, 5));
         if (textBounds.Width <= 0 || textBounds.Height <= 0) return;
-        TextRenderer.DrawText(e.Graphics, Text, Font, textBounds, Enabled ? ForeColor : SystemColors.GrayText,
+        TextRenderer.DrawText(e.Graphics, Text, Font, textBounds, Enabled ? ForeColor : FrameShiftTheme.TextMuted,
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.WordBreak | (ShowKeyboardCues ? 0 : TextFormatFlags.HidePrefix));
-        if (Focused && ShowFocusCues) ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(bounds, -4, -4));
+        if (Enabled && Focused && ShowFocusCues)
+            ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(bounds, -4, -4), ForeColor, color);
     }
 }

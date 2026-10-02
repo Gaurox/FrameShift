@@ -7,7 +7,7 @@ Décisions techniques stables tant qu’une révision explicite n’est pas vali
 - format : `1.<version fonctionnelle>.<correctif>` ;
 - nouvelle fonctionnalité : dernier nombre remis à `0` ;
 - petit correctif : incrément du dernier nombre ;
-- version active : `1.19.0`.
+- version de développement active : `1.19.1` (source : `src/FrameShift/FrameShift.csproj`).
 
 ## Stack figée
 
@@ -67,7 +67,7 @@ Progression FFmpeg :
 
 ## Décision UI
 
-WinForms reste la solution retenue.
+WinForms reste la solution retenue. Les fenêtres se composent avec la politique et les composants du [contrat UI commun](UI_FOUNDATION.md) ; le [standard visuel](UI_STANDARDIZATION.md) décrit les compositions validées. Les preuves de recette et les limites de distribution figurent dans [l'audit UI/DPI](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md).
 
 Ne pas migrer vers :
 - WPF

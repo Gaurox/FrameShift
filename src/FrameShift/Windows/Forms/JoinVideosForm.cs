@@ -607,7 +607,7 @@ internal sealed class JoinVideosForm : Form
 
         if (invalid is not null)
         {
-            _statusLabel.ForeColor = Color.Firebrick;
+            _statusLabel.ForeColor = FrameShiftTheme.ErrorText;
             _statusLabel.Text = $"Remove or replace invalid clip: {Path.GetFileName(invalid.SourcePath)}";
             _joinButton.Enabled = false;
             return;

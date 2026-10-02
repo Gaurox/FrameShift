@@ -193,6 +193,8 @@ public sealed partial class CutVideoForm : Form
             UseVisualStyleBackColor = false, BackColor = FrameShiftTheme.Surface, ForeColor = FrameShiftTheme.AccentText
         };
         button.FlatAppearance.BorderColor = FrameShiftTheme.PrimaryBlue;
+        button.FlatAppearance.MouseOverBackColor = FrameShiftTheme.AccentSoft;
+        button.FlatAppearance.MouseDownBackColor = FrameShiftTheme.AccentSoftHover;
         return button;
     }
 

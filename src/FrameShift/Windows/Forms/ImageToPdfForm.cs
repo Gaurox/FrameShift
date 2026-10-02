@@ -1474,7 +1474,7 @@ public sealed class ImageToPdfForm : Form
         if (_cropModeEnabled)
         {
             _buttonCrop.BackColor = FrameShiftTheme.AccentSoft;
-            _buttonCrop.FlatAppearance.BorderColor = FrameShiftTheme.SecondaryBlue;
+            _buttonCrop.FlatAppearance.BorderColor = FrameShiftTheme.AccentText;
         }
         else
         {

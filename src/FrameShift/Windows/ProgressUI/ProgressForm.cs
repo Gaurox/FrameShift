@@ -25,7 +25,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
     private static Color BodyColor => FrameShiftTheme.TextSecondary;
     private static Color MutedColor => FrameShiftTheme.TextMuted;
     private static Color AccentColor => FrameShiftTheme.AccentText;
-    private static readonly Color DangerColor = Color.FromArgb(198, 40, 40);
+    private static Color DangerColor => FrameShiftTheme.ErrorText;
 
 
     private readonly Label _currentFileLabel;
@@ -703,7 +703,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
     {
         return state.ToLowerInvariant() switch
         {
-            "done" or "completed" => Color.FromArgb(28, 116, 70),
+            "done" or "completed" => FrameShiftTheme.SuccessText,
             "failed" => DangerColor,
             "canceled" => MutedColor,
             "canceling" => DangerColor,

@@ -14,7 +14,10 @@ public static class FrameShiftTheme
         SurfaceBorder: Color.FromArgb(0xD8, 0xE2, 0xF2),
         TextPrimary: Color.FromArgb(0x1F, 0x28, 0x3A),
         TextSecondary: Color.FromArgb(0x52, 0x5E, 0x73),
-        TextMuted: Color.FromArgb(0x7A, 0x84, 0x95),
+        TextMuted: Color.FromArgb(0x5F, 0x6B, 0x7E),
+        AccentText: Color.FromArgb(0x3C, 0x62, 0x94),
+        ErrorText: Color.FromArgb(0xC6, 0x28, 0x28),
+        SuccessText: Color.FromArgb(0x1C, 0x74, 0x46),
         AccentSoft: Color.FromArgb(0xEC, 0xF3, 0xFF),
         AccentSoftHover: Color.FromArgb(0xE4, 0xEE, 0xFE));
 
@@ -24,7 +27,10 @@ public static class FrameShiftTheme
         SurfaceBorder: Color.FromArgb(0x3A, 0x46, 0x5A),
         TextPrimary: Color.FromArgb(0xF4, 0xF7, 0xFC),
         TextSecondary: Color.FromArgb(0xC3, 0xCD, 0xDB),
-        TextMuted: Color.FromArgb(0x98, 0xA5, 0xB7),
+        TextMuted: Color.FromArgb(0xB0, 0xBD, 0xCF),
+        AccentText: Color.FromArgb(0x94, 0xBE, 0xF3),
+        ErrorText: Color.FromArgb(0xFF, 0x9E, 0x9E),
+        SuccessText: Color.FromArgb(0x78, 0xC9, 0xA0),
         AccentSoft: Color.FromArgb(0x2A, 0x3B, 0x55),
         AccentSoftHover: Color.FromArgb(0x34, 0x4A, 0x6A));
 
@@ -35,6 +41,10 @@ public static class FrameShiftTheme
 
     public static Color PrimaryBlue => PrimaryBlueColor;
     public static Color SecondaryBlue => SecondaryBlueColor;
+    // Opaque blue fills retain white captions in every enabled button state.
+    public static Color PrimaryButtonBackground => Color.FromArgb(0x45, 0x6F, 0xA5);
+    public static Color PrimaryButtonHover => Color.FromArgb(0x3D, 0x64, 0x97);
+    public static Color PrimaryButtonPressed => Color.FromArgb(0x35, 0x59, 0x83);
     public static Color AccentText => GetAccentTextColor(s_effectiveTheme);
     public static Color PageBackground => ActivePalette.PageBackground;
     public static Color Surface => ActivePalette.Surface;
@@ -42,6 +52,8 @@ public static class FrameShiftTheme
     public static Color TextPrimary => ActivePalette.TextPrimary;
     public static Color TextSecondary => ActivePalette.TextSecondary;
     public static Color TextMuted => ActivePalette.TextMuted;
+    public static Color ErrorText => ActivePalette.ErrorText;
+    public static Color SuccessText => ActivePalette.SuccessText;
     public static Color AccentSoft => ActivePalette.AccentSoft;
     public static Color AccentSoftHover => ActivePalette.AccentSoftHover;
 
@@ -91,7 +103,7 @@ public static class FrameShiftTheme
 
     internal static Color GetAccentTextColor(FrameShiftThemeMode theme)
     {
-        return theme == FrameShiftThemeMode.Dark ? PrimaryBlueColor : SecondaryBlueColor;
+        return theme == FrameShiftThemeMode.Dark ? DarkPalette.AccentText : LightPalette.AccentText;
     }
 
     internal static Color ResolveCurrentBackgroundColor(Color color)
@@ -141,6 +153,16 @@ public static class FrameShiftTheme
             return TextMuted;
         }
 
+        if (Matches(color, LightPalette.ErrorText) || Matches(color, DarkPalette.ErrorText))
+        {
+            return ErrorText;
+        }
+
+        if (Matches(color, LightPalette.SuccessText) || Matches(color, DarkPalette.SuccessText))
+        {
+            return SuccessText;
+        }
+
         if (Matches(color, GetAccentTextColor(FrameShiftThemeMode.Light)) ||
             Matches(color, GetAccentTextColor(FrameShiftThemeMode.Dark)))
         {
@@ -168,7 +190,7 @@ public static class FrameShiftTheme
         }
     }
 
-    private static void ApplyToControl(Control control)
+    internal static void ApplyToControl(Control control)
     {
         control.BackColor = ResolveCurrentBackgroundColor(control.BackColor);
         control.ForeColor = ResolveCurrentTextColor(control.ForeColor);
@@ -176,6 +198,7 @@ public static class FrameShiftTheme
         if (control is Button button)
         {
             button.FlatAppearance.BorderColor = ResolveCurrentBackgroundColor(button.FlatAppearance.BorderColor);
+            button.FlatAppearance.BorderColor = ResolveCurrentTextColor(button.FlatAppearance.BorderColor);
             button.FlatAppearance.MouseOverBackColor = ResolveCurrentBackgroundColor(button.FlatAppearance.MouseOverBackColor);
             button.FlatAppearance.MouseDownBackColor = ResolveCurrentBackgroundColor(button.FlatAppearance.MouseDownBackColor);
         }
@@ -183,11 +206,24 @@ public static class FrameShiftTheme
         if (control is DataGridView grid)
         {
             ApplyToGridStyle(grid.DefaultCellStyle);
+            ApplyToGridStyle(grid.RowsDefaultCellStyle);
             ApplyToGridStyle(grid.AlternatingRowsDefaultCellStyle);
             ApplyToGridStyle(grid.ColumnHeadersDefaultCellStyle);
             ApplyToGridStyle(grid.RowHeadersDefaultCellStyle);
             grid.BackgroundColor = ResolveCurrentBackgroundColor(grid.BackgroundColor);
             grid.GridColor = ResolveCurrentBackgroundColor(grid.GridColor);
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                if (column.HasDefaultCellStyle) ApplyToGridStyle(column.DefaultCellStyle);
+                if (column.HeaderCell.HasStyle) ApplyToGridStyle(column.HeaderCell.Style);
+                if (column.CellTemplate is { HasStyle: true } template) ApplyToGridStyle(template.Style);
+            }
+            ApplyToRowStyles(grid.RowTemplate);
+            for (var index = 0; index < grid.Rows.Count; index++)
+            {
+                // Inspect existing overrides without unsharing rows or creating a style per cell.
+                ApplyToRowStyles(grid.Rows.SharedRow(index));
+            }
         }
 
         foreach (Control child in control.Controls)
@@ -206,6 +242,16 @@ public static class FrameShiftTheme
         style.SelectionForeColor = ResolveCurrentTextColor(style.SelectionForeColor);
     }
 
+    private static void ApplyToRowStyles(DataGridViewRow row)
+    {
+        if (row.HasDefaultCellStyle) ApplyToGridStyle(row.DefaultCellStyle);
+        if (row.HeaderCell.HasStyle) ApplyToGridStyle(row.HeaderCell.Style);
+        foreach (DataGridViewCell cell in row.Cells)
+        {
+            if (cell.HasStyle) ApplyToGridStyle(cell.Style);
+        }
+    }
+
     private static bool Matches(Color first, Color second)
     {
         return first.ToArgb() == second.ToArgb();
@@ -218,6 +264,9 @@ public static class FrameShiftTheme
         Color TextPrimary,
         Color TextSecondary,
         Color TextMuted,
+        Color AccentText,
+        Color ErrorText,
+        Color SuccessText,
         Color AccentSoft,
         Color AccentSoftHover);
 }

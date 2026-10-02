@@ -26,6 +26,22 @@ FrameShift uses `1.<feature release>.<patch>` starting with `1.14.0`:
   - generated `installer/FrameShift_<version>_Setup.exe`
   - `docs/CHANGELOG.md`
 
+## UI/DPI Qualification Gate
+
+For the UI chantier, use the [active UI contract](UI_FOUNDATION.md) and the [official audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` is historical. The visual approvals of C/D/E and hidden layout tests do not certify the Release payload or an existing installation.
+
+Before declaring the chantier qualified or publishing the global DPI activation in phase G:
+
+- Finish the retained F lots and record their results and remaining limits.
+- Record the section 8 environment/scenario matrix from the audit for the 36 windows and their variants, with commit/binary, resolution, DPI, text size, theme, monitor and result.
+- Include keyboard/focus, dynamic options, repeated monitor transitions, previews, close/cancel/failure, unique adjacent outputs, cleanup, no orphan process and no visible console.
+- Identify functional checks not separately confirmed in D3/E; verify them without upgrading a visual approval into a functional guarantee.
+- Make and record the explicit Release DPI decision; the current application project enables `PerMonitorV2` only in Debug.
+- Run the canonical release workflow below, then verify that exact installed payload, native dialogs, hub/Explorer entry points and installer pages.
+- Preserve unresolved cases as explicit limits; do not mark an unexecuted scenario as passed.
+
+The compact/editor examples are development tools. Do not add them or scratch results to the installer.
+
 ## Release Build
 
 The only official release command is:

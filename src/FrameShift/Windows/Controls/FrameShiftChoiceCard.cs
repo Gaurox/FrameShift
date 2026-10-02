@@ -40,18 +40,19 @@ public sealed class FrameShiftChoiceCard : RadioButton
         var glyph = FrameShiftUiMetrics.ToPixels(this, 16);
         var bounds = new Rectangle(0, 0, Math.Max(1, Width - 1), Math.Max(1, Height - 1));
         using var path = FrameShiftUiPainter.CreateRoundedPath(bounds, FrameShiftUiMetrics.ToPixels(this, 6));
-        using var fill = new SolidBrush(Checked ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface);
-        using var pen = new Pen(Checked || Focused ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.SurfaceBorder, FrameShiftUiMetrics.ToPixels(this, 1));
+        using var fill = new SolidBrush(!Enabled ? FrameShiftTheme.PageBackground : Checked ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface);
+        using var pen = new Pen(Enabled && (Checked || Focused) ? FrameShiftTheme.AccentText : FrameShiftTheme.SurfaceBorder, FrameShiftUiMetrics.ToPixels(this, 1));
         e.Graphics.FillPath(fill, path);
         e.Graphics.DrawPath(pen, path);
-        ControlPaint.DrawRadioButton(e.Graphics, new Rectangle(pad, pad, glyph, glyph), Checked ? ButtonState.Checked : ButtonState.Normal);
+        ControlPaint.DrawRadioButton(e.Graphics, new Rectangle(pad, pad, glyph, glyph),
+            (Checked ? ButtonState.Checked : ButtonState.Normal) | (Enabled ? ButtonState.Normal : ButtonState.Inactive));
         using var titleFont = new Font(Font, FontStyle.Bold);
         var titleRect = new Rectangle(pad + glyph + FrameShiftUiMetrics.ToPixels(this, 6), pad, Math.Max(1, Width - 2 * pad - glyph - FrameShiftUiMetrics.ToPixels(this, 6)), Height);
         var titleHeight = TextRenderer.MeasureText(Text, titleFont, titleRect.Size, TextFormatFlags.WordBreak).Height;
-        TextRenderer.DrawText(e.Graphics, Text, titleFont, titleRect, Enabled ? FrameShiftTheme.TextPrimary : SystemColors.GrayText, TextFormatFlags.WordBreak);
+        TextRenderer.DrawText(e.Graphics, Text, titleFont, titleRect, Enabled ? FrameShiftTheme.TextPrimary : FrameShiftTheme.TextMuted, TextFormatFlags.WordBreak);
         var detailTop = pad + Math.Max(glyph, titleHeight) + FrameShiftUiMetrics.ToPixels(this, 8);
-        TextRenderer.DrawText(e.Graphics, Description, Font, new Rectangle(pad, detailTop, Math.Max(1, Width - 2 * pad), Math.Max(1, Height - detailTop - pad)), Enabled ? FrameShiftTheme.TextSecondary : SystemColors.GrayText, TextFormatFlags.WordBreak);
-        if (Focused && ShowFocusCues && bounds.Width > 6 && bounds.Height > 6)
+        TextRenderer.DrawText(e.Graphics, Description, Font, new Rectangle(pad, detailTop, Math.Max(1, Width - 2 * pad), Math.Max(1, Height - detailTop - pad)), Enabled ? FrameShiftTheme.TextSecondary : FrameShiftTheme.TextMuted, TextFormatFlags.WordBreak);
+        if (Enabled && Focused && ShowFocusCues && bounds.Width > 6 && bounds.Height > 6)
             ControlPaint.DrawFocusRectangle(e.Graphics, Rectangle.Inflate(bounds, -3, -3));
     }
 }

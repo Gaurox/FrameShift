@@ -1,6 +1,10 @@
-# FrameShift UI DPI Audit
+# FrameShift UI DPI Audit — historique
 
-Référence officielle du chantier DPI/UI.
+**Document historique antérieur au chantier du 28 septembre 2026.** Les constats, listes de fenêtres et affirmations de validation ci-dessous décrivent ce bilan ancien ; ils ne certifient pas l'état actuel ni la distribution installée.
+
+Les références actives sont le [contrat du socle UI](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et [l'audit/feuille de route officiel du 28 septembre](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). Les anciennes recettes de layout décrites ici ont été remplacées par les composants mesurés de B/C/D/E ; les chemins inutilisés ont été retirés en F1. Consulter la feuille de route pour les preuves par phase et la qualification G.
+
+## Bilan ancien conservé
 
 Périmètre :
 - documentation uniquement ;
@@ -122,7 +126,7 @@ Objectifs de validation :
 - cohérence des espacements ;
 - stabilité des layouts.
 
-## 6. Règles futures obligatoires
+## 6. Règles proposées lors du bilan ancien
 
 Pour toute nouvelle fenêtre DPI-safe :
 - partir des helpers UI partagés avant d’introduire une géométrie locale ;

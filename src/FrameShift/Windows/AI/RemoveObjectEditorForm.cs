@@ -478,12 +478,14 @@ public sealed class RemoveObjectEditorForm : Form
     private void SetTool(bool brush)
     {
         _isBrushMode = brush;
-        _btnBrush.BackColor = brush ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.Surface;
+        _btnBrush.BackColor = brush ? FrameShiftTheme.PrimaryButtonBackground : FrameShiftTheme.Surface;
         _btnBrush.ForeColor = brush ? Color.White : FrameShiftTheme.TextPrimary;
-        _btnEraser.BackColor = brush ? FrameShiftTheme.Surface : FrameShiftTheme.SecondaryBlue;
+        _btnEraser.BackColor = brush ? FrameShiftTheme.Surface : FrameShiftTheme.PrimaryButtonBackground;
         _btnEraser.ForeColor = brush ? FrameShiftTheme.TextPrimary : Color.White;
-        _btnBrush.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.AccentSoftHover;
-        _btnEraser.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.AccentSoftHover : FrameShiftTheme.SecondaryBlue;
+        _btnBrush.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.PrimaryButtonHover : FrameShiftTheme.AccentSoft;
+        _btnEraser.FlatAppearance.MouseOverBackColor = brush ? FrameShiftTheme.AccentSoft : FrameShiftTheme.PrimaryButtonHover;
+        _btnBrush.FlatAppearance.MouseDownBackColor = brush ? FrameShiftTheme.PrimaryButtonPressed : FrameShiftTheme.AccentSoftHover;
+        _btnEraser.FlatAppearance.MouseDownBackColor = brush ? FrameShiftTheme.AccentSoftHover : FrameShiftTheme.PrimaryButtonPressed;
         _btnBrush.Invalidate();
         _btnEraser.Invalidate();
     }

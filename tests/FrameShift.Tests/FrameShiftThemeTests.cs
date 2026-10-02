@@ -75,8 +75,8 @@ public sealed class FrameShiftThemeTests
     }
 
     [Theory]
-    [InlineData(FrameShiftThemeMode.Light, 0x4D, 0x79, 0xB4)]
-    [InlineData(FrameShiftThemeMode.Dark, 0x8E, 0xBA, 0xF3)]
+    [InlineData(FrameShiftThemeMode.Light, 0x3C, 0x62, 0x94)]
+    [InlineData(FrameShiftThemeMode.Dark, 0x94, 0xBE, 0xF3)]
     public void AccentText_UsesTheAccessibleAccentForEachPalette(
         FrameShiftThemeMode theme,
         int red,
@@ -112,8 +112,8 @@ public sealed class FrameShiftThemeTests
         FrameShiftTheme.ApplyPreference(FrameShiftThemePreference.Dark);
 
         Assert.Equal(
-            FrameShiftTheme.PrimaryBlue,
-            FrameShiftTheme.ResolveCurrentTextColor(FrameShiftTheme.SecondaryBlue));
+            FrameShiftTheme.AccentText,
+            FrameShiftTheme.ResolveCurrentTextColor(FrameShiftTheme.GetAccentTextColor(FrameShiftThemeMode.Light)));
 
         FrameShiftTheme.ApplyPreference(FrameShiftThemePreference.Light);
     }

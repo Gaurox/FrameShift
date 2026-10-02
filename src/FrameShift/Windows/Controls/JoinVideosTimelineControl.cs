@@ -130,7 +130,7 @@ internal sealed class JoinVideosTimelineControl : Control
         if ((_isDragging || _isExternalDragHover) && _dragInsertionIndex >= 0)
         {
             var markerX = GetInsertionMarkerX(_dragInsertionIndex);
-            using var pen = new Pen(FrameShiftTheme.SecondaryBlue, Pixels(3));
+            using var pen = new Pen(FrameShiftTheme.AccentText, Pixels(3));
             e.Graphics.DrawLine(pen, markerX, Pixels(TileTop + 2), markerX, Pixels(TileTop) + MeasuredTileHeight - Pixels(2));
         }
     }
@@ -317,7 +317,7 @@ internal sealed class JoinVideosTimelineControl : Control
         }
 
         var background = selected ? FrameShiftTheme.AccentSoft : FrameShiftTheme.Surface;
-        var border = selected ? FrameShiftTheme.SecondaryBlue : FrameShiftTheme.SurfaceBorder;
+        var border = selected ? FrameShiftTheme.AccentText : FrameShiftTheme.SurfaceBorder;
         if (dragging)
         {
             background = FrameShiftTheme.AccentSoftHover;
@@ -362,7 +362,7 @@ internal sealed class JoinVideosTimelineControl : Control
             details,
             Font,
             detailBounds,
-            item.LoadError is null ? FrameShiftTheme.TextSecondary : Color.Firebrick,
+            item.LoadError is null ? FrameShiftTheme.TextSecondary : FrameShiftTheme.ErrorText,
             TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine | TextFormatFlags.Left);
     }
 
