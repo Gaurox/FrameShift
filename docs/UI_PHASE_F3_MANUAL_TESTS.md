@@ -2,7 +2,7 @@
 
 ## Lancement
 
-Double-cliquer sur [TEST_PHASE_F3.cmd](../TEST_PHASE_F3.cmd) dans `E:\AI\FrameShift_V1`. Le testeur Debug est compilé. Ce mode réutilise le lanceur F2 ; l'application installée ne contient pas ces changements.
+Double-cliquer sur [TEST_PHASE_F3.cmd](../TEST_PHASE_F3.cmd) dans `E:\AI\FrameShift_V1`. Compiler le testeur Debug si nécessaire. Ce mode réutilise le lanceur F2 et ses scénarios de recette ; les changements sont également distribués dans l'application installée depuis 1.20.0. La [recette G](UI_PHASE_G_MANUAL_TESTS.md) vérifie le binaire installé.
 
 Les boutons **Clair / Sombre / Système** restent temporaires. Main utilise les fichiers fictifs de F2 et intercepte les actions. Compress Audio ferme seulement son dialogue. Progress est simulé. **Join Videos** crée, au clic, trois copies distinctement nommées de la vidéo de `scratch/phase-a` dans `scratch/phase-f3/clips clavier`, puis produit de vrais aperçus locaux. Son bouton Join ferme l'éditeur sans lancer l'export ; son tri est sauvegardé dans ce dossier test. Les copies existantes sont conservées. L'ouverture du lanceur ne prépare aucun média.
 

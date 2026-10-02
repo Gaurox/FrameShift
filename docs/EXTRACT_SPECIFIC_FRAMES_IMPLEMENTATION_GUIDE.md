@@ -2,10 +2,13 @@
 
 ## Notice complète d’implémentation FrameShift
 
-**Statut :** conception validée, implémentation à réaliser.  
+**Statut :** implémenté en 1.18.0 ; plan de conception conservé comme référence historique.
+
 **Projet :** `E:\AI\FrameShift_V1`  
 **Périmètre :** évolution de l’action FFmpeg existante `extract-frames`.  
 **Objectif :** conserver l’extraction complète en un clic et ajouter l’extraction directe de la première frame, de la dernière frame et des keyframes, sans picker ni saisie de timecode.
+
+L'état actif est décrit dans [CHANGELOG](CHANGELOG.md) et [CODE_FILE_INDEX](CODE_FILE_INDEX.md). Les propositions d'implémentation ci-dessous décrivent la conception initiale. Toute future interface suit le [guide UI courant](UI_WINDOW_DEVELOPMENT_GUIDE.md) ; cette action réutilise `ProgressForm` et n'introduit pas de nouveau picker.
 
 ---
 

@@ -48,7 +48,7 @@ ReadRange → HostSpectro.Stft → session.Run({mix, spec}) → HostSpectro.Istf
 - **Lot 5** : HostSpectro (STFT/iSTFT C# — port de stft_onnx.py) — point de risque max
 - **Lot 6** : AudioSeparationEngine V1 CPU bout-en-bout → MVP
 - **Lot 7** : AudioSeparationEngine V2 GPU + sélection auto DML/CPU
-- **Lot 8** : SeparateAudioPickerForm (UI 560×440, 5 checkboxes, radio Engine)
+- **Lot 8** : SeparateAudioPickerForm (5 checkboxes, radio Engine ; taille 560 × 440 du plan d'origine, non normative). Pour la composition actuelle ou une extension, suivre le [guide UI](UI_WINDOW_DEVELOPMENT_GUIDE.md) et les métriques du socle.
 - **Lot 9** : Câblage Program.cs complet + ConversionBatchSession définition
 - **Lot 10** : Installer (composant ai\separate_audio, menu Explorer AudioExtensions)
 - **Lot 11** : Tests d'intégration manuels + polish

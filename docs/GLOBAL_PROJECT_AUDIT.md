@@ -1,5 +1,7 @@
 # Audit global du projet FrameShift
 
+**Audit historique du 4 août 2026.** Les constats et pistes ci-dessous décrivent cette base, sans certifier leur présence dans le code courant. Pour les fenêtres futures, le [contrat UI](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et le [guide de développement](UI_WINDOW_DEVELOPMENT_GUIDE.md) priment sur les stratégies UI antérieures. Le chantier du 28 septembre et la qualification 1.20.0 portent les preuves UI/DPI actuelles.
+
 Date de l'audit : 4 août 2026  
 Projet audité : `E:\AI\FrameShift_V1`  
 Base Git : branche `main`, commit `614c896`, avec les modifications locales présentes au moment de l'audit  

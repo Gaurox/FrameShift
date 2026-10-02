@@ -1,10 +1,11 @@
 # FrameShift — Standard visuel et conception des fenêtres
 
-Réconciliation F1 du 2 octobre 2026. Ce document décrit les choix visuels et ergonomiques appliqués aux fenêtres WinForms actuelles.
+Standard appliqué en 1.20.0, relu le 3 octobre 2026. Ce document décrit les choix visuels et ergonomiques à préserver dans les fenêtres WinForms actuelles et futures.
 
 ## Références et état du chantier
 
 - [UI_FOUNDATION](UI_FOUNDATION.md) porte le **contrat technique et les métriques figées** : politique DPI, construction, composants, tailles et exemples.
+- [UI_WINDOW_DEVELOPMENT_GUIDE](UI_WINDOW_DEVELOPMENT_GUIDE.md) donne le parcours pratique, les exemples complets et les contrôles à appliquer à chaque nouvelle fenêtre.
 - [L'audit UI/DPI du 28 septembre](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) porte la feuille de route, les décisions et les preuves de recette.
 - [CODE_FILE_INDEX](CODE_FILE_INDEX.md) indique où se trouve le code actif.
 - [UI_DPI_AUDIT](UI_DPI_AUDIT.md) conserve l'ancien bilan à titre historique ; ses anciennes recettes de placement ne s'appliquent plus aux nouvelles fenêtres.
@@ -67,7 +68,7 @@ Chaque fenêtre reprend le bandeau commun : icône de fonction à gauche, titre 
 
 - Titre du bandeau : Segoe UI Semibold, 14 pt ; contenu hérité : Segoe UI, 9 pt.
 - Le titre peut revenir à la ligne. Le bandeau augmente sa hauteur mesurée.
-- Les métadonnées restent compactes avec ellipse, tooltip et menu « Copy details » donnant le texte complet. Le complément clavier est suivi en F3.
+- Les métadonnées restent compactes avec ellipse et tooltip ; le menu View/Copy details donne le texte complet. Tab accède au bandeau, Entrée/Espace ouvre les détails, Ctrl+C copie et Maj+F10 ouvre le menu. Ce comportement commun a été accepté en F3.
 - Une icône dédiée de fonction est choisie via `IconPaths`, avec fallback ; ses offsets sont convertis par le composant.
 - Les textes longs utiles restent consultables ; conserver accents, chemins et noms complets dans les données du contrôle.
 
@@ -132,7 +133,7 @@ Les fonds d'aperçu sombres ou les pixels des médias ne sont pas des surfaces d
 
 ## 8. Construction, ressources et recette
 
-Les bitmaps, icônes, polices et tooltips créés par l'application doivent avoir un propriétaire et être libérés au remplacement/à la fermeture. Disposer les contrôles retirés d'une reconstruction. Le contrat est déjà explicite dans les bandeaux et la politique de police ; les points restants sont suivis en F4.
+Les bitmaps, icônes, polices et tooltips créés par l'application doivent avoir un propriétaire et être libérés au remplacement/à la fermeture. Disposer les contrôles retirés d'une reconstruction. Les contrats des bandeaux, de la politique de police et des éditeurs sont explicités dans le socle ; leurs vérifications sont consignées en F4. Une nouvelle fenêtre doit reprendre ces contrats et être vérifiée sur ses propres ressources.
 
 Les aperçus passent par les helpers de durée de vie existants : travail asynchrone, annulation, attente à la fermeture et libération des retours tardifs. Après une fermeture annulée dans `FormClosing`, poster la fermeture finale avec `BeginInvoke` et restaurer le résultat modal. Ne pas réentrer immédiatement dans `Close()` après un `await` qui peut déjà être terminé.
 

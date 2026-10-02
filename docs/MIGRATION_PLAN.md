@@ -108,3 +108,4 @@ La migration initiale est finie, mais il reste de la consolidation :
 - `references/` sert uniquement de contexte ;
 - toute nouvelle capacité doit être branchée jusqu’au publish et à l’installateur ;
 - toute promesse documentaire doit être vérifiée contre les fichiers `Program*.cs`, `ActionRegistry.cs` et `installer/FrameShift.iss`.
+- toute future fenêtre suit le [guide de développement UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), le [socle commun](UI_FOUNDATION.md) et les [variantes visuelles validées](UI_STANDARDIZATION.md), sans reprendre les placements des anciennes interfaces migrées.

@@ -2,6 +2,18 @@
 
 Documentation centrale du projet FrameShift.
 
+## Développer une future fenêtre
+
+Lire dans cet ordre : [PROJECT_RULES](PROJECT_RULES.md), [ARCHITECTURE_FREEZE](ARCHITECTURE_FREEZE.md), [UI_FOUNDATION](UI_FOUNDATION.md), [UI_STANDARDIZATION](UI_STANDARDIZATION.md), puis le [guide pratique de développement](UI_WINDOW_DEVELOPMENT_GUIDE.md).
+
+- **Contrat technique et métriques :** `UI_FOUNDATION`, avec les constantes de `FrameShiftUiMetrics`.
+- **Choix visuels et variantes validées :** `UI_STANDARDIZATION`.
+- **Construction, exemples complets et checklist :** `UI_WINDOW_DEVELOPMENT_GUIDE`.
+- **Preuves et historique :** audit du 28 septembre et recettes par phase ; ils ne prescrivent pas de recréer les anciens layouts.
+- **Distribution installée :** `RELEASE_CHECKLIST` et recette G.
+
+Les plans Main, Remove Object et Extract Frames conservent leur conception d'origine. Pour leurs interfaces, le standard UI courant prévaut sur les anciennes tailles, factories ou maquettes. La validation 1.20.0 ne dispense pas de vérifier une nouvelle fenêtre.
+
 ## Quick Links
 
 - [Project Overview](PRODUCT_GUIDE.md)
@@ -23,6 +35,7 @@ Documentation centrale du projet FrameShift.
 - [Dark / Light Theme Implementation](DARK_LIGHT_THEME_IMPLEMENTATION.md)
 - [UI Foundation — Active Contract and Examples](UI_FOUNDATION.md)
 - [UI Standardization — Visual and Layout Rules](UI_STANDARDIZATION.md)
+- [UI Window Development — Recipes and Acceptance Checklist](UI_WINDOW_DEVELOPMENT_GUIDE.md)
 - [UI DPI Audit — Historical Notes](UI_DPI_AUDIT.md)
 - [UI Audit and Standardization Plan — 2026-09-28](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md)
 - [UI Phase C — Manual Pilot Tests](UI_PHASE_C_MANUAL_TESTS.md)
@@ -41,7 +54,7 @@ Documentation centrale du projet FrameShift.
 
 ## Scope
 
-Cette documentation couvre uniquement la structure active du projet.
+Cette documentation couvre la structure active du projet ainsi que les plans et audits historiques explicitement datés. Les documents historiques ne décrivent pas nécessairement le code actuel.
 
 Exclusions volontaires :
 - `references/`

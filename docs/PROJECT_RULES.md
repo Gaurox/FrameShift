@@ -170,6 +170,19 @@ La chrome Windows des fenêtres d'action doit rester centralisée :
 
 Un bandeau donation discret peut être partagé par la fenêtre de progression commune sans bloquer le traitement ni changer la logique de queue.
 
+### Standard obligatoire pour les futures fenêtres
+
+Toute nouvelle fenêtre, variante ou refonte suit le [contrat du socle UI](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et le [guide de développement](UI_WINDOW_DEVELOPMENT_GUIDE.md). Ce contrat prévaut sur les anciennes recettes UI des guides métier et plans historiques.
+
+- Initialiser `FrameShiftWindowPolicy` avant contrôles/handles ; conserver le DPI natif et les métriques logiques partagées.
+- Composer avec les bandeaux, sections, champs et shells existants ; ne pas recréer leurs marges, placements ou polices dans chaque formulaire.
+- Créer les commandes du footer avec `CreateMeasuredActionButton` et `CreateActions`, sans dimensions locales selon le rôle du bouton.
+- Montrer toutes les options d'un compact à l'ouverture si l'écran le permet ; défilement de secours du contenu et commandes persistantes sinon.
+- Préserver le thème, le clavier, la consultation des textes longs et la durée de vie asynchrone des aperçus.
+- Vérifier la nouvelle fenêtre et ses variantes : l'acceptation des fenêtres de 1.20.0 n'est pas une validation automatique d'un nouveau formulaire.
+
+Une dimension locale décrit un besoin métier, pas un nouveau standard visuel. Toute évolution des règles communes se fait dans le socle et sa documentation, avec recette des fenêtres affectées.
+
 ## Code Style
 
 Préférer :

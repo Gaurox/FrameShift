@@ -6,6 +6,8 @@ Les références actives sont le [contrat du socle UI](UI_FOUNDATION.md), le [st
 
 ## Bilan ancien conservé
 
+Pour développer une fenêtre, utiliser le [guide courant](UI_WINDOW_DEVELOPMENT_GUIDE.md). Les formules de facteur DPI et recettes de placement de ce bilan n'autorisent pas une seconde mise à l'échelle manuelle : WinForms applique le DPI, `ToPixels` ne convertit que les métriques logiques des calculs spécifiques.
+
 Périmètre :
 - documentation uniquement ;
 - aucune modification de code dans ce document ;

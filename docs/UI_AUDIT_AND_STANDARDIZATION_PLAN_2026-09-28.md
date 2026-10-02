@@ -1110,14 +1110,14 @@ Version/commit | Fenêtre/variante | Résolution | DPI | Taille texte | Thème
 
 ## 9. Règles pour toute future interface
 
-Avant de créer une nouvelle fenêtre, choisir le shell compact ou le shell éditeur et vérifier si l'action peut réutiliser un picker existant.
+Avant de créer une nouvelle fenêtre, suivre le [guide de développement UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), le [contrat du socle et ses métriques figées](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md). Choisir le shell compact, éditeur ou temporel et vérifier si l'action peut réutiliser un picker existant. Ces références actives remplacent les recettes de placement antérieures au chantier.
 
 Checklist à intégrer au développement et à la revue :
 
 - [ ] La fenêtre reprend le contrat DPI commun; aucun mode divergent dans une base héritée.
 - [ ] Bandeau, sections, champs et actions proviennent des composants partagés.
 - [ ] Les constantes sont des métriques logiques documentées; aucun calcul ne mélange espaces logiques, pixels écran et coordonnées média.
-- [ ] Les textes pilotent la taille des rangées; les champs s'étirent; les instructions et erreurs peuvent revenir à la ligne.
+- [ ] Les textes pilotent la taille des rangées ; les champs comparables sont alignés, les saisies courtes ont une largeur adaptée ; instructions et erreurs peuvent revenir à la ligne.
 - [ ] Le corps possède une stratégie de manque de place; le footer reste accessible.
 - [ ] Les contrôles dynamiques ont été testés après affichage et changement d'options/DPI.
 - [ ] Tab, focus, Enter/Escape, noms accessibles et contrôles natifs sont vérifiés.
@@ -1129,6 +1129,8 @@ Checklist à intégrer au développement et à la revue :
 **Exemple de répartition attendue :** une future action décrit ses options, ajoute les champs et relie la validation au Core. Elle ne décide pas à nouveau de la hauteur du bandeau, de la position de Cancel, de l'espacement entre sections ou de la formule DPI. Les personnalisations concernent le média et l'interaction propre à l'action.
 
 ## 10. Points volontairement ouverts et décisions attendues
+
+**Historique des décisions attendues pendant le chantier.** B/C ont retenu la composition et les composants existants ; aucune base générale `FrameShiftForm` n'est requise. Les décisions courantes figurent dans le contrat du socle ; G et la publication 1.20.0 sont consignées sous leur phase et dans le [rapport de release](RELEASE_QUALIFICATION_1.20.0.md).
 
 | Point ouvert | Quand le trancher | Limite à respecter |
 |---|---|---|

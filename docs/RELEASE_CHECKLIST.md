@@ -30,6 +30,8 @@ FrameShift uses `1.<feature release>.<patch>` starting with `1.14.0`:
 
 For the UI chantier, use the [active UI contract](UI_FOUNDATION.md) and the [official audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` is historical. The visual approvals of C/D/E and hidden layout tests do not certify the Release payload or an existing installation.
 
+For every future window or variant, first follow the [window development guide](UI_WINDOW_DEVELOPMENT_GUIDE.md) and its acceptance checklist. This gate also applies to later UI releases; the recorded 1.20.0 approval does not qualify newly added windows.
+
 Before declaring the chantier qualified or publishing the global DPI activation in phase G:
 
 - Finish the retained F lots and record their results and remaining limits.

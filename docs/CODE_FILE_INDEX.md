@@ -2,6 +2,8 @@
 
 Index court des fichiers actifs du projet.
 
+Pour construire une future fenêtre, commencer par le [guide de développement UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), puis retrouver ici les composants et exemples actifs. Le [contrat du socle](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md) restent les références communes.
+
 Règles de lecture :
 - code actif uniquement ;
 - `references/` exclus ;

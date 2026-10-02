@@ -4,7 +4,7 @@
 
 Cette notice fige le périmètre de la première implémentation clair/sombre de FrameShift.
 
-Elle complète les règles projet et le [contrat UI actif](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et [l'audit UI/DPI officiel](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` conserve le bilan ancien à titre historique. Les preuves et les corrections restantes des états/contrastes sont suivies dans la phase F.
+Elle complète les règles projet et le [contrat UI actif](UI_FOUNDATION.md), le [standard visuel](UI_STANDARDIZATION.md) et [l'audit UI/DPI officiel](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). `UI_DPI_AUDIT.md` conserve le bilan ancien à titre historique. Les corrections et preuves des états/contrastes sont consignées dans F2, acceptée et distribuée en 1.20.0. Pour une future fenêtre, suivre le [guide de développement UI](UI_WINDOW_DEVELOPMENT_GUIDE.md) et vérifier ses propres états ; les étapes de première implémentation et la recette 1.17.0 ci-dessous restent historiques.
 
 Portée actuelle : la préférence System est résolue au démarrage ou au changement de préférence ; le rafraîchissement en direct concerne les fenêtres ouvertes du même processus. Cette notice ne garantit pas le suivi automatique d'un changement de thème Windows, les autres processus ou le contraste de tous les états locaux.
 
@@ -98,7 +98,7 @@ La cible des textes utiles est **4,5:1** sur `Surface`, `PageBackground`, `Accen
 
 Le remappage clair ↔ sombre traite les styles généraux des grilles, les overrides de colonne, en-tête, template, ligne et cellule déjà présents. Les couleurs hors palette et les couleurs vides héritées sont conservées ; les lignes partagées ne sont pas dédoublées pour cette opération. Les états Progress mis en cache et les erreurs Join suivent les rôles sémantiques. Le rafraîchissement d'une grille n'ajoute aucune bande alternée.
 
-Preuves et état de recette : [audit F2](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [procédure F2](UI_PHASE_F2_MANUAL_TESTS.md). La validation visuelle historique ci-dessous ne vaut pas validation des nouvelles couleurs F2.
+Preuves et état de recette : [audit F2](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [procédure F2](UI_PHASE_F2_MANUAL_TESTS.md). Les nouvelles couleurs F2 ont été acceptées sur leur périmètre ; la validation visuelle 1.17.0 ci-dessous est conservée séparément.
 
 Les helpers existants restent les points d'entrée :
 - `FrameShiftUiFactory` pour les contrôles standards ;
@@ -122,7 +122,7 @@ Il est interdit de remplacer en bloc tous les contrôles natifs.
 
 `FrameShiftWindowChrome.Apply(...)` reste le point central. Il applique la préférence sombre à la barre de titre standard via DWM quand Windows le permet, et ignore proprement l'échec sinon.
 
-Aucune barre de titre custom n'est créée. `ProgressForm` doit utiliser le même chemin commun que les autres fenêtres lors de l'implémentation.
+Aucune barre de titre custom n'est créée. `ProgressForm` utilise le même chemin commun que les autres fenêtres ; conserver ce point d'entrée pour les futures interfaces.
 
 ### Dessins et aperçus
 

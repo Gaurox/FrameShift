@@ -1,7 +1,7 @@
 # FrameShift — Plan de développement : Fenêtre principale (hub glisser-déposer)
 
-> Document de guidage pour l'implémentation. Rien n'est codé à ce stade.
-> Rédigé le 2026-07-08. Cible : v1.17.x (à confirmer au moment du versionnage).
+> **Plan historique rédigé le 8 juillet 2026.** Le hub est implémenté et décrit dans le changelog 1.16.1 ; sa composition a ensuite rejoint le standard UI de 1.20.0.
+> Ce document conserve les décisions produit et étapes d'origine. Pour le catalogue courant, consulter `ActionCatalog.cs` et [CODE_FILE_INDEX](CODE_FILE_INDEX.md). Pour développer une fenêtre ou modifier le hub, suivre le [guide UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), le [contrat du socle](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md), qui prévalent sur les maquettes et découpages anciens.
 
 ---
 
@@ -112,7 +112,7 @@ continue de servir uniquement si l'utilisateur relance la même action (agrégat
 
 ---
 
-## 5. Taxonomie complète des actions (LA référence)
+## 5. Taxonomie des actions au moment du plan
 
 Arité observée depuis le code (marqueur `ExactlyOneSourceFileRequired` = mono-fichier).
 

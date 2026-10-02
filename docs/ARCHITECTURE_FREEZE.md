@@ -69,6 +69,8 @@ Progression FFmpeg :
 
 WinForms reste la solution retenue. Les fenêtres se composent avec la politique et les composants du [contrat UI commun](UI_FOUNDATION.md) ; le [standard visuel](UI_STANDARDIZATION.md) décrit les compositions validées. Les preuves de recette et les limites de distribution figurent dans [l'audit UI/DPI](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md).
 
+Le [guide de développement des fenêtres](UI_WINDOW_DEVELOPMENT_GUIDE.md) est le point d'entrée pour construire une future interface. Les métriques, boutons, bandeaux, espacements et politiques DPI restent dans les composants existants ; le formulaire décrit ses options et interactions métier. Les anciens plans d'actions ne prescrivent plus de placements fixes ni de tailles divergentes.
+
 Ne pas migrer vers :
 - WPF
 - MAUI

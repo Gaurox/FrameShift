@@ -394,6 +394,8 @@ Alternative plus simple : implémenter via `System.Numerics.Complex` + FFT direc
 
 ## 6. Interface utilisateur (implémentée)
 
+**Composition actuelle :** les paramètres métier ci-dessous sont conservés, mais la fenêtre utilise désormais le socle 1.20.0. Pour sa géométrie, ses choix, son bandeau et ses commandes, suivre le [guide UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), le [contrat commun](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md). Les schémas ASCII illustrent les options, pas des positions ou tailles fixes.
+
 > **Statut (2026-05-25) :** l'UI est implémentée dans `SeparateAudioPickerForm.cs`. Les paramètres avancés (§6.3) n'ont pas été exposés — l'expérience est délibérément simplifiée.
 
 ### 6.1 Sélection des stems (checkboxes)

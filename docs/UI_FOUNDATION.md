@@ -6,34 +6,32 @@
 
 Choix retenu et éprouvé par C/D/E : composition de contrôles WinForms. Le formulaire compose ses options et relie la validation au métier ; la géométrie commune reste dans les composants existants.
 
-```csharp
-SuspendLayout();
-FrameShiftWindowPolicy.Initialize(this, new Size(680, 540), new Size(400, 300));
-FrameShiftWindowChrome.Apply(this, "FrameShift - Function");
+Le [guide de développement des fenêtres](UI_WINDOW_DEVELOPMENT_GUIDE.md) fournit l'ordre de construction, deux exemples complets (compact et éditeur), les règles de taille initiale, les variantes et la checklist de livraison. Ce document reste le contrat des composants et des métriques ; [UI_STANDARDIZATION](UI_STANDARDIZATION.md) porte les choix visuels. Les bilans de phases ci-dessous sont historiques et ne constituent pas des modèles supplémentaires.
 
-var header = FrameShiftUiFactory.CreateHeader(
-    "FrameShift - Function", sourceDescription, iconPath, IconPaths.AppIcon, "▶");
-var fields = new TableLayoutPanel
-{
-    AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
-    ColumnCount = 1, Dock = DockStyle.Top, Margin = Padding.Empty
-};
-fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-fields.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-fields.Controls.Add(FrameShiftUiFactory.CreateFieldRow("&Value", new TextBox()), 0, 0);
-var section = FrameShiftUiFactory.CreateSection("Options", fields);
-var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
-var primary = FrameShiftUiFactory.CreateMeasuredActionButton("Start", true);
-cancel.DialogResult = DialogResult.Cancel;
-CancelButton = cancel;
-AcceptButton = primary;
-// Connect validation and cancellation to the action, as before.
-Controls.Add(FrameShiftDialogLayout.Create(header, section,
-    FrameShiftDialogLayout.CreateActions(cancel, primary)));
-ResumeLayout(true);
-```
+Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, actions, options: options, status: status)`. Le rail est facultatif et défilant ; il passe sous l'aperçu lorsque la largeur disponible ne permet plus les deux colonnes. `FrameShiftCropEditorUi.Create` compose ce même shell. Le dessin du média et ses coordonnées restent à la charge de l'éditeur.
 
-Pour un éditeur, utiliser `FrameShiftEditorShellUi.Create(header, workspace, actions, options, status)`. Le rail est facultatif et défilant; il passe sous l'aperçu lorsque la largeur disponible ne permet plus les deux colonnes. `FrameShiftCropEditorUi.Create` compose ce même shell. Le dessin du média et ses coordonnées restent à la charge de l'éditeur.
+## Contrat de géométrie figé — 29 septembre 2026
+
+À réutiliser pour toute nouvelle fenêtre et toute modification. Les dimensions sont **logiques à 96 DPI** ; les métriques communes viennent de [FrameShiftUiMetrics.cs](../src/FrameShift/Windows/Helpers/FrameShiftUiMetrics.cs), et les polices/dessins des composants indiqués ci-dessous. Les mesures de texte et les bornes de contrôles sont déjà en pixels physiques.
+
+| Élément | Référence à 96 DPI | Métrique / composant propriétaire |
+|---|---|---|
+| Validation / annulation / fermeture | 140 × 34 ; mêmes dimensions dans un footer ; écart 10 | `FooterButtonWidth`, `FooterButtonHeight`, `FooterButtonGap` ; `CreateActions` |
+| Marges extérieures | 12 sur chaque côté | `OuterPadding` ; shell |
+| Bandeau / corps / statut / actions et aperçu / options | Séparation 12 | `OuterPadding` ; shell / workspace |
+| Sections ou blocs empilés | Écart 10 | `BlockGap` ; `CreateVerticalStack` |
+| Champs, choix sur une ligne et titre / contenu de section | Écart 8 | `LineGap`, `SectionContentGap` ; champs / rangées / sections |
+| Intérieur des sections | Gauche 12, haut 10, droite 12, bas 12 | `StandardSectionPadding` ; `CreateSection` |
+| Bandeau commun | Minimum 58 de haut, icône 38, marges horizontales 12, verticales 8, écart icône / texte 10 | `HeaderHeight`, `HeaderIconSize`, métriques d'écart ; `FrameShiftHeader` |
+| Arrondi des panneaux | Rayon 8 | `PanelCornerRadius` ; peintre commun |
+| Arrondi des boutons communs | Rayon 6 | `FrameShiftActionButton` ; dessin commun, rendu natif en contraste élevé |
+| Police de contenu | Segoe UI, 9 pt, héritée | `FrameShiftWindowPolicy` |
+| Police du titre de bandeau | Segoe UI Semibold, 14 pt | `FrameShiftHeader` ; hauteur du titre mesurée |
+| Rail d'éditeur par défaut | Largeur 258 ; repli sous l'aperçu en espace réduit | `EditorRailWidth` ; `FrameShiftEditorWorkspace` |
+
+Ces règles restent adaptatives : les boutons d'un footer grandissent ensemble pour des textes longs, le bandeau grandit pour un titre sur plusieurs lignes, et les métriques suivent le DPI. Ne pas figer des pixels physiques ni couper les textes. Les boutons internes spécialisés (par exemple ×2/×3/×4) peuvent être plus compacts ; ils ne sont pas des commandes de footer.
+
+Les espacements ne sont pas tous identiques : le shell sépare ses grandes zones par 12, la pile de sections par 10 et les lignes de champs par 8. Leurs composants appliquent ces valeurs ; éviter de rajouter la même marge dans le formulaire. Les seules dimensions locales décrivent un besoin métier (largeur de saisie courte, taille initiale d'aperçu, rail spécialisé), avec mesure et défilement de secours.
 
 ## Contrats des composants
 
@@ -72,7 +70,7 @@ F1 a retiré les anciennes factories fixes, les anciens `CreateFill*`, les roots
 
 Le testeur ouvre la démonstration compacte par défaut ; « Open editor sample » ouvre la seconde structure. Son mode `--check <fichier-json>` construit les deux structures et les lanceurs **sans les afficher**. Pour une nouvelle fenêtre, reprendre la composition et les composants ; les faux champs et tailles des cas métier ne sont pas des prescriptions.
 
-[TEST_PHASE_F2.cmd](../TEST_PHASE_F2.cmd) ouvre une recette ciblée à fenêtres non modales, avec thème temporaire dans le processus et états Progress simulés. Elle réutilise les composants de production ; voir [les manipulations F2](UI_PHASE_F2_MANUAL_TESTS.md). Aucun lancement visible n'est requis pour les tests automatisés.
+[TEST_PHASE_F2.cmd](../TEST_PHASE_F2.cmd) ouvre une recette ciblée à fenêtres non modales, avec thème temporaire dans le processus et états Progress simulés. Elle réutilise les composants de production ; voir [les manipulations F2](UI_PHASE_F2_MANUAL_TESTS.md). Le mode caché `--check` ci-dessous ne demande aucun affichage ; la suite complète comprend aussi des tests avec affichage.
 
 ## Validation par commandes
 
@@ -95,7 +93,11 @@ La suite existante peut afficher des fenêtres. Le passage sans affichage utilis
 dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter "FullyQualifiedName!~ExplorerArrivals_BeforeAndAfterHandle&FullyQualifiedName!~AddVideosButton_AddsEveryPickerOccurrence&FullyQualifiedName!~ShownWindow_IsVisibleAndCanBeginClosing&FullyQualifiedName!~Closing_DoesNotBlockTheStaMessagePump&FullyQualifiedName!~RemoveNoisePickers_PreserveRequestedDialogResult"
 ```
 
-Il exclut 12 cas UI existants, distincts des 5 tests média déjà ignorés. Les réexécuter ultérieurement en environnement de recette adapté.
+Ce filtre de développement historique exclut 12 cas UI existants, distincts des 5 tests média ignorés lors de la qualification 1.20.0. Il ne constitue pas un gate de release : G a réexécuté la suite Release complète en environnement Windows isolé. Voir le [rapport de qualification](RELEASE_QUALIFICATION_1.20.0.md) et la [chaîne canonique](RELEASE_CHECKLIST.md). Pour une nouvelle fenêtre, ajouter les contrôles pertinents et suivre la [recette de développement](UI_WINDOW_DEVELOPMENT_GUIDE.md#8-vérifier-avant-de-livrer).
+
+## Historique de mise en place du socle
+
+Les bilans B/C/D/E/F ci-dessous conservent les décisions, résultats intermédiaires et recettes rejouables. Une mention de phase suivante, de code non encore migré ou d'application installée antérieure décrit sa date d'exécution. L'état courant est celui de 1.20.0 indiqué en tête ; les règles actives sont les sections précédentes et le guide de développement.
 
 ## Recette manuelle de B — validée par l'utilisateur
 
@@ -116,21 +118,9 @@ Ces fenêtres utilisent des valeurs fictives. Aucun média, traitement FFmpeg, f
 
 ## Pilotes C — développement et recette
 
-### Contrat de géométrie figé — 29 septembre 2026
+### Application du contrat aux cinq pilotes
 
-À réutiliser pour toute nouvelle fenêtre et toute modification, sans variantes locales selon l'action ou le rôle principal/secondaire. Les tailles sont des références mesurées, agrandies ensemble lorsque le texte l'exige :
-
-| Élément | Référence à 96 DPI |
-|---|---|
-| Validation / annulation / fermeture | 140 × 34 ; mêmes dimensions pour la paire ; écart 10 |
-| Marges extérieures | 12 sur chaque côté |
-| Bandeau / corps / statut / actions et aperçu / options | Séparation 12 |
-| Sections ou blocs empilés | Écart 10 |
-| Champs, choix sur une ligne et titre / contenu de section | Écart 8 |
-| Intérieur des sections | Gauche 12, haut 10, droite 12, bas 12 |
-| Bandeau commun | Minimum 58 de haut, icône 38, marges horizontales 12, verticales 8, écart icône / texte 10 |
-
-Ces valeurs sont centralisées dans `FrameShiftUiMetrics`. Une règle figée reste adaptative : la paire de boutons grandit ensemble pour des textes longs ou une police agrandie, le bandeau peut grandir pour un titre sur plusieurs lignes, et les métriques suivent le DPI. Ne pas figer des pixels physiques ni couper les textes. Les boutons internes spécialisés (par exemple ×2/×3/×4) peuvent être plus compacts ; ils ne sont pas des commandes de footer.
+Le [contrat de géométrie](#contrat-de-géométrie-figé--29-septembre-2026), désormais placé parmi les règles actives ci-dessus, a été figé lors de cette phase.
 
 Le bandeau et les espacements des cinq pilotes respectaient déjà ce contrat ; leur géométrie est conservée. Les quelques constantes équivalentes encore littérales du nouveau socle utilisent maintenant les métriques communes. Les menus historiques utilisent encore les chemins de compatibilité avant D/E : ils ne sont pas déclarés uniformisés par cette révision C.
 
@@ -200,4 +190,4 @@ Le chrome possède uniquement ses icônes chargées ; les bitmaps de bandeau/out
 
 Les classes de tests WinForms rejoignent `WinFormsTestCollection`. Cette collection et celle des préférences ne s'exécutent pas en parallèle avec les autres collections, car thème, settings et GDI sont partagés dans le processus. Chacune possède un dossier de préférences temporaire ; les collections indépendantes gardent leur parallélisme. Conserver ce contrat pour les prochains tests UI plutôt que fournir un flag global à chaque commande de test.
 
-`FrameShift.UiSamples --resources <json>` est une mesure de développement cachée : handles natifs, dessin dans ses propres bitmaps et compteurs GDI/USER après échauffement. Ce mode n'affiche aucune fenêtre et ne capture pas le bureau. Il exerce le noyau chrome/composants/Main/picker/Progress, sans certifier le rendu à plusieurs DPI. Voir [le bilan F4 de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [la recette combinée de F](UI_PHASE_F4_MANUAL_TESTS.md). F4 est terminée techniquement et les recettes manuelles F2/F3/F4 sont validées par l'utilisateur le 2 octobre 2026 ; G n'est pas lancé.
+`FrameShift.UiSamples --resources <json>` est une mesure de développement cachée : handles natifs, dessin dans ses propres bitmaps et compteurs GDI/USER après échauffement. Ce mode n'affiche aucune fenêtre et ne capture pas le bureau. Il exerce le noyau chrome/composants/Main/picker/Progress, sans certifier le rendu à plusieurs DPI. Voir [le bilan F4 de l'audit](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md) et [la recette combinée de F](UI_PHASE_F4_MANUAL_TESTS.md). F4 et les recettes manuelles F2/F3/F4 ont été validées par l'utilisateur le 2 octobre 2026, avant la qualification G et la publication 1.20.0 consignées séparément.

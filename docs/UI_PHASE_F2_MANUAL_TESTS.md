@@ -2,7 +2,7 @@
 
 ## Lancement
 
-Double-cliquer sur [TEST_PHASE_F2.cmd](../TEST_PHASE_F2.cmd) dans `E:\AI\FrameShift_V1`. Le testeur Debug doit être compilé. Utiliser ce build de développement pour vérifier F2 ; l'application installée ne contient pas ces changements.
+Double-cliquer sur [TEST_PHASE_F2.cmd](../TEST_PHASE_F2.cmd) dans `E:\AI\FrameShift_V1`. Le testeur Debug doit être compilé. Il propose les états simulés pour rejouer F2 ; les changements sont également distribués dans l'application installée depuis 1.20.0. La [recette G](UI_PHASE_G_MANUAL_TESTS.md) vérifie le binaire installé.
 
 Les boutons **Clair / Sombre / Système** ne sauvegardent aucune préférence et ne changent aucun réglage Windows. Ils rafraîchissent les fenêtres ouvertes du même processus. La fermeture du lanceur termine cette session de recette. Settings est le vrai formulaire : **utiliser les boutons du lanceur pour changer le thème**, car le sélecteur de Settings sauvegarde réellement la préférence si on le modifie.
 

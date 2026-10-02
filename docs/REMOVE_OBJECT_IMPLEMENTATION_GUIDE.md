@@ -5,6 +5,8 @@
 > Audience : développeurs et agents IA reprenant le travail, éventuellement plusieurs semaines après la phase d'étude.
 > Règle d'or : ce guide est autoportant. Il n'est pas nécessaire de relire la recherche initiale pour développer la fonctionnalité.
 
+**Référence UI actuelle (1.20.0) :** le [guide de développement des fenêtres](UI_WINDOW_DEVELOPMENT_GUIDE.md), le [contrat du socle](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md) prévalent sur les maquettes historiques de cette notice. Les sections UI et build ci-dessous sont réconciliées avec ces règles ; les étapes métier d'origine restent historiques.
+
 > **Note post-implémentation (mai 2026)** : MI-GAN 512 a été retiré du catalogue après validation — le modèle ONNX produit des résultats non fonctionnels (output saturé en couleur uniforme) quel que soit le pré-traitement testé (13 combinaisons normalisation/masque/décodage).
 > **Mise à jour (mai 2026)** : un second modèle a été ajouté — **LaMa 2025 (Fast)** (`inpainting_lama_2025jan.onnx`, 93 MB, Apache-2.0, opencv/inpainting_lama). API identique à LaMa FP32 (mêmes tenseurs `image`/`mask`, même plage de sortie [0,255]), aucun changement d'engine. Accessible via le ComboBox (`lama-fast`). SHA256 : `7DF918AC3921D3DAF0AAE1D219776CF0DC4E4935F035AF81841B40ADCF74FDF2`. Hébergé sur `Gaurox/frameshift-models/lama-opencv-onnx/`. La propriété `ForceCpu` a été ajoutée à `ObjectRemovalModelDefinition` (défaut `true`) pour permettre aux futurs modèles d'activer DirectML sans toucher à l'engine.
 
@@ -227,8 +229,8 @@ ApplyAIActionMenuList(ImageExtensions, 'remove_object', 'Remove object', 'remove
 Assets : ajouter `src/FrameShift/Assets/Icons/ai/remove_object.ico` (utilisé en bandeau interne ET en icône menu Explorer).
 Rappel build (PROJECT_RULES — Build Discipline) :
 - `dotnet build src/FrameShift/FrameShift.csproj`
-- puis `dotnet publish ... -c Release -r win-x64 --self-contained true`
-- puis recompiler l'ISS. Ne jamais tester l'ancien binaire.
+- pour une distribution, `./build_installer.ps1` est la chaîne canonique : tests Release complets, publish et compilation Inno intégrés ; voir [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md).
+- tester le binaire réellement construit/installé. Ne pas remplacer cette chaîne par un publish puis une compilation ISS manuels.
 ---
 ## 12. Gestion des modèles
 - `ModelLocator` : chemins sous `AiModelStorage.RootDirectory\<folder>\`, `ModelExists()` / `EnsureDirectoryExists()`, migration de layout legacy si nécessaire (suivre `RemoveBackground.ModelLocator`).
@@ -250,22 +252,23 @@ Nominal :
 7. Fermeture / nouvelle passe possible.
 ---
 ## 14. UI détaillée (UI_STANDARDIZATION strict)
-Type : **éditeur léger redimensionnable** (§12.2 / §12.3 du standard). Hiérarchie : **bandeau / workspace / rangée d'outils / aide / footer**, rail de contrôle fixe à droite.
+Type : **éditeur léger redimensionnable** composé avec `FrameShiftEditorShellUi.Create`. Hiérarchie : **bandeau / workspace avec options / statut / footer**. Le rail d'options défile et passe sous l'aperçu lorsque la largeur disponible l'exige.
 - Chrome : `FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Object", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon)` → barre de titre icône **FrameShift AI**.
-- Bandeau (≈58 px) via `FrameShiftUiFactory.CreateFixedHeader/CreateFillHeader` : icône `remove_object`, titre, ligne secondaire (`nom · LARGEURxHAUTEUR · format`).
-- Workspace (bloc dominant) : image affichée, **overlay masque** semi-transparent (rouge ~40 %). Base mécanique reprise de `FrameShiftCropEditorUi` (zoom molette, pan clic-glissé, Fit).
-- Couleurs : `#8EBAF3` (PrimaryBlue) / `#4D79B4` (SecondaryBlue) ; fond `#F5F7FB` ; surfaces blanches ; bordures bleues, jamais noires.
-- Rail outils (ligne dédiée à hauteur fixe, jamais comprimable) :
+- Politique : `FrameShiftWindowPolicy.Initialize` avant contrôles/handles ; géométrie logique 96 DPI et minima bornés au moniteur.
+- Bandeau via `FrameShiftUiFactory.CreateHeader` : icône `remove_object`, titre mesuré, métadonnées complètes (`nom · LARGEURxHAUTEUR · format`) consultables/copiables. Hauteur minimale logique 58, jamais une hauteur physique fixe.
+- Workspace (bloc dominant) : image affichée, **overlay masque** semi-transparent (rouge ~40 %). La composition est partagée ; le mapping image, le pinceau, le zoom, le pan et Fit restent dans `RemoveObjectEditorForm`, pas dans le helper de shell.
+- Couleurs UI : rôles de `FrameShiftTheme` ; petits textes, focus et états lisibles en clair/sombre. Les couleurs du masque et du média restent fonctionnelles.
+- Outils : rangées/sections mesurées avec défilement de secours, sans hauteur locale imposée :
 - `Brush` / `Eraser` (toggle exclusif, tuiles ou boutons cohérents) ;
-- **Brush size** (champ composite + slider, hauteur 30/34 px standard) ;
+- **Brush size** (champ compact + slider, hauteur mesurée) ;
 - `Reset mask` (secondaire) ;
 - `Fit` (secondaire) ;
 - indicateur Zoom %.
-- Footer : `Cancel` (120×34, secondaire) à gauche du principal ; `Apply` (140×34, principal `SecondaryBlue`) à droite. Marge basse cohérente.
-- Cadre d'aide bleu (`AccentSoft` + bordure `PrimaryBlue`) : texte court.
+- Footer hors scroll : `Cancel` à gauche d'`Apply`, via `CreateMeasuredActionButton` et `CreateActions`. Base commune 140 × 34 logique, agrandissement conjoint si nécessaire ; état principal fourni par la factory.
+- Aide : statut commun sélectionnable/copiable ; lecture longue dans une zone native adaptée si nécessaire.
 - Souris : clic-gauche glissé = peindre ; gomme = mode actif (ou clic-droit glissé) ; molette = zoom ; espace+drag (ou molette-drag) = pan ; `[` / `]` = taille pinceau.
 - Le masque est stocké en **coordonnées image** (indépendant du zoom), prêt pour le resize 512.
-- Respecter la taille minimale de fenêtre garantissant les espacements standards (sinon relever la taille min avant de toucher au style).
+- Respecter les métriques communes ; en espace réduit, replier/défiler les options plutôt qu'imposer un minimum dépassant l'écran. Aperçus asynchrones, annulation et fermeture suivent la durée de vie de l'éditeur courant.
 ---
 ## 15. Mockup ASCII
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -430,10 +433,10 @@ Robustesse (PROJECT_RULES — Runtime Validation) :
 UI (UI_STANDARDIZATION) :
 - [ ] Bandeau standard, titre `FrameShift - Remove Object`, icône fonction visible.
 - [ ] Barre de titre = icône FrameShift AI.
-- [ ] Deux bleus de référence, aucune bordure noire système.
-- [ ] Boutons principal/secondaire conformes (140×34 / 120×34, 34 px outils).
-- [ ] Rangée d'outils toujours visible (ligne dédiée à hauteur fixe).
-- [ ] Espacements standards respectés à la taille minimale.
+- [ ] Rôles de thème, textes, focus et états lisibles en clair/sombre ; média et masque conservés.
+- [ ] Commandes de footer de dimensions communes (base 140 × 34 logique), mesurées par le socle.
+- [ ] Options accessibles par repli/défilement ; footer persistant.
+- [ ] Espacements standards, textes longs et recette 100/150/200/300 %, multi-écran et taille du texte indépendante.
 Licence / conformité (§6) :
 - [ ] `DownloadModelForm` affiche la licence réelle, sans « commercial guaranteed ».
 - [ ] Origine Places2 mentionnée (libellé licence ou note catalogue).
@@ -441,8 +444,8 @@ Licence / conformité (§6) :
 - [ ] Architecture catalogue en place (modèle remplaçable).
 Build / packaging (Build Discipline) :
 - [ ] `dotnet build` vert.
-- [ ] `dotnet publish -c Release -r win-x64 --self-contained true`.
-- [ ] ISS recompilé ; menu Explorer et action testés sur binaire publié/installé (pas Debug).
+- [ ] `./build_installer.ps1` réussi, incluant tests Release complets, publish et Inno.
+- [ ] Menu Explorer et action testés sur le binaire réellement installé (pas Debug).
 - [ ] Désinstallation propose la suppression des modèles (`%LOCALAPPDATA%\FrameShift\AI\Models`).
 ---
 ## 25. Références internes (pour reprise rapide)
