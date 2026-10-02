@@ -193,6 +193,8 @@ tests/
 - [Migration Plan](docs/MIGRATION_PLAN.md)
 - [Changelog](docs/CHANGELOG.md)
 - [Release Notes 1.18.1](docs/RELEASE_NOTES_1.18.1.md)
+- [Release Notes 1.20.0 — Candidate](docs/RELEASE_NOTES_1.20.0.md)
+- [Installed Candidate Tests](docs/UI_PHASE_G_MANUAL_TESTS.md)
 - [Release Notes 1.19.0](docs/RELEASE_NOTES_1.19.0.md)
 - [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)
 - [Dark / Light Theme Implementation](docs/DARK_LIGHT_THEME_IMPLEMENTATION.md)

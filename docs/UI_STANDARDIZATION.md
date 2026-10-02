@@ -10,7 +10,7 @@ Réconciliation F1 du 2 octobre 2026. Ce document décrit les choix visuels et e
 - [UI_DPI_AUDIT](UI_DPI_AUDIT.md) conserve l'ancien bilan à titre historique ; ses anciennes recettes de placement ne s'appliquent plus aux nouvelles fenêtres.
 - [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md) porte la qualification de distribution et la chaîne canonique de publication.
 
-Les 36 fenêtres C/D/E ont rejoint le socle et leur rendu a été accepté par l'utilisateur à 100/150/200/300 %. La portée des contrôles complémentaires reste celle consignée dans l'audit. F1 retire les chemins de compatibilité inutilisés et réconcilie ces documents. Les contrastes/états, les compléments clavier et la vérification des ressources restent suivis dans F2/F3/F4. La qualification globale Release et du binaire installé relève de G.
+Les 36 fenêtres C/D/E ont rejoint le socle et leur rendu a été accepté par l'utilisateur à 100/150/200/300 %. La portée des contrôles complémentaires reste celle consignée dans l'audit. F1 retire les chemins de compatibilité inutilisés et réconcilie ces documents. F2/F3/F4 sont vérifiées et acceptées sur leur périmètre ; G prépare la candidate installable 1.20.0, dont la recette globale et la décision de publication restent attendues.
 
 ## 1. Composition commune
 

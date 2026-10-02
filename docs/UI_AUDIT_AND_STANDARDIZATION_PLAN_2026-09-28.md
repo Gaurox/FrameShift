@@ -1029,6 +1029,10 @@ La version applicative passe à 1.20.0 et `PerMonitorV2` est activé en Debug et
 
 Résultats et identité de l'artefact : [rapport de qualification 1.20.0](RELEASE_QUALIFICATION_1.20.0.md). Vérifications utilisateur : [recette G installée](UI_PHASE_G_MANUAL_TESTS.md). Notes préparées : [release 1.20.0](RELEASE_NOTES_1.20.0.md). **G reste ouverte** jusqu'à la recette du binaire exact et la décision de publication ; aucun scénario non exécuté n'est marqué validé.
 
+**Résultat de préparation :** installateur terminé depuis le commit propre **`dd54287`** par la chaîne canonique, code **0**. Suite Release complète : **642 réussites, 0 échec, 5 ignorés, 647 cas**, sans filtre ni dérogation à l'isolation des collections. Les cinq intégrations Whisper manquent d'assets locaux ; elles restent non exécutées. Inno Setup 6.7.1 compile `FrameShift_1.20.0_Setup.exe` (**167 335 254 octets**, SHA-256 **`5B055346F20E4359249B84F64C62D3153EF0765819C996B9A51A52D557C2D6A6`**). Les **775 fichiers** du payload sont inventoriés avec empreintes ; runtimes/outils/notices présents, aucun symbole ni testeur distribué.
+
+L'initialiseur de la DLL publiée est vérifié sur un bureau privé : **PerMonitorV2 WinForms et natif Windows**, handle caché à **96 DPI**, code **0**. Deux redimensionnements réels de l'apphost publié donnent des sorties **160 × 120** distinctes dans un chemin avec espaces/accents, avec source et premier résultat inchangés. Ces preuves automatiques ne remplacent pas l'installation, les DPI réels, Explorer et la matrice section 8. **Candidate remise pour essais ; aucune publication, aucun tag/push et aucune installation automatique.**
+
 **Règle de reprise :** pour chaque passage, consigner phase, commit/binaire, résultat de build/tests, scénarios exécutés, défauts et limites, puis décision de poursuite. Une validation manquante reste identifiée comme telle. Les corrections de layout, aperçus et comportement restent dans des changements séparés autant que possible. Les règles Core, runners et nommage unique ne sont pas réécrites pour les besoins du chantier UI.
 
 ## 8. Plan de validation

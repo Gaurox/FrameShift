@@ -20,7 +20,7 @@ Candidate for manual installed-build testing. Publication requires the owner's f
 ## Download
 
 - `FrameShift_1.20.0_Setup.exe` — Windows 10/11 x64 installer
-- SHA-256: pending candidate build
+- SHA-256: `5B055346F20E4359249B84F64C62D3153EF0765819C996B9A51A52D557C2D6A6`
 
 FrameShift remains self-contained and offline-first. Optional AI models download only when needed.
 ```
