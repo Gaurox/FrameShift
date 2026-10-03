@@ -26,6 +26,7 @@
 - [Quick Workflow](#quick-workflow)
 - [Actions](#actions)
 - [Technology](#technology)
+- [ImageSharp Licence — Maintainers and AI Agents](#imagesharp-licence--maintainers-and-ai-agents)
 - [Documentation](#documentation)
 
 ---
@@ -174,6 +175,21 @@ Crop images and videos with a dedicated visual editor that now supports automati
 - FFmpeg
 - FFprobe
 - Optional local AI components with ONNX Runtime DirectML
+
+## ImageSharp Licence — Maintainers and AI Agents
+
+**Renewal reminder: the current Six Labors Community licence expires on 2028-01-01, according to its issuance email. Plan renewal in December 2027.**
+
+FrameShift uses ImageSharp 4 for image processing. A valid private `sixlabors.lic` file is required for Release builds. Community keys expire and require periodic renewal; do not assume automatic renewal. See [Six Labors' confirmation](https://github.com/SixLabors/ImageSharp/discussions/3039) and [licence setup instructions](https://sixlabors.com/posts/licence-enforcement-changes/).
+
+Before preparing any release, maintainers and AI agents must:
+
+1. Check that the available licence is still valid. If it is expired or approaching expiry, ask the project owner to renew it through [Six Labors](https://licensing.sixlabors.com/).
+2. Supply the private file through `SixLaborsLicenseFile` (for example, a process environment variable), or use a protected build secret as documented by Six Labors. Never commit the licence or its contents, print the key in logs, or include it in the installer.
+3. Run the official release command, `build_installer.ps1`, with the licence configured. Do not bypass licence validation or downgrade to a vulnerable ImageSharp version to build a release.
+4. After renewal, update the expiry date and renewal reminder in this section from the new issuance email.
+
+The licence is checked during compilation. Installed FrameShift versions keep working after the key expires, and end users do not need their own key.
 
 ## Project Structure
 
