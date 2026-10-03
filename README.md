@@ -35,7 +35,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.20.0** · latest published release: **[1.20.0](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch target: **1.20.1** (release candidate; see [release notes](docs/RELEASE_NOTES_1.20.1.md)) · latest published release: **[1.20.0](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -210,6 +210,7 @@ tests/
 - [Changelog](docs/CHANGELOG.md)
 - [Release Notes 1.18.1](docs/RELEASE_NOTES_1.18.1.md)
 - [Release Notes 1.20.0](docs/RELEASE_NOTES_1.20.0.md)
+- [Release Notes 1.20.1](docs/RELEASE_NOTES_1.20.1.md)
 - [Installed Release Tests](docs/UI_PHASE_G_MANUAL_TESTS.md)
 - [Release Notes 1.19.0](docs/RELEASE_NOTES_1.19.0.md)
 - [Release Checklist and Versioning](docs/RELEASE_CHECKLIST.md)

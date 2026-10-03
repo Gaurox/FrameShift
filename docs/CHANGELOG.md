@@ -2,7 +2,7 @@
 
 ## 1.20.1
 
-Security corrections implemented and tested locally; not released. The Six Labors Community licence is validated and Release compilation succeeds. Release tests, canonical packaging and installed qualification are pending.
+Security maintenance release candidate; not published. The Six Labors Community licence is validated. Canonical Release build results and remaining installed qualification are recorded in [the candidate report](RELEASE_QUALIFICATION_1.20.1.md).
 
 - Removed the setup's registry-driven uninstaller launch. Existing machine installations remain updatable; uninstall through Windows Settings. Legacy per-user installations are reported separately.
 - Upgraded ImageSharp from 3.1.12 to 4.1.2; updated the app, test and UI sample lockfiles and the affected BMP encoder API. Restricted file decoding to PNG, JPEG, WebP and BMP, preserving ICC profiles and pixel colors. Debug builds and real CPU/DirectML inference are validated. The owner's Community licence is accepted by the official validator; app/worker Release compilation passes without warnings or errors.
