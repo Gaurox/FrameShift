@@ -19,7 +19,7 @@ internal sealed class OutputOperation : IDisposable
         for (var attempt = 0; ; attempt++)
         {
             WorkspacePath = Path.Combine(parent, $".frameshift-{Guid.NewGuid():N}");
-            if (CreateDirectory(WorkspacePath, IntPtr.Zero)) break;
+            if (CreateDirectory(ToNativeDirectoryPath(WorkspacePath), IntPtr.Zero)) break;
             var error = Marshal.GetLastWin32Error();
             if (error == 183 && attempt < 9) continue;
             throw new IOException("Cannot create output workspace.", new Win32Exception(error));
@@ -62,6 +62,15 @@ internal sealed class OutputOperation : IDisposable
 
     private static bool IsDestinationCollision(IOException exception) =>
         (exception.HResult & 0xffff) is 80 or 183;
+
+    private static string ToNativeDirectoryPath(string path)
+    {
+        // Unlike .NET file APIs, this P/Invoke needs the extended prefix for long Windows paths.
+        if (path.Length < 248 || path.StartsWith(@"\\?\", StringComparison.Ordinal)) return path;
+        return path.StartsWith(@"\\", StringComparison.Ordinal)
+            ? @"\\?\UNC\" + path[2..]
+            : @"\\?\" + path;
+    }
 
     public static void NotifySaved(Action notification)
     {

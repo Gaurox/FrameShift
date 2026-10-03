@@ -46,7 +46,7 @@ internal sealed class VideoUpscaleEngine : IDisposable
                 using (var source = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputFramePath))
                 using (var output = _processor.Upscale(source, request, progress: null, cancellationToken))
                 {
-                    output.SaveAsBmp(outputFramePath, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Pixel32 });
+                    output.SaveAsBmp(outputFramePath, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Bit32 });
                 }
 
                 // The output has been safely persisted; source BMPs are never read again.

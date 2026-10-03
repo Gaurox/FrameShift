@@ -154,6 +154,16 @@ public sealed class SecurityOutputIntegrationTests : IDisposable
         Assert.Empty(Directory.GetDirectories(_root, ".frameshift-*"));
     }
 
+    [Fact]
+    public void FailureCreatingSecondStemCleansPreviouslyOpenedWriter()
+    {
+        // The vocals filename fits NTFS's 255-character component limit; instrumental does not.
+        var input = Path.Combine(_root, new string('a', 243) + ".wav");
+        Assert.ThrowsAny<IOException>(() => AudioSeparationEngine.OutputWriters.Create(
+            input, new StemSelection { Vocals = true, Instrumental = true }));
+        Assert.Empty(Directory.GetFileSystemEntries(_root));
+    }
+
     private sealed class CollisionReporter(Action createCollision) : IProgressReporter
     {
         private bool _created;

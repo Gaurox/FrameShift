@@ -14,6 +14,7 @@ internal static class SafeImageReader
 {
     private static readonly DecoderOptions Options = new()
     {
+        ColorProfileHandling = ColorProfileHandling.Preserve,
         Configuration = new Configuration(
             new PngConfigurationModule(), new JpegConfigurationModule(),
             new WebpConfigurationModule(), new BmpConfigurationModule())

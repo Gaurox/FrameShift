@@ -6,7 +6,7 @@
 
 **Référence :** [audit de sécurité](E:/AI/FrameShift_V1/docs/SECURITY_AUDIT_2026-10-03.md).
 
-**Statut :** application commencée sur `codex/security-p1`. L'installateur, les lectures restreintes, les sorties et les contrôles du runtime sont implémentés et testés localement. La migration ImageSharp 4.1.2 attend une licence de compilation valide ; la qualification installée et la clôture des quatre P1 restent à réaliser. Voir le [suivi d'application](E:/AI/FrameShift_V1/docs/SECURITY_P1_IMPLEMENTATION_2026-10-03.md).
+**Statut :** corrections de code terminées sur `codex/security-p1`, y compris la migration ImageSharp 4.1.2 et les verrouillages. Compilation et suite complète Debug, inférences CPU/DirectML et contrôles d'un payload Debug autonome validés. La licence bloque la compilation Release ; la chaîne canonique et la qualification installée restent à terminer avant clôture. Voir le [suivi d'application](E:/AI/FrameShift_V1/docs/SECURITY_P1_IMPLEMENTATION_2026-10-03.md).
 
 ## Organisation : trois phases
 
@@ -54,9 +54,9 @@ La restriction porte sur les **lectures ImageSharp**. Elle ne doit pas retirer d
 
 Éviter les contrôles répétés dans toutes les couches UI/Core : le helper doit garantir la restriction au moment de la lecture réelle. Il n'est pas nécessaire de réorganiser la recherche des modèles IA pour fermer cette faille. Ne pas modifier `Configuration.Default` globalement pendant les traitements.
 
-**Prérequis de compilation :** ImageSharp 4 demande un `sixlabors.lic` valide pour une dépendance directe. Aucun fichier de ce type n'a été trouvé dans l'inventaire du dépôt. Vérifier les modalités communautaires applicables au projet GPL v3 et prévoir son chemin de compilation. Le fichier d'exemple de l'éditeur, expiré le 4 septembre 2026, ne convient pas. [Instructions Six Labors](https://sixlabors.com/posts/licence-enforcement-changes/).
+**Prérequis de compilation Release :** ImageSharp 4 demande un `sixlabors.lic` valide pour une dépendance directe. Le paquet officiel 4.1.2 autorise Debug avec un avertissement de licence : la migration et ses tests locaux sont réalisés dans cette configuration, sans désactiver sa validation. Aucun fichier de licence valide n'a été trouvé. Le propriétaire devra demander la licence applicable au projet GPL v3 et fournir son chemin de compilation. Le fichier d'exemple de l'éditeur, expiré le 4 septembre 2026, ne convient pas. [Instructions Six Labors](https://sixlabors.com/posts/licence-enforcement-changes/).
 
-La restriction des décodeurs peut être préparée avec la version actuelle pendant la résolution de ce prérequis. Elle ne permet pas à elle seule de déclarer la migration terminée. La compatibilité du framework ne prouve pas la compatibilité des API ou du rendu.
+La migration peut être réalisée et testée en Debug pendant la résolution de ce prérequis. Une validation locale en Debug ne clôture pas la qualification Release et installée.
 
 **Tests ciblés :**
 

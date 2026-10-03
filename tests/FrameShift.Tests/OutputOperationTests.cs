@@ -92,4 +92,77 @@ public sealed class OutputOperationTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_root, "result_001.wav")));
         Assert.Equal("sentinel", File.ReadAllText(desired));
     }
+
+    [Fact]
+    public void LongAdjacentPathCanBePublishedWithoutReplacement()
+    {
+        var parent = _root;
+        while (parent.Length < 270) parent = Path.Combine(parent, "dossier avec accents été");
+        Directory.CreateDirectory(parent);
+        var desired = Path.Combine(parent, "résultat.png");
+        File.WriteAllText(desired, "foreign");
+        using (var output = OutputOperation.ForFile(desired))
+        {
+            File.WriteAllText(output.WorkingPath, "generated");
+            Assert.Equal(Path.Combine(parent, "résultat_001.png"), output.Publish(CancellationToken.None));
+        }
+        Assert.Equal("foreign", File.ReadAllText(desired));
+        Assert.Equal("generated", File.ReadAllText(Path.Combine(parent, "résultat_001.png")));
+        Assert.Empty(Directory.GetDirectories(parent, ".frameshift-*"));
+    }
+
+    [Fact]
+    public void CancellationAfterPublicationKeepsSavedFile()
+    {
+        var desired = Path.Combine(_root, "résultat.png");
+        using var cancellation = new CancellationTokenSource();
+        using (var output = OutputOperation.ForFile(desired))
+        {
+            File.WriteAllText(output.WorkingPath, "complete");
+            Assert.Equal(desired, output.Publish(cancellation.Token));
+            OutputOperation.NotifySaved(() =>
+            {
+                cancellation.Cancel();
+                throw new InvalidOperationException("Late UI failure");
+            });
+        }
+        Assert.Equal("complete", File.ReadAllText(desired));
+        Assert.Empty(Directory.GetDirectories(_root, ".frameshift-*"));
+    }
+
+    [Fact]
+    public void AccessDeniedDuringPublicationDoesNotRetryOrTouchForeignOutput()
+    {
+        var desired = Path.Combine(_root, "result.wav");
+        File.WriteAllText(desired, "foreign");
+        using var output = OutputOperation.ForFile(desired);
+        File.WriteAllText(output.WorkingPath, "generated");
+        var file = new FileInfo(output.WorkingPath);
+        var directory = new DirectoryInfo(output.WorkspacePath);
+        using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+        var fileRule = new System.Security.AccessControl.FileSystemAccessRule(identity.User!,
+            System.Security.AccessControl.FileSystemRights.Delete, System.Security.AccessControl.AccessControlType.Deny);
+        var directoryRule = new System.Security.AccessControl.FileSystemAccessRule(identity.User!,
+            System.Security.AccessControl.FileSystemRights.DeleteSubdirectoriesAndFiles, System.Security.AccessControl.AccessControlType.Deny);
+        var fileAcl = System.IO.FileSystemAclExtensions.GetAccessControl(file);
+        var directoryAcl = System.IO.FileSystemAclExtensions.GetAccessControl(directory);
+        try
+        {
+            fileAcl.AddAccessRule(fileRule);
+            System.IO.FileSystemAclExtensions.SetAccessControl(file, fileAcl);
+            directoryAcl.AddAccessRule(directoryRule);
+            System.IO.FileSystemAclExtensions.SetAccessControl(directory, directoryAcl);
+            Assert.Throws<UnauthorizedAccessException>(() => output.Publish(CancellationToken.None));
+            Assert.Null(output.PublishedPath);
+            Assert.False(File.Exists(Path.Combine(_root, "result_001.wav")));
+            Assert.Equal("foreign", File.ReadAllText(desired));
+        }
+        finally
+        {
+            fileAcl.RemoveAccessRuleSpecific(fileRule);
+            System.IO.FileSystemAclExtensions.SetAccessControl(file, fileAcl);
+            directoryAcl.RemoveAccessRuleSpecific(directoryRule);
+            System.IO.FileSystemAclExtensions.SetAccessControl(directory, directoryAcl);
+        }
+    }
 }

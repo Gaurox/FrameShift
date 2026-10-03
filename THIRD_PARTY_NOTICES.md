@@ -58,14 +58,16 @@ The self-contained `win-x64` publish includes the .NET 8 Windows Desktop runtime
 
 ## SixLabors.ImageSharp
 
-- NuGet package: `SixLabors.ImageSharp` version 3.1.12
+- NuGet package: `SixLabors.ImageSharp` version 4.1.2
 - Source: https://github.com/SixLabors/ImageSharp
 - License: **Six Labors Split License**
-  - Apache 2.0 for open-source projects (OSI-approved license)
-  - Commercial license required for closed-source or commercial use
+  - Apache 2.0 when the qualifying criteria in the upstream license are met, including open-source or source-available software.
+  - Six Labors Commercial License for other scenarios.
 - FrameShift is distributed under GPL v3 (an OSI-approved open-source license), so the Apache 2.0 branch of the Split License applies.
 
-Full license text: https://github.com/SixLabors/ImageSharp/blob/main/LICENSE
+Full license text: https://github.com/SixLabors/ImageSharp/blob/v4.1.2/LICENSE
+
+Version 4 requires a valid Six Labors build licence for Release compilation. Open-source projects can apply at https://licensing.sixlabors.com/. The vendor permits Debug compilation with a licence warning; FrameShift does not suppress or bypass licence validation.
 
 ---
 
