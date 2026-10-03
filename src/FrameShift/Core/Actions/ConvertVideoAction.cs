@@ -83,7 +83,8 @@ public sealed class ConvertVideoAction : IFrameShiftAction
         var cpuFallbackPlan = plan.ModeLabel.Equals("GPU", StringComparison.OrdinalIgnoreCase)
             ? VideoConversionPlanner.BuildPlan(target, profile, probe, false)
             : null;
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, $"_convert_{target.Id}", $".{target.Id}");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, $"_convert_{target.Id}", $".{target.Id}"));
+        var outputPath = output.WorkingPath;
         var pipelineDescription = BuildPipelineDescription(plan, probe, cpuFallbackPlan is not null);
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
@@ -162,9 +163,7 @@ public sealed class ConvertVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

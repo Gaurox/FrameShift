@@ -49,7 +49,8 @@ public sealed class ConvertToIconAction : IFrameShiftAction
         }
 
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_icon", ".ico");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_icon", ".ico"));
+        var outputPath = output.WorkingPath;
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"frameshift_icon_{Guid.NewGuid():N}");
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
@@ -122,9 +123,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

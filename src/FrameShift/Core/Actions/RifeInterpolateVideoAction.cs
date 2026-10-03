@@ -107,7 +107,8 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.DurationUnavailable());
         }
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, settings.OutputSuffix, sourceExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, settings.OutputSuffix, sourceExtension));
+        var outputPath = output.WorkingPath;
         var requestedPipeline = ConversionActionHelper.GetOption(request, ActionOptionKeys.InterpolatePipeline, "auto");
         var tempRoot = Path.Combine(
             Path.GetTempPath(),
@@ -173,9 +174,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
 
                     request.Logger.Log(rawResult.Report);
                     WritePerformanceReport(rawResult.Report, "RifeRawVideoPerformanceReport_latest.txt");
-                    request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-                    request.ProgressReporter?.ReportState("done", "Completed.");
-                    return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+                    return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
                 }
                 catch (Exception ex) when (!string.Equals(requestedPipeline, "rawvideo", StringComparison.OrdinalIgnoreCase))
                 {
@@ -387,9 +386,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             var report = metrics.BuildReport();
             request.Logger.Log(report);
             WritePerformanceReport(report, "RifePerformanceReport_latest.txt");
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

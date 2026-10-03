@@ -46,7 +46,7 @@ internal sealed class UpscaleEngine : IUpscaleEngine
             throw new FileNotFoundException("Input image not found.", inputPath);
 
         progress.Report(new UpscaleProgress(5, "Loading image..."));
-        using var source = SharpImage.Load<Rgba32>(inputPath);
+        using var source = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputPath);
         UpscaleFrameProcessor.ValidateSourceSize(source.Width, source.Height);
         AppLogger.LogStatic(
             $"UpscaleEngine: image loaded. size={source.Width}x{source.Height}, model={_definition.Id}, scale={_definition.ScaleFactor}");
@@ -57,17 +57,18 @@ internal sealed class UpscaleEngine : IUpscaleEngine
             source.Height,
             request,
             _definition.ScaleFactor);
-        return SaveOutput(inputPath, output, target.Suffix, progress);
+        return SaveOutput(inputPath, output, target.Suffix, progress, cancellationToken);
     }
 
     private static string SaveOutput(
         string inputPath,
         Image<Rgba32> image,
         string suffix,
-        IProgress<UpscaleProgress> progress)
+        IProgress<UpscaleProgress> progress, CancellationToken cancellationToken)
     {
         progress.Report(new UpscaleProgress(95, "Saving PNG..."));
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, suffix, ".png");
+        using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, suffix, ".png"));
+        var outputPath = publication.WorkingPath;
         try
         {
             image.SaveAsPng(outputPath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestSpeed });
@@ -78,8 +79,9 @@ internal sealed class UpscaleEngine : IUpscaleEngine
             throw;
         }
 
-        progress.Report(new UpscaleProgress(100, "Done."));
-        AppLogger.LogStatic($"UpscaleEngine: complete. output={outputPath}");
+        outputPath = publication.Publish(cancellationToken);
+        OutputOperation.NotifySaved(() => progress.Report(new UpscaleProgress(100, "Done.")));
+        OutputOperation.NotifySaved(() => AppLogger.LogStatic($"UpscaleEngine: complete. output={outputPath}"));
         return outputPath;
     }
 

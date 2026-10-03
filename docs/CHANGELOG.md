@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.20.1
+
+Security corrections in progress; not released. ImageSharp migration and installed qualification are pending.
+
+- Removed the setup's registry-driven uninstaller launch. Existing machine installations remain updatable; uninstall through Windows Settings. Legacy per-user installations are reported separately.
+- Restricted ImageSharp file decoding to PNG, JPEG, WebP and BMP, including renamed inputs and BMP video frames. The upgrade from 3.1.12 to 4.1.2 still requires a valid Six Labors build licence.
+- Media outputs are written in exclusively created adjacent workspaces and published without replacement. Collisions choose a new numeric suffix; failure and cancellation clean owned workspaces. WAV headers are finalized before multi-stem publication, and earlier published stems survive later failures.
+- Subtitle diagnostics also publish without replacement; diagnostic failure preserves the completed subtitles, and foreign `.tmp` files are no longer removed.
+- Pinned SDK 8.0.425 and the self-contained 8.0.31 runtime for Release. Packaging checks app/worker runtime manifests, runtime binaries and ImageSharp 4.1.2 before Inno Setup; the current ImageSharp version intentionally prevents distribution.
+
 ## 1.20.0
 
 Published on 2 October 2026 after owner acceptance of the tested installer. GitHub tag: `1.20.0`.

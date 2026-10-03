@@ -74,7 +74,8 @@ public sealed class ResizeImageAction : IFrameShiftAction
 
         resize = NormalizeTargetSize(resize.Width, resize.Height);
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, $"_resize_{resize.Width}x{resize.Height}");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, $"_resize_{resize.Width}x{resize.Height}"));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.ProgressReporter?.ReportState("processing", "Preparing image resize on CPU...");
@@ -107,9 +108,7 @@ public sealed class ResizeImageAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

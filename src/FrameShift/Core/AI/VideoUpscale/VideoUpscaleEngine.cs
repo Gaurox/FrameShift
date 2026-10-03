@@ -43,7 +43,7 @@ internal sealed class VideoUpscaleEngine : IDisposable
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var outputFramePath = Path.Combine(outputFramesDirectory, Path.GetFileName(inputFramePath));
-                using (var source = SharpImage.Load<Rgba32>(inputFramePath))
+                using (var source = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputFramePath))
                 using (var output = _processor.Upscale(source, request, progress: null, cancellationToken))
                 {
                     output.SaveAsBmp(outputFramePath, new BmpEncoder { BitsPerPixel = BmpBitsPerPixel.Pixel32 });

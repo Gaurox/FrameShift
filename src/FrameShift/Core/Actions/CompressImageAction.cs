@@ -56,7 +56,8 @@ public sealed class CompressImageAction : IFrameShiftAction
         }
 
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, settings.OutputSuffix, settings.OutputExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, settings.OutputSuffix, settings.OutputExtension));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.ProgressReporter?.ReportState("processing", "Preparing image compression on CPU...");
@@ -65,10 +66,10 @@ public sealed class CompressImageAction : IFrameShiftAction
         {
             if (settings.TargetBytes.HasValue)
             {
-                return await ExecuteTargetSizeAsync(request, settings, ffmpegPath, outputPath, cancellationToken).ConfigureAwait(false);
+                return await ExecuteTargetSizeAsync(request, settings, ffmpegPath, output, cancellationToken).ConfigureAwait(false);
             }
 
-            return await ExecutePresetAsync(request, settings, ffmpegPath, outputPath, cancellationToken).ConfigureAwait(false);
+            return await ExecutePresetAsync(request, settings, ffmpegPath, output, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {
@@ -89,9 +90,10 @@ public sealed class CompressImageAction : IFrameShiftAction
         ActionRequest request,
         CompressImageSettings settings,
         string ffmpegPath,
-        string outputPath,
+        OutputOperation output,
         CancellationToken cancellationToken)
     {
+        var outputPath = output.WorkingPath;
         var arguments = BuildProgressArguments(request.InputPath, outputPath, settings.OutputFormat, settings.ProfileId);
         var result = await _ffmpegRunner.RunAsync(
             ffmpegPath,
@@ -118,20 +120,19 @@ public sealed class CompressImageAction : IFrameShiftAction
             return new ActionExecutionResult(false, failureMessage, null, false);
         }
 
-        request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-        request.ProgressReporter?.ReportState("done", "Completed.");
-        return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+        return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
     }
 
     private async Task<ActionExecutionResult> ExecuteTargetSizeAsync(
         ActionRequest request,
         CompressImageSettings settings,
         string ffmpegPath,
-        string outputPath,
+        OutputOperation output,
         CancellationToken cancellationToken)
     {
+        var outputPath = output.WorkingPath;
         var candidates = settings.OutputFormat == "jpg" ? JpgCandidates : WebpCandidates;
-        var tempPath = Path.Combine(Path.GetTempPath(), $"frameshift_{Guid.NewGuid():N}{settings.OutputExtension}");
+        var tempPath = Path.Combine(output.WorkspacePath, $"candidate{settings.OutputExtension}");
 
         int? bestUnderQuality = null;
         long bestUnderSize = 0;
@@ -217,9 +218,7 @@ public sealed class CompressImageAction : IFrameShiftAction
             return new ActionExecutionResult(false, failureMessage, null, false);
         }
 
-        request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-        request.ProgressReporter?.ReportState("done", "Completed.");
-        return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+        return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
     }
 
     private static IReadOnlyList<string> BuildProgressArguments(string inputPath, string outputPath, string outputFormat, string profileId)

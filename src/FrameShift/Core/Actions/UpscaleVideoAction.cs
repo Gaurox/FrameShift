@@ -102,7 +102,8 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
             request.ProgressReporter?.ReportState("processing", warning);
         }
 
-        string outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, target.Suffix, extension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, target.Suffix, extension));
+        var outputPath = output.WorkingPath;
         string tempRoot = Path.Combine(
             Path.GetTempPath(),
             "FrameShift",
@@ -182,9 +183,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
 
                             request.Logger.Log(
                                 $"UpscaleVideoAction: rawvideo complete. sourceFrames={rawResult.SourceFrameCount}, outputFrames={rawResult.OutputFrameCount}, provider={rawResult.Provider}.");
-                            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-                            request.ProgressReporter?.ReportState("done", "Completed.");
-                            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+                            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
                         }
                         catch (OperationCanceledException)
                         {
@@ -349,9 +348,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                 return FailedResult(request, failure);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

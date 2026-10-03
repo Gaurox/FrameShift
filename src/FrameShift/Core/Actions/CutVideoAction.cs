@@ -84,10 +84,11 @@ public sealed class CutVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, settingsError ?? MediaActionMessages.CutVideoSettingsMissing());
         }
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(
             request.InputPath,
             $"__frame_{settings.StartFrame}_to_{settings.EndFrame}",
-            sourceExtension);
+            sourceExtension));
+        var outputPath = output.WorkingPath;
 
         var encodingPlan = await GetEncodingPlanAsync(sourceExtension, cancellationToken).ConfigureAwait(false);
         var selectedDurationSeconds = settings.DurationSeconds;
@@ -122,9 +123,7 @@ public sealed class CutVideoAction : IFrameShiftAction
 
             if (primaryResult.ExitCode == 0 && File.Exists(outputPath))
             {
-                request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-                request.ProgressReporter?.ReportState("done", "Completed.");
-                return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+                return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
             }
 
             if (encodingPlan.Fallback is not null)
@@ -152,9 +151,7 @@ public sealed class CutVideoAction : IFrameShiftAction
 
                 if (fallbackResult.ExitCode == 0 && File.Exists(outputPath))
                 {
-                    request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-                    request.ProgressReporter?.ReportState("done", "Completed.");
-                    return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+                    return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
                 }
 
                 ConversionActionHelper.DeleteIfExists(outputPath);

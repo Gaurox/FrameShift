@@ -95,7 +95,8 @@ public sealed class ExtractFramesAction : IFrameShiftAction
         MediaProbeResult probe,
         CancellationToken cancellationToken)
     {
-        var outputDirectory = OutputPathHelper.CreateUniqueOutputDirectoryPath(request.InputPath, "_frames");
+        using var output = OutputOperation.ForDirectory(OutputPathHelper.GetOutputDirectoryPath(request.InputPath, "_frames"));
+        var outputDirectory = output.WorkingPath;
         var outputDirectoryCreated = false;
         var inputBaseName = Path.GetFileNameWithoutExtension(request.InputPath);
         var outputPattern = Path.Combine(outputDirectory, $"{inputBaseName}_%06d.png");
@@ -140,9 +141,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
             }
 
             request.Logger.Log($"Extract frames completed. frameCount={extractedFrameCount}, outputDirectory={outputDirectory}");
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputDirectory);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -166,7 +165,8 @@ public sealed class ExtractFramesAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         const string actionName = "Extract First Frame";
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_first_frame", ".png");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_first_frame", ".png"));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Extract first frame output path: {outputPath}");
         request.ProgressReporter?.ReportState("processing", "Extracting the first frame...");
@@ -201,9 +201,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(actionName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, actionName, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -226,8 +224,9 @@ public sealed class ExtractFramesAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         const string actionName = "Extract Last Frame";
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_last_frame", ".png");
-        var temporaryOutputPath = CreateTemporaryOutputPath(outputPath);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_last_frame", ".png"));
+        var outputPath = output.WorkingPath;
+        var temporaryOutputPath = outputPath;
         var progressReporter = request.ProgressReporter is null ? null : new LastFrameProgressReporter(request.ProgressReporter);
 
         request.Logger.Log($"Extract last frame output path: {outputPath}");
@@ -261,10 +260,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
 
                 if (lastRunResult.ExitCode == 0 && HasOutputFile(temporaryOutputPath))
                 {
-                    File.Move(temporaryOutputPath, outputPath);
-                    request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, "Completed.");
-                    request.ProgressReporter?.ReportState("done", "Completed.");
-                    return new ActionExecutionResult(true, MediaActionMessages.Completed(actionName), outputPath);
+                    return ConversionActionHelper.CompleteOutput(output, request, actionName, cancellationToken);
                 }
 
                 CleanupOutputFile(temporaryOutputPath, request.Logger);
@@ -302,7 +298,8 @@ public sealed class ExtractFramesAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         const string actionName = "Extract Keyframes";
-        var outputDirectory = OutputPathHelper.CreateUniqueOutputDirectoryPath(request.InputPath, "_keyframes");
+        using var output = OutputOperation.ForDirectory(OutputPathHelper.GetOutputDirectoryPath(request.InputPath, "_keyframes"));
+        var outputDirectory = output.WorkingPath;
         var outputDirectoryCreated = false;
         var outputPattern = Path.Combine(outputDirectory, "keyframe_%06d.png");
 
@@ -343,9 +340,7 @@ public sealed class ExtractFramesAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(actionName), outputDirectory);
+            return ConversionActionHelper.CompleteOutput(output, request, actionName, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -465,13 +460,6 @@ public sealed class ExtractFramesAction : IFrameShiftAction
             "-compression_level", "6",
             outputPattern
         ];
-    }
-
-    private static string CreateTemporaryOutputPath(string outputPath)
-    {
-        var directory = Path.GetDirectoryName(outputPath) ?? string.Empty;
-        var fileName = Path.GetFileNameWithoutExtension(outputPath);
-        return Path.Combine(directory, $".{fileName}.{Guid.NewGuid():N}.tmp.png");
     }
 
     private static bool HasOutputFile(string outputPath)

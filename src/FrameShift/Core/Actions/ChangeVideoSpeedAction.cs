@@ -82,7 +82,8 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         var hasAudio = probe.HasAudio;
         var sampleRate = probe.PrimaryAudioSampleRate > 0 ? probe.PrimaryAudioSampleRate : FallbackSampleRate;
         var targetDurationSeconds = settings.EstimatedOutputDuration(sourceDurationSeconds);
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, settings.OutputSuffix, sourceExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, settings.OutputSuffix, sourceExtension));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"SpeedFactor: {settings.SpeedFactor:0.######}, keepPitch={settings.KeepPitch}, hasAudio={hasAudio}, sampleRate={sampleRate}");
@@ -116,9 +117,7 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

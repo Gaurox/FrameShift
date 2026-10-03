@@ -64,7 +64,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InferenceProgress(5, "Loading image..."));
 
-        using var original = SharpImage.Load<Rgba32>(inputPath);
+        using var original = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputPath);
 
         if ((long)original.Width * original.Height > MaxPixels)
             throw new InvalidOperationException(
@@ -130,7 +130,8 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             cancellationToken.ThrowIfCancellationRequested();
             progress.Report(new InferenceProgress(95, "Saving PNG..."));
 
-            outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_nobg", ".png");
+            using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_nobg", ".png"));
+            outputPath = publication.WorkingPath;
 
             try
             {
@@ -144,11 +145,12 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
                 DeletePartialOutput(outputPath);
                 throw;
             }
+            outputPath = publication.Publish(cancellationToken);
         }
 
-        progress.Report(new InferenceProgress(100, "Done."));
+        OutputOperation.NotifySaved(() => progress.Report(new InferenceProgress(100, "Done.")));
 
-        AppLogger.LogStatic($"BackgroundRemovalEngine: complete. output={outputPath}");
+        OutputOperation.NotifySaved(() => AppLogger.LogStatic($"BackgroundRemovalEngine: complete. output={outputPath}"));
 
         return outputPath;
     }

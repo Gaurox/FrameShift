@@ -52,7 +52,8 @@ public sealed class ConvertImageAction : IFrameShiftAction
         var profileId = ConversionActionHelper.GetOption(request, ActionOptionKeys.Profile, "standard").ToLowerInvariant();
         var profile = ImageConversionCatalog.GetProfileById(profileId);
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, $"_convert_{target.Id}", $".{target.Id}");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, $"_convert_{target.Id}", $".{target.Id}"));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.ProgressReporter?.ReportState("processing", $"Preparing image conversion to {target.DisplayName.ToLowerInvariant()} ({profile.DisplayName.ToLowerInvariant()}) on CPU...");
@@ -85,9 +86,7 @@ public sealed class ConvertImageAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

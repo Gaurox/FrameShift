@@ -48,7 +48,8 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
         }
 
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_rotated");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_rotated"));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.ProgressReporter?.ReportState("processing", "Applying transform...");
@@ -81,9 +82,7 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

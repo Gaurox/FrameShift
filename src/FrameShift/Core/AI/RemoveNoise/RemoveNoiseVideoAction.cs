@@ -118,6 +118,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
         string? tempCleanWavL = null;
         string? tempCleanWavR = null;
         string? outputPath    = null;
+        OutputOperation? publication = null;
 
         using var itemCancellationSource = new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, itemCancellationSource.Token);
@@ -247,7 +248,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             request.ProgressReporter?.ReportProgress(900, request.InputPath, Descriptor.DisplayName, "Remuxing...");
             request.ProgressReporter?.ReportState("processing", "Remuxing...");
 
-            outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_clean");
+            publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_clean"));
+                outputPath = publication.WorkingPath;
 
             var remuxArgs = processStereo
                 ? BuildRemuxArgsStereo(request.InputPath, tempCleanWavL!, tempCleanWavR!, outputPath, remuxAudioCodec)
@@ -272,9 +274,9 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
                 return new ActionExecutionResult(false, err);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return publication is null
+                ? ConversionActionHelper.CompletedPublishedOutput(outputPath!, request, Descriptor.DisplayName)
+                : ConversionActionHelper.CompleteOutput(publication, request, Descriptor.DisplayName, linked.Token);
         }
         catch (OperationCanceledException)
         {
@@ -293,6 +295,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
         }
         finally
         {
+            publication?.Dispose();
             monitorStop.Cancel();
             try { await monitorTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
             TryDeleteTemp(tempExtractedWav);

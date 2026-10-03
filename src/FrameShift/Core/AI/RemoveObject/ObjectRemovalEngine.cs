@@ -63,7 +63,7 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InpaintProgress(10, "Loading image..."));
 
-        using var original = SharpImage.Load<Rgba32>(inputPath);
+        using var original = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputPath);
 
         if ((long)original.Width * original.Height > MaxPixels)
             throw new InvalidOperationException(
@@ -93,7 +93,8 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InpaintProgress(93, "Saving PNG..."));
 
-        outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_cleaned", ".png");
+        using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_cleaned", ".png"));
+        outputPath = publication.WorkingPath;
         try
         {
             finalImage.SaveAsPng(outputPath, new PngEncoder { CompressionLevel = PngCompressionLevel.BestSpeed });
@@ -103,9 +104,10 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
             DeletePartialOutput(outputPath);
             throw;
         }
+        outputPath = publication.Publish(cancellationToken);
 
-        progress.Report(new InpaintProgress(100, "Done."));
-        AppLogger.LogStatic($"ObjectRemovalEngine: complete. output={outputPath}");
+        OutputOperation.NotifySaved(() => progress.Report(new InpaintProgress(100, "Done.")));
+        OutputOperation.NotifySaved(() => AppLogger.LogStatic($"ObjectRemovalEngine: complete. output={outputPath}"));
         return outputPath;
     }
 

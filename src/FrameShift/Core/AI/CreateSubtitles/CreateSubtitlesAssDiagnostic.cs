@@ -149,11 +149,12 @@ internal static class CreateSubtitlesAssDiagnosticWriter
             return null;
         }
 
-        var reportPath = outputPath + ".diagnostic.json";
+        using var publication = Helpers.OutputOperation.ForFile(outputPath + ".diagnostic.json");
         var report = BuildReport(inputPath, outputPath, refinedProject, analysis, requestedPreset);
         var json = JsonSerializer.Serialize(report, s_jsonOptions);
-        await File.WriteAllTextAsync(reportPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken).ConfigureAwait(false);
-        logger.Log($"CreateSubtitlesAction: ASS diagnostic written to '{reportPath}'.");
+        await File.WriteAllTextAsync(publication.WorkingPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken).ConfigureAwait(false);
+        var reportPath = publication.Publish(cancellationToken);
+        Helpers.OutputOperation.NotifySaved(() => logger.Log($"CreateSubtitlesAction: ASS diagnostic written to '{reportPath}'."));
         return reportPath;
     }
 

@@ -164,7 +164,8 @@ internal sealed class RemoveNoiseEngine : IDisposable
         }
 
         progress.Report((92, "Saving cleaned file..."));
-        outputPath = OutputPathHelper.CreateUniqueOutputPath(inputPath, "_clean", ".wav");
+        using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_clean", ".wav"));
+        outputPath = publication.WorkingPath;
         try
         {
             WriteWavPcm16(outputPath, clean, Sr);
@@ -174,8 +175,9 @@ internal sealed class RemoveNoiseEngine : IDisposable
             DeletePartialOutput(outputPath);
             throw;
         }
+        outputPath = publication.Publish(cancellationToken);
 
-        progress.Report((100, "Done."));
+        OutputOperation.NotifySaved(() => progress.Report((100, "Done.")));
         return outputPath;
     }
 

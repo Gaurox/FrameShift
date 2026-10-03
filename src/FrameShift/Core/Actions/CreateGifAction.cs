@@ -75,7 +75,8 @@ public sealed class CreateGifAction : IFrameShiftAction
             return new ActionExecutionResult(false, settingsError ?? MediaActionMessages.CreateGifSettingsInvalid());
         }
 
-        var outputPath = BuildOutputPath(request.InputPath, settings, probe.Duration.Value.TotalSeconds);
+        using var output = OutputOperation.ForFile(BuildDesiredOutputPath(request.InputPath, settings, probe.Duration.Value.TotalSeconds));
+        var outputPath = output.WorkingPath;
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Create GIF output path: {outputPath}");
         request.ProgressReporter?.ReportState("processing", "Preparing GIF creation on CPU...");
@@ -111,9 +112,7 @@ public sealed class CreateGifAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -171,12 +170,15 @@ public sealed class CreateGifAction : IFrameShiftAction
     }
 
     public static string BuildOutputPath(string inputPath, CreateGifSettings settings, double sourceDurationSeconds)
+        => OutputPathHelper.CreateUniqueFilePath(BuildDesiredOutputPath(inputPath, settings, sourceDurationSeconds));
+
+    private static string BuildDesiredOutputPath(string inputPath, CreateGifSettings settings, double sourceDurationSeconds)
     {
         var suffix = settings.IsCustomRange(sourceDurationSeconds)
             ? $"_gif_{FormatTimeForFilename(settings.StartSeconds)}_for_{FormatTimeForFilename(settings.DurationSeconds)}"
             : "_gif";
 
-        return OutputPathHelper.CreateUniqueOutputPath(inputPath, suffix, ".gif");
+        return OutputPathHelper.GetOutputPath(inputPath, suffix, ".gif");
     }
 
     public static GifQualityProfile GetQualityProfile(string qualityKey)

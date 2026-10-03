@@ -51,7 +51,7 @@ public sealed class ImageToPdfPdfExporter
                     {
                         // GDI+ ne lit pas le WebP — on passe par ImageSharp
                         using var webpMs = new MemoryStream();
-                        using (var imgSharp = SixLabors.ImageSharp.Image.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(item.SourcePath))
+                        using (var imgSharp = FrameShift.Core.Helpers.SafeImageReader.Load<SixLabors.ImageSharp.PixelFormats.Rgba32>(item.SourcePath))
                             imgSharp.Save(webpMs, new PngEncoder());
                         webpMs.Position = 0;
                         sourceBitmap = new Bitmap(webpMs);

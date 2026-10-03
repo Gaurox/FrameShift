@@ -91,6 +91,9 @@ internal static class CreateSubtitlesOutputFormats
     public static string CreateOutputPath(string inputPath, CreateSubtitlesOutputFormat format) =>
         OutputPathHelper.CreateUniqueOutputPath(inputPath, string.Empty, format.GetOutputExtension());
 
+    public static string GetDesiredOutputPath(string inputPath, CreateSubtitlesOutputFormat format) =>
+        OutputPathHelper.GetOutputPath(inputPath, string.Empty, format.GetOutputExtension());
+
     public static IReadOnlyList<CreateSubtitlesOutputFormat> GetAll() =>
     [
         CreateSubtitlesOutputFormat.StandardSrt,

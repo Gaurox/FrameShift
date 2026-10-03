@@ -170,7 +170,7 @@ internal static partial class Program
             {
                 try
                 {
-                    var info = SixLabors.ImageSharp.Image.Identify(inputPaths[0]);
+                    var info = FrameShift.Core.Helpers.SafeImageReader.Identify(inputPaths[0]);
                     sourceWidth = info.Width;
                     sourceHeight = info.Height;
                 }

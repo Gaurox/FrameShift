@@ -94,14 +94,15 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
 
         var outputFormat = ResolveOutputFormat(request.Options, request.Logger);
         var assPreset = ResolveAssPreset(request.Options, request.Logger);
-        var outputPath = CreateSubtitlesOutputFormats.CreateOutputPath(request.InputPath, outputFormat);
+        using var publication = OutputOperation.ForFile(CreateSubtitlesOutputFormats.GetDesiredOutputPath(request.InputPath, outputFormat));
+        var outputPath = publication.WorkingPath;
         var tempRoot = Path.Combine(Path.GetTempPath(), "FrameShift", "CreateSubtitles", Guid.NewGuid().ToString("N"));
         var extractedAudioPath = Path.Combine(tempRoot, "extracted.wav");
         var normalizedAudioPath = Path.Combine(tempRoot, "normalized.wav");
         var workerModelRoot = Path.Combine(tempRoot, "worker-model");
         var responsePath = Path.Combine(tempRoot, "worker-response.json");
         var cancelSignalPath = Path.Combine(tempRoot, "cancel.signal");
-        var tempOutputPath = Path.Combine(tempRoot, $"output{outputFormat.GetOutputExtension()}");
+        var tempOutputPath = publication.WorkingPath;
 
         using var itemCancellationSource = new CancellationTokenSource();
         using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, itemCancellationSource.Token);
@@ -231,23 +232,28 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             var outputText = CreateSubtitlesOutputFormats.FormatProject(project, outputFormat, assPreset);
 
             await File.WriteAllTextAsync(tempOutputPath, outputText, new UTF8Encoding(false), linkedCancellationSource.Token).ConfigureAwait(false);
-            File.Move(tempOutputPath, outputPath, overwrite: false);
+            outputPath = publication.Publish(linkedCancellationSource.Token);
 
-            await CreateSubtitlesAssDiagnosticWriter
-                .WriteReportIfNeededAsync(
-                    outputFormat,
-                    request.InputPath,
-                    outputPath,
-                    project,
-                    displayTimingAnalysis,
-                    assPreset,
-                    request.Logger,
-                    linkedCancellationSource.Token)
-                .ConfigureAwait(false);
+            try
+            {
+                await CreateSubtitlesAssDiagnosticWriter
+                    .WriteReportIfNeededAsync(
+                        outputFormat,
+                        request.InputPath,
+                        outputPath,
+                        project,
+                        displayTimingAnalysis,
+                        assPreset,
+                        request.Logger,
+                        linkedCancellationSource.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                OutputOperation.NotifySaved(() => request.Logger.Log($"Subtitles saved at {outputPath}; diagnostic was not saved: {ex.Message}"));
+            }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", $"Completed. Language: {workerResponse.DetectedLanguage ?? "auto"}");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompletedPublishedOutput(outputPath, request, Descriptor.DisplayName);
         }
         catch (OperationCanceledException)
         {
@@ -272,7 +278,6 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             }
 
             ConversionActionHelper.DeleteIfExists(tempOutputPath);
-            ConversionActionHelper.DeleteIfExists(outputPath + ".tmp");
             TryDeleteFile(extractedAudioPath);
             TryDeleteFile(normalizedAudioPath);
             TryDeleteFile(responsePath);

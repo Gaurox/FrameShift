@@ -60,7 +60,8 @@ public sealed class ImageToPdfAction : IFrameShiftAction
             }
         }
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_image_to_pdf", ".pdf");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_image_to_pdf", ".pdf"));
+        var outputPath = output.WorkingPath;
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
 
         try
@@ -74,7 +75,7 @@ public sealed class ImageToPdfAction : IFrameShiftAction
                 return Task.FromResult(new ActionExecutionResult(false, MediaActionMessages.PdfFileNotCreated()));
             }
 
-            return Task.FromResult(new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath));
+            return Task.FromResult(ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken));
         }
         catch (OperationCanceledException)
         {

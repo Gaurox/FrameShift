@@ -56,6 +56,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
         var anchorPath = settings.InputPaths[0];
         string? outputPath = null;
+        OutputOperation? output = null;
         string? temporaryDirectory = null;
 
         try
@@ -96,7 +97,9 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
             if (plan.Pipeline == JoinVideosPipeline.DirectCopy)
             {
-                outputPath = CreateOutputPath(anchorPath, Path.GetExtension(anchorPath));
+                output?.Dispose();
+                output = OutputOperation.ForFile(CreateOutputPath(anchorPath, Path.GetExtension(anchorPath)));
+                outputPath = output.WorkingPath;
                 var directResult = await RunDirectCopyAsync(
                     ffmpegPath,
                     settings.InputPaths,
@@ -114,7 +117,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
                 if (directResult.ExitCode == 0 && File.Exists(outputPath))
                 {
-                    return Completed(outputPath, request);
+                    return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
                 }
 
                 ConversionActionHelper.DeleteIfExists(outputPath);
@@ -132,7 +135,9 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 request.Logger.Log("Join Videos: direct concat failed; falling back to SDR normalization.");
                 request.ProgressReporter?.ReportState("processing", "Direct join was not accepted; normalizing clips...");
 
-                outputPath = CreateOutputPath(anchorPath, ".mp4");
+                output?.Dispose();
+                output = OutputOperation.ForFile(CreateOutputPath(anchorPath, ".mp4"));
+                outputPath = output.WorkingPath;
                 var normalizeFallbackResult = await RunNormalizationWithFallbackAsync(
                     ffmpegPath,
                     settings.InputPaths,
@@ -150,11 +155,13 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 }
 
                 return normalizeFallbackResult.ExitCode == 0 && File.Exists(outputPath)
-                    ? Completed(outputPath, request)
+                    ? ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken)
                     : FailedWithCleanup(outputPath, normalizeFallbackResult.StandardError, request);
             }
 
-            outputPath = CreateOutputPath(anchorPath, ".mp4");
+            output?.Dispose();
+            output = OutputOperation.ForFile(CreateOutputPath(anchorPath, ".mp4"));
+            outputPath = output.WorkingPath;
             var normalizeResult = await RunNormalizationWithFallbackAsync(
                 ffmpegPath,
                 settings.InputPaths,
@@ -172,7 +179,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
             }
 
             return normalizeResult.ExitCode == 0 && File.Exists(outputPath)
-                ? Completed(outputPath, request)
+                ? ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken)
                 : FailedWithCleanup(outputPath, normalizeResult.StandardError, request);
         }
         catch (OperationCanceledException)
@@ -189,6 +196,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
         }
         finally
         {
+            output?.Dispose();
             TryDeleteDirectory(temporaryDirectory);
         }
     }
@@ -436,7 +444,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
     private static string CreateOutputPath(string anchorPath, string extension)
     {
         var normalizedExtension = string.IsNullOrWhiteSpace(extension) ? ".mp4" : extension;
-        return OutputPathHelper.CreateUniqueOutputPath(anchorPath, "_joined", normalizedExtension);
+        return OutputPathHelper.GetOutputPath(anchorPath, "_joined", normalizedExtension);
     }
 
     private static string CreateTemporaryDirectory()
@@ -444,13 +452,6 @@ public sealed class JoinVideosAction : IFrameShiftAction
         var directory = Path.Combine(Path.GetTempPath(), "FrameShift", "JoinVideos", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         return directory;
-    }
-
-    private static ActionExecutionResult Completed(string outputPath, ActionRequest request)
-    {
-        request.ProgressReporter?.ReportProgress(1000, request.InputPath, "Join Videos", "Completed.");
-        request.ProgressReporter?.ReportState("done", "Completed.");
-        return new ActionExecutionResult(true, MediaActionMessages.Completed("Join Videos"), outputPath);
     }
 
     private static ActionExecutionResult Canceled(string? outputPath, ActionRequest request, CancellationScope scope)

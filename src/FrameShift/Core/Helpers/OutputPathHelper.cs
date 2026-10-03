@@ -7,6 +7,9 @@ namespace FrameShift.Core.Helpers;
 public static class OutputPathHelper
 {
     public static string CreateUniqueOutputPath(string inputPath, string suffix, string? extension = null)
+        => CreateUniqueFilePath(GetOutputPath(inputPath, suffix, extension));
+
+    internal static string GetOutputPath(string inputPath, string suffix, string? extension = null)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -17,9 +20,16 @@ public static class OutputPathHelper
         var fileName = Path.GetFileNameWithoutExtension(inputPath);
         var finalExtension = string.IsNullOrWhiteSpace(extension) ? Path.GetExtension(inputPath) : extension;
         var basePath = Path.Combine(directory ?? string.Empty, $"{fileName}{suffix}");
-        var candidatePath = $"{basePath}{finalExtension}";
+        return $"{basePath}{finalExtension}";
+    }
 
-        if (!File.Exists(candidatePath))
+    internal static string CreateUniqueFilePath(string desiredPath)
+    {
+        var finalExtension = Path.GetExtension(desiredPath);
+        var basePath = desiredPath[..^finalExtension.Length];
+        var candidatePath = desiredPath;
+
+        if (!PathExists(candidatePath))
         {
             return candidatePath;
         }
@@ -27,7 +37,7 @@ public static class OutputPathHelper
         for (var index = 1; index < 1000; index++)
         {
             candidatePath = $"{basePath}_{index:000}{finalExtension}";
-            if (!File.Exists(candidatePath))
+            if (!PathExists(candidatePath))
             {
                 return candidatePath;
             }
@@ -37,6 +47,9 @@ public static class OutputPathHelper
     }
 
     public static string CreateUniqueOutputDirectoryPath(string inputPath, string suffix)
+        => CreateUniqueDirectoryPath(GetOutputDirectoryPath(inputPath, suffix));
+
+    internal static string GetOutputDirectoryPath(string inputPath, string suffix)
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
@@ -51,7 +64,7 @@ public static class OutputPathHelper
         var directory = Path.GetDirectoryName(inputPath);
         var fileName = Path.GetFileNameWithoutExtension(inputPath);
         var desiredPath = Path.Combine(directory ?? string.Empty, $"{fileName}{suffix}");
-        return CreateUniqueDirectoryPath(desiredPath);
+        return desiredPath;
     }
 
     public static string CreateUniqueDirectoryPath(string desiredPath)

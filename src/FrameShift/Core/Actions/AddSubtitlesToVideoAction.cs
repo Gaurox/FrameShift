@@ -88,7 +88,8 @@ public sealed class AddSubtitlesToVideoAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         var plan = AddSubtitlesToVideoPlanner.BuildPlan(sourceExtension, probe);
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_subtitled", plan.TargetExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_subtitled", plan.TargetExtension));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Add subtitles plan: {plan.PipelineDescription}. {plan.DecisionReason}");
@@ -126,9 +127,7 @@ public sealed class AddSubtitlesToVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -154,7 +153,8 @@ public sealed class AddSubtitlesToVideoAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         var plan = AddSubtitlesToVideoBurnPlanner.BuildPlan(sourceExtension, probe);
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_subtitled_burned", plan.TargetExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_subtitled_burned", plan.TargetExtension));
+        var outputPath = output.WorkingPath;
         AddSubtitlesToVideoPreparedSubtitleInput? preparedInput = null;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
@@ -211,9 +211,7 @@ public sealed class AddSubtitlesToVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

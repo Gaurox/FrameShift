@@ -103,8 +103,8 @@ internal sealed class AudioSeparationEngine : IDisposable
                 }
             }
 
-            progress.Report(new AudioSeparationProgress(100, chunkTotal, chunkTotal, "Done."));
-            writers.MarkCompleted();
+            writers.MarkCompleted(cancellationToken);
+            OutputOperation.NotifySaved(() => progress.Report(new AudioSeparationProgress(100, chunkTotal, chunkTotal, "Done.")));
         }
         catch
         {
@@ -391,7 +391,7 @@ internal sealed class AudioSeparationEngine : IDisposable
             throw new FileNotFoundException("Input audio not found.", inputPath);
     }
 
-    private sealed class OutputWriters : IDisposable
+    internal sealed class OutputWriters : IDisposable
     {
         private bool _completed;
 
@@ -426,7 +426,7 @@ internal sealed class AudioSeparationEngine : IDisposable
                     if (!enabled)
                         return null;
 
-                    var path = OutputPathHelper.CreateUniqueOutputPath(inputPath, suffix, ".wav");
+                    var path = OutputPathHelper.GetOutputPath(inputPath, suffix, ".wav");
                     var writer = new AudioStemWriter(path);
                     created.Add(writer);
                     return writer;
@@ -447,9 +447,21 @@ internal sealed class AudioSeparationEngine : IDisposable
             }
         }
 
-        public void MarkCompleted()
+        public void MarkCompleted(CancellationToken cancellationToken)
         {
+            var published = new List<string>();
+            try
+            {
+                foreach (var writer in Enumerate()) writer.Dispose();
+                foreach (var writer in Enumerate()) published.Add(writer.Publish(cancellationToken));
+            }
+            catch (Exception ex) when (published.Count > 0)
+            {
+                // Keep earlier commits and report their paths instead of attempting rollback.
+                throw new IOException($"Some audio stems were saved: {string.Join(", ", published)}. Remaining outputs failed: {ex.Message}", ex);
+            }
             _completed = true;
+            OutputOperation.NotifySaved(() => AppLogger.LogStatic($"Audio stems saved: {string.Join(", ", published)}"));
         }
 
         public void DeletePartialOutputs()
@@ -463,7 +475,7 @@ internal sealed class AudioSeparationEngine : IDisposable
             if (_completed)
             {
                 foreach (var writer in Enumerate())
-                    writer.Dispose();
+                    writer.CleanupWorkspace();
             }
             else
             {

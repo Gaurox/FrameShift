@@ -78,8 +78,11 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
             await engine.SeparateAsync(request.InputPath, stems, preferGpu, progress, linked.Token)
                 .ConfigureAwait(false);
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, $"Audio Separation ({engine.Provider})", "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
+            Helpers.OutputOperation.NotifySaved(() =>
+            {
+                request.ProgressReporter?.ReportProgress(1000, request.InputPath, $"Audio Separation ({engine.Provider})", "Completed.");
+                request.ProgressReporter?.ReportState("done", "Completed.");
+            });
 
             return new ActionExecutionResult(true, "Audio separation complete.");
         }

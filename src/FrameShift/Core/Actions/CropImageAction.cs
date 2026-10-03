@@ -51,7 +51,8 @@ public sealed class CropImageAction : IFrameShiftAction
         crop = NormalizeCropRect(crop.X, crop.Y, crop.Width, crop.Height);
 
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_crop");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_crop"));
+        var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.ProgressReporter?.ReportState("processing", "Preparing image crop on CPU...");
@@ -84,9 +85,7 @@ public sealed class CropImageAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

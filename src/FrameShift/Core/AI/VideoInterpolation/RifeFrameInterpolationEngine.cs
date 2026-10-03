@@ -85,7 +85,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
                 _metrics?.AddBmpLoad(duration);
             }))
             {
-                previous = SixLabors.ImageSharp.Image.Load<Rgb24>(inputFrames[0]);
+                previous = FrameShift.Core.Helpers.SafeImageReader.Load<Rgb24>(inputFrames[0]);
             }
             SaveFrame(previous, outputFramesDirectory, outputIndex++);
 
@@ -106,7 +106,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
                     _metrics?.AddBmpLoad(duration);
                 }))
                 {
-                    current = SixLabors.ImageSharp.Image.Load<Rgb24>(inputFrames[pairIndex]);
+                    current = FrameShift.Core.Helpers.SafeImageReader.Load<Rgb24>(inputFrames[pairIndex]);
                 }
                 try
                 {

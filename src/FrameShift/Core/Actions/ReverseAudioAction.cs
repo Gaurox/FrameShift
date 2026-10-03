@@ -63,7 +63,8 @@ public sealed class ReverseAudioAction : IFrameShiftAction
         }
 
         var outputExtension = sourceExtension == ".wave" ? ".wav" : sourceExtension;
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_reverse", outputExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_reverse", outputExtension));
+        var outputPath = output.WorkingPath;
         var plan = GetEncodingPlan(outputExtension);
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
@@ -97,9 +98,7 @@ public sealed class ReverseAudioAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

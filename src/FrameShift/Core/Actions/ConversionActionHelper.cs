@@ -9,6 +9,30 @@ namespace FrameShift.Core.Actions;
 
 public static class ConversionActionHelper
 {
+    internal static ActionExecutionResult CompleteOutput(
+        Helpers.OutputOperation output, ActionRequest request, string actionName, CancellationToken cancellationToken)
+    {
+        var publishedPath = output.Publish(cancellationToken);
+        return CompletedPublishedOutput(publishedPath, request, actionName);
+    }
+
+    internal static ActionExecutionResult CompletedPublishedOutput(string publishedPath, ActionRequest request, string actionName)
+    {
+        // Notification failures and late cancellation cannot undo an already published file.
+        try
+        {
+            request.Logger.Log($"Output published: {publishedPath}");
+            request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, "Completed.");
+            request.ProgressReporter?.ReportState("done", "Completed.");
+        }
+        catch (Exception ex)
+        {
+            try { request.Logger.Log($"Output was saved; completion notification failed: {ex.Message}"); }
+            catch { /* Do not lose the successful result because logging failed. */ }
+        }
+        return new ActionExecutionResult(true, MediaActionMessages.Completed(actionName), publishedPath);
+    }
+
     public static string GetOption(ActionRequest request, string key, string defaultValue)
     {
         if (request.Options is null)

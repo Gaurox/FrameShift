@@ -69,7 +69,8 @@ public sealed class CompressVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.CompressionTargetSizeMissing());
         }
 
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, targetBytes is null ? $"_compress_{profile.Id}" : "_compress_target");
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, targetBytes is null ? $"_compress_{profile.Id}" : "_compress_target"));
+        var outputPath = output.WorkingPath;
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
         var ffprobePath = _toolLocator.ResolveFfprobePath();
         var probeAttempt = await _ffprobeRunner.TryProbeMediaAsync(ffprobePath, request.InputPath, cancellationToken).ConfigureAwait(false);
@@ -143,9 +144,7 @@ public sealed class CompressVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

@@ -107,7 +107,8 @@ public sealed class CutAudioAction : IFrameShiftAction
         settings = settings with { EndSeconds = effectiveEndSeconds };
 
         var outputExtension = sourceExtension == ".wave" ? ".wav" : sourceExtension;
-        var outputPath = OutputPathHelper.CreateUniqueOutputPath(request.InputPath, "_cut", outputExtension);
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_cut", outputExtension));
+        var outputPath = output.WorkingPath;
         var plan = GetEncodingPlan(outputExtension);
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
@@ -142,9 +143,7 @@ public sealed class CutAudioAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, Descriptor.DisplayName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
-            return new ActionExecutionResult(true, MediaActionMessages.Completed(Descriptor.DisplayName), outputPath);
+            return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
         }
         catch (OperationCanceledException)
         {

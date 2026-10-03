@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using NAudio.Wave;
+using FrameShift.Core.Helpers;
 
 namespace FrameShift.Core.AI.SeparateAudio;
 
@@ -12,15 +13,25 @@ internal sealed class AudioStemWriter : IDisposable
     private static readonly WaveFormat OutputFormat = new(44100, 16, 2);
 
     private readonly WaveFileWriter _writer;
+    private readonly OutputOperation _publication;
     private bool _disposed;
 
-    public string OutputPath { get; }
+    public string OutputPath => _publication.PublishedPath ?? _publication.WorkingPath;
 
     public AudioStemWriter(string outputPath)
     {
-        OutputPath = outputPath;
-        _writer = new WaveFileWriter(outputPath, OutputFormat);
+        _publication = OutputOperation.ForFile(outputPath);
+        try { _writer = new WaveFileWriter(_publication.WorkingPath, OutputFormat); }
+        catch { _publication.Dispose(); throw; }
     }
+
+    public string Publish(CancellationToken cancellationToken)
+    {
+        Dispose(); // Finalize WAV headers before moving any stem.
+        return _publication.Publish(cancellationToken);
+    }
+
+    public void CleanupWorkspace() => _publication.Dispose();
 
     // Writes count interleaved stereo float32 samples (count/2 frames).
     // Samples are clamped to [-1, 1] and converted to PCM_16.
@@ -52,15 +63,8 @@ internal sealed class AudioStemWriter : IDisposable
     // Deletes the partial output file if called before normal completion (e.g. on cancellation).
     public void DeletePartialOutput()
     {
-        Dispose();
-        try
-        {
-            if (File.Exists(OutputPath))
-                File.Delete(OutputPath);
-        }
-        catch
-        {
-            // Cleanup failure must never propagate.
-        }
+        try { Dispose(); }
+        catch { /* Continue cleaning the other stems if WAV finalization failed. */ }
+        finally { _publication.Dispose(); }
     }
 }
