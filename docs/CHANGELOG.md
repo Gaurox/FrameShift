@@ -2,14 +2,14 @@
 
 ## 1.20.1
 
-Security maintenance release candidate; not published. The Six Labors Community licence is validated. Canonical Release build results and remaining installed qualification are recorded in [the candidate report](RELEASE_QUALIFICATION_1.20.1.md).
+Published on 3 October 2026 after owner authorization. GitHub tag: `1.20.1`. The Six Labors Community licence is validated. Canonical Release build results, verified installer download and remaining installed qualification are recorded in [the release report](RELEASE_QUALIFICATION_1.20.1.md).
 
 - Removed the setup's registry-driven uninstaller launch. Existing machine installations remain updatable; uninstall through Windows Settings. Legacy per-user installations are reported separately.
 - Upgraded ImageSharp from 3.1.12 to 4.1.2; updated the app, test and UI sample lockfiles and the affected BMP encoder API. Restricted file decoding to PNG, JPEG, WebP and BMP, preserving ICC profiles and pixel colors. The owner's Community licence is accepted by the official validator. Debug checks and the full Release suite pass, including the ten local-model P1 inference cases.
 - Media outputs are written in exclusively created adjacent workspaces and published without replacement. Collisions choose a new numeric suffix; failure and cancellation clean owned workspaces. WAV headers are finalized before multi-stem publication, and earlier published stems survive later failures.
 - Preserved long Windows and UNC paths during exclusive workspace creation. Added collision, cancellation, NTFS access-denial, partial WAV and real BMP/rawvideo inference coverage; concurrent publication also verified across processes, junctions and loopback UNC.
 - Subtitle diagnostics also publish without replacement; diagnostic failure preserves the completed subtitles, and foreign `.tmp` files are no longer removed.
-- Pinned SDK 8.0.425 and the self-contained 8.0.31 runtime. Packaging checks app/worker runtime manifests, runtime binaries and ImageSharp 4.1.2 before Inno Setup. The full canonical Release chain passes: 690 tests passed, five unavailable Whisper integrations skipped, no failures, verified self-contained payload and installer built. Direct apphost startup and sequential/concurrent image exports pass; installed qualification and publication remain pending.
+- Pinned SDK 8.0.425 and the self-contained 8.0.31 runtime. Packaging checks app/worker runtime manifests, runtime binaries and ImageSharp 4.1.2 before Inno Setup. The full canonical Release chain passes: 690 tests passed, five unavailable Whisper integrations skipped, no failures, verified self-contained payload and installer built. Direct apphost startup and sequential/concurrent image exports pass; unexecuted installed qualification remains an explicit limit of the authorized publication.
 
 ## 1.20.0
 

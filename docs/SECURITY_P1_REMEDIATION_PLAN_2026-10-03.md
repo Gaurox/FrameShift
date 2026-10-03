@@ -6,7 +6,7 @@
 
 **Référence :** [audit de sécurité](E:/AI/FrameShift_V1/docs/SECURITY_AUDIT_2026-10-03.md).
 
-**Statut :** corrections de code terminées sur `codex/security-p1`, y compris ImageSharp 4.1.2 et les verrouillages. Licence Community acceptée et chaîne officielle Release réussie : **690 tests réussis, 5 ignorés, aucun échec**, payload autonome avec runtimes 8.0.31 contrôlé et installeur 1.20.1 construit. Démarrage autonome et exports successifs/concurrents validés. La qualification installée de phase 3 reste à terminer avant clôture. Voir le [suivi d'application](E:/AI/FrameShift_V1/docs/SECURITY_P1_IMPLEMENTATION_2026-10-03.md) et le [rapport de candidate](RELEASE_QUALIFICATION_1.20.1.md).
+**Statut :** corrections de code terminées, y compris ImageSharp 4.1.2 et les verrouillages. Licence Community acceptée et chaîne officielle Release réussie : **690 tests réussis, 5 ignorés, aucun échec**, payload autonome avec runtimes 8.0.31 contrôlé et installeur 1.20.1 construit. Démarrage autonome et exports successifs/concurrents validés. **1.20.1 publiée sur autorisation du propriétaire**, avec téléchargement public vérifié identique. La qualification installée de phase 3 reste à compléter pour les preuves de clôture exhaustive. Voir le [suivi d'application](E:/AI/FrameShift_V1/docs/SECURITY_P1_IMPLEMENTATION_2026-10-03.md) et le [rapport de release](RELEASE_QUALIFICATION_1.20.1.md).
 
 ## Organisation : trois phases
 

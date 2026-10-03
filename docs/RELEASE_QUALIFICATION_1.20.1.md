@@ -2,7 +2,7 @@
 
 ## Statut
 
-**Candidate de maintenance sécurité construite et contrôlée le 3 octobre 2026, non publiée.** Le tag annoté local `1.20.1` identifie exactement le commit compilé. Les corrections des quatre P1 sont décrites dans [le bilan d'implémentation](SECURITY_P1_IMPLEMENTATION_2026-10-03.md). La recette installée et la décision de diffusion restent ouvertes.
+**Release de maintenance sécurité publiée le 3 octobre 2026 après autorisation du propriétaire ; téléchargement public vérifié identique à l'installeur préparé.** Le tag annoté `1.20.1` identifie exactement le commit compilé. Les corrections des quatre P1 sont décrites dans [le bilan d'implémentation](SECURITY_P1_IMPLEMENTATION_2026-10-03.md). La recette installée reste non exécutée, avec le périmètre de cette limite indiqué ci-dessous.
 
 La licence Community fournie par le propriétaire est acceptée par le vérificateur officiel ImageSharp. Le fichier reste privé, hors du dépôt et de l'installateur. Son courriel annonce une expiration le 1er janvier 2028 ; le [README](../README.md#imagesharp-licence--maintainers-and-ai-agents) rappelle le renouvellement.
 
@@ -73,4 +73,14 @@ Après remise de l'installeur, des résultats automatiques et de la limite de qu
 
 La publication porte sur le tag **`1.20.1`**, le commit source **`0b31a16329eba739cd47e725b287362684389c47`** et l'installeur de SHA-256 **`E606E5A30B4F7AC5E9ECD9685C261FE3964641321F301933296BE64C764B8991`**. Aucune reconstruction ni substitution de l'artefact accepté n'est prévue.
 
-Ce retour autorise la diffusion avec les limites précédemment signalées. Il ne fournit pas de résultats supplémentaires pour l'installation en VM, les entrées HKCU trompeuses, la désinstallation ou les recettes manquantes. Ces scénarios restent non exécutés et les preuves de clôture exhaustive des quatre P1 restent ouvertes. La publication et le téléchargement de l'artefact seront vérifiés séparément.
+Ce retour autorise la diffusion avec les limites précédemment signalées. Il ne fournit pas de résultats supplémentaires pour l'installation en VM, les entrées HKCU trompeuses, la désinstallation ou les recettes manquantes. Ces scénarios restent non exécutés et les preuves de clôture exhaustive des quatre P1 restent ouvertes.
+
+## Publication GitHub vérifiée
+
+- [Release stable **1.20.1**](https://github.com/Gaurox/FrameShift/releases/tag/1.20.1), identifiant `402694541`, publiée le **3 octobre 2026 à 23:15:40 CEST** (`2026-10-03T21:15:40Z`). Publique, sans statut prerelease, marquée comme dernière version.
+- Code et documents poussés vers `main`. Le push initial atomique pointe la branche sur `99f028d`, avec le tag annoté **`1.20.1`**, objet `2d58c412a2235645c1e6aecf8555c0b248dd3abc`, pointant sur le commit de construction **`0b31a16329eba739cd47e725b287362684389c47`**.
+- [Installeur public](https://github.com/Gaurox/FrameShift/releases/download/1.20.1/FrameShift_1.20.1_Setup.exe), asset `608547272`, **171 550 754 octets**. Empreinte GitHub identique à l'artefact accepté : **`E606E5A30B4F7AC5E9ECD9685C261FE3964641321F301933296BE64C764B8991`**.
+- [Fichier SHA-256](https://github.com/Gaurox/FrameShift/releases/download/1.20.1/FrameShift_1.20.1_Setup.exe.sha256), asset `608547274`, vérifié conforme au fichier local. Aucun secret de licence joint.
+- Téléchargement **sans authentification** depuis l'URL publique, puis contrôle local : taille et SHA-256 identiques. Vérification terminée à `2026-10-03T21:16:26Z`. Aucune reconstruction ou substitution du binaire.
+- Texte publié conforme aux [notes de release](RELEASE_NOTES_1.20.1.md). README et changelog actualisés après vérification du téléchargement.
+- Traces locales : `github-draft-metadata.json`, `github-published-metadata.json`, `github-download-verification.json`, et copie téléchargée dans `scratch/release-1.20.1/download-verification/`.

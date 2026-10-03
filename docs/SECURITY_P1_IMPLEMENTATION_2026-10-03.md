@@ -1,6 +1,6 @@
 # FrameShift — Application du plan correctif P1
 
-Date : 3 octobre 2026. Branche : `codex/security-p1`. Version : **1.20.1, non publiée**.
+Date : 3 octobre 2026. Branche de travail : `codex/security-p1`, changements poussés vers `main`. Version : **[1.20.1, publiée](https://github.com/Gaurox/FrameShift/releases/tag/1.20.1)**.
 
 Références : [audit initial](SECURITY_AUDIT_2026-10-03.md), [plan en trois phases](SECURITY_P1_REMEDIATION_PLAN_2026-10-03.md).
 
@@ -15,7 +15,7 @@ Références : [audit initial](SECURITY_AUDIT_2026-10-03.md), [plan en trois pha
 | P1 / FS-SEC-03 | Écrasement ou suppression de fichiers lors de collisions/annulations | Producteurs FFmpeg, PDF, PNG IA, WAV et sous-titres migrés vers un workspace adjacent créé exclusivement, puis publication sans remplacement. Chemins Windows longs et UNC pris en charge. | Rejouer les cas représentatifs sur la candidate installée ; les coupures d'un partage distant et le disque plein ne sont pas simulés ici. |
 | P1 / FS-SEC-04 | Runtime autonome .NET ancien | SDK **8.0.425** épinglé, .NET/Windows Desktop **8.0.31** dans le vrai payload Release autonome, worker inclus. Contrôles canoniques des manifests, DLL, ImageSharp, outils et notices réussis ; démarrage autonome et traitements réels réussis. | Contrôler le contenu installé. |
 
-**Les quatre P1 ne sont pas déclarés clos sur une version distribuée.** L'installeur Release est prêt localement et le tag annoté `1.20.1` est préparé. Aucune installation locale ni publication distante n'a été effectuée. L'application déjà installée n'est pas mise à jour par ces changements du dépôt.
+**Les preuves de clôture exhaustive des quatre P1 restent ouvertes pour la recette installée.** Le propriétaire a autorisé la diffusion après présentation des résultats et de cette limite. La release `1.20.1` et son tag sont publiés ; le téléchargement public est vérifié identique à l'installeur construit. Aucun scénario d'installation en VM n'est ajouté aux réussites. La publication ne met pas automatiquement à jour l'application déjà installée.
 
 ## Conservation des sorties
 
@@ -55,7 +55,7 @@ Le payload Debug est un contrôle technique, **pas une release à distribuer**. 
 
 1. **Licence : étape réalisée.** Le propriétaire a effectué la demande et fourni le fichier Community. Son acceptation par le paquet officiel est vérifiée. Le fichier reste privé, hors du dépôt et hors des artefacts distribués.
 2. **Chaîne officielle : étape réalisée.** Suite Release complète réussie sur arbre propre, application et worker autonomes contrôlés, Inno compilé. Le tag local identifie le commit compilé. Aucun correctif de migration ImageSharp supplémentaire n'est actuellement identifié.
-3. **Qualifier cette candidate installée en VM**, selon la phase 3 du plan, puis seulement clôturer les P1 et décider de la diffusion.
+3. **Compléter la qualification installée en VM**, selon la phase 3 du plan, pour terminer les preuves de clôture exhaustive. Le propriétaire a autorisé la diffusion de la 1.20.1 avec la limite signalée ; cette autorisation ne vaut pas résultat positif des scénarios non exécutés.
 
 ## Reprendre les vérifications
 

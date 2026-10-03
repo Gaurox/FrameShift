@@ -35,7 +35,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch target: **1.20.1** (release candidate; see [release notes](docs/RELEASE_NOTES_1.20.1.md)) · latest published release: **[1.20.0](https://github.com/Gaurox/FrameShift/releases/tag/1.20.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch version: **1.20.1** · latest published release: **[1.20.1](https://github.com/Gaurox/FrameShift/releases/tag/1.20.1)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,6 +46,8 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
+
+**New in 1.20.1 — security and reliability fixes.** Hardened the installer, updated bundled image-processing and .NET components, and protected media outputs during filename collisions, cancellation and failure. See [the release notes](docs/RELEASE_NOTES_1.20.1.md) and [the qualification report](docs/RELEASE_QUALIFICATION_1.20.1.md).
 
 **New in 1.20.0 — refreshed Windows interface.** Action dialogs and editors share consistent headers, spacing and buttons, adapt to the available screen space, and keep their main commands accessible. This release also brings improved keyboard navigation, readable queue/error details, and PerMonitorV2 DPI handling. Build evidence and the accepted qualification scope are recorded in [the release report](docs/RELEASE_QUALIFICATION_1.20.0.md).
 
