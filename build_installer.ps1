@@ -252,6 +252,56 @@ function Assert-PublishPayload {
 
     Assert-BundledFfmpegPayload -PayloadRoot $PublishDirectory -Label 'Published FFmpeg payload'
     Assert-DistributionNoticePayload -PublishDirectory $PublishDirectory
+    Assert-ManagedPayload -Directory $PublishDirectory -Name 'FrameShift' -Desktop
+    Assert-ManagedPayload -Directory (Join-Path $PublishDirectory 'Workers\CreateSubtitlesWorker') -Name 'FrameShift.SubtitlesWorker'
+}
+
+function Assert-ManagedPayload {
+    param([string]$Directory, [string]$Name, [switch]$Desktop)
+
+    $runtimeVersion = '8.0.31'
+    $configPath = Join-Path $Directory "$Name.runtimeconfig.json"
+    $depsPath = Join-Path $Directory "$Name.deps.json"
+    Assert-RequiredFile -Path $configPath -Label 'Runtime manifest'
+    Assert-RequiredFile -Path $depsPath -Label 'Dependency manifest'
+    $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+    $deps = Get-Content -LiteralPath $depsPath -Raw | ConvertFrom-Json
+    $expected = @('Microsoft.NETCore.App')
+    if ($Desktop) { $expected += 'Microsoft.WindowsDesktop.App' }
+    $frameworks = @($config.runtimeOptions.includedFrameworks)
+    if ($frameworks.Count -ne $expected.Count) { throw "Unexpected runtime frameworks in $configPath" }
+    foreach ($framework in $expected) {
+        $match = @($frameworks | Where-Object { $_.name -eq $framework -and $_.version -eq $runtimeVersion })
+        if ($match.Count -ne 1) { throw "Runtime $framework must be $runtimeVersion in $configPath" }
+    }
+    if ($deps.runtimeTarget.name -notlike '*/win-x64') { throw "Payload must target win-x64: $depsPath" }
+    $runtimeLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'runtimepack.Microsoft.NETCore.App.Runtime.win-x64/*' })
+    if ($runtimeLibraries.Count -ne 1 -or $runtimeLibraries[0] -ne "runtimepack.Microsoft.NETCore.App.Runtime.win-x64/$runtimeVersion") {
+        throw "Runtime dependency manifest mismatch: $depsPath"
+    }
+    $binaryVersions = @{
+        'coreclr.dll' = '8.0.3126.42015'
+        'System.Private.CoreLib.dll' = '8.0.3126.42015'
+    }
+    if ($Desktop) {
+        $desktopLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/*' })
+        if ($desktopLibraries.Count -ne 1 -or $desktopLibraries[0] -ne "runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/$runtimeVersion") {
+            throw "Desktop dependency manifest mismatch: $depsPath"
+        }
+        $binaryVersions['System.Windows.Forms.dll'] = '8.0.3126.42106'
+        $imageLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'SixLabors.ImageSharp/*' })
+        if ($imageLibraries.Count -ne 1 -or $imageLibraries[0] -ne 'SixLabors.ImageSharp/4.1.2') {
+            throw "ImageSharp 4.1.2 is required before distribution: $depsPath"
+        }
+        Assert-RequiredFile -Path (Join-Path $Directory 'SixLabors.ImageSharp.dll') -Label 'ImageSharp binary'
+        $binaryVersions['SixLabors.ImageSharp.dll'] = '4.1.2.0'
+    }
+    foreach ($binary in $binaryVersions.Keys) {
+        $path = Join-Path $Directory $binary
+        Assert-RequiredFile -Path $path -Label 'Runtime binary'
+        $actual = (([string][Diagnostics.FileVersionInfo]::GetVersionInfo($path).FileVersion -split ' ')[0]).Replace(',', '.')
+        if ($actual -ne $binaryVersions[$binary]) { throw "Runtime binary version mismatch for $path : $actual" }
+    }
 }
 
 try {
@@ -299,9 +349,17 @@ try {
     Write-Host "Release version: $appVersion" -ForegroundColor Green
 
     Write-Host 'Restoring locked dependencies...' -ForegroundColor Cyan
-    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
-    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
-    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'
+    # A locally prepared official SDK is convenient without changing the machine installation.
+    $localSdk = Join-Path $repoRoot '.buildcheck\sdk\8.0.425'
+    if (Test-Path -LiteralPath (Join-Path $localSdk 'dotnet.exe') -PathType Leaf) {
+        $env:PATH = "$localSdk;$env:PATH"
+        $env:DOTNET_CLI_HOME = Join-Path $repoRoot '.buildcheck\dotnet-home'
+    }
+    $sdkVersion = (& dotnet --version | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0 -or $sdkVersion -ne '8.0.425') { throw 'The release requires .NET SDK 8.0.425.' }
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'
 
     Write-Host 'Running mandatory Release tests...' -ForegroundColor Cyan
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('test', $testProject, '-c', 'Release', '--no-restore', '--verbosity', 'minimal') -Step 'Release tests'

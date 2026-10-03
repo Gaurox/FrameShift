@@ -105,7 +105,6 @@ Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpe
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
 
 [Code]
-procedure ExitProcess(uExitCode: Integer); external 'ExitProcess@kernel32.dll stdcall';
 procedure SHChangeNotify(wEventId: LongInt; uFlags: Cardinal; dwItem1: Integer; dwItem2: Integer); external 'SHChangeNotify@shell32.dll stdcall';
 
 const
@@ -114,8 +113,6 @@ const
   ImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   PdfImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   UninstallSubkey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppId}_is1';
-  ExistingInstallActionInstall = 1;
-  ExistingInstallActionUninstall = 2;
   ExistingInstallStateOlder = -1;
   ExistingInstallStateSame = 0;
   ExistingInstallStateNewer = 1;
@@ -127,14 +124,11 @@ const
 
 var
   InstalledVersion: string;
-  InstalledUninstallString: string;
+  HasLegacyUserInstall: Boolean;
   InstalledVersionState: Integer;
   HasInstalledVersion: Boolean;
   ExistingInstallPage: TWizardPage;
   ExistingInstallStatusLabel: TNewStaticText;
-  ExistingInstallInstallRadio: TNewRadioButton;
-  ExistingInstallUninstallRadio: TNewRadioButton;
-  ExistingInstallSelectedAction: Integer;
   AiModelsPage: TWizardPage;
   AiModelsDirEdit: TEdit;
   AiModelsDirBrowseButton: TButton;
@@ -156,24 +150,15 @@ begin
   end;
 end;
 
-function TryGetInstalledValue(const ValueName: string; var Value: string): Boolean;
-begin
-  Result :=
-    RegQueryStringValue(HKLM64, UninstallSubkey, ValueName, Value) or
-    RegQueryStringValue(HKLM, UninstallSubkey, ValueName, Value) or
-    RegQueryStringValue(HKCU64, UninstallSubkey, ValueName, Value) or
-    RegQueryStringValue(HKCU, UninstallSubkey, ValueName, Value);
-end;
-
 function FindInstalledVersion(): Boolean;
+var
+  LegacyVersion: string;
 begin
   InstalledVersion := '';
-  InstalledUninstallString := '';
-  Result := TryGetInstalledValue('DisplayVersion', InstalledVersion);
-  if Result then
-  begin
-    TryGetInstalledValue('UninstallString', InstalledUninstallString);
-  end;
+  Result := RegQueryStringValue(HKLM64, UninstallSubkey, 'DisplayVersion', InstalledVersion) or
+    RegQueryStringValue(HKLM32, UninstallSubkey, 'DisplayVersion', InstalledVersion);
+  HasLegacyUserInstall := RegQueryStringValue(HKCU64, UninstallSubkey, 'DisplayVersion', LegacyVersion) or
+    RegQueryStringValue(HKCU32, UninstallSubkey, 'DisplayVersion', LegacyVersion);
 end;
 
 function ReadNextVersionPart(const Version: string; var Index: Integer): Integer;
@@ -235,29 +220,16 @@ begin
   Result := 0;
 end;
 
-function TryRunInstalledUninstaller(): Boolean;
-var
-  ResultCode: Integer;
-begin
-  Result := False;
-  if InstalledUninstallString = '' then
-  begin
-    exit;
-  end;
-
-  Result := Exec(
-    RemoveQuotes(InstalledUninstallString),
-    '',
-    '',
-    SW_SHOWNORMAL,
-    ewWaitUntilTerminated,
-    ResultCode);
-end;
-
 procedure UpdateExistingInstallPageContent();
 begin
   if not HasInstalledVersion then
   begin
+    if HasLegacyUserInstall then
+    begin
+      ExistingInstallStatusLabel.Caption :=
+        'A previous per-user FrameShift installation was detected.' + #13#10#13#10 +
+        'You can remove that copy from Windows Settings. This setup will install FrameShift for this machine.';
+    end;
     exit;
   end;
 
@@ -265,36 +237,35 @@ begin
   begin
     ExistingInstallPage.Caption := 'Existing installation detected';
     ExistingInstallPage.Description :=
-      'Choose whether to update the installed copy or uninstall it first.';
+      'Continue to update the installed copy.';
     ExistingInstallStatusLabel.Caption :=
       'FrameShift version ' + InstalledVersion + ' is already installed.' + #13#10#13#10 +
       'This setup can update it to version {#MyAppVersion}.';
-    ExistingInstallInstallRadio.Caption := 'Update to version {#MyAppVersion}';
   end
   else if InstalledVersionState = ExistingInstallStateSame then
   begin
     ExistingInstallPage.Caption := 'Existing installation detected';
     ExistingInstallPage.Description :=
-      'Choose whether to reinstall the current version or uninstall it.';
+      'Continue to reinstall the current version.';
     ExistingInstallStatusLabel.Caption :=
       'FrameShift version {#MyAppVersion} is already installed.' + #13#10#13#10 +
       'You can reinstall this version over the current installation.';
-    ExistingInstallInstallRadio.Caption := 'Reinstall version {#MyAppVersion}';
   end
   else
   begin
     ExistingInstallPage.Caption := 'Existing installation detected';
     ExistingInstallPage.Description :=
-      'Choose whether to install this setup over the current copy or uninstall it.';
+      'Continue to install this version over the current copy.';
     ExistingInstallStatusLabel.Caption :=
       'A newer FrameShift version (' + InstalledVersion + ') is already installed.' + #13#10#13#10 +
       'You can still install version {#MyAppVersion} over the current installation.';
-    ExistingInstallInstallRadio.Caption := 'Install version {#MyAppVersion} over the current installation';
   end;
 
-  ExistingInstallUninstallRadio.Caption := 'Uninstall the current FrameShift installation';
-  ExistingInstallInstallRadio.Checked := True;
-  ExistingInstallSelectedAction := ExistingInstallActionInstall;
+  ExistingInstallStatusLabel.Caption := ExistingInstallStatusLabel.Caption + #13#10#13#10 +
+    'To uninstall FrameShift, use Windows Settings.';
+  if HasLegacyUserInstall then
+    ExistingInstallStatusLabel.Caption := ExistingInstallStatusLabel.Caption + #13#10 +
+      'A previous per-user copy was also detected; you can remove it from Windows Settings.';
 end;
 
 procedure CleanupContextMenuKeysForHive(const Hive: Integer; const Extensions: string);
@@ -1520,24 +1491,9 @@ begin
   ExistingInstallStatusLabel.Left := ScaleX(0);
   ExistingInstallStatusLabel.Top := ScaleY(8);
   ExistingInstallStatusLabel.Width := ExistingInstallPage.SurfaceWidth;
-  ExistingInstallStatusLabel.Height := ScaleY(52);
+  ExistingInstallStatusLabel.Height := ScaleY(160);
   ExistingInstallStatusLabel.AutoSize := False;
   ExistingInstallStatusLabel.WordWrap := True;
-
-  ExistingInstallInstallRadio := TNewRadioButton.Create(ExistingInstallPage);
-  ExistingInstallInstallRadio.Parent := ExistingInstallPage.Surface;
-  ExistingInstallInstallRadio.Left := ScaleX(0);
-  ExistingInstallInstallRadio.Top := ExistingInstallStatusLabel.Top + ExistingInstallStatusLabel.Height + ScaleY(12);
-  ExistingInstallInstallRadio.Width := ExistingInstallPage.SurfaceWidth;
-  ExistingInstallInstallRadio.Height := ScaleY(24);
-  ExistingInstallInstallRadio.Checked := True;
-
-  ExistingInstallUninstallRadio := TNewRadioButton.Create(ExistingInstallPage);
-  ExistingInstallUninstallRadio.Parent := ExistingInstallPage.Surface;
-  ExistingInstallUninstallRadio.Left := ScaleX(0);
-  ExistingInstallUninstallRadio.Top := ExistingInstallInstallRadio.Top + ExistingInstallInstallRadio.Height + ScaleY(8);
-  ExistingInstallUninstallRadio.Width := ExistingInstallPage.SurfaceWidth;
-  ExistingInstallUninstallRadio.Height := ScaleY(24);
 
   UpdateExistingInstallPageContent();
 end;
@@ -1547,7 +1503,7 @@ begin
   Result := False;
   if (ExistingInstallPage <> nil) and (PageID = ExistingInstallPage.ID) then
   begin
-    Result := not HasInstalledVersion;
+    Result := not HasInstalledVersion and not HasLegacyUserInstall;
   end;
 end;
 
@@ -1573,28 +1529,6 @@ begin
     AiModelsDirEdit.Text := SafeModelsDir;
   end;
 
-  if (ExistingInstallPage <> nil) and (CurPageID = ExistingInstallPage.ID) then
-  begin
-    if ExistingInstallUninstallRadio.Checked then
-    begin
-      ExistingInstallSelectedAction := ExistingInstallActionUninstall;
-    end
-    else
-    begin
-      ExistingInstallSelectedAction := ExistingInstallActionInstall;
-    end;
-
-    if ExistingInstallSelectedAction = ExistingInstallActionUninstall then
-    begin
-      if not TryRunInstalledUninstaller() then
-      begin
-        MsgBox('Unable to start the installed FrameShift uninstaller.', mbError, MB_OK);
-      end;
-
-      Result := False;
-      ExitProcess(0);
-    end;
-  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

@@ -3,12 +3,46 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Runtime.InteropServices;
 using Xunit;
 
 namespace FrameShift.Tests;
 
 public sealed class ReleaseScriptTests
 {
+    [Theory]
+    [InlineData("approved-app/FrameShift.runtimeconfig.json", "8.0.31", "8.0.26")]
+    [InlineData("approved-worker/FrameShift.SubtitlesWorker.runtimeconfig.json", "8.0.31", "8.0.26")]
+    [InlineData("approved-app/FrameShift.deps.json", "SixLabors.ImageSharp/4.1.2", "SixLabors.ImageSharp/3.1.12")]
+    [InlineData("approved-worker/FrameShift.SubtitlesWorker.deps.json", "8.0.31", "8.0.26")]
+    [InlineData("approved-app/FrameShift.deps.json", "WindowsDesktop.App.Runtime.win-x64/8.0.31", "WindowsDesktop.App.Runtime.win-x64/8.0.26")]
+    [InlineData("approved-app/coreclr.dll", null, null)]
+    [InlineData("approved-worker/System.Private.CoreLib.dll", null, null)]
+    [InlineData("approved-app/SixLabors.ImageSharp.dll", null, null)]
+    public void CanonicalRelease_UnsafeManagedPayloadStopsBeforeInno(string relativePath, string? oldValue, string? newValue)
+    {
+        using var fixture = new ReleaseFixture();
+        var path = Path.Combine(fixture.Root, relativePath);
+        if (oldValue is null) File.Delete(path);
+        else File.WriteAllText(path, File.ReadAllText(path).Replace(oldValue, newValue));
+        var result = fixture.Run();
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(result.LogLines, line => line.StartsWith("dotnet publish ", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void CanonicalRelease_ManifestCannotHideWrongRuntimeBinary()
+    {
+        using var fixture = new ReleaseFixture();
+        File.WriteAllText(Path.Combine(fixture.Root, "approved-worker", "coreclr.dll"), "not an approved runtime binary");
+        var result = fixture.Run();
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Runtime binary version mismatch", result.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public void CanonicalRelease_CleanFixtureRestoresBeforeNoRestoreTests_CleansPublishAndBuildsFromCurrentPayload()
     {
@@ -200,6 +234,39 @@ public sealed class ReleaseScriptTests
             CopyRepositoryFile("licenses\\subtitles-worker-native\\APACHE-2.0.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-LICENSE.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt");
+            CreateManagedPayloadFixture("approved-app", "FrameShift", desktop: true);
+            CreateManagedPayloadFixture("approved-worker", "FrameShift.SubtitlesWorker", desktop: false);
+        }
+
+        private void CreateManagedPayloadFixture(string folder, string name, bool desktop)
+        {
+            var frameworks = new List<object> { new { name = "Microsoft.NETCore.App", version = "8.0.31" } };
+            var libraries = new Dictionary<string, object>
+            {
+                ["runtimepack.Microsoft.NETCore.App.Runtime.win-x64/8.0.31"] = new { type = "runtimepack" }
+            };
+            if (desktop)
+            {
+                frameworks.Add(new { name = "Microsoft.WindowsDesktop.App", version = "8.0.31" });
+                libraries["runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/8.0.31"] = new { type = "runtimepack" };
+                libraries["SixLabors.ImageSharp/4.1.2"] = new { type = "package" };
+            }
+            WriteFile($"{folder}\\{name}.runtimeconfig.json", JsonSerializer.Serialize(new
+            {
+                runtimeOptions = new { includedFrameworks = frameworks }
+            }));
+            WriteFile($"{folder}\\{name}.deps.json", JsonSerializer.Serialize(new
+            {
+                runtimeTarget = new { name = ".NETCoreApp,Version=v8.0/win-x64" }, libraries
+            }));
+            var runtime = RuntimeEnvironment.GetRuntimeDirectory();
+            File.Copy(Path.Combine(runtime, "coreclr.dll"), Path.Combine(Root, folder, "coreclr.dll"));
+            File.Copy(typeof(object).Assembly.Location, Path.Combine(Root, folder, "System.Private.CoreLib.dll"));
+            if (desktop)
+            {
+                File.Copy(typeof(System.Windows.Forms.Form).Assembly.Location, Path.Combine(Root, folder, "System.Windows.Forms.dll"));
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "ReleaseFixtures", "SixLabors.ImageSharp.dll"), Path.Combine(Root, folder, "SixLabors.ImageSharp.dll"));
+            }
         }
 
         private void CreateFakeTools()
@@ -215,6 +282,7 @@ public sealed class ReleaseScriptTests
             {
                 "@echo off",
                 "echo dotnet %*>> \"%FRAMESHIFT_RELEASE_TEST_LOG%\"",
+                "if /I \"%1\"==\"--version\" (echo 8.0.425 & exit /b 0)",
                 "if /I \"%1\"==\"restore\" exit /b 0",
                 "if /I \"%1\"==\"test\" goto test",
                 "if /I \"%1\"==\"publish\" goto publish",
@@ -240,6 +308,8 @@ public sealed class ReleaseScriptTests
                 ":skipnotice",
                 "if /I \"%FRAMESHIFT_RELEASE_TEST_TAMPER_FFMPEG%\"==\"1\" echo tampered>> \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffmpeg.exe\"",
                 "type nul > \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\\FrameShift.SubtitlesWorker.exe\"",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\approved-app\\*\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\\" >nul",
+                "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\approved-worker\\*\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Workers\\CreateSubtitlesWorker\\\" >nul",
                 "exit /b 0"
             });
             WriteBatchFile("fake-iscc.cmd", new[]

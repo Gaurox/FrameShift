@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Inspect the approved binary in release fixtures; do not reference or execute it. -->
+    <PackageDownload Include="SixLabors.ImageSharp" Version="[4.1.2]" />
+    <Content Include="$(NuGetPackageRoot)sixlabors.imagesharp\4.1.2\lib\net8.0\SixLabors.ImageSharp.dll"
+             Link="ReleaseFixtures\SixLabors.ImageSharp.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">

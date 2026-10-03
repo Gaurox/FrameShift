@@ -34,3 +34,6 @@ screenshots/Gif_demos/*.mp4
 # OS noise
 Thumbs.db
 Desktop.ini
+
+# Six Labors build licences belong to the build environment, never to source control.
+sixlabors.lic
