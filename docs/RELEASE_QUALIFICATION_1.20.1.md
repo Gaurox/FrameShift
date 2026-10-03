@@ -69,4 +69,8 @@ Les modèles LaMa/DeepFilterNet et certains corpus Whisper ne sont pas disponibl
 
 ## Décision de publication
 
-Aucun push, upload ou publication GitHub n'est autorisé par la seule préparation de cette candidate. L'acceptation finale du propriétaire et son périmètre seront consignés après son retour. Les quatre P1 ne sont pas déclarés clos sur une version distribuée avant cette décision et la vérification de la distribution.
+Après remise de l'installeur, des résultats automatiques et de la limite de qualification installée, le propriétaire autorise explicitement : **« ok parfait push et publie »**.
+
+La publication porte sur le tag **`1.20.1`**, le commit source **`0b31a16329eba739cd47e725b287362684389c47`** et l'installeur de SHA-256 **`E606E5A30B4F7AC5E9ECD9685C261FE3964641321F301933296BE64C764B8991`**. Aucune reconstruction ni substitution de l'artefact accepté n'est prévue.
+
+Ce retour autorise la diffusion avec les limites précédemment signalées. Il ne fournit pas de résultats supplémentaires pour l'installation en VM, les entrées HKCU trompeuses, la désinstallation ou les recettes manquantes. Ces scénarios restent non exécutés et les preuves de clôture exhaustive des quatre P1 restent ouvertes. La publication et le téléchargement de l'artefact seront vérifiés séparément.
