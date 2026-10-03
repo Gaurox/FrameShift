@@ -6,16 +6,16 @@ Références : [audit initial](SECURITY_AUDIT_2026-10-03.md), [plan en trois pha
 
 ## État des quatre P1
 
-**Les corrections de code et les vérifications locales initiales sont terminées.** ImageSharp est réellement migré en 4.1.2. Le 3 octobre, le propriétaire a fourni une licence Community : le vérificateur officiel l'accepte et la compilation Release de l'application et du worker réussit, sans erreur ni avertissement. Le fichier reste hors du dépôt ; aucun contrôle de licence n'est désactivé.
+**Les corrections de code et la construction officielle de la candidate sont terminées.** ImageSharp est réellement migré en 4.1.2. La licence Community est acceptée ; la chaîne Release complète réussit : **690 tests réussis, 5 ignorés, aucun échec**, payload autonome contrôlé et installeur 1.20.1 compilé. Le [rapport de candidate](RELEASE_QUALIFICATION_1.20.1.md) identifie le commit, les empreintes et les vérifications. Le fichier de licence reste hors du dépôt ; aucun contrôle n'est désactivé.
 
 | Priorité | Défaut | Correction réalisée | Reste avant clôture de distribution |
 |---|---|---|---|
 | P1 / FS-SEC-01 | Exécution élevée d'un désinstalleur provenant du registre | Chemin d'exécution et option supprimés. Détection machine HKLM séparée de l'information HKCU. Mise à jour/réinstallation conservées ; désinstallation par Windows. | Recette de l'installateur en VM : première installation, mise à jour, réinstallation, désinstallation Windows et entrée HKCU trompeuse. |
-| P1 / FS-SEC-02 | Décodeurs ImageSharp vulnérables | Dépendance directe **4.1.2**, API BMP adaptée, trois verrouillages et notices actualisés. Toutes les lectures de fichiers utilisent exclusivement PNG/JPEG/WebP/BMP ; ICC préservé explicitement. Debug, formats, PDF et inférences CPU/DirectML vérifiés. Licence Community acceptée ; compilation Release réussie. | Suite de tests Release avec la licence, puis vérification sur la candidate installée. |
+| P1 / FS-SEC-02 | Décodeurs ImageSharp vulnérables | Dépendance directe **4.1.2**, API BMP adaptée, trois verrouillages et notices actualisés. Toutes les lectures de fichiers utilisent exclusivement PNG/JPEG/WebP/BMP ; ICC préservé explicitement. Formats, PDF et inférences CPU/DirectML vérifiés. Licence acceptée, suite Release réussie et paquet corrigé embarqué. | Vérification sur la candidate installée. |
 | P1 / FS-SEC-03 | Écrasement ou suppression de fichiers lors de collisions/annulations | Producteurs FFmpeg, PDF, PNG IA, WAV et sous-titres migrés vers un workspace adjacent créé exclusivement, puis publication sans remplacement. Chemins Windows longs et UNC pris en charge. | Rejouer les cas représentatifs sur la candidate installée ; les coupures d'un partage distant et le disque plein ne sont pas simulés ici. |
-| P1 / FS-SEC-04 | Runtime autonome .NET ancien | SDK **8.0.425** épinglé, .NET/Windows Desktop **8.0.31** dans un vrai payload Debug autonome, worker inclus. Contrôles canoniques des manifests, DLL, ImageSharp, outils et notices tous réussis sur ce payload. | Reproduire la chaîne officielle en Release puis contrôler le contenu installé. |
+| P1 / FS-SEC-04 | Runtime autonome .NET ancien | SDK **8.0.425** épinglé, .NET/Windows Desktop **8.0.31** dans le vrai payload Release autonome, worker inclus. Contrôles canoniques des manifests, DLL, ImageSharp, outils et notices réussis ; démarrage autonome et traitements réels réussis. | Contrôler le contenu installé. |
 
-**Les quatre P1 ne sont pas déclarés clos sur une version distribuée.** Aucune installation locale, publication distante ni livraison d'un installateur Release n'a été effectuée. L'application déjà installée n'est pas mise à jour par ces changements du dépôt.
+**Les quatre P1 ne sont pas déclarés clos sur une version distribuée.** L'installeur Release est prêt localement et le tag annoté `1.20.1` est préparé. Aucune installation locale ni publication distante n'a été effectuée. L'application déjà installée n'est pas mise à jour par ces changements du dépôt.
 
 ## Conservation des sorties
 
@@ -43,6 +43,8 @@ Références : [audit initial](SECURITY_AUDIT_2026-10-03.md), [plan en trois pha
 | Ancien contrôle sans licence | Trois restores verrouillés réussis ; compilation des tests arrêtée par la licence ImageSharp manquante, avant publication et Inno. Journal conservé : `.buildcheck/security-p1/canonical-release-check.log`. |
 | Vérification de la licence reçue | Fichier Community accepté par la validation officielle ImageSharp 4.1.2. Trois restores Release verrouillés et compilation Release de l'application/worker réussis : **0 erreur, 0 avertissement**. Le courriel annonce une validité jusqu'au **1er janvier 2028**. Journal local sans clé affichée : `.buildcheck/security-p1/license-release-verification.log`. |
 | Installateur | Script corrigé compilé avec Inno Setup **6.7.1** lors du lot précédent. Son artefact de syntaxe utilise un ancien payload de contrôle ; ce n'est pas une candidate corrigée à distribuer. |
+| Candidate officielle 1.20.1 | Chaîne complète sur le commit propre `0b31a16`, code **0** : **690 réussis, 5 ignorés, aucun échec**, dix cas IA inclus ; vrai payload Release vérifié, Inno **6.7.1**, installer **171 550 754 octets**. Identité et SHA-256 dans le rapport de candidate. |
+| Programme autonome 1.20.1 | Deux exports successifs et deux instances simultanées réussis ; originaux et sorties conservés, chemins avec espaces/accents et aucun workspace restant. Version 1.20.1 et initialisation DPI confirmées sur le DLL publié. |
 | Revue finale | Aucun appel `UninstallString`/désinstalleur externe restant dans le setup ; toutes les lectures ImageSharp de fichiers centralisées ; `LoadPixelData` rawvideo conservé ; `git diff --check` sans anomalie. |
 
 Les résultats TRX sont conservés dans `.buildcheck/security-p1/test-results` : `security-p1-final-debug.trx` et `security-p1-qualification-final.trx`. Les preuves temporaires, sondes et payloads restent ignorés par Git. Le SDK local a été téléchargé depuis Microsoft et son SHA-512 vérifié contre les métadonnées officielles.
@@ -52,7 +54,7 @@ Le payload Debug est un contrôle technique, **pas une release à distribuer**. 
 ## Ce qui reste à faire, dans l'ordre
 
 1. **Licence : étape réalisée.** Le propriétaire a effectué la demande et fourni le fichier Community. Son acceptation par le paquet officiel est vérifiée. Le fichier reste privé, hors du dépôt et hors des artefacts distribués.
-2. **Avec la licence : exécuter la chaîne officielle sur arbre propre.** Elle impose les tests Release, publie l'application et le worker autonomes, vérifie leur contenu puis compile Inno Setup. Aucun correctif de migration ImageSharp supplémentaire n'est actuellement identifié.
+2. **Chaîne officielle : étape réalisée.** Suite Release complète réussie sur arbre propre, application et worker autonomes contrôlés, Inno compilé. Le tag local identifie le commit compilé. Aucun correctif de migration ImageSharp supplémentaire n'est actuellement identifié.
 3. **Qualifier cette candidate installée en VM**, selon la phase 3 du plan, puis seulement clôturer les P1 et décider de la diffusion.
 
 ## Reprendre les vérifications

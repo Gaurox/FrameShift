@@ -22,6 +22,8 @@ Les plans Main, Remove Object et Extract Frames conservent leur conception d'ori
 - [BiRefNet High Resolution Decision Note](BIREFNET_HIGH_RESOLUTION_DECISION.md)
 - [Migration Plan](MIGRATION_PLAN.md)
 - [Changelog](CHANGELOG.md)
+- [Release Notes 1.20.1](RELEASE_NOTES_1.20.1.md)
+- [Release Qualification 1.20.1](RELEASE_QUALIFICATION_1.20.1.md)
 - [Release Notes 1.20.0](RELEASE_NOTES_1.20.0.md)
 - [Release Qualification 1.20.0](RELEASE_QUALIFICATION_1.20.0.md)
 - [UI Phase G — Installed Release Tests](UI_PHASE_G_MANUAL_TESTS.md)
