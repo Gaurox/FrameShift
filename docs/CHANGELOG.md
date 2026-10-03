@@ -2,14 +2,14 @@
 
 ## 1.20.1
 
-Security corrections implemented and tested locally; not released. The Six Labors Release build licence and installed qualification are pending.
+Security corrections implemented and tested locally; not released. The Six Labors Community licence is validated and Release compilation succeeds. Release tests, canonical packaging and installed qualification are pending.
 
 - Removed the setup's registry-driven uninstaller launch. Existing machine installations remain updatable; uninstall through Windows Settings. Legacy per-user installations are reported separately.
-- Upgraded ImageSharp from 3.1.12 to 4.1.2; updated the app, test and UI sample lockfiles and the affected BMP encoder API. Restricted file decoding to PNG, JPEG, WebP and BMP, preserving ICC profiles and pixel colors. Debug builds and real CPU/DirectML inference are validated; Release compilation still requires a valid Six Labors build licence.
+- Upgraded ImageSharp from 3.1.12 to 4.1.2; updated the app, test and UI sample lockfiles and the affected BMP encoder API. Restricted file decoding to PNG, JPEG, WebP and BMP, preserving ICC profiles and pixel colors. Debug builds and real CPU/DirectML inference are validated. The owner's Community licence is accepted by the official validator; app/worker Release compilation passes without warnings or errors.
 - Media outputs are written in exclusively created adjacent workspaces and published without replacement. Collisions choose a new numeric suffix; failure and cancellation clean owned workspaces. WAV headers are finalized before multi-stem publication, and earlier published stems survive later failures.
 - Preserved long Windows and UNC paths during exclusive workspace creation. Added collision, cancellation, NTFS access-denial, partial WAV and real BMP/rawvideo inference coverage; concurrent publication also verified across processes, junctions and loopback UNC.
 - Subtitle diagnostics also publish without replacement; diagnostic failure preserves the completed subtitles, and foreign `.tmp` files are no longer removed.
-- Pinned SDK 8.0.425 and the self-contained 8.0.31 runtime. Packaging checks app/worker runtime manifests, runtime binaries and ImageSharp 4.1.2 before Inno Setup; all checks pass on a real Debug control payload. The official Release chain stops at the missing licence before publishing.
+- Pinned SDK 8.0.425 and the self-contained 8.0.31 runtime. Packaging checks app/worker runtime manifests, runtime binaries and ImageSharp 4.1.2 before Inno Setup; all checks pass on a real Debug control payload. The earlier missing-licence block is resolved; the full canonical Release chain still needs qualification.
 
 ## 1.20.0
 
