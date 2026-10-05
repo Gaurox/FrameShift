@@ -68,6 +68,7 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
         var lineCount = 0;
         var lowConfidence = 0;
         var usedOcr = false;
+        var reducedPages = 0;
         void WritePage(OcrPage page)
         {
             lineCount += page.Lines.Count;
@@ -98,7 +99,13 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
                 if (settings.OcrOnly || native.Lines.Count == 0 || hasImages)
                 {
                     Report(i * 95 / pages.Length, $"Rendering page {pages[i]} of {document.PageCount}");
-                    using var image = document.Render(pages[i], settings.Dpi, token);
+                    using var image = document.Render(pages[i], settings.Dpi, token, actualDpi =>
+                    {
+                        reducedPages++;
+                        var message = $"Page {pages[i]}: OCR rendering reduced from {settings.Dpi} to {actualDpi} DPI to limit memory use.";
+                        request.Logger.Log($"ExtractText: {message}");
+                        Report(i * 95 / pages.Length, message);
+                    });
                     var engine = GetEngine(settings);
                     usedOcr = true;
                     var recognized = engine.Recognize(image, settings.Rotation, (percent, message) => Report((i * 95 + percent * 95 / 100) / pages.Length, $"Page {pages[i]}: {message}"), token);
@@ -153,9 +160,11 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
         jsonStream?.Dispose();
         token.ThrowIfCancellationRequested();
         var published = output.Publish(token);
-        request.Logger.Log($"ExtractText: saved '{published}', model={settings.Model}, format={settings.Format}, lines={lineCount}, lowConfidence={lowConfidence}.");
+        request.Logger.Log($"ExtractText: saved '{published}', model={settings.Model}, format={settings.Format}, lines={lineCount}, lowConfidence={lowConfidence}, reducedQualityPages={reducedPages}.");
         Report(100, $"Saved: {Path.GetFileName(published)}");
         var message = lineCount == 0 ? "File created. No text was detected." : lowConfidence > 0 ? "Text extracted. Some low-confidence text may need review." : "Text extracted.";
+        if (reducedPages > 0)
+            message += $" OCR rendering quality was reduced for {reducedPages} oversized PDF page(s). Review small text.";
         return new(true, message, published);
     }
 

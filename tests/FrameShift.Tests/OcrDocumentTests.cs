@@ -17,6 +17,80 @@ public sealed class OcrDocumentTests : IDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "FrameShift OCR été " + Guid.NewGuid().ToString("N"));
     public OcrDocumentTests() => Directory.CreateDirectory(_directory);
+
+    [Theory]
+    [InlineData(612, 792, 200, 1700, 2200, 200)]
+    [InlineData(612, 792, 300, 2550, 3300, 300)]
+    [InlineData(2160, 2160, 200, 5640, 5640, 188)]
+    [InlineData(2160, 2160, 300, 5640, 5640, 188)]
+    [InlineData(792, 612, 300, 3300, 2550, 300)]
+    public void PdfRenderingKeepsNormalQualityAndAdaptsOversizedPages(double width, double height, int requestedDpi, int expectedWidth, int expectedHeight, int expectedDpi)
+    {
+        var size = PdfOcrDocument.GetRenderSize(width, height, requestedDpi);
+        Assert.Equal((expectedWidth, expectedHeight, expectedDpi), size);
+        Assert.InRange((long)size.Width * size.Height, 1, PdfOcrDocument.MaxRenderedPixels);
+    }
+
+    [Fact]
+    public void RoundedAndNarrowPdfDimensionsCannotExceedThePixelLimit()
+    {
+        var side = Math.Sqrt(PdfOcrDocument.MaxRenderedPixels) * 72 / 200;
+        var rounded = PdfOcrDocument.GetRenderSize(side, side, 200);
+        Assert.InRange((long)rounded.Width * rounded.Height, 1, PdfOcrDocument.MaxRenderedPixels);
+        var narrow = PdfOcrDocument.GetRenderSize(72d * PdfOcrDocument.MaxRenderedPixels, .000001, 300);
+        Assert.Equal((32_000_000, 1, 1), narrow);
+        Assert.Throws<InvalidDataException>(() => PdfOcrDocument.GetRenderSize(double.MaxValue, 100, 300));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void InvalidPdfDimensionsAreRejectedBeforeAllocation(double dimension)
+    {
+        Assert.Throws<InvalidDataException>(() => PdfOcrDocument.GetRenderSize(dimension, 100, 300));
+        Assert.Throws<InvalidDataException>(() => PdfOcrDocument.GetRenderSize(100, dimension, 300));
+    }
+
+    [Fact]
+    public void OversizedPdfRenderReportsReductionAndPreservesPageCoordinates()
+    {
+        var input = LargePage();
+        using var document = new PdfOcrDocument(input);
+        var reductions = new List<int>();
+        using var image = document.Render(1, 300, default, reductions.Add);
+        Assert.Equal(new[] { 188 }, reductions);
+        Assert.Equal(5640, image.Width);
+        Assert.Equal(5640, image.Height);
+        Assert.Equal(new SixLabors.ImageSharp.PixelFormats.Rgb24(255, 0, 0), image[282, 282]);
+        Assert.Equal(new SixLabors.ImageSharp.PixelFormats.Rgb24(255, 255, 255), image[500, 500]);
+        var page = document.ReadText(1, out _, default);
+        Assert.Equal(2160, page.Width);
+        Assert.Equal(2160, page.Height);
+    }
+
+    [Fact]
+    public void QualityAdjustmentCanBeCanceledBeforeBitmapAllocation()
+    {
+        using var document = new PdfOcrDocument(LargePage());
+        using var cancellation = new CancellationTokenSource();
+        Assert.Throws<OperationCanceledException>(() => document.Render(1, 300, cancellation.Token, _ => cancellation.Cancel()));
+        Assert.Equal(1, document.PageCount);
+    }
+
+    private string LargePage()
+    {
+        var path = Path.Combine(_directory, "large page été.pdf");
+        using var document = new PdfDocument();
+        var page = document.AddPage();
+        page.Width = PdfSharp.Drawing.XUnit.FromPoint(2160);
+        page.Height = PdfSharp.Drawing.XUnit.FromPoint(2160);
+        using (var graphics = PdfSharp.Drawing.XGraphics.FromPdfPage(page))
+            graphics.DrawRectangle(PdfSharp.Drawing.XBrushes.Red, 72, 72, 72, 72);
+        document.Save(path);
+        return path;
+    }
     [Theory]
     [InlineData("txt")]
     [InlineData("json")]

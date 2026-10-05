@@ -10,6 +10,7 @@ namespace FrameShift.Core.AI.Ocr;
 /// <summary>Owns native PDF handles. PDFium calls are serialized, including metadata probes.</summary>
 internal sealed class PdfOcrDocument : IDisposable
 {
+    internal const long MaxRenderedPixels = 32_000_000;
     private static readonly SemaphoreSlim Gate = new(1, 1);
     private static bool _initialized;
     private FpdfDocumentT? _document;
@@ -156,16 +157,39 @@ internal sealed class PdfOcrDocument : IDisposable
         return new(x, y);
     }
 
-    public Image<Rgb24> Render(int number, int dpi, CancellationToken token)
+    internal static (int Width, int Height, int Dpi) GetRenderSize(double width, double height, int requestedDpi)
+    {
+        if (!double.IsFinite(width) || !double.IsFinite(height) || width <= 0 || height <= 0)
+            throw new InvalidDataException("This PDF page has invalid dimensions.");
+        if (requestedDpi <= 0 || requestedDpi > 300)
+            throw new ArgumentOutOfRangeException(nameof(requestedDpi), "PDF rendering quality must be between 1 and 300 DPI.");
+
+        // Calculate before allocating a bitmap. Bound individual dimensions too,
+        // so very narrow pages and double-to-int overflow cannot bypass the cap.
+        var maximumDpi = Math.Min(72 * Math.Sqrt(MaxRenderedPixels / width / height),
+            Math.Min(72 * MaxRenderedPixels / width, 72 * MaxRenderedPixels / height));
+        var dpi = (int)Math.Floor(Math.Min(requestedDpi, maximumDpi));
+        for (; dpi >= 1; dpi--)
+        {
+            var w = Math.Ceiling(width * dpi / 72);
+            var h = Math.Ceiling(height * dpi / 72);
+            if (w >= 1 && h >= 1 && w <= MaxRenderedPixels && h <= MaxRenderedPixels && w * h <= MaxRenderedPixels)
+                return ((int)w, (int)h, dpi);
+        }
+
+        throw new InvalidDataException("This PDF page is too large to render even at 1 DPI. Select other pages or use a smaller page.");
+    }
+
+    public Image<Rgb24> Render(int number, int dpi, CancellationToken token, Action<int>? onQualityReduced = null)
     {
         token.ThrowIfCancellationRequested();
         var page = LoadPage(number);
         try
         {
-            var w = (int)Math.Ceiling(fpdfview.FPDF_GetPageWidth(page) * dpi / 72);
-            var h = (int)Math.Ceiling(fpdfview.FPDF_GetPageHeight(page) * dpi / 72);
-            if (w <= 0 || h <= 0 || (long)w * h > 32_000_000)
-                throw new InvalidDataException("This PDF page is too large to render. Use Standard quality or a smaller page.");
+            var (w, h, actualDpi) = GetRenderSize(fpdfview.FPDF_GetPageWidth(page), fpdfview.FPDF_GetPageHeight(page), dpi);
+            if (actualDpi < dpi)
+                onQualityReduced?.Invoke(actualDpi);
+            token.ThrowIfCancellationRequested();
             var bitmap = fpdfview.FPDFBitmapCreateEx(w, h, 4, IntPtr.Zero, 0) ?? throw new OutOfMemoryException("Cannot allocate the PDF page image.");
             try
             {
