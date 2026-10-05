@@ -174,6 +174,59 @@ public sealed class ConversionBatchSessionInvocationTests
         Assert.Empty(session.GetPendingQueueItems());
     }
 
+    [Fact]
+    public async Task PerItemPreparationPreservesExplicitInvocationOptions()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var action = new RecordingAction();
+        using var session = CreateSession(out _, action);
+        session.Initialize(["initial.item", "explicit.item"], cancellation.Token);
+        var initial = new Dictionary<string, string> { ["ocr-model"] = "small", ["ocr-format"] = "txt" };
+        session.SetSharedOptions(initial);
+        session.SetItemOptions(session.GetPendingQueueItems()[1].QueueItemId,
+            new Dictionary<string, string> { ["ocr-model"] = "tiny", ["ocr-format"] = "pdf" });
+        session.SetItemPreflight(item => ConversionBatchSession.BatchOptionResult.Succeeded(new Dictionary<string, string>(item.Options ?? initial)));
+        var processing = session.StartProcessing(cancellation.Token);
+        try
+        {
+            WaitUntil(() => action.ExecutedRequests.Count == 2);
+            Assert.Equal("small", action.ExecutedRequests[0].Options!["ocr-model"]);
+            Assert.Equal("txt", action.ExecutedRequests[0].Options!["ocr-format"]);
+            Assert.Equal("tiny", action.ExecutedRequests[1].Options!["ocr-model"]);
+            Assert.Equal("pdf", action.ExecutedRequests[1].Options!["ocr-format"]);
+        }
+        finally
+        {
+            cancellation.Cancel();
+            await processing;
+        }
+    }
+
+    [Fact]
+    public async Task FailedPreparationDoesNotDiscardTheNextItem()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var action = new RecordingAction();
+        using var session = CreateSession(out _, action);
+        session.Initialize(["damaged.item", "valid.item"], cancellation.Token);
+        session.SetSharedOptions(new Dictionary<string, string>());
+        session.SetItemPreflight(item => item.InputPath == "damaged.item"
+            ? throw new InvalidDataException("Damaged PDF.")
+            : ConversionBatchSession.BatchOptionResult.Succeeded(new Dictionary<string, string>()));
+        var processing = session.StartProcessing(cancellation.Token);
+        try
+        {
+            WaitUntil(() => action.ExecutedPaths.Count == 1);
+            Assert.Equal("valid.item", action.ExecutedPaths[0]);
+            Assert.Equal(1, session.ExitCode);
+        }
+        finally
+        {
+            cancellation.Cancel();
+            await processing;
+        }
+    }
+
     private static ConversionBatchSession CreateSession(
         out ConversionBatchSession.BatchDefinition definition,
         RecordingAction action)

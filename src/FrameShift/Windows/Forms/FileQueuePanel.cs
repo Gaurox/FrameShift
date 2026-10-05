@@ -19,7 +19,7 @@ namespace FrameShift.Windows.Forms;
 public sealed class FileQueuePanel : UserControl
 {
     private const string MediaFileFilter =
-        "Media files|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v;*.mp3;*.wav;*.wave;*.flac;*.m4a;*.ogg;*.aac;*.wma;*.png;*.jpg;*.jpeg;*.webp;*.bmp|All files|*.*";
+        "Media and PDF files|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v;*.mp3;*.wav;*.wave;*.flac;*.m4a;*.ogg;*.aac;*.wma;*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.pdf|All files|*.*";
 
 
     private readonly FileQueueModel _model = new();
@@ -281,7 +281,7 @@ public sealed class FileQueuePanel : UserControl
         var head = total == 1 ? "1 file" : $"{total} files";
 
         var parts = new List<string>();
-        foreach (var kind in new[] { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Other })
+        foreach (var kind in new[] { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Document, MediaFamily.Other })
         {
             if (byKind.TryGetValue(kind, out var count) && count > 0)
             {
@@ -297,6 +297,7 @@ public sealed class FileQueuePanel : UserControl
         MediaFamily.Video => "video",
         MediaFamily.Audio => "audio",
         MediaFamily.Image => "image",
+        MediaFamily.Document => "PDF",
         _ => "other"
     };
 

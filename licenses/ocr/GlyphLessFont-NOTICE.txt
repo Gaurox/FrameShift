@@ -1,0 +1,6 @@
+GlyphLessFont from Tesseract, Apache-2.0.
+Copyright 2020, Google Inc.
+Author: Zdenko Podobny
+Source revision: db20f322d03664d1e878e2fbf6e904f5da755594
+Source: src/api/pdf_ttf.h
+SHA256: dbbbba44717f3c6dfdb4ab8dd5d231ba16ef002d75cedb820824ce6063c0a5ee

@@ -2,6 +2,26 @@
   "version": 1,
   "dependencies": {
     "net8.0-windows7.0": {
+      "bblanchon.PDFium.Linux": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "413fLxjGE6Wi/r1U1sBQ7mzIRcCOfo8PRt7y+7NMDGG9sRD77Q6UcqtSLbXSsKonfy6QJJjIrisEY+Wyw3neeA=="
+      },
+      "bblanchon.PDFium.macOS": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "Q01czvrzEWcnHA7K3bfGDhenSlrsO21ziWaSVSq8QLLox0ygwpQM23PAhrEn56Js9vrUYWS8z4pioOWC/b9s1Q=="
+      },
+      "bblanchon.PDFium.Win32": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "nWP8z9PAK1ArGUGPoYgSsRL8sFkgvVgOrlv82CjEPGpXdtSg/ctCr/Xe8aDI8k2nk3mXvYWGnOlZsRIA7IxupQ=="
+      },
+      "Clipper2": {
+        "type": "Transitive",
+        "resolved": "2.0.0",
+        "contentHash": "2X23RZxJrjRjOSZc20aqXY9jpmHLekDRy4PIMfrsi2LPNzxFYlnuqzX/nLdk77fbURHUeX+gMhUn2a1z9/wMTQ=="
+      },
       "Microsoft.AI.DirectML": {
         "type": "Transitive",
         "resolved": "1.15.4",
@@ -112,6 +132,16 @@
           "NAudio.Core": "2.2.1"
         }
       },
+      "PDFiumCore": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "p0W6luHFB7motyYln3WmrtasMl9ECTi+WCHgJ2y3eNyI/wYr7jUDOO6JfKsIPCHMOZbpK22kNKDkv8ca1V4CIA==",
+        "dependencies": {
+          "bblanchon.PDFium.Linux": "156.0.8076",
+          "bblanchon.PDFium.Win32": "156.0.8076",
+          "bblanchon.PDFium.macOS": "156.0.8076"
+        }
+      },
       "PDFsharp": {
         "type": "Transitive",
         "resolved": "6.2.4",
@@ -163,13 +193,21 @@
         "resolved": "4.7.0",
         "contentHash": "ojD0PX0XhneCsUbAZVKdb7h/70vyYMDYs85lwEI+LngEONe/17A0cFaRFqZU+sOEidcVswYWikYOQ9PPfjlbtQ=="
       },
+      "YamlDotNet": {
+        "type": "Transitive",
+        "resolved": "18.1.0",
+        "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
+      },
       "frameshift": {
         "type": "Project",
         "dependencies": {
+          "Clipper2": "[2.0.0, )",
           "Microsoft.ML.OnnxRuntime.DirectML": "[1.24.4, )",
           "NAudio": "[2.2.1, )",
+          "PDFiumCore": "[156.0.8076, )",
           "PDFsharp": "[6.2.4, )",
-          "SixLabors.ImageSharp": "[4.1.2, )"
+          "SixLabors.ImageSharp": "[4.1.2, )",
+          "YamlDotNet": "[18.1.0, )"
         }
       }
     }

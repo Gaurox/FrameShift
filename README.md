@@ -35,7 +35,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current branch version: **1.20.1** · latest published release: **[1.20.1](https://github.com/Gaurox/FrameShift/releases/tag/1.20.1)** · Windows 10 / 11 · self-contained · no extra install required.
+Current branch version: **1.21.0** · latest published release: **[1.20.1](https://github.com/Gaurox/FrameShift/releases/tag/1.20.1)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,6 +46,8 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
+
+**New in 1.21.0 — Extract Text.** Extract text from images and PDFs with local PP-OCRv6 Small or Tiny. Save UTF-8 text, structured JSON or a searchable PDF with its original appearance. PDF options include page ranges, native-text reuse, rendering quality and text layout. Models download on demand from the FrameShift Hugging Face repository with pinned revisions and SHA-256 checks. See [the feature guide](docs/EXTRACT_TEXT.md).
 
 **New in 1.20.1 — security and reliability fixes.** Hardened the installer, updated bundled image-processing and .NET components, and protected media outputs during filename collisions, cancellation and failure. See [the release notes](docs/RELEASE_NOTES_1.20.1.md) and [the qualification report](docs/RELEASE_QUALIFICATION_1.20.1.md).
 
@@ -151,6 +153,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 
 | Action | Short Description | Screenshot |
 | --- | --- | --- |
+| Extract Text | Extract text from PNG, JPEG, WebP, BMP and PDF with **PP-OCRv6 Small** or **Tiny**. Export TXT, JSON or a searchable PDF. Supports PDF page ranges, native text reuse, paragraph grouping, recognition rotation and CPU/DirectML. Models download on demand; subsequent processing is offline. | |
 | Remove Background | Remove the background from an image with local AI modes: Fast, High Resolution Matting (CPU), High Resolution General (CPU), plus two optional **user-supplied** BRIA RMBG-2.0 modes (Balanced / High Quality). The BRIA models are never bundled, downloaded or redistributed by FrameShift — you obtain them manually from BRIA's [official page](https://huggingface.co/briaai/RMBG-2.0/tree/main) (non-commercial / CC BY-NC 4.0) and place them in the model folder. Re-launches while the progress window is already open are appended directly to the visible queue, including repeated runs on the same source file. | <img src="screenshots/Gif_demos/demo_remove_bg_gif.gif" alt="Remove Background" width="320" /> |
 | Remove Noise (Audio) | Strip background noise from audio files with strength control, stereo mode, and live preview. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
 | Remove Noise (Video) | Denoise a video's audio track without re-encoding the video stream. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
@@ -204,6 +207,8 @@ tests/
 
 ## Documentation
 
+- [Extract Text — OCR, PDF Options and Model Downloads](docs/EXTRACT_TEXT.md)
+- [Release Qualification 1.21.0](docs/RELEASE_QUALIFICATION_1.21.0.md)
 - [Documentation Index](docs/README.md)
 - [Project Overview](docs/PRODUCT_GUIDE.md)
 - [Project Rules](docs/PROJECT_RULES.md)

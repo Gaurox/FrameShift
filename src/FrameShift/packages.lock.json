@@ -2,6 +2,12 @@
   "version": 1,
   "dependencies": {
     "net8.0-windows7.0": {
+      "Clipper2": {
+        "type": "Direct",
+        "requested": "[2.0.0, )",
+        "resolved": "2.0.0",
+        "contentHash": "2X23RZxJrjRjOSZc20aqXY9jpmHLekDRy4PIMfrsi2LPNzxFYlnuqzX/nLdk77fbURHUeX+gMhUn2a1z9/wMTQ=="
+      },
       "Microsoft.ML.OnnxRuntime.DirectML": {
         "type": "Direct",
         "requested": "[1.24.4, )",
@@ -26,6 +32,17 @@
           "NAudio.WinMM": "2.2.1"
         }
       },
+      "PDFiumCore": {
+        "type": "Direct",
+        "requested": "[156.0.8076, )",
+        "resolved": "156.0.8076",
+        "contentHash": "p0W6luHFB7motyYln3WmrtasMl9ECTi+WCHgJ2y3eNyI/wYr7jUDOO6JfKsIPCHMOZbpK22kNKDkv8ca1V4CIA==",
+        "dependencies": {
+          "bblanchon.PDFium.Linux": "156.0.8076",
+          "bblanchon.PDFium.Win32": "156.0.8076",
+          "bblanchon.PDFium.macOS": "156.0.8076"
+        }
+      },
       "PDFsharp": {
         "type": "Direct",
         "requested": "[6.2.4, )",
@@ -44,6 +61,27 @@
         "dependencies": {
           "System.IO.Hashing": "8.0.0"
         }
+      },
+      "YamlDotNet": {
+        "type": "Direct",
+        "requested": "[18.1.0, )",
+        "resolved": "18.1.0",
+        "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
+      },
+      "bblanchon.PDFium.Linux": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "413fLxjGE6Wi/r1U1sBQ7mzIRcCOfo8PRt7y+7NMDGG9sRD77Q6UcqtSLbXSsKonfy6QJJjIrisEY+Wyw3neeA=="
+      },
+      "bblanchon.PDFium.macOS": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "Q01czvrzEWcnHA7K3bfGDhenSlrsO21ziWaSVSq8QLLox0ygwpQM23PAhrEn56Js9vrUYWS8z4pioOWC/b9s1Q=="
+      },
+      "bblanchon.PDFium.Win32": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "nWP8z9PAK1ArGUGPoYgSsRL8sFkgvVgOrlv82CjEPGpXdtSg/ctCr/Xe8aDI8k2nk3mXvYWGnOlZsRIA7IxupQ=="
       },
       "Microsoft.AI.DirectML": {
         "type": "Transitive",
@@ -178,6 +216,21 @@
           "Microsoft.AI.DirectML": "1.15.4",
           "Microsoft.ML.OnnxRuntime.Managed": "1.24.4"
         }
+      },
+      "bblanchon.PDFium.Linux": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "413fLxjGE6Wi/r1U1sBQ7mzIRcCOfo8PRt7y+7NMDGG9sRD77Q6UcqtSLbXSsKonfy6QJJjIrisEY+Wyw3neeA=="
+      },
+      "bblanchon.PDFium.macOS": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "Q01czvrzEWcnHA7K3bfGDhenSlrsO21ziWaSVSq8QLLox0ygwpQM23PAhrEn56Js9vrUYWS8z4pioOWC/b9s1Q=="
+      },
+      "bblanchon.PDFium.Win32": {
+        "type": "Transitive",
+        "resolved": "156.0.8076",
+        "contentHash": "nWP8z9PAK1ArGUGPoYgSsRL8sFkgvVgOrlv82CjEPGpXdtSg/ctCr/Xe8aDI8k2nk3mXvYWGnOlZsRIA7IxupQ=="
       },
       "Microsoft.Win32.Registry": {
         "type": "Transitive",

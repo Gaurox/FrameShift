@@ -1,5 +1,12 @@
 # FrameShift Code File Index
 
+Extract Text (OCR):
+- `src/FrameShift/ProgramOcr.cs` — Explorer queue, picker and model preparation.
+- `src/FrameShift/Windows/AI/ExtractTextPickerForm.cs` — native WinForms options.
+- `src/FrameShift/Core/AI/Ocr/` — verified model downloads, ONNX inference, geometry, PDFium, output and cancellation.
+- `tests/FrameShift.Tests/Ocr*Tests.cs` — OCR, native/scanned/mixed PDF, rotation, UI and cleanup qualification.
+- [Feature and CLI guide](EXTRACT_TEXT.md).
+
 Index court des fichiers actifs du projet.
 
 Pour construire une future fenêtre, commencer par le [guide de développement UI](UI_WINDOW_DEVELOPMENT_GUIDE.md), puis retrouver ici les composants et exemples actifs. Le [contrat du socle](UI_FOUNDATION.md) et le [standard visuel](UI_STANDARDIZATION.md) restent les références communes.

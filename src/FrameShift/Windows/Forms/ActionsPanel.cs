@@ -18,7 +18,7 @@ namespace FrameShift.Windows.Forms;
 /// </summary>
 public sealed class ActionsPanel : UserControl
 {
-    private static readonly MediaFamily[] FamilyOrder = { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Other };
+    private static readonly MediaFamily[] FamilyOrder = { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Document, MediaFamily.Other };
 
     private readonly TextBox _searchBox;
     private readonly FlowLayoutPanel _chipsPanel;
@@ -325,6 +325,7 @@ public sealed class ActionsPanel : UserControl
         MediaFamily.Video => "Video",
         MediaFamily.Audio => "Audio",
         MediaFamily.Image => "Image",
+        MediaFamily.Document => "PDF",
         _ => "Other"
     };
 }

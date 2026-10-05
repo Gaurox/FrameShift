@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FrameShift.Core.AI.CreateSubtitles;
+using FrameShift.Core.AI.Ocr;
 using FrameShift.Core.AI.RemoveBackground;
 using FrameShift.Core.AI.RemoveNoise;
 using FrameShift.Core.AI.RemoveObject;
@@ -45,6 +46,7 @@ public sealed class ActionRegistry
         return new ActionRegistry(
         [
             new MediaInfoAction(),
+            new ExtractTextAction(),
             new RemoveAudioAction(
                 ffmpegRunner,
                 ffprobeRunner,

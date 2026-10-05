@@ -28,7 +28,9 @@ internal static class AiModelStorage
         "upscale-video-onnx",
         "whisper-base-onnx",
         "whisper-small-onnx",
-        "whisper-large-v3-turbo-onnx"
+        "whisper-large-v3-turbo-onnx",
+        "pp-ocrv6-tiny-onnx",
+        "pp-ocrv6-small-onnx"
     ];
 
     private static readonly IReadOnlyDictionary<string, string[]> s_expectedModelFiles =
@@ -126,6 +128,9 @@ internal static class AiModelStorage
         }
 
         var relativePath = Path.GetRelativePath(modelsRoot, directory);
+        if (relativePath is "pp-ocrv6-tiny-onnx" or "pp-ocrv6-small-onnx")
+            return Ocr.OcrModelDirectorySafety.ContainsOnlyExpectedFiles(modelsRoot, directory,
+                Ocr.OcrModelCatalog.Get(relativePath.Contains("tiny") ? "tiny" : "small"));
         if (!s_expectedModelFiles.TryGetValue(relativePath, out var expectedFiles))
         {
             return false;

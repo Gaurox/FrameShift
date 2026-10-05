@@ -7,7 +7,7 @@ Third-party components keep their own licenses. The main project license does no
 
 Every release carries this document as `licenses/THIRD_PARTY_NOTICES.md`. The
 same directory contains the FrameShift GPLv3 text (`licenses/LICENSE`) and the
-additional static native-worker license texts identified below.
+additional native-worker and OCR license texts identified below.
 
 ---
 
@@ -53,6 +53,29 @@ The self-contained `win-x64` publish includes the .NET 8 Windows Desktop runtime
 - Source: https://github.com/empira/PDFsharp
 - License: **MIT License**
 - Copyright: Copyright © empira Software GmbH
+
+---
+
+## Extract Text: PDFium, YamlDotNet, Clipper2 and GlyphLessFont
+
+- `PDFiumCore` 156.0.8076: .NET bindings from [PDFiumCore](https://github.com/Dtronix/PDFiumCore), **Apache-2.0**; full text in `licenses/ocr/PDFium-LICENSE.txt`.
+- Native `pdfium.dll`: Chromium/PDFium build 8076 supplied through PDFiumCore's `bblanchon.PDFium.Win32` dependency. PDFium is **BSD-3-Clause**, with separately licensed components. The complete native release licence directory is preserved in `licenses/ocr/pdfium-native/`, including its top-level `LICENSE` and notices for FreeType, ICU, libpng, libjpeg, OpenJPEG, LCMS, Abseil and the remaining bundled components. Upstream source: [PDFium](https://pdfium.googlesource.com/pdfium/), binary release: [pdfium-binaries chromium/8076](https://github.com/bblanchon/pdfium-binaries/releases/tag/chromium%2F8076).
+- `YamlDotNet` 18.1.0: [upstream](https://github.com/aaubry/YamlDotNet), **MIT**, full text in `licenses/ocr/YamlDotNet-LICENSE.txt`.
+- `Clipper2` 2.0.0: [upstream](https://github.com/AngusJohnson/Clipper2), **Boost Software License 1.0**, full text in `licenses/ocr/Clipper2-LICENSE.txt`.
+- Tesseract's `GlyphLessFont`: **Apache-2.0**, copyright 2020 Google Inc., author Zdenko Podobny. The unchanged font is embedded for invisible searchable-PDF text. Source revision and SHA-256 are recorded in `licenses/ocr/GlyphLessFont-NOTICE.txt`; the licence is in `licenses/ocr/APACHE-2.0.txt`. [Source](https://github.com/tesseract-ocr/tesseract/blob/db20f322d03664d1e878e2fbf6e904f5da755594/src/api/pdf_ttf.h). Tesseract's recognition engine is not bundled.
+
+The canonical packaging script verifies the presence of every OCR notice and the required managed/native OCR binaries before compiling the installer.
+
+---
+
+## PP-OCRv6 Models
+
+The optional Extract Text feature downloads complete **PP-OCRv6 Tiny** or **PP-OCRv6 Small** ONNX packages from [Gaurox/frameshift-models](https://huggingface.co/Gaurox/frameshift-models/tree/b4f8fa610edff25e059959fb478bd3879e26f7a7), pinned at revision `b4f8fa610edff25e059959fb478bd3879e26f7a7`.
+
+- Folders: `pp-ocrv6-tiny-onnx/` and `pp-ocrv6-small-onnx/`.
+- Official originals: [Tiny detector](https://huggingface.co/PaddlePaddle/PP-OCRv6_tiny_det_onnx), [Tiny recognizer](https://huggingface.co/PaddlePaddle/PP-OCRv6_tiny_rec_onnx), [Small detector](https://huggingface.co/PaddlePaddle/PP-OCRv6_small_det_onnx), [Small recognizer](https://huggingface.co/PaddlePaddle/PP-OCRv6_small_rec_onnx).
+- License: **Apache-2.0**, as declared by the official model repositories. Each download preserves the full `LICENSE`, `NOTICE-export-provenance.md`, official component model cards, configurations, character dictionary, source manifest and checksums.
+- Weight files are unchanged official ONNX exports; no Python or Paddle runtime is bundled. Weights are downloaded on demand, excluded from the installer and stored under the configured local models directory. FrameShift verifies all package files against its embedded size/SHA-256 manifest.
 
 ---
 

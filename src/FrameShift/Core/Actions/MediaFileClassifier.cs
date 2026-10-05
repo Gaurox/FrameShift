@@ -10,6 +10,7 @@ public enum MediaFamily
     Video,
     Audio,
     Image,
+    Document,
     Other
 }
 
@@ -74,6 +75,7 @@ public static class MediaFileClassifier
             return MediaFamily.Image;
         }
 
+        if (normalized == ".pdf") return MediaFamily.Document;
         return MediaFamily.Other;
     }
 }

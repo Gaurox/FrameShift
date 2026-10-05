@@ -18,7 +18,7 @@ internal static partial class Program
     private static readonly HashSet<string> s_aiBatchActions = new(StringComparer.OrdinalIgnoreCase)
     {
         "remove-background", "separate-audio", "remove-noise", "remove-noise-video", "upscale-image", "upscale-video",
-        "create-subtitles-audio", "create-subtitles-video"
+        "create-subtitles-audio", "create-subtitles-video", "extract-text"
     };
 
     private static readonly HashSet<string> s_conversionBatchActions = new(StringComparer.OrdinalIgnoreCase)
@@ -36,6 +36,8 @@ internal static partial class Program
         IReadOnlyDictionary<string, string>? options = null)
     {
         logger.Log($"Program: RunConversionBatch entered. actionId={actionId}, inputPathCount={inputPaths.Count}, logPath={AppLogger.LogPath}, baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}.");
+        if (actionId.Equals("extract-text", StringComparison.OrdinalIgnoreCase))
+            return RunOcrBatch(registry, logger, inputPaths, options);
         var effectiveOptions = options is null
             ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, string>(options, StringComparer.OrdinalIgnoreCase);
@@ -474,6 +476,8 @@ internal static partial class Program
 
     private static ConversionBatchSession.BatchDefinition? GetConversionBatchDefinition(string actionId)
     {
+        if (actionId.Equals("extract-text", StringComparison.OrdinalIgnoreCase))
+            return ConversionBatchSession.CreateExtractTextDefinition();
         if (actionId.Equals("convert-video", StringComparison.OrdinalIgnoreCase))
         {
             return ConversionBatchSession.CreateVideoDefinition();

@@ -9,11 +9,12 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\Icons\app\app.ico</ApplicationIcon>
-    <Version>1.20.1</Version>
-    <AssemblyVersion>1.20.1.0</AssemblyVersion>
-    <FileVersion>1.20.1.0</FileVersion>
-    <InformationalVersion>1.20.1</InformationalVersion>
+    <Version>1.21.0</Version>
+    <AssemblyVersion>1.21.0.0</AssemblyVersion>
+    <FileVersion>1.21.0.0</FileVersion>
+    <InformationalVersion>1.21.0</InformationalVersion>
     <Product>FrameShift</Product>
     <Company>FrameShift</Company>
     <Description>Windows-first offline multimedia processing utility.</Description>
@@ -30,9 +31,17 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
     <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
+    <PackageReference Include="PDFiumCore" Version="156.0.8076" />
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <PackageReference Include="Clipper2" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Core\AI\Ocr\model-files.json" />
+    <EmbeddedResource Include="Assets\Ocr\glyphless.ttf" />
+    <Content Include="..\..\licenses\ocr\**\*" Link="licenses\ocr\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>FrameShift.Tests</_Parameter1>
     </AssemblyAttribute>

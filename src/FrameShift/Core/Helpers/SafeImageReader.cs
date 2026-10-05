@@ -24,4 +24,12 @@ internal static class SafeImageReader
         where TPixel : unmanaged, IPixel<TPixel> => SharpImage.Load<TPixel>(Options, path);
 
     public static ImageInfo Identify(string path) => SharpImage.Identify(Options, path);
+
+    public static Image<TPixel> LoadFirstFrame<TPixel>(string path)
+        where TPixel : unmanaged, IPixel<TPixel> => SharpImage.Load<TPixel>(new DecoderOptions
+        {
+            Configuration = Options.Configuration,
+            ColorProfileHandling = ColorProfileHandling.Preserve,
+            MaxFrames = 1
+        }, path);
 }

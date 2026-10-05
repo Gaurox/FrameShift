@@ -20,6 +20,8 @@ public sealed class ReleaseScriptTests
     [InlineData("approved-app/coreclr.dll", null, null)]
     [InlineData("approved-worker/System.Private.CoreLib.dll", null, null)]
     [InlineData("approved-app/SixLabors.ImageSharp.dll", null, null)]
+    [InlineData("approved-app/pdfium.dll", null, null)]
+    [InlineData("approved-app/PDFiumCore.dll", null, null)]
     public void CanonicalRelease_UnsafeManagedPayloadStopsBeforeInno(string relativePath, string? oldValue, string? newValue)
     {
         using var fixture = new ReleaseFixture();
@@ -137,6 +139,17 @@ public sealed class ReleaseScriptTests
         Assert.Contains("Publish distribution notice", result.StandardError, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void CanonicalRelease_MissingPdfiumLicenceStopsBeforeRestore()
+    {
+        using var fixture = new ReleaseFixture();
+        File.Delete(Path.Combine(fixture.Root, "licenses/ocr/pdfium-native/LICENSE"));
+        var result = fixture.Run();
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Distribution notice source", result.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("dotnet restore ", StringComparison.OrdinalIgnoreCase));
+    }
+
     private sealed class ReleaseFixture : IDisposable
     {
         private readonly string _toolsDirectory;
@@ -234,6 +247,9 @@ public sealed class ReleaseScriptTests
             CopyRepositoryFile("licenses\\subtitles-worker-native\\APACHE-2.0.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-LICENSE.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-THIRD_PARTY_NOTICES.txt");
+            var ocrNotices = Path.GetDirectoryName(FindRepositoryFile("licenses/ocr/APACHE-2.0.txt"))!;
+            foreach (var file in Directory.EnumerateFiles(ocrNotices, "*", SearchOption.AllDirectories))
+                CopyRepositoryFile(Path.Combine("licenses/ocr", Path.GetRelativePath(ocrNotices, file)));
             CreateManagedPayloadFixture("approved-app", "FrameShift", desktop: true);
             CreateManagedPayloadFixture("approved-worker", "FrameShift.SubtitlesWorker", desktop: false);
         }
@@ -266,6 +282,8 @@ public sealed class ReleaseScriptTests
             {
                 File.Copy(typeof(System.Windows.Forms.Form).Assembly.Location, Path.Combine(Root, folder, "System.Windows.Forms.dll"));
                 File.Copy(Path.Combine(AppContext.BaseDirectory, "ReleaseFixtures", "SixLabors.ImageSharp.dll"), Path.Combine(Root, folder, "SixLabors.ImageSharp.dll"));
+                foreach (var binary in new[] { "PDFiumCore.dll", "pdfium.dll", "YamlDotNet.dll", "Clipper2Lib.dll" })
+                    WriteFile($"{folder}\\{binary}", "OCR payload fixture");
             }
         }
 
@@ -300,6 +318,7 @@ public sealed class ReleaseScriptTests
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_SOURCE_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\Tools\\ffmpeg\\ffprobe.exe\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\LICENSE\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\LICENSE\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\THIRD_PARTY_NOTICES.md\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\THIRD_PARTY_NOTICES.md\" >nul",
+                "xcopy /E /I /Q /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\ocr\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\ocr\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\src\\FrameShift.SubtitlesWorker\\native-dml\\THIRD_PARTY_NOTICES.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\THIRD_PARTY_NOTICES.txt\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" >nul",

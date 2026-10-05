@@ -24,6 +24,15 @@ public sealed class FrameShiftUiSettings
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? JoinVideosSortOrder { get; set; }
 
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OcrModel { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? OcrFormat { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool OcrParagraphs { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? OcrDpi { get; set; }
+
     public FrameShiftThemePreference GetThemePreference()
     {
         return ParseThemePreference(Theme);
@@ -72,7 +81,11 @@ public sealed class FrameShiftUiSettings
             var settingsToSave = new FrameShiftUiSettings
             {
                 Theme = GetThemePreference().ToString(),
-                JoinVideosSortOrder = JoinVideosSortOrder
+                JoinVideosSortOrder = JoinVideosSortOrder,
+                OcrModel = OcrModel,
+                OcrFormat = OcrFormat,
+                OcrParagraphs = OcrParagraphs,
+                OcrDpi = OcrDpi
             };
             var json = JsonSerializer.Serialize(settingsToSave, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configFilePath, json);

@@ -209,7 +209,7 @@ public sealed class MainForm : Form
         browse.Click += (_, _) => _queuePanel.PromptForFiles();
         return FrameShiftDialogLayout.CreateScrollBody(FrameShiftUiFactory.CreateSection("Drop files here",
             FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateWrappingLabel("Add videos, audio or images to see the available actions."),
+                FrameShiftUiFactory.CreateWrappingLabel("Add videos, audio, images or PDFs to see the available actions."),
                 FrameShiftUiFactory.CreateChoiceRow(browse))));
     }
 }

@@ -23,7 +23,12 @@ internal static class OnnxProviderHelper
         {
             try
             {
-                var opts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
+                using var opts = new SessionOptions
+                {
+                    GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
+                    EnableMemoryPattern = false,
+                    ExecutionMode = ExecutionMode.ORT_SEQUENTIAL
+                };
                 opts.AppendExecutionProvider_DML();
                 AppLogger.LogStatic($"{logPrefix}: using DirectML provider");
                 return (new InferenceSession(modelPath, opts), "DirectML");
@@ -38,7 +43,7 @@ internal static class OnnxProviderHelper
             AppLogger.LogStatic($"{logPrefix}: ForceCpu=true — using CPU provider directly");
         }
 
-        var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
+        using var cpuOpts = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
         AppLogger.LogStatic($"{logPrefix}: using CPU provider");
         return (new InferenceSession(modelPath, cpuOpts), "CPU");
     }

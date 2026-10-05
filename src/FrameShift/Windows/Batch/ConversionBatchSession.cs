@@ -35,6 +35,7 @@ internal sealed class ConversionBatchSession : IDisposable
 
     private Dictionary<string, string>? _sharedOptions;
     private Func<BatchQueueItemInfo, BatchOptionResult>? _lateItemOptionsProvider;
+    private Func<BatchQueueItemInfo, BatchOptionResult>? _itemPreflight;
     private Thread? _pipeServerThread;
     private NamedPipeServerStream? _activePipeServer;
     private CancellationToken _sessionCancellationToken;
@@ -96,6 +97,8 @@ internal sealed class ConversionBatchSession : IDisposable
     {
         _lateItemOptionsProvider = provider;
     }
+
+    internal void SetItemPreflight(Func<BatchQueueItemInfo, BatchOptionResult> provider) => _itemPreflight = provider;
 
     public void SetItemOptions(string queueItemId, IReadOnlyDictionary<string, string> options)
     {
@@ -302,6 +305,14 @@ internal sealed class ConversionBatchSession : IDisposable
         inputPath = trimmed;
         return true;
     }
+
+    public static BatchDefinition CreateExtractTextDefinition() => new(
+        ActionId: "extract-text", DisplayName: "Extract Text", RequiresSharedOptions: false,
+        DefaultOptions: new Dictionary<string,string>(), PickerTitle: null, PickerDescription: null,
+        SupportedSourceFormatsText: "PNG, JPG, JPEG, WebP, BMP and PDF",
+        MutexName: @"Local\FrameShift_ExtractTextBatch", PipeName: "FrameShift_ExtractTextBatchQueue",
+        ShowProfiles: false, IsSupportedSourceExtension: Core.AI.Ocr.ExtractTextAction.Supports,
+        GetTargetsForSelection: _ => [], GetProfiles: () => [], KeepWindowOpenOnFailure: true, PrimaryButtonText: "Extract Text");
 
     public static BatchDefinition CreateVideoDefinition() => new(
         ActionId: "convert-video",
@@ -730,6 +741,29 @@ internal sealed class ConversionBatchSession : IDisposable
                     Path.GetExtension(inputPath),
                     _definition.SupportedSourceFormatsText));
             return;
+        }
+
+        if (_itemPreflight is not null)
+        {
+            ReportQueueItem(inputPath, "processing", "Checking inputs and models...");
+            BatchOptionResult prepared;
+            try { prepared = _itemPreflight(ToQueueItemInfo(queueItem)); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception ex)
+            {
+                ExitCode = 1;
+                _logger.Log($"Batch item preparation failed for '{inputPath}': {ex}");
+                ReportQueueItem(inputPath, "failed", ex.Message);
+                return;
+            }
+            if (!prepared.Success || prepared.Options is null)
+            {
+                ReportQueueItem(inputPath, "canceled", "Preparation canceled.");
+                return;
+            }
+            SetItemOptions(queueItem.QueueItemId, prepared.Options);
+            if (TryGetKnownItem(queueItem.QueueItemId, out currentQueueItem)) queueItem = currentQueueItem;
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         if (queueItem.Options is null && _lateItemOptionsProvider is not null)

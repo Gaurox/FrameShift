@@ -35,5 +35,6 @@
     <None Update="Assets\FakeMediaProcess.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\OcrBrochureLayout.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

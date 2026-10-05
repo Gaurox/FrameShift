@@ -62,6 +62,7 @@ Name: "ai\upscale_image"; Description: "Upscale image (4x)"; Types: complete cus
 Name: "ai\upscale_video"; Description: "Upscale video (2x / 3x / 4x)"; Types: complete custom
 Name: "ai\create_subtitles_audio"; Description: "Create subtitle file (audio)"; Types: complete custom
 Name: "ai\create_subtitles_video"; Description: "Create subtitle file (video)"; Types: complete custom
+Name: "ai\extract_text"; Description: "Extract text (images and PDF)"; Types: complete custom
 Name: "video"; Description: "Video actions"; Types: complete custom
 Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
 Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
@@ -291,6 +292,8 @@ begin
   CleanupContextMenuKeysForHive(HKLM, AudioExtensions);
   CleanupContextMenuKeysForHive(HKCU, ImageExtensions);
   CleanupContextMenuKeysForHive(HKLM, ImageExtensions);
+  CleanupContextMenuKeysForHive(HKCU, '.pdf');
+  CleanupContextMenuKeysForHive(HKLM, '.pdf');
 end;
 
 procedure CleanupContextMenuAIKeysForHive(const Hive: Integer; const Extensions: string);
@@ -316,6 +319,8 @@ begin
   CleanupContextMenuAIKeysForHive(HKLM, VideoExtensions);
   CleanupContextMenuAIKeysForHive(HKCU, AudioExtensions);
   CleanupContextMenuAIKeysForHive(HKLM, AudioExtensions);
+  CleanupContextMenuAIKeysForHive(HKCU, '.pdf');
+  CleanupContextMenuAIKeysForHive(HKLM, '.pdf');
 end;
 
 procedure EnsureFrameShiftAIRootForHive(const Hive: Integer; const Ext: string);
@@ -340,6 +345,8 @@ begin
   KeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShiftAI\shell\' + MenuKey;
   RegDeleteKeyIncludingSubkeys(Hive, KeyPath);
   RegWriteStringValue(Hive, KeyPath, 'MUIVerb', LabelText);
+  if ActionId = 'extract-text' then
+    RegWriteStringValue(Hive, KeyPath, 'MultiSelectModel', 'Player');
   if Pos('remove_background', MenuKey) = 1 then
   begin
     IconPath := ExpandConstant('{app}\Assets\Icons\ai\remove_background.ico');
@@ -1130,6 +1137,8 @@ begin
       'create-subtitles-video',
       '');
   end;
+  if WizardIsComponentSelected('ai\extract_text') then
+    ApplyAIActionMenuList(ImageExtensions + ',.pdf', 'extract_text', 'Extract text...', 'extract-text', '');
 end;
 
 function GetDefaultModelsDir(): string;
@@ -1686,7 +1695,21 @@ begin
   else if CompareText(RelativePath, 'whisper-small-onnx') = 0 then
     Result := 'small-encoder.onnx,small-decoder.onnx,small-tokens.txt'
   else if CompareText(RelativePath, 'whisper-large-v3-turbo-onnx') = 0 then
-    Result := 'turbo-encoder.onnx,turbo-decoder.onnx,turbo-tokens.txt,turbo-encoder.weights';
+    Result := 'turbo-encoder.onnx,turbo-decoder.onnx,turbo-tokens.txt,turbo-encoder.weights'
+  else if (CompareText(RelativePath, 'pp-ocrv6-tiny-onnx') = 0) or
+          (CompareText(RelativePath, 'pp-ocrv6-small-onnx') = 0) then
+    Result := 'LICENSE,NOTICE-export-provenance.md,README.md,SHA256SUMS,source_manifest.json,.download-lock'
+  else if (CompareText(RelativePath, 'pp-ocrv6-tiny-onnx\det') = 0) or
+          (CompareText(RelativePath, 'pp-ocrv6-tiny-onnx\rec') = 0) or
+          (CompareText(RelativePath, 'pp-ocrv6-small-onnx\det') = 0) or
+          (CompareText(RelativePath, 'pp-ocrv6-small-onnx\rec') = 0) then
+    Result := 'inference.onnx,inference.yml,inference.json,README.md';
+end;
+
+function IsOcrModelDirectory(const RelativePath: string): Boolean;
+begin
+  Result := (CompareText(RelativePath, 'pp-ocrv6-tiny-onnx') = 0) or
+            (CompareText(RelativePath, 'pp-ocrv6-small-onnx') = 0);
 end;
 
 function IsExpectedModelFile(const RelativePath, FileName: string): Boolean;
@@ -1713,8 +1736,17 @@ begin
     repeat
       if (FindRec.Name <> '.') and (FindRec.Name <> '..') then
       begin
-        if ((FindRec.Attributes and FileAttributeDirectory) <> 0) or
-           not IsExpectedModelFile(RelativePath, FindRec.Name) then
+        if (FindRec.Attributes and FileAttributeReparsePoint) <> 0 then
+          exit;
+        if (FindRec.Attributes and FileAttributeDirectory) <> 0 then
+        begin
+          if not IsOcrModelDirectory(RelativePath) or
+             ((FindRec.Name <> 'det') and (FindRec.Name <> 'rec')) or
+             not ContainsOnlyExpectedModelFiles(AddBackslash(DirectoryName) + FindRec.Name,
+               RelativePath + '\' + FindRec.Name) then
+            exit;
+        end
+        else if not IsExpectedModelFile(RelativePath, FindRec.Name) then
           exit;
       end;
     until not FindNext(FindRec);
@@ -1738,6 +1770,9 @@ var
   RemainingFiles: string;
   FileName: string;
   FilePath: string;
+  ChildName: string;
+  ChildDirectory: string;
+  ChildFiles: string;
 begin
   // Do not call DelTree here. A file or subdirectory added after the safety check
   // must remain in place rather than becoming part of a recursive deletion.
@@ -1746,6 +1781,32 @@ begin
   if (RemainingFiles = '') or
      not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
     exit;
+
+  if IsOcrModelDirectory(RelativePath) then
+  begin
+    ChildFiles := 'det,rec';
+    while ChildFiles <> '' do
+    begin
+      ChildName := GetListItem(ChildFiles);
+      ChildDirectory := AddBackslash(DirectoryName) + ChildName;
+      if DirExists(ChildDirectory) then
+      begin
+        RemainingFiles := GetExpectedModelFileList(RelativePath + '\' + ChildName);
+        while RemainingFiles <> '' do
+        begin
+          if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+            exit;
+          FileName := GetListItem(RemainingFiles);
+          FilePath := AddBackslash(ChildDirectory) + FileName;
+          if FileExists(FilePath) and not DeleteFile(FilePath) then exit;
+          if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then exit;
+        end;
+        if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) or
+           not RemoveDir(ChildDirectory) then exit;
+      end;
+    end;
+  end;
+  RemainingFiles := GetExpectedModelFileList(RelativePath);
 
   while RemainingFiles <> '' do
   begin
@@ -1779,7 +1840,7 @@ begin
     'RemoveBackground\BriaBalanced,RemoveBackground\BriaHighQuality,' +
     'htdemucs,htdemucs-split,deepfilternet3_onnx,rife,lama-onnx,lama-opencv-onnx,' +
     'upscale-image-onnx,upscale-video-onnx,whisper-base-onnx,whisper-small-onnx,' +
-    'whisper-large-v3-turbo-onnx';
+    'whisper-large-v3-turbo-onnx,pp-ocrv6-tiny-onnx,pp-ocrv6-small-onnx';
 end;
 
 function HasOwnedModelDirectories(const ModelsDir: string): Boolean;

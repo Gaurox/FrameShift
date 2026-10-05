@@ -172,6 +172,7 @@ public static class ActionCatalog
         Combine("image-to-pdf", "Image to PDF", ActionCategory.Image, ImageExts, minimumInputCount: 1),
 
         // ---- General (cross-type) ----
+        Batch("extract-text", "Extract text", ActionCategory.General, [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".pdf"]),
         Single("media-info", "Media info", ActionCategory.General, MediaInfoExts),
     ];
 

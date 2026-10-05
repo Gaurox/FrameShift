@@ -32,6 +32,17 @@ internal static partial class Program
         for (var index = actionIndex + 2; index < args.Length; index++)
         {
             var token = args[index];
+            if (token.StartsWith("--ocr-", StringComparison.OrdinalIgnoreCase))
+            {
+                var key = token[2..].ToLowerInvariant();
+                if (!Core.AI.Ocr.OcrSettings.OptionNames.Contains(key) || index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
+                {
+                    error = $"Invalid OCR option: {token}. Supply a supported option and its value.";
+                    return false;
+                }
+                options[key] = args[++index];
+                continue;
+            }
             if (string.Equals(token, "--frame-mode", StringComparison.OrdinalIgnoreCase))
             {
                 if (index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))

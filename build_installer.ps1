@@ -22,6 +22,18 @@ $script:DistributionNoticeFiles = @(
     @{ Source = 'licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt'; Published = 'licenses\subtitles-worker-native\DirectML-THIRD_PARTY_NOTICES.txt' }
 )
 
+$ocrNoticeNames = @(
+    'APACHE-2.0.txt', 'Clipper2-LICENSE.txt', 'GlyphLessFont-NOTICE.txt', 'PDFium-LICENSE.txt', 'YamlDotNet-LICENSE.txt',
+    'pdfium-native\LICENSE', 'pdfium-native\pdfium.txt', 'pdfium-native\abseil.txt', 'pdfium-native\agg23.txt',
+    'pdfium-native\fast_float.txt', 'pdfium-native\freetype.txt', 'pdfium-native\icu.txt', 'pdfium-native\lcms.txt',
+    'pdfium-native\libjpeg_turbo.ijg', 'pdfium-native\libjpeg_turbo.md', 'pdfium-native\libopenjpeg.txt',
+    'pdfium-native\libpng.txt', 'pdfium-native\llvm-libc.txt', 'pdfium-native\simdutf.txt', 'pdfium-native\zlib.txt'
+)
+foreach ($noticeName in $ocrNoticeNames) {
+    $relativePath = Join-Path 'licenses\ocr' $noticeName
+    $script:DistributionNoticeFiles += @{ Source = $relativePath; Published = $relativePath }
+}
+
 function Assert-RequiredFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -238,6 +250,10 @@ function Assert-PublishPayload {
 
     $requiredPayloadFiles = @(
         'FrameShift.exe',
+        'PDFiumCore.dll',
+        'pdfium.dll',
+        'YamlDotNet.dll',
+        'Clipper2Lib.dll',
         'Tools\ffmpeg\ffmpeg.exe',
         'Tools\ffmpeg\ffprobe.exe',
         'Workers\CreateSubtitlesWorker\FrameShift.SubtitlesWorker.exe'

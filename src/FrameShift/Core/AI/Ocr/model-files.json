@@ -1,0 +1,136 @@
+{
+  "tiny": [
+    {
+      "path": "LICENSE",
+      "bytes": 11376,
+      "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e"
+    },
+    {
+      "path": "NOTICE-export-provenance.md",
+      "bytes": 1444,
+      "sha256": "db2d773a15240245e67425a759631ddaa254c333eace65901025cf333b6a1844"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2665,
+      "sha256": "c4b32c67bb12934383cce8dca280772d06e5f91ef11814a828a13319a9bff673"
+    },
+    {
+      "path": "SHA256SUMS",
+      "bytes": 999,
+      "sha256": "1605f6208d0e4dcf9c03d3e643d3182087e5f7a1282e8787b76d5b45d5d876aa"
+    },
+    {
+      "path": "source_manifest.json",
+      "bytes": 5746,
+      "sha256": "ce0d24467ea35828904737034102bad3ab66f165690b5423f9f00514a28c6d93"
+    },
+    {
+      "path": "det/inference.onnx",
+      "bytes": 1780590,
+      "sha256": "193bab7a04fca699a6c82e6abb5b81bdb28177f0abd4062552b04908dafb19f8"
+    },
+    {
+      "path": "det/inference.yml",
+      "bytes": 883,
+      "sha256": "3ac018be6f97499a08faa3bbdeb33640968d9307f6736d152902747a9f259593"
+    },
+    {
+      "path": "det/inference.json",
+      "bytes": 229184,
+      "sha256": "935c18972799dd8f2a2ff424b9f8b2c6adee4b89f3a76f0746210ec33ba9b3d8"
+    },
+    {
+      "path": "det/README.md",
+      "bytes": 16064,
+      "sha256": "f48628931a5dc994ce5c67e32c94d71b4a7e96b8c5c1b00663284999c3c566bc"
+    },
+    {
+      "path": "rec/inference.onnx",
+      "bytes": 4462639,
+      "sha256": "9ef676d6ed3c88256a2d92c640c44f25b0c40947e111b14b8be8f594091563e6"
+    },
+    {
+      "path": "rec/inference.yml",
+      "bytes": 55571,
+      "sha256": "66170210bad538e83fff3c4a3867e547d6bf20b50d64b20347c4b913f3034ea1"
+    },
+    {
+      "path": "rec/inference.json",
+      "bytes": 108959,
+      "sha256": "b5b14770c7dcf092781e92f4278a2ae5f95048f08b4b8a04140e88cb2745f147"
+    },
+    {
+      "path": "rec/README.md",
+      "bytes": 16600,
+      "sha256": "e83dd03e515a2d064eaba8ec82248f21dbf6a0813550bafe4c70ee2f6e8fdf2a"
+    }
+  ],
+  "small": [
+    {
+      "path": "LICENSE",
+      "bytes": 11376,
+      "sha256": "3840c5c0c61c294264d2dd77b8777be6ddd90121ef4e0e64abcd22edea581d6e"
+    },
+    {
+      "path": "NOTICE-export-provenance.md",
+      "bytes": 1449,
+      "sha256": "bdf82d516666c315bcf5ba7dde4ad01c2d8aa7e5c873c8d21d313aa689cd99a2"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2674,
+      "sha256": "9f8e058f15387d8a2dca992ba7ed7f00a8e91be6ce27857b9d997080dfa4f4c5"
+    },
+    {
+      "path": "SHA256SUMS",
+      "bytes": 999,
+      "sha256": "81cbc3873c3ee6b46290083fa9d1cf8afe1b6347baffc2c0c1ef350c4445c332"
+    },
+    {
+      "path": "source_manifest.json",
+      "bytes": 5723,
+      "sha256": "f5e7e33fd8d93ab80c85d023d76ac9911eb54374d6315f7e67619030155edc24"
+    },
+    {
+      "path": "det/inference.onnx",
+      "bytes": 9880512,
+      "sha256": "d73e0058b7a8086bbd57f3d10b8bcd4ff95363f67e06e2762b5e814fe9c9410e"
+    },
+    {
+      "path": "det/inference.yml",
+      "bytes": 885,
+      "sha256": "193f435274bf9f0b5f71a929bbfbcf148282df7e633b34e7c373e8f44741b516"
+    },
+    {
+      "path": "det/inference.json",
+      "bytes": 229307,
+      "sha256": "89240f689a4a77aad75ef55a8df0a15c8e1d4980a327d17e58f24bbadde5aeab"
+    },
+    {
+      "path": "det/README.md",
+      "bytes": 16076,
+      "sha256": "e9403667f0f92055d8ce9e73a2beb1002fc489d9342697db74039eb7178bb5fb"
+    },
+    {
+      "path": "rec/inference.onnx",
+      "bytes": 21159378,
+      "sha256": "5435fd747c9e0efe15a96d0b378d5bd157e9492ed8fd80edf08f30d02fa24634"
+    },
+    {
+      "path": "rec/inference.yml",
+      "bytes": 150579,
+      "sha256": "ab078671bb49f06228eadccd34f1bb501e157f7a047095ffb943ba81512c77d1"
+    },
+    {
+      "path": "rec/inference.json",
+      "bytes": 208004,
+      "sha256": "f0bf53c853937a917affdd74467472167727f8ab0f0f7bded01c4a16c27e46e6"
+    },
+    {
+      "path": "rec/README.md",
+      "bytes": 16585,
+      "sha256": "7d46dbd183ac09bd5a2e6b4577dcb29240751b1c00eb6813eca308d529f86806"
+    }
+  ]
+}
