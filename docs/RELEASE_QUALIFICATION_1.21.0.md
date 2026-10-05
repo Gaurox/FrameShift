@@ -1,6 +1,6 @@
-# FrameShift 1.21.0 local qualification
+# FrameShift 1.21.0 release qualification
 
-Prepared on 4 October 2026, updated on 5 October 2026. The owner accepted the feature and explicitly authorized Git publication and the public 1.21.0 release with its installer on 5 October 2026. The installer below is the accepted canonical build; independent installed qualification remains limited as described below.
+Prepared on 4 October 2026, updated on 5 October 2026. **Release 1.21.0 is published after the owner's explicit authorization, with an anonymous installer download verified against the accepted canonical build.** The website is deployed and verified. Independent installed qualification remains limited as described below.
 
 ## Build and tests
 
@@ -64,6 +64,15 @@ The owner's unmodified 602 × 554 screenshot is stored in `screenshots/AI_action
 
 The website overview, action catalog, local-AI catalog/model table, comparison pages, Image to PDF guide, footer navigation and sitemap were reviewed and updated. The software version is 1.21.0 and the local-AI count is 10. Removed the outdated TIFF support claim from Image to PDF. Two existing mobile table overflows were corrected with keyboard-accessible scroll regions and a versioned stylesheet URL.
 
-All **20 HTML pages**, including the 404 page and the other Gaurox product pages, were loaded in the browser at desktop size and at 390 × 844. No horizontal page overflow remains. Static validation checked internal links, anchors, assets, unique IDs, JSON-LD and the 19-page sitemap without errors. The OCR gallery lightbox opened and closed correctly. Screenshots and local verification results are retained under ignored `scratch/website-qa/` and `scratch/website-local-check.json`. Public deployment verification is recorded separately after publication.
+All **20 HTML pages**, including the 404 page and the other Gaurox product pages, were loaded in the browser at desktop size and at 390 × 844. No horizontal page overflow remains. Static validation checked internal links, anchors, assets, unique IDs, JSON-LD and the 19-page sitemap without errors. The OCR gallery lightbox opened and closed correctly. Screenshots and local verification results are retained under ignored `scratch/website-qa/` and `scratch/website-local-check.json`.
+
+## Verified public publication
+
+- [Stable release 1.21.0](https://github.com/Gaurox/FrameShift/releases/tag/1.21.0), release ID `404111521`, published at **2026-10-05T21:41:38Z** (23:41:38 CEST), public, not a prerelease, and confirmed as the latest release.
+- FrameShift code, README, screenshot and release documents were pushed to `main`. Annotated tag `1.21.0`, object `0d13b87c8d85ff749961ea7dfbe649157bd28445`, targets publication commit `2ad8f86c994397fd51089c6c7bcbdaa2462e6412`. Runtime source and packaging inputs match the accepted correction commit `d0c5f8a`.
+- [Installer](https://github.com/Gaurox/FrameShift/releases/download/1.21.0/FrameShift_1.21.0_Setup.exe), asset `613672905`, **175,032,307 bytes**. GitHub's asset digest and an anonymous public download both match **`48D711BD8A918F9E5764F7F874E2A1050195B944C37415D4C049B44829E01281`**. The [checksum file](https://github.com/Gaurox/FrameShift/releases/download/1.21.0/FrameShift_1.21.0_Setup.exe.sha256), asset `613672906`, downloaded identically to the local file. No rebuild or installer substitution occurred.
+- Website commit `53db0006d1d5a5ad6b104ec25b40c9856c4a3593` was pushed to `Gaurox/gaurox-website:main`. Cloudflare Pages completed successfully at **2026-10-05T21:41:34Z**. The [OCR guide](https://gaurox.dev/frameshift/extract-text/) and overview show the new function; all 20 public pages were loaded in the browser without broken loaded images or horizontal overflow. Public mobile checks also passed for the OCR guide and the two corrected table pages.
+- Separate anonymous HTTP verification passed for **20 pages and 54 unique asset URLs**. Page titles/H1s match the local sources, all FrameShift pages expose the OCR route and versioned stylesheet, and the downloaded public screenshot matches its source SHA-256 exactly. Completed at **2026-10-05T21:44:07Z**.
+- Local publication evidence: ignored `builds/release-1.21.0/github-draft-metadata.json`, `github-published-metadata.json`, `installer-public-verification.json`, `public-download-verification.json`, and the verified installer in `public-download/`. Browser evidence is under `scratch/website-qa/`.
 
 See [the feature guide](EXTRACT_TEXT.md) for formats, options, model storage and CLI usage.

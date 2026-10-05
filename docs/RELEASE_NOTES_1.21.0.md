@@ -1,5 +1,7 @@
 # FrameShift 1.21.0
 
+Published on 5 October 2026: [GitHub release 1.21.0](https://github.com/Gaurox/FrameShift/releases/tag/1.21.0). The installer and checksum were verified by anonymous public download; the updated website is deployed.
+
 ## Extract Text from images and PDFs
 
 Right-click a supported image or PDF and choose **Extract text**, or launch the action from the FrameShift hub. Choose **PP-OCRv6 Small** for higher accuracy or **Tiny** for faster processing, then save **UTF-8 text**, **structured JSON** or a **searchable PDF** that retains the original document appearance.
