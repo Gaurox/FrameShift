@@ -2,7 +2,7 @@
 
 ## 1.21.0
 
-Prepared locally; publication requires owner authorization.
+Publication authorized by the owner on 5 October 2026. GitHub tag: `1.21.0`. See the [release notes](RELEASE_NOTES_1.21.0.md) and [qualification report](RELEASE_QUALIFICATION_1.21.0.md).
 
 - **Extract Text.** Added local OCR for PNG, JPG/JPEG, WebP, BMP and PDF through the hub, Explorer's optional AI component and `--action extract-text`. A compact English WinForms picker selects PP-OCRv6 Small/Tiny and TXT, JSON or searchable PDF output, with PDF page ranges and expandable layout, source, DPI, rotation and device options.
 - **PDF handling.** Existing native text is reused; scanned and mixed pages are rendered one at a time with PDFium. The searchable PDF preserves the complete source document and adds an invisible Unicode text layer to selected pages. TXT supports line breaks or paragraph grouping and optional page markers; JSON carries page geometry, text source and confidence.

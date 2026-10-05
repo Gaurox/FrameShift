@@ -1,6 +1,6 @@
 # FrameShift 1.21.0 local qualification
 
-Prepared on 4 October 2026, updated on 5 October 2026. The feature is implemented and the installer is built locally; this document does not claim a published or installed release.
+Prepared on 4 October 2026, updated on 5 October 2026. The owner accepted the feature and explicitly authorized Git publication and the public 1.21.0 release with its installer on 5 October 2026. The installer below is the accepted canonical build; independent installed qualification remains limited as described below.
 
 ## Build and tests
 
@@ -50,10 +50,20 @@ All six searchable PDF pages were compared to the source at 54 DPI: rendered pix
 | `installer/FrameShift_1.21.0_Setup.exe` | 175,032,307 bytes | `48D711BD8A918F9E5764F7F874E2A1050195B944C37415D4C049B44829E01281` |
 | `publish/FrameShift-win-x64/FrameShift.dll` | 1.21.0 | `AB7EF9E085CD775DB59B1A8F48F9C4B07CF66FCB5E3EF5A104DE314F7601685F` |
 
-Local evidence is retained under ignored `scratch/ocr-qa-results/`, `scratch/ocr-release-build.log`, `scratch/ocr-columns-release-build.log` and `scratch/ocr-oversized-release-build.log`. The initial integration and column correction are recorded in commit `c972919`, requested by the owner on 5 October 2026. The owner accepted the oversized-page correction and requested its commit on 5 October 2026. No push or public release was requested.
+Local evidence is retained under ignored `scratch/ocr-qa-results/`, `scratch/ocr-release-build.log`, `scratch/ocr-columns-release-build.log` and `scratch/ocr-oversized-release-build.log`. The initial integration and column correction are recorded in commit `c972919`; the accepted oversized-page correction is recorded in `d0c5f8a81c815c4035e4feb5feb0d0751348dadd`. Both commits were requested by the owner on 5 October 2026. Publication of this exact installer is now authorized.
+
+The canonical build was performed with the oversized-page correction present as explicitly allowed working-tree changes. Its product metadata retains `1.21.0+c972919429c3e5aa682f6577ff27d07878021845`. Commit `d0c5f8a81c815c4035e4feb5feb0d0751348dadd` records the corrected build sources. The annotated release tag targets the subsequent publication commit, including the README, release documents and screenshot. Its runtime sources and packaging inputs are unchanged from `d0c5f8a`; these documentation changes do not alter the accepted installer. SHA-256, rather than the retained build metadata suffix, identifies the accepted artifact.
 
 ## Installed acceptance
 
 The owner confirmed that OCR extraction works and accepted both the corrected column reading order and the oversized-page correction on 5 October 2026. The agent did not run the installer against the owner's existing installation. Explorer registration, update/uninstall interaction and physical multi-monitor DPI behavior have not been independently qualified. Enable the **Extract text (images and PDF)** installer component to register the new Explorer menus.
+
+## README and website verification
+
+The owner's unmodified 602 × 554 screenshot is stored in `screenshots/AI_actions/Extract_text.png` and used in the README, website gallery and new `/frameshift/extract-text/` guide. Its SHA-256 is `AD090B543AAF0AD0563377BE8C987B13E198200894A38FB3E7F917A02687F7E4`. The prescribed shared synchronization script copied product screenshots to the website repository.
+
+The website overview, action catalog, local-AI catalog/model table, comparison pages, Image to PDF guide, footer navigation and sitemap were reviewed and updated. The software version is 1.21.0 and the local-AI count is 10. Removed the outdated TIFF support claim from Image to PDF. Two existing mobile table overflows were corrected with keyboard-accessible scroll regions and a versioned stylesheet URL.
+
+All **20 HTML pages**, including the 404 page and the other Gaurox product pages, were loaded in the browser at desktop size and at 390 × 844. No horizontal page overflow remains. Static validation checked internal links, anchors, assets, unique IDs, JSON-LD and the 19-page sitemap without errors. The OCR gallery lightbox opened and closed correctly. Screenshots and local verification results are retained under ignored `scratch/website-qa/` and `scratch/website-local-check.json`. Public deployment verification is recorded separately after publication.
 
 See [the feature guide](EXTRACT_TEXT.md) for formats, options, model storage and CLI usage.

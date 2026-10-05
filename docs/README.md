@@ -17,6 +17,7 @@ Les plans Main, Remove Object et Extract Frames conservent leur conception d'ori
 ## Quick Links
 
 - [Extract Text — OCR, PDF Options and Model Downloads](EXTRACT_TEXT.md)
+- [Release Notes 1.21.0](RELEASE_NOTES_1.21.0.md)
 - [Release Qualification 1.21.0](RELEASE_QUALIFICATION_1.21.0.md)
 - [Project Overview](PRODUCT_GUIDE.md)
 - [Project Rules](PROJECT_RULES.md)
