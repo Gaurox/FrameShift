@@ -148,8 +148,14 @@ public sealed class DownloadModelForm : Form
                 _cancelButton.Enabled = !_closingRequested;
                 if (_closingRequested)
                 {
-                    DialogResult = DialogResult.Cancel;
-                    Close();
+                    // Cancellation may finish inline inside FormClosing. Post the
+                    // final result after WinForms has cancelled that first close.
+                    BeginInvoke(new Action(() =>
+                    {
+                        if (IsDisposed || Disposing) return;
+                        DialogResult = DialogResult.Cancel;
+                        Close();
+                    }));
                 }
             }
         }

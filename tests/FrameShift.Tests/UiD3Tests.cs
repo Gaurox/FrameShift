@@ -263,7 +263,13 @@ public sealed class UiD3Tests
             Assert.Equal(0, Named<ProgressBar>(form, "downloadProgress").Value);
             release.SetResult();
             Pump(task);
-            if (close) Assert.Equal(DialogResult.Cancel, form.DialogResult);
+            if (close)
+            {
+                // The final close is deliberately posted after the download task
+                // finishes, even if cancellation unwinds inline in FormClosing.
+                Application.DoEvents();
+                Assert.Equal(DialogResult.Cancel, form.DialogResult);
+            }
             else
             {
                 Assert.Equal("Close", ((Button)form.CancelButton!).Text);

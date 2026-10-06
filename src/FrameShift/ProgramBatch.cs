@@ -200,16 +200,17 @@ internal static partial class Program
 
         if (actionId.Equals("remove-noise", StringComparison.OrdinalIgnoreCase))
         {
+            // The options picker can preview immediately, so its models must be ready.
             return ValidateRemoveNoiseInputs(inputPaths)
-                && EnsureRemoveNoiseAudioOptions(inputPaths, effectiveOptions, logger)
-                && EnsureRemoveNoiseModelReady(logger);
+                && EnsureRemoveNoiseModelReady(logger)
+                && EnsureRemoveNoiseAudioOptions(inputPaths, effectiveOptions, logger);
         }
 
         if (actionId.Equals("remove-noise-video", StringComparison.OrdinalIgnoreCase))
         {
             return ValidateRemoveNoiseVideoInputs(inputPaths)
-                && EnsureRemoveNoiseVideoOptions(inputPaths, effectiveOptions, logger)
-                && EnsureRemoveNoiseModelReady(logger);
+                && EnsureRemoveNoiseModelReady(logger)
+                && EnsureRemoveNoiseVideoOptions(inputPaths, effectiveOptions, logger);
         }
 
         return true;

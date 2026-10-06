@@ -208,6 +208,8 @@ tests/
 ## Documentation
 
 - [Extract Text — OCR, PDF Options and Model Downloads](docs/EXTRACT_TEXT.md)
+- [Release Notes 1.21.1 — local installer candidate](docs/RELEASE_NOTES_1.21.1.md)
+- [Release Qualification 1.21.1](docs/RELEASE_QUALIFICATION_1.21.1.md)
 - [Release Notes 1.21.0](docs/RELEASE_NOTES_1.21.0.md)
 - [Release Qualification 1.21.0](docs/RELEASE_QUALIFICATION_1.21.0.md)
 - [Documentation Index](docs/README.md)

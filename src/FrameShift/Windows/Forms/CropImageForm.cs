@@ -34,6 +34,7 @@ public sealed class CropImageForm : Form
     private PointF _panStartCenter;
     private string _dragMode = string.Empty;
     private bool _closing;
+    private bool _allowClose;
     private bool _disposed;
     private readonly CancellationTokenSource _previewCancellation = new();
     private Task? _initializationTask;
@@ -170,20 +171,24 @@ public sealed class CropImageForm : Form
 
     private async void CloseAfterPreviewAsync(object? sender, FormClosingEventArgs e)
     {
+        if (_allowClose) return;
+        e.Cancel = true;
         if (_closing) return;
         _closing = true;
+        var result = DialogResult;
         _resizeRefreshTimer.Stop();
         _previewCancellation.Cancel();
-        if (_initializationTask is { IsCompleted: false })
+        Enabled = false;
+        if (_initializationTask is not null) await _initializationTask;
+        if (IsDisposed) return;
+        // Also defer completed cleanup, and keep repeated close requests cancelled.
+        BeginInvoke(new Action(() =>
         {
-            var result = DialogResult;
-            e.Cancel = true;
-            Enabled = false;
-            await _initializationTask;
             if (IsDisposed) return;
+            _allowClose = true;
             DialogResult = result;
             Close();
-        }
+        }));
     }
 
     protected override void Dispose(bool disposing)

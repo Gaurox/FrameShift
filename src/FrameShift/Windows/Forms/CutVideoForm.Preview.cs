@@ -9,6 +9,7 @@ public sealed partial class CutVideoForm
     private CancellationTokenSource? _previewCancellation;
     private Task _previewTask = Task.CompletedTask;
     private bool _closing;
+    private bool _allowClose;
 
     internal Task RequestPreviewAsync(int frame)
     {
@@ -56,20 +57,24 @@ public sealed partial class CutVideoForm
 
     private async void CloseAfterPreviewAsync(object? sender, FormClosingEventArgs e)
     {
+        if (_allowClose) return;
+        e.Cancel = true;
         if (_closing) return;
         _closing = true;
+        var result = DialogResult;
         _previewTimer.Stop();
         _previewCancellation?.Cancel();
-        if (!_previewTask.IsCompleted)
+        Enabled = false;
+        await _previewTask;
+        if (IsDisposed) return;
+        // Also defer completed cleanup, and keep repeated close requests cancelled.
+        BeginInvoke(new Action(() =>
         {
-            var result = DialogResult;
-            e.Cancel = true;
-            Enabled = false;
-            await _previewTask;
             if (IsDisposed) return;
+            _allowClose = true;
             DialogResult = result;
             Close();
-        }
+        }));
     }
 
     protected override void Dispose(bool disposing)

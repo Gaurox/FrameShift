@@ -219,9 +219,14 @@ public sealed class RemoveNoiseAudioPickerForm : Form
             return;
         }
 
-        _allowClose = true;
-        DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
-        Close();
+        // Leave the cancelled FormClosing before setting the modal result.
+        BeginInvoke(new Action(() =>
+        {
+            if (IsDisposed || Disposing) return;
+            _allowClose = true;
+            DialogResult = _requestedDialogResult ?? DialogResult.Cancel;
+            Close();
+        }));
     }
 
     private Task CleanupPreviewResourcesAsync()

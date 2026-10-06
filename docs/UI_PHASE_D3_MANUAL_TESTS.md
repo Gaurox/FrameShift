@@ -48,3 +48,18 @@ dotnet test tests/FrameShift.Tests/FrameShift.Tests.csproj --no-restore --filter
 Les tests D3 créent des handles natifs cachés, sans saisie injectée sur le bureau. Ils vérifient variantes stéréo/mono, GPU disponible/indisponible, batch/single, géométrie, choix et valeurs métier, erreurs/retry/cancel, retours tardifs et durée de vie. Les fixtures injectées de téléchargement ne touchent aucun serveur ou modèle. La suite de non-régression conserve le filtre sans affichage de B/C/D1/D2 ; les 12 cas ouvrant des fenêtres sont exclus, distincts des skips média/IA. Voir les résultats dans l'audit.
 
 Les exports réels, les téléchargements réels, la distribution installée et le mode DPI Release restent à qualifier avant publication. Le re-check BRIA conserve son callback synchrone de vérification ; la lecture d'un gros fichier peut encore prendre du temps. L'audit garde cette limite distincte du rendu UI.
+
+## Régression Remove Noise — 7 octobre 2026
+
+L'[audit élargi des fermetures modales](MODAL_CLOSING_AUDIT_2026-10-07.md) a ensuite identifié et corrigé trois cas supplémentaires : annulation immédiate du dialogue de téléchargement partagé, et seconde demande de fermeture pendant l'aperçu de Cut Video/Crop Image. La validation élargie compte 146 tests réussis.
+
+Le retour sur la 1.21 signale un aperçu utilisable après installation manuelle des modèles, puis une fenêtre bloquée sur « Closing... » au clic sur Denoise. Les deux pickers diffèrent maintenant la fermeture finale après l'événement `FormClosing` annulé. Le parcours applicatif vérifie les modèles avant d'ouvrir les réglages.
+
+Validation Debug : **57 tests ciblés réussis, aucun échec ni test ignoré**. Les huit routes de fermeture audio/vidéo échouaient avant le correctif avec `ShowDialog()` ; elles passent après. Quatre cas supplémentaires simulent un aperçu encore actif et vérifient l'annulation, l'attente et le résultat modal. Deux cas ouvrent le vrai dialogue de téléchargement avec un dossier de modèles temporaire vide et vérifient que son annulation arrête le préflight avant les réglages, sans téléchargement. La compilation Debug émet les avertissements ImageSharp de licence absente dans cet environnement.
+
+Recette réelle à compléter sur un build corrigé, depuis le hub ou Explorer (le lanceur D3 ne teste pas le préflight applicatif) :
+
+1. Choisir un dossier de modèles de test vide. Lancer Remove Noise audio puis vidéo ; vérifier que Download apparaît avant les réglages. Vérifier aussi Cancel à cette étape.
+2. Télécharger les modèles depuis FrameShift, ouvrir les réglages et écouter Preview. Cliquer Denoise une fois l'aperçu terminé ; vérifier la fermeture et le démarrage du traitement complet.
+3. Rejouer Denoise sans aperçu, puis Cancel et la croix. Fermer aussi pendant la préparation d'un aperçu ; vérifier le nettoyage des temporaires après la fin du travail et l'absence de processus FFmpeg orphelin.
+4. Utiliser des chemins avec espaces et accents et relancer sur le même média ; vérifier les sorties uniques, la conservation de la source et les logs. Les modèles réels, l'export complet et un nouvel installateur n'ont pas été qualifiés par les tests ciblés ci-dessus.

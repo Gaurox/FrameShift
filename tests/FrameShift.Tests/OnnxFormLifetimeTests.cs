@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -156,6 +157,65 @@ public sealed class OnnxFormLifetimeTests
         Assert.Equal(string.Equals(closeRoute, "ok", StringComparison.Ordinal) ? DialogResult.OK : DialogResult.Cancel, result);
     }
 
+    [Theory]
+    [InlineData(false, "ok")]
+    [InlineData(false, "cancel")]
+    [InlineData(true, "ok")]
+    [InlineData(true, "cancel")]
+    public void RemoveNoisePickers_ClosingDuringPreviewWaitsForWorkAndPreservesModalResult(bool videoPicker, string closeRoute)
+    {
+        StaTest.Run(() =>
+        {
+            using Form picker = videoPicker
+                ? new RemoveNoiseVideoPickerForm("source été.wav", sourceIsStereo: false)
+                : new RemoveNoiseAudioPickerForm("source été.wav", sourceIsStereo: false);
+            var lifetime = (OnnxFormLifetime)picker.GetType()
+                .GetField("_lifetime", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(picker)!;
+            var finishPreview = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Task? previewTask = null;
+            using var timer = new System.Windows.Forms.Timer { Interval = 20 };
+            var waitedForPreview = false;
+            var timedOut = false;
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+
+            picker.Shown += (_, _) => picker.BeginInvoke(new Action(() =>
+            {
+                previewTask = lifetime.RunAsync(async cancellationToken =>
+                {
+                    await finishPreview.Task;
+                    cancellationToken.ThrowIfCancellationRequested();
+                });
+                TriggerClose(picker, closeRoute);
+                timer.Start();
+            }));
+            timer.Tick += (_, _) =>
+            {
+                if (!waitedForPreview)
+                {
+                    Assert.True(lifetime.Token.IsCancellationRequested);
+                    Assert.False(previewTask!.IsCompleted);
+                    Assert.True(picker.Visible);
+                    Assert.False(((Button)picker.AcceptButton!).Enabled);
+                    waitedForPreview = true;
+                    finishPreview.TrySetResult();
+                }
+                else if (DateTime.UtcNow > deadline)
+                {
+                    timedOut = true;
+                    picker.DialogResult = DialogResult.Cancel;
+                    picker.Close();
+                }
+            };
+
+            var result = picker.ShowDialog();
+            timer.Stop();
+            Assert.False(timedOut, "The picker did not close after the preview finished.");
+            Assert.True(waitedForPreview);
+            Assert.True(previewTask!.IsCanceled);
+            Assert.Equal(closeRoute == "ok" ? DialogResult.OK : DialogResult.Cancel, result);
+        });
+    }
+
     private static DialogResult ShowPickerDialog(bool videoPicker, string closeRoute)
     {
         DialogResult result = DialogResult.None;
@@ -165,10 +225,24 @@ public sealed class OnnxFormLifetimeTests
             using Form picker = videoPicker
                 ? new RemoveNoiseVideoPickerForm("source.wav", sourceIsStereo: false)
                 : new RemoveNoiseAudioPickerForm("source.wav", sourceIsStereo: false);
+            using var timeout = new System.Windows.Forms.Timer { Interval = 2000 };
+            var timedOut = false;
+
+            timeout.Tick += (_, _) =>
+            {
+                timeout.Stop();
+                timedOut = true;
+                picker.DialogResult = DialogResult.Cancel;
+                picker.Close();
+            };
 
             picker.Shown += (_, _) => picker.BeginInvoke(new Action(() => TriggerClose(picker, closeRoute)));
-            Application.Run(picker);
-            result = picker.DialogResult;
+            timeout.Start();
+            // Production opens these pickers modally. Application.Run misses the
+            // DialogResult reset when the original FormClosing is cancelled.
+            result = picker.ShowDialog();
+            timeout.Stop();
+            Assert.False(timedOut, "The picker remained open after its first close request.");
         });
 
         return result;
