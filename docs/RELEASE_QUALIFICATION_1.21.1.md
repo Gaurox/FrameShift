@@ -2,6 +2,13 @@
 
 Prepared on 7 October 2026 at the owner's request for an updated installer. Version 1.21.1 follows the repository's patch-numbering rule for fixes without new features. The owner subsequently authorized committing, pushing and publishing this exact installer on GitHub.
 
+## GitHub publication
+
+- Published on **7 October 2026 (Europe/Paris)**, at `2026-10-06T22:49:32Z`, as the latest stable [release 1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1).
+- Annotated tag `1.21.1` identifies patch commit `a4829435d81aba12c9952c4174d8e1634e026f67`, pushed to `main` without rewriting history. The installer is the previously tested canonical build; no application source changed after that build.
+- Both installer and checksum were uploaded and their GitHub asset digests verified against local files before publication.
+- An anonymous download from each public asset URL succeeds. The downloaded installer is **175,010,494 bytes** and has SHA-256 `D09AAB3E3CC1E2E3F4E6DC5968BA54293363DB34B89C139B6D01615C55E6BD10`; the downloaded checksum file is byte-identical to its local source. GitHub's latest-release endpoint identifies `1.21.1`, with draft and prerelease flags both false.
+
 ## Scope
 
 Remove Noise audio/video modal closure, DeepFilterNet model preflight before Preview, inline cancellation of the shared model download dialog, and repeated close requests during Cut Video/Crop Image preview cleanup. No UI framework, model weights, package version or processing algorithm changed.

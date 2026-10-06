@@ -2,7 +2,7 @@
 
 ## 1.21.1
 
-Prepared on 7 October 2026; GitHub publication authorized by the owner. This patch fixes noise-removal setup and modal closure/cancellation. The owner reports that Remove Noise appears corrected; the other installed checks remain open. See the [release notes](RELEASE_NOTES_1.21.1.md) and [qualification report](RELEASE_QUALIFICATION_1.21.1.md).
+Published on 7 October 2026 after owner authorization. GitHub tag: `1.21.1`. The public installer download matches the tested build's SHA-256. This patch fixes noise-removal setup and modal closure/cancellation. The owner reports that Remove Noise appears corrected; the other installed checks remain open. See the [release notes](RELEASE_NOTES_1.21.1.md) and [qualification report](RELEASE_QUALIFICATION_1.21.1.md).
 
 - **Remove Noise.** Fixed audio/video settings dialogs remaining stuck on "Closing..." after Denoise or Cancel. Final closure is posted after the cancelled WinForms closing event; preview cancellation still waits for active work before cleanup.
 - **Remove Noise models.** Check and offer to download DeepFilterNet3 before opening the audio/video settings dialog, so Preview is available without manually installing ONNX files.

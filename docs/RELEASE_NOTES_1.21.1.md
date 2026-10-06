@@ -1,6 +1,6 @@
 # FrameShift 1.21.1
 
-Prepared on 7 October 2026, with GitHub publication authorized by the owner. This patch follows 1.21.0 and adds no new action.
+Published on 7 October 2026 after owner authorization. This patch follows 1.21.0 and adds no new action. Download the installer and checksum from [release 1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1).
 
 - **Remove Noise audio/video:** Denoise, Cancel and native close no longer leave the settings window stuck on "Closing..." after idle or completed preview cleanup.
 - **Noise-removal models:** FrameShift now checks and offers to download DeepFilterNet3 before opening the settings window, making the first Preview available without manually installing ONNX files.

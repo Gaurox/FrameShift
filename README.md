@@ -35,7 +35,7 @@
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current version: **[1.21.0](https://github.com/Gaurox/FrameShift/releases/tag/1.21.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Current version: **[1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -46,6 +46,8 @@ the final number (`1.14.1`, `1.14.2`, etc.).
 
 FrameShift is a desktop utility for fast video, audio, image, and AI-assisted media tasks on Windows.  
 Its main goal is simple: let you launch useful actions directly from Explorer context menus, make the right adjustments quickly, and save the result next to the source file with safe unique naming.
+
+**Fixed in 1.21.1 — Remove Noise and window cleanup.** Denoise no longer leaves the audio/video settings window stuck on "Closing...". Required models are checked before Preview, and download cancellation and repeated close requests in Cut Video/Crop Image now finish correctly. See [the release notes](docs/RELEASE_NOTES_1.21.1.md).
 
 **New in 1.21.0 — Extract Text.** Extract text from images and PDFs with local PP-OCRv6 Small or Tiny. Save UTF-8 text, structured JSON or a searchable PDF with its original appearance. PDF options include page ranges, native-text reuse, rendering quality and text layout. Reading order follows detected columns; oversized PDF pages automatically use a safe rendering resolution and report the adjustment. Models download on demand from the FrameShift Hugging Face repository with pinned revisions and SHA-256 checks: approximately **31.7 MB for Small** or **6.7 MB for Tiny**, including dictionaries and Apache-2.0 notices. Subsequent processing runs offline. See [the feature guide](docs/EXTRACT_TEXT.md) and [release notes](docs/RELEASE_NOTES_1.21.0.md).
 
@@ -208,7 +210,7 @@ tests/
 ## Documentation
 
 - [Extract Text — OCR, PDF Options and Model Downloads](docs/EXTRACT_TEXT.md)
-- [Release Notes 1.21.1 — local installer candidate](docs/RELEASE_NOTES_1.21.1.md)
+- [Release Notes 1.21.1](docs/RELEASE_NOTES_1.21.1.md)
 - [Release Qualification 1.21.1](docs/RELEASE_QUALIFICATION_1.21.1.md)
 - [Release Notes 1.21.0](docs/RELEASE_NOTES_1.21.0.md)
 - [Release Qualification 1.21.0](docs/RELEASE_QUALIFICATION_1.21.0.md)
