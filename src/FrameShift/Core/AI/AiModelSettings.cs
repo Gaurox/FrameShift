@@ -86,7 +86,7 @@ public sealed class AiModelSettings
     {
         try
         {
-            Directory.CreateDirectory(path);
+            using var lease = AiModelPathLease.Acquire(path, create: true);
             // Exclusive, handle-owned cleanup also preserves pre-existing/shared probe files.
             using var probe = new FileStream(
                 Path.Combine(path, $".writetest-{Guid.NewGuid():N}"),

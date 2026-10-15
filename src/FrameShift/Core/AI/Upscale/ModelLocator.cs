@@ -34,6 +34,10 @@ internal static class ModelLocator
         try
         {
             AiModelStorage.EnsureDirectory(Path.GetDirectoryName(targetPath)!);
+            using var targetLease = AiModelPathLease.Acquire(Path.GetDirectoryName(targetPath)!, allowFileUpdates: true);
+            using var sourceLease = AiModelPathLease.Acquire(Path.GetDirectoryName(legacyPath)!);
+            AiModelPathLease.ValidateFile(legacyPath);
+            AiModelPathLease.ValidateFile(targetPath);
             File.Copy(legacyPath, targetPath, overwrite: false);
             AppLogger.LogStatic($"UpscaleModelLocator: copied legacy model to {targetPath}");
         }

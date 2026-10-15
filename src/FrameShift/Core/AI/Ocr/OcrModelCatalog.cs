@@ -47,58 +47,22 @@ internal static class OcrModelDownloader
 {
     public static async Task DownloadAsync(OcrModelDefinition model, IProgress<AiModelDownloadProgress> progress, CancellationToken token)
     {
-        // File sharing makes the lock cross-process; unlike a Mutex, it can be held across awaits.
-        OcrModelDirectorySafety.ValidateDownloadPath(AiModelStorage.RootDirectory, model.DirectoryPath);
+        token.ThrowIfCancellationRequested();
         AiModelStorage.EnsureDirectory(model.DirectoryPath);
-        FileStream? lease = null;
-        var lockPath = Path.Combine(model.DirectoryPath, ".download-lock");
-        OcrModelDirectorySafety.ValidateDownloadPath(AiModelStorage.RootDirectory, lockPath);
-        try
+        long complete = 0;
+        foreach (var file in model.Files)
         {
-            while (lease is null)
-            {
-                token.ThrowIfCancellationRequested();
-                try
-                {
-                    lease = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                }
-                catch (IOException ex) when ((ex.HResult & 0xffff) is 32 or 33)
-                {
-                    progress.Report(new(0, "Waiting for another OCR download..."));
-                    await Task.Delay(250, token).ConfigureAwait(false);
-                }
-            }
-
-            Directory.CreateDirectory(Path.Combine(model.DirectoryPath, "det"));
-            Directory.CreateDirectory(Path.Combine(model.DirectoryPath, "rec"));
-            long complete = 0;
-            foreach (var file in model.Files)
-            {
-                token.ThrowIfCancellationRequested();
-                var destination = Path.Combine(model.DirectoryPath, file.Path);
-                OcrModelDirectorySafety.ValidateDownloadPath(AiModelStorage.RootDirectory, destination);
-                OcrModelDirectorySafety.ValidateDownloadPath(AiModelStorage.RootDirectory, destination + ".tmp");
-                var valid = File.Exists(destination) && new FileInfo(destination).Length == file.Bytes && AiModelFileDownloader.VerifySha256File(destination, file.Sha256, null, "OCR");
-                if (!valid)
-                {
-                    var completedBytes = complete;
-                    var fileProgress = new ForwardProgress<AiModelDownloadProgress>(p => progress.Report(new((int)((completedBytes + file.Bytes * p.Percent / 100) * 100 / model.SizeBytes), $"{file.Path}: {p.Status}")));
-                    await AiModelFileDownloader.DownloadAsync($"https://huggingface.co/Gaurox/frameshift-models/resolve/{OcrModelCatalog.Revision}/{model.Folder}/{file.Path}", destination, file.Sha256, fileProgress, token, "OCR").ConfigureAwait(false);
-                }
-
-                complete += file.Bytes;
-                progress.Report(new((int)(complete * 100 / model.SizeBytes), $"Verified {file.Path}"));
-            }
+            token.ThrowIfCancellationRequested();
+            var destination = Path.Combine(model.DirectoryPath, file.Path);
+            var completedBytes = complete;
+            var fileProgress = new ForwardProgress<AiModelDownloadProgress>(p => progress.Report(new(
+                (int)((completedBytes + file.Bytes * p.Percent / 100) * 100 / model.SizeBytes),
+                $"{file.Path}: {p.Status}")));
+            await AiModelFileDownloader.DownloadAsync(
+                $"https://huggingface.co/Gaurox/frameshift-models/resolve/{OcrModelCatalog.Revision}/{model.Folder}/{file.Path}",
+                destination, file.Sha256, file.Bytes, fileProgress, token, "OCR").ConfigureAwait(false);
+            complete += file.Bytes;
+            progress.Report(new((int)(complete * 100 / model.SizeBytes), $"Verified {file.Path}"));
         }
-        finally
-        {
-            lease?.Dispose();
-        }
-        // Keep the empty lock file: removing it after releasing the lease can race another downloader.
     }
-}
-
-internal sealed class ForwardProgress<T>(Action<T> report) : IProgress<T>
-{
-    public void Report(T value) => report(value);
 }

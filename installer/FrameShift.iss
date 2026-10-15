@@ -123,6 +123,13 @@ const
   FileAttributeDirectory = $00000010;
   InvalidFileAttributes = $FFFFFFFF;
 
+type
+  TModelDirectoryHandles = array of THandle;
+  TModelAttributeTag = record
+    Attributes: Cardinal;
+    Tag: Cardinal;
+  end;
+
 var
   InstalledVersion: string;
   HasLegacyUserInstall: Boolean;
@@ -1590,6 +1597,69 @@ end;
 function GetFileAttributes(const FileName: string): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
 
+function OpenModelDirectory(const FileName: string; Access, Sharing: Cardinal;
+  Security: Integer; Disposition, Flags: Cardinal; Template: THandle): THandle;
+  external 'CreateFileW@kernel32.dll stdcall';
+function InspectModelDirectory(Handle: THandle; InfoClass: Integer;
+  var Info: TModelAttributeTag; Size: Cardinal): Boolean;
+  external 'GetFileInformationByHandleEx@kernel32.dll stdcall';
+function CloseModelDirectory(Handle: THandle): Boolean;
+  external 'CloseHandle@kernel32.dll stdcall';
+
+procedure ReleaseModelDirectoryPath(var Handles: TModelDirectoryHandles);
+var
+  I: Integer;
+begin
+  for I := GetArrayLength(Handles) - 1 downto 0 do
+    if Handles[I] <> -1 then CloseModelDirectory(Handles[I]);
+  SetArrayLength(Handles, 0);
+end;
+
+function AcquireModelDirectoryPath(const DirectoryName: string;
+  var Handles: TModelDirectoryHandles): Boolean;
+var
+  Paths: TArrayOfString;
+  CurrentPath, ParentPath: string;
+  I, Count: Integer;
+  Handle: THandle;
+  Info: TModelAttributeTag;
+begin
+  Result := False;
+  SetArrayLength(Handles, 0);
+  CurrentPath := RemoveBackslashUnlessRoot(ExpandFileName(DirectoryName));
+  while CurrentPath <> '' do
+  begin
+    Count := GetArrayLength(Paths);
+    SetArrayLength(Paths, Count + 1);
+    Paths[Count] := CurrentPath;
+    ParentPath := RemoveBackslashUnlessRoot(ExtractFileDir(CurrentPath));
+    if CompareText(CurrentPath, ParentPath) = 0 then break;
+    CurrentPath := ParentPath;
+  end;
+  // Lock from the volume/share root down, and inspect the opened object rather than
+  // checking a name that another process could replace before the next operation.
+  for I := GetArrayLength(Paths) - 1 downto 0 do
+  begin
+    Handle := OpenModelDirectory(Paths[I], $80000000, 1, 0, 3, $02200000, 0);
+    if Handle = -1 then
+    begin
+      ReleaseModelDirectoryPath(Handles);
+      exit;
+    end;
+    Count := GetArrayLength(Handles);
+    SetArrayLength(Handles, Count + 1);
+    Handles[Count] := Handle;
+    if not InspectModelDirectory(Handle, 9, Info, 8) or
+       ((Info.Attributes and FileAttributeReparsePoint) <> 0) or
+       ((Info.Attributes and FileAttributeDirectory) = 0) then
+    begin
+      ReleaseModelDirectoryPath(Handles);
+      exit;
+    end;
+  end;
+  Result := GetArrayLength(Handles) > 0;
+end;
+
 function IsReparsePoint(const DirectoryName: string): Boolean;
 var
   Attributes: Cardinal;
@@ -1607,21 +1677,21 @@ begin
   // Fail closed if the generated candidate ever falls outside the configured root.
   Result := True;
   CurrentDirectory := RemoveBackslashUnlessRoot(ExpandFileName(DirectoryName));
+  if not PathIsSameOrChild(CurrentDirectory, ModelsDir) then
+    exit;
 
-  while PathIsSameOrChild(CurrentDirectory, ModelsDir) do
+  // Inspect ancestors above the configured root as well (a parent may be a junction).
+  while CurrentDirectory <> '' do
   begin
     if IsReparsePoint(CurrentDirectory) then
       exit;
 
-    if CompareText(CurrentDirectory, ModelsDir) = 0 then
+    ParentDirectory := RemoveBackslashUnlessRoot(ExtractFileDir(CurrentDirectory));
+    if (ParentDirectory = '') or (CompareText(ParentDirectory, CurrentDirectory) = 0) then
     begin
       Result := False;
       exit;
     end;
-
-    ParentDirectory := RemoveBackslashUnlessRoot(ExtractFileDir(CurrentDirectory));
-    if CompareText(ParentDirectory, CurrentDirectory) = 0 then
-      exit;
 
     CurrentDirectory := ParentDirectory;
   end;
@@ -1633,6 +1703,8 @@ var
 begin
   Result := False;
   if IsReparsePoint(DirectoryName) then
+    exit;
+  if IsReparsePoint(AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName) then
     exit;
   if not LoadStringFromFile(
     AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName,
@@ -1653,7 +1725,8 @@ begin
   begin
     ExpectedName := GetListItem(Remaining);
     if (CompareText(FileName, ExpectedName) = 0) or
-       (CompareText(FileName, ExpectedName + '.tmp') = 0) then
+       (CompareText(FileName, ExpectedName + '.tmp') = 0) or
+       (CompareText(FileName, ExpectedName + '.download-lock') = 0) then
     begin
       Result := True;
       exit;
@@ -1773,6 +1846,7 @@ var
   ChildName: string;
   ChildDirectory: string;
   ChildFiles: string;
+  Handles, ChildHandles: TModelDirectoryHandles;
 begin
   // Do not call DelTree here. A file or subdirectory added after the safety check
   // must remain in place rather than becoming part of a recursive deletion.
@@ -1781,56 +1855,71 @@ begin
   if (RemainingFiles = '') or
      not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
     exit;
-
-  if IsOcrModelDirectory(RelativePath) then
-  begin
-    ChildFiles := 'det,rec';
-    while ChildFiles <> '' do
+  if not AcquireModelDirectoryPath(DirectoryName, Handles) then exit;
+  try
+    if IsOcrModelDirectory(RelativePath) then
     begin
-      ChildName := GetListItem(ChildFiles);
-      ChildDirectory := AddBackslash(DirectoryName) + ChildName;
-      if DirExists(ChildDirectory) then
+      ChildFiles := 'det,rec';
+      while ChildFiles <> '' do
       begin
-        RemainingFiles := GetExpectedModelFileList(RelativePath + '\' + ChildName);
-        while RemainingFiles <> '' do
+        ChildName := GetListItem(ChildFiles);
+        ChildDirectory := AddBackslash(DirectoryName) + ChildName;
+        if DirExists(ChildDirectory) then
         begin
-          if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
-            exit;
-          FileName := GetListItem(RemainingFiles);
-          FilePath := AddBackslash(ChildDirectory) + FileName;
-          if FileExists(FilePath) and not DeleteFile(FilePath) then exit;
-          if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then exit;
+          if not AcquireModelDirectoryPath(ChildDirectory, ChildHandles) then exit;
+          try
+            RemainingFiles := GetExpectedModelFileList(RelativePath + '\' + ChildName);
+            while RemainingFiles <> '' do
+            begin
+              if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+                exit;
+              FileName := GetListItem(RemainingFiles);
+              FilePath := AddBackslash(ChildDirectory) + FileName;
+              if FileExists(FilePath) and not DeleteFile(FilePath) then exit;
+              if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then exit;
+              if FileExists(FilePath + '.download-lock') and not DeleteFile(FilePath + '.download-lock') then exit;
+            end;
+          finally
+            ReleaseModelDirectoryPath(ChildHandles);
+          end;
+          if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) or
+             not RemoveDir(ChildDirectory) then exit;
         end;
-        if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) or
-           not RemoveDir(ChildDirectory) then exit;
       end;
     end;
-  end;
-  RemainingFiles := GetExpectedModelFileList(RelativePath);
+    RemainingFiles := GetExpectedModelFileList(RelativePath);
 
-  while RemainingFiles <> '' do
-  begin
+    while RemainingFiles <> '' do
+    begin
+      if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
+        exit;
+
+      FileName := GetListItem(RemainingFiles);
+      FilePath := AddBackslash(DirectoryName) + FileName;
+      if FileExists(FilePath) and not DeleteFile(FilePath) then
+        exit;
+      if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then
+        exit;
+      if FileExists(FilePath + '.download-lock') and not DeleteFile(FilePath + '.download-lock') then
+        exit;
+    end;
+
     if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
       exit;
 
-    FileName := GetListItem(RemainingFiles);
-    FilePath := AddBackslash(DirectoryName) + FileName;
+    FilePath := AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName;
     if FileExists(FilePath) and not DeleteFile(FilePath) then
       exit;
-    if FileExists(FilePath + '.tmp') and not DeleteFile(FilePath + '.tmp') then
-      exit;
+
+    // RemoveDir is non-recursive. If any foreign content appeared while uninstalling,
+    // this call fails closed and the remaining directory is preserved.
+    // Only the leaf must be released to remove it; keep every ancestor pinned.
+    CloseModelDirectory(Handles[GetArrayLength(Handles) - 1]);
+    Handles[GetArrayLength(Handles) - 1] := -1;
+    Result := (not DirExists(DirectoryName)) or RemoveDir(DirectoryName);
+  finally
+    ReleaseModelDirectoryPath(Handles);
   end;
-
-  if not CanDeleteOwnedModelDirectory(ModelsDir, DirectoryName, RelativePath) then
-    exit;
-
-  FilePath := AddBackslash(DirectoryName) + ModelDirectoryMarkerFileName;
-  if FileExists(FilePath) and not DeleteFile(FilePath) then
-    exit;
-
-  // RemoveDir is non-recursive. If any foreign content appeared while uninstalling,
-  // this call fails closed and the remaining directory is preserved.
-  Result := (not DirExists(DirectoryName)) or RemoveDir(DirectoryName);
 end;
 
 function GetKnownModelDirectories(): string;

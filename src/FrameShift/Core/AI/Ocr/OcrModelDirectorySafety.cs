@@ -6,11 +6,7 @@ internal static class OcrModelDirectorySafety
     {
         if (!AiModelDirectorySafety.IsSameOrChildPath(path, root))
             throw new InvalidOperationException("OCR downloads must stay inside the configured models directory.");
-        for (var current = Path.GetFullPath(path); AiModelDirectorySafety.IsSameOrChildPath(current, root); current = Path.GetDirectoryName(current)!)
-        {
-            if ((File.Exists(current) || Directory.Exists(current)) && (File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
-                throw new InvalidOperationException("The OCR model path contains a filesystem link. Choose a regular models directory in Settings.");
-        }
+        AiModelDirectorySafety.ValidateAncestors(path);
     }
 
     public static bool ContainsOnlyExpectedFiles(string root, string directory, OcrModelDefinition model)
@@ -18,8 +14,11 @@ internal static class OcrModelDirectorySafety
         try
         {
             ValidateDownloadPath(root, directory);
+            using var lease = AiModelPathLease.Acquire(directory);
+            if (!AiModelStorage.HasOwnershipMarker(directory)) return false;
             var allowed = new HashSet<string>(model.Files.Select(file => file.Path.Replace('/', Path.DirectorySeparatorChar)), StringComparer.OrdinalIgnoreCase);
             allowed.UnionWith(model.Files.Select(file => file.Path.Replace('/', Path.DirectorySeparatorChar) + ".tmp"));
+            allowed.UnionWith(model.Files.Select(file => file.Path.Replace('/', Path.DirectorySeparatorChar) + ".download-lock"));
             allowed.Add(AiModelStorage.ModelDirectoryMarkerFileName);
             allowed.Add(".download-lock");
             foreach (var entry in Directory.EnumerateFileSystemEntries(directory))
@@ -31,6 +30,7 @@ internal static class OcrModelDirectorySafety
                 {
                     if (name is not "det" and not "rec")
                         return false;
+                    using var childLease = AiModelPathLease.Acquire(entry);
                     foreach (var file in Directory.EnumerateFileSystemEntries(entry))
                     {
                         if ((File.GetAttributes(file) & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0 || !allowed.Contains(Path.GetRelativePath(directory, file)))

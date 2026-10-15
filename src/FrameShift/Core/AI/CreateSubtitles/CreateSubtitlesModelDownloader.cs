@@ -26,6 +26,7 @@ internal static class CreateSubtitlesModelDownloader
         IProgress<AiModelDownloadProgress> progress,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         CreateSubtitlesModelLocator.EnsureDirectoryExists(model);
 
         var totalBytes = Math.Max(1L, model.ExpectedTotalSizeBytes);
@@ -59,6 +60,7 @@ internal static class CreateSubtitlesModelDownloader
                 artifact.DownloadUrl,
                 destinationPath,
                 artifact.ExpectedSha256,
+                artifact.ExpectedSizeBytes,
                 artifactProgress,
                 cancellationToken,
                 $"{LogPrefix}:{artifact.FileName}").ConfigureAwait(false);
@@ -69,29 +71,4 @@ internal static class CreateSubtitlesModelDownloader
         progress.Report(new AiModelDownloadProgress(100, $"{model.DisplayName} is ready."));
     }
 
-    public static void RemoveInvalidFiles(CreateSubtitlesModelDefinition model, AppLogger logger)
-    {
-        foreach (var artifact in model.Artifacts)
-        {
-            var artifactPath = CreateSubtitlesModelLocator.GetArtifactPath(model, artifact);
-            if (!File.Exists(artifactPath))
-            {
-                continue;
-            }
-
-            if (AiModelFileDownloader.VerifySha256File(artifactPath, artifact.ExpectedSha256, logger, LogPrefix))
-            {
-                continue;
-            }
-
-            try
-            {
-                File.Delete(artifactPath);
-            }
-            catch (Exception ex)
-            {
-                logger.Log($"{LogPrefix}: failed to delete invalid artifact '{artifactPath}'. {ex.Message}");
-            }
-        }
-    }
 }

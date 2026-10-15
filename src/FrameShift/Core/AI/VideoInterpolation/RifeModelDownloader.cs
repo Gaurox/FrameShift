@@ -20,6 +20,7 @@ internal static class RifeModelDownloader
             model.DownloadUrl,
             destinationPath,
             model.ExpectedSha256,
+            model.ExpectedSizeBytes,
             progress,
             cancellationToken,
             LogPrefix).ConfigureAwait(false);

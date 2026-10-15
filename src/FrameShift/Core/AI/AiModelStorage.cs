@@ -92,7 +92,7 @@ internal static class AiModelStorage
         }
 
         var directoryAlreadyExisted = Directory.Exists(path);
-        Directory.CreateDirectory(path);
+        using var lease = AiModelPathLease.Acquire(path, create: true);
 
         // Existing folders may be shared with other software. Never retroactively claim one:
         // only a directory first created by FrameShift receives the ownership marker used by
@@ -121,8 +121,7 @@ internal static class AiModelStorage
 
     internal static bool CanDeleteOwnedKnownModelDirectory(string modelsRoot, string directory)
     {
-        if (!AiModelDirectorySafety.IsSameOrChildPath(directory, modelsRoot) ||
-            !HasOwnershipMarker(directory))
+        if (!AiModelDirectorySafety.IsSameOrChildPath(directory, modelsRoot))
         {
             return false;
         }
@@ -138,14 +137,18 @@ internal static class AiModelStorage
 
         try
         {
+            using var lease = AiModelPathLease.Acquire(directory);
+            if (!HasOwnershipMarker(directory)) return false;
             var allowedFiles = new HashSet<string>(expectedFiles, StringComparer.OrdinalIgnoreCase)
             {
                 ModelDirectoryMarkerFileName
             };
             allowedFiles.UnionWith(expectedFiles.Select(file => file + ".tmp"));
+            allowedFiles.UnionWith(expectedFiles.Select(file => file + ".download-lock"));
 
             return Directory.EnumerateFileSystemEntries(directory).All(entry =>
-                File.Exists(entry) && allowedFiles.Contains(Path.GetFileName(entry)));
+                (File.GetAttributes(entry) & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == 0 &&
+                allowedFiles.Contains(Path.GetFileName(entry)));
         }
         catch
         {
@@ -157,10 +160,14 @@ internal static class AiModelStorage
     {
         try
         {
+            using var lease = AiModelPathLease.Acquire(path);
             var markerPath = Path.Combine(path, ModelDirectoryMarkerFileName);
-            return File.Exists(markerPath) &&
-                   string.Equals(
-                       File.ReadAllText(markerPath).Trim(),
+            using var handle = AiModelPathLease.Open(markerPath, 0x80000000, FileShare.Read, 3);
+            AiModelPathLease.CheckRegular(handle);
+            using var stream = new FileStream(handle, FileAccess.Read);
+            using var reader = new StreamReader(stream);
+            return stream.Length <= 1024 && string.Equals(
+                       reader.ReadToEnd().Trim(),
                        ModelDirectoryMarkerContent,
                        StringComparison.Ordinal);
         }
@@ -180,7 +187,10 @@ internal static class AiModelStorage
             var directory = Path.GetDirectoryName(targetPath);
             if (!string.IsNullOrWhiteSpace(directory))
                 EnsureDirectory(directory);
-
+            using var targetLease = AiModelPathLease.Acquire(directory!, allowFileUpdates: true);
+            using var sourceLease = AiModelPathLease.Acquire(Path.GetDirectoryName(legacyPath)!, allowFileUpdates: true);
+            AiModelPathLease.ValidateFile(legacyPath);
+            AiModelPathLease.ValidateFile(targetPath);
             File.Move(legacyPath, targetPath);
             AppLogger.LogStatic($"{logPrefix}: migrated legacy file to {targetPath}");
         }
@@ -197,6 +207,8 @@ internal static class AiModelStorage
 
         try
         {
+            using var lease = AiModelPathLease.Acquire(Path.GetDirectoryName(path)!, allowFileUpdates: true);
+            AiModelDirectorySafety.ValidateAncestors(path);
             if (Directory.GetFileSystemEntries(path).Length == 0)
             {
                 Directory.Delete(path);

@@ -1,11 +1,8 @@
 using System;
 using System.IO;
-using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.AI;
-using FrameShift.Core.Logging;
 
 namespace FrameShift.Core.AI.RemoveNoise;
 
@@ -33,163 +30,21 @@ internal static class DeepFilterNetModelDownloader
         IProgress<AiModelDownloadProgress> progress,
         CancellationToken cancellationToken)
     {
-        using var handler = new HttpClientHandler { AllowAutoRedirect = true };
-        using var httpClient = new HttpClient(handler);
-        httpClient.Timeout = Timeout.InfiniteTimeSpan;
-        httpClient.DefaultRequestHeaders.Add("User-Agent", "FrameShift/1.0 (model-downloader)");
-
         for (var i = 0; i < Files.Length; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var file = Files[i];
-            var destPath = Path.Combine(modelsDirectory, file.Name);
-
             var fileIndex = i;
-            var fileProgress = new Progress<(int percent, string status)>(p =>
-            {
-                var composite = Math.Clamp(fileIndex * 25 + p.percent * 25 / 100, 0, 99);
-                progress.Report(new AiModelDownloadProgress(
-                    composite,
-                    $"[{fileIndex + 1}/{Files.Length}] {file.Name} — {p.status}"));
-            });
-
-            await DownloadFileAsync(
-                httpClient,
-                BaseUrl + file.Name,
-                destPath,
-                file.Sha256,
-                fileProgress,
-                cancellationToken).ConfigureAwait(false);
+            var fileProgress = new ForwardProgress<AiModelDownloadProgress>(p => progress.Report(new(
+                Math.Clamp(fileIndex * 25 + p.Percent * 25 / 100, 0, 99),
+                $"[{fileIndex + 1}/{Files.Length}] {file.Name} — {p.Status}")));
+            // A small config and three model files; a fixed ceiling remains effective even
+            // when the server omits Content-Length. SHA256 still identifies each artifact.
+            var maximumBytes = file.Name == "config.ini" ? 64L * 1024 : 16L * 1024 * 1024;
+            await AiModelFileDownloader.DownloadAsync(BaseUrl + file.Name,
+                Path.Combine(modelsDirectory, file.Name), file.Sha256, maximumBytes,
+                fileProgress, cancellationToken, "DeepFilterNetModelDownloader").ConfigureAwait(false);
         }
-
-        progress.Report(new AiModelDownloadProgress(100, "All files downloaded."));
-    }
-
-    private static async Task DownloadFileAsync(
-        HttpClient httpClient,
-        string url,
-        string destPath,
-        string expectedSha256,
-        IProgress<(int percent, string status)> progress,
-        CancellationToken cancellationToken)
-    {
-        if (File.Exists(destPath))
-        {
-            progress.Report((100, "Already present."));
-            return;
-        }
-
-        var tempPath = destPath + ".tmp";
-
-        try
-        {
-            AppLogger.LogStatic($"DeepFilterNetModelDownloader: downloading {Path.GetFileName(destPath)}");
-
-            progress.Report((0, "Connecting..."));
-
-            using var response = await httpClient
-                .GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                .ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
-
-            var totalBytes = response.Content.Headers.ContentLength;
-
-            using var sourceStream = await response.Content
-                .ReadAsStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            using var fileStream = new FileStream(
-                tempPath,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                bufferSize: 81920,
-                useAsync: true);
-
-            var buffer = new byte[81920];
-            long totalBytesRead = 0L;
-            int bytesRead;
-
-            while ((bytesRead = await sourceStream
-                       .ReadAsync(buffer, cancellationToken)
-                       .ConfigureAwait(false)) > 0)
-            {
-                await fileStream
-                    .WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken)
-                    .ConfigureAwait(false);
-
-                totalBytesRead += bytesRead;
-
-                var percent = totalBytes is > 0
-                    ? (int)Math.Min(99, totalBytesRead * 100L / totalBytes.Value)
-                    : 0;
-
-                var mbReceived = totalBytesRead / (1024.0 * 1024.0);
-                var totalDisplay = totalBytes.HasValue
-                    ? $"{totalBytes.Value / (1024.0 * 1024.0):0.0} MB"
-                    : "unknown";
-
-                progress.Report((percent, $"{mbReceived:0.0} MB / {totalDisplay}"));
-            }
-
-            await fileStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-            fileStream.Close();
-
-            if (File.Exists(destPath))
-            {
-                TryDeleteFile(tempPath);
-                progress.Report((100, "Already present."));
-                return;
-            }
-
-            progress.Report((99, "Verifying integrity..."));
-            VerifySha256(tempPath, expectedSha256);
-
-            File.Move(tempPath, destPath);
-
-            AppLogger.LogStatic($"DeepFilterNetModelDownloader: {Path.GetFileName(destPath)} complete.");
-            progress.Report((100, "Done."));
-        }
-        catch (InvalidDataException)
-        {
-            TryDeleteFile(tempPath);
-            throw;
-        }
-        catch (OperationCanceledException)
-        {
-            AppLogger.LogStatic($"DeepFilterNetModelDownloader: cancelled on {Path.GetFileName(destPath)}.");
-            TryDeleteFile(tempPath);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            AppLogger.LogStatic($"DeepFilterNetModelDownloader: failed on {Path.GetFileName(destPath)}. {ex}");
-            TryDeleteFile(tempPath);
-            throw;
-        }
-    }
-
-    private static void VerifySha256(string filePath, string expectedHex)
-    {
-        using var sha = SHA256.Create();
-        using var stream = File.OpenRead(filePath);
-        var hash = sha.ComputeHash(stream);
-        var actual = Convert.ToHexString(hash);
-
-        if (!string.Equals(actual, expectedHex, StringComparison.OrdinalIgnoreCase))
-        {
-            AppLogger.LogStatic(
-                $"DeepFilterNetModelDownloader: SHA256 mismatch on {Path.GetFileName(filePath)}. expected={expectedHex} actual={actual}");
-            throw new InvalidDataException(
-                $"Downloaded file {Path.GetFileName(filePath)} is corrupted (SHA256 mismatch). Please try again.");
-        }
-
-        AppLogger.LogStatic($"DeepFilterNetModelDownloader: SHA256 OK for {Path.GetFileName(filePath)}.");
-    }
-
-    private static void TryDeleteFile(string path)
-    {
-        try { if (File.Exists(path)) File.Delete(path); }
-        catch { }
+        progress.Report(new(100, "All files downloaded."));
     }
 }

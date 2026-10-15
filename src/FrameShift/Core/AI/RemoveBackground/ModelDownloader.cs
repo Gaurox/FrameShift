@@ -20,6 +20,7 @@ public static class ModelDownloader
             def.DownloadUrl,
             destinationPath,
             def.ExpectedSha256,
+            def.ExpectedSizeBytes,
             progress,
             cancellationToken,
             LogPrefix).ConfigureAwait(false);

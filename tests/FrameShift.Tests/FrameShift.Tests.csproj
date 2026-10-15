@@ -37,6 +37,7 @@
     <None Update="Assets\FakeMediaProcess.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\HoldModelDownloadLease.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Assets\OcrBrochureLayout.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Assets\RemoveNoise\*.onnx" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

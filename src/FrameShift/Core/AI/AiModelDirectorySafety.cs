@@ -21,7 +21,8 @@ internal static class AiModelDirectorySafety
 
         try
         {
-            var candidate = TrimEndingDirectorySeparator(Path.GetFullPath(value.Trim()));
+            var candidate = AiModelPathLease.Normalize(value.Trim());
+            ValidateAncestors(candidate);
             var defaultDirectory = TrimEndingDirectorySeparator(AiModelSettings.DefaultModelsDirectoryPath);
 
             if (IsVolumeRoot(candidate))
@@ -66,9 +67,23 @@ internal static class AiModelDirectorySafety
             normalizedDirectory = candidate;
             return true;
         }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             return false;
+        }
+    }
+
+    internal static void ValidateAncestors(string path)
+    {
+        for (string? current = AiModelPathLease.Normalize(path); current is not null; current = Path.GetDirectoryName(current))
+        {
+            try
+            {
+                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
+                    throw new InvalidOperationException("The AI models path contains a filesystem link.");
+            }
+            catch (FileNotFoundException) { }
+            catch (DirectoryNotFoundException) { }
         }
     }
 

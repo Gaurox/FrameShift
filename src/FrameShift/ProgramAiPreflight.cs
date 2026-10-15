@@ -535,8 +535,7 @@ internal static partial class Program
             return true;
         }
 
-        CreateSubtitles.CreateSubtitlesModelDownloader.RemoveInvalidFiles(model, logger);
-
+        // Keep existing artifacts until a verified replacement can be activated atomically.
         logger.Log($"Program: Create Subtitles model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
             "FrameShift AI - Create Subtitles",
