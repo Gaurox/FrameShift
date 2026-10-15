@@ -59,17 +59,15 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
 
         ValidateInput(inputPath);
 
-        EnsureSession(progress, cancellationToken);
-
         cancellationToken.ThrowIfCancellationRequested();
         progress.Report(new InferenceProgress(5, "Loading image..."));
 
-        using var original = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputPath);
-
-        if ((long)original.Width * original.Height > MaxPixels)
-            throw new InvalidOperationException(
-                $"Image too large: {original.Width}x{original.Height}. " +
-                $"Limit is {MaxPixels:N0} pixels.");
+        using var original = SafeImageReader.LoadValidatedFirstFrame<Rgba32>(inputPath, (width, height) =>
+        {
+            if ((long)width * height > MaxPixels)
+                throw new InvalidOperationException($"Image too large: {width}x{height}. Limit is {MaxPixels:N0} pixels.");
+        }, cancellationToken);
+        EnsureSession(progress, cancellationToken);
 
         AppLogger.LogStatic(
             $"BackgroundRemovalEngine: image loaded. size={original.Width}x{original.Height}");

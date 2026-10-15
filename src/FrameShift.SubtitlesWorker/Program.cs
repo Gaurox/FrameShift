@@ -2,8 +2,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using NAudio.Wave;
-using NAudio.Wave.SampleProviders;
 using SherpaOnnx;
 
 namespace FrameShift.SubtitlesWorker;
@@ -28,7 +26,7 @@ internal static class Program
 
         try
         {
-            var wave = WaveLoader.LoadMono16Khz(request.WavPath);
+            using var wave = new WaveWindowReader(request.WavPath);
             response.AudioDurationSeconds = wave.DurationSeconds;
 
             if (IsCancellationRequested(request.CancelSignalPath))
@@ -103,7 +101,7 @@ internal static class Program
         }
     }
 
-    private static string DetectLanguage(CreateSubtitlesWorkerRequest request, LoadedWave wave)
+    private static string DetectLanguage(CreateSubtitlesWorkerRequest request, WaveWindowReader wave)
     {
         var config = new SpokenLanguageIdentificationConfig
         {
@@ -120,8 +118,8 @@ internal static class Program
 
         using var lid = new SpokenLanguageIdentification(config);
         using var stream = lid.CreateStream();
-        var detectionWindow = WaveWindowPlanner.TakeLanguageWindow(wave.Samples, wave.SampleRate);
-        stream.AcceptWaveform(wave.SampleRate, detectionWindow);
+        var detectionWindow = wave.Read(0, (int)Math.Min(wave.SampleCount, WaveWindowReader.SampleRate * 20), () => IsCancellationRequested(request.CancelSignalPath));
+        stream.AcceptWaveform(WaveWindowReader.SampleRate, detectionWindow);
         EmitProgress(10, "Detecting language...");
         var result = lid.Compute(stream);
         return result.Lang ?? string.Empty;
@@ -172,13 +170,9 @@ internal static class Program
     private static (List<CreateSubtitlesWorkerWord> Words, List<CreateSubtitlesWorkerToken> Tokens) TranscribeAllWindows(
         CreateSubtitlesWorkerRequest request,
         OfflineRecognizer recognizer,
-        LoadedWave wave)
+        WaveWindowReader wave)
     {
-        var windows = WaveWindowPlanner.Plan(
-            wave.Samples.Length,
-            wave.SampleRate,
-            request.WindowMilliseconds,
-            request.OverlapMilliseconds);
+        var windows = wave.Plan(request.WindowMilliseconds, request.OverlapMilliseconds);
         var mergedWords = new List<WordTiming>();
         var mergedTokens = new List<TokenTiming>();
 
@@ -194,11 +188,11 @@ internal static class Program
                 20 + (int)Math.Round((index / (double)Math.Max(1, windows.Count)) * 72d, MidpointRounding.AwayFromZero),
                 $"Transcribing window {index + 1}/{windows.Count}...");
 
-            var buffer = new float[window.LengthSamples];
-            Array.Copy(wave.Samples, window.StartSample, buffer, 0, window.LengthSamples);
+            var buffer = wave.Read(window.StartSample, window.LengthSamples,
+                () => IsCancellationRequested(request.CancelSignalPath));
 
             using var stream = recognizer.CreateStream();
-            stream.AcceptWaveform(wave.SampleRate, buffer);
+            stream.AcceptWaveform(WaveWindowReader.SampleRate, buffer);
             recognizer.Decode(stream);
 
             var result = stream.Result;
@@ -335,13 +329,6 @@ internal static class Program
         public string Message { get; set; } = string.Empty;
     }
 
-    private sealed record LoadedWave(int SampleRate, int Channels, float[] Samples)
-    {
-        public double DurationSeconds => Samples.Length / (double)SampleRate;
-    }
-
-    private sealed record WaveWindow(int StartSample, int LengthSamples, double StartSeconds);
-
     private sealed record WordTiming(string Text, string NormalizedText, double StartSeconds);
 
     private sealed record TokenTiming(
@@ -352,90 +339,6 @@ internal static class Program
         bool StartsNewWord,
         bool IsWhitespaceOnly,
         bool IsPunctuationOnly);
-
-    private static class WaveLoader
-    {
-        public static LoadedWave LoadMono16Khz(string path)
-        {
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException($"Wave file not found: {path}", path);
-            }
-
-            using var reader = new WaveFileReader(path);
-            if (reader.WaveFormat.Channels != 1)
-            {
-                throw new InvalidOperationException($"Expected mono WAV, got {reader.WaveFormat.Channels} channels.");
-            }
-
-            if (reader.WaveFormat.SampleRate != 16000)
-            {
-                throw new InvalidOperationException($"Expected 16 kHz WAV, got {reader.WaveFormat.SampleRate} Hz.");
-            }
-
-            var provider = reader.ToSampleProvider();
-            var samples = new List<float>(checked((int)(reader.SampleCount / Math.Max(1, reader.WaveFormat.Channels))));
-            var buffer = new float[4096];
-            while (true)
-            {
-                var read = provider.Read(buffer, 0, buffer.Length);
-                if (read == 0)
-                {
-                    break;
-                }
-
-                for (var index = 0; index < read; index++)
-                {
-                    samples.Add(buffer[index]);
-                }
-            }
-
-            return new LoadedWave(reader.WaveFormat.SampleRate, reader.WaveFormat.Channels, samples.ToArray());
-        }
-    }
-
-    private static class WaveWindowPlanner
-    {
-        public static IReadOnlyList<WaveWindow> Plan(int totalSamples, int sampleRate, int windowMilliseconds, int overlapMilliseconds)
-        {
-            var windows = new List<WaveWindow>();
-            var cappedWindowMilliseconds = Math.Clamp(windowMilliseconds, 10_000, 29_000);
-            var cappedOverlapMilliseconds = Math.Clamp(overlapMilliseconds, 0, cappedWindowMilliseconds / 3);
-            var windowSamples = Math.Max(sampleRate, sampleRate * cappedWindowMilliseconds / 1000);
-            var overlapSamples = sampleRate * cappedOverlapMilliseconds / 1000;
-            var stepSamples = Math.Max(sampleRate / 2, windowSamples - overlapSamples);
-
-            if (totalSamples <= windowSamples)
-            {
-                windows.Add(new WaveWindow(0, totalSamples, 0d));
-                return windows;
-            }
-
-            var startSample = 0;
-            while (startSample < totalSamples)
-            {
-                var remaining = totalSamples - startSample;
-                var length = Math.Min(windowSamples, remaining);
-                windows.Add(new WaveWindow(startSample, length, startSample / (double)sampleRate));
-                if (startSample + length >= totalSamples)
-                {
-                    break;
-                }
-
-                startSample += stepSamples;
-            }
-
-            return windows;
-        }
-
-        public static float[] TakeLanguageWindow(float[] samples, int sampleRate)
-        {
-            var length = Math.Min(samples.Length, sampleRate * 20);
-            var buffer = new float[length];
-            Array.Copy(samples, buffer, length);
-            return buffer;
-        }
-    }
 
     private static class WhisperWordBuilder
     {

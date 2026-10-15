@@ -146,7 +146,17 @@ public sealed class UpscaleTransparencyTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+        // Windows may retain a transient sharing lock after the native session
+        // has been disposed (e.g. a file scanner). A persistent lock still fails.
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+                return;
+            }
+            catch (IOException) when (attempt < 19) { Thread.Sleep(100); }
+        }
     }
 
     private sealed class InlineProgress(Action<UpscaleProgress> report) : IProgress<UpscaleProgress>

@@ -46,8 +46,9 @@ internal sealed class UpscaleEngine : IUpscaleEngine
             throw new FileNotFoundException("Input image not found.", inputPath);
 
         progress.Report(new UpscaleProgress(5, "Loading image..."));
-        using var source = FrameShift.Core.Helpers.SafeImageReader.Load<Rgba32>(inputPath);
-        UpscaleFrameProcessor.ValidateSourceSize(source.Width, source.Height);
+        using var source = SafeImageReader.LoadValidatedFirstFrame<Rgba32>(inputPath,
+            (width, height) => UpscaleFrameProcessor.ValidateOutputSize(width, height, request, _definition.ScaleFactor),
+            cancellationToken);
         AppLogger.LogStatic(
             $"UpscaleEngine: image loaded. size={source.Width}x{source.Height}, model={_definition.Id}, scale={_definition.ScaleFactor}");
 

@@ -28,7 +28,7 @@ public sealed class ImageToPdfForm : Form
     private const float MaximumPreviewScale = 5.00f;
     private const float PreviewZoomStep = 1.12f;
     private readonly List<ImageCanvasItem> _items = [];
-    private readonly Dictionary<string, Bitmap> _bitmapCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ImageToPdfBitmapCache _bitmapCache = new();
     private readonly Stack<EditorHistoryState> _undoHistory = [];
     private readonly Stack<EditorHistoryState> _redoHistory = [];
     private readonly List<ClipboardImageItem> _clipboardItems = [];
@@ -278,14 +278,22 @@ public sealed class ImageToPdfForm : Form
                     _loadStatus.Text = $"Loading: {Path.GetFileName(path)}";
                     if (!_bitmapCache.TryGetValue(path, out var cached))
                     {
-                        decoded = await LoadBitmapForImportAsync(path, token);
+                        if (_bitmapCache.Contains(path))
+                        {
+                            await _bitmapCache.LoadAsync(ActiveBitmapPaths().Append(path), ActiveBitmapPaths(), token);
+                            _bitmapCache.TryGetValue(path, out cached);
+                        }
+                        else
+                        {
+                            decoded = await LoadBitmapForImportAsync(path, token);
+                            await _bitmapCache.AddAsync(path, decoded, ActiveBitmapPaths(), token);
+                            cached = decoded;
+                            decoded = null;
+                        }
                         token.ThrowIfCancellationRequested();
                         if (_closing || IsDisposed) return;
-                        cached = decoded;
-                        _bitmapCache[path] = decoded;
-                        decoded = null;
                     }
-                    if (!TryAddBitmapItemInternal(path, cached, null, initial && _items.Count == 0, out var error, out _))
+                    if (!TryAddBitmapItemInternal(path, cached!, null, initial && _items.Count == 0, out var error, out _))
                         throw new InvalidOperationException(error);
                 }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
@@ -294,6 +302,7 @@ public sealed class ImageToPdfForm : Form
             }
             if (_closing || IsDisposed) return;
             if (!initial) CommitHistoryIfChanged(history);
+            PruneBitmapCache();
             RefreshImageList(_items.Count - 1);
             UpdateSelectionState(_items.Count - 1);
             if (initial) FitPreviewToView();
@@ -341,7 +350,6 @@ public sealed class ImageToPdfForm : Form
             _closing = true;
             _imageCancellation.Cancel();
             DisposeClipboardItems();
-            DisposeLoadedImages();
             CleanupTemporarySourcePaths();
             _toolTip?.Dispose();
             _ = DisposeImageCancellationAsync();
@@ -351,7 +359,8 @@ public sealed class ImageToPdfForm : Form
 
     private async Task DisposeImageCancellationAsync()
     {
-        try { await _imageImportTask; } finally { _imageCancellation.Dispose(); }
+        try { await _imageImportTask; }
+        finally { DisposeLoadedImages(); _imageCancellation.Dispose(); }
     }
     public ImageToPdfSettings? Settings { get; private set; }
 
@@ -507,7 +516,8 @@ public sealed class ImageToPdfForm : Form
             }
             : CloneItemSettings(templateSettings, sourcePath);
 
-        _bitmapCache[sourcePath] = bitmap;
+        try { _bitmapCache.Add(sourcePath, bitmap, ActiveBitmapPaths()); }
+        catch (Exception ex) { errorMessage = ex.Message; return false; }
         _items.Add(new ImageCanvasItem(settings, bitmap));
         selectedNewItem = true;
         return true;
@@ -966,6 +976,14 @@ public sealed class ImageToPdfForm : Form
             return;
         }
 
+        var clipboardBytes = selectedIndexes.Where(index => index >= 0 && index < _items.Count)
+            .Sum(index => (long)_items[index].Bitmap.Width * _items[index].Bitmap.Height * 4);
+        if (clipboardBytes > ImageToPdfBitmapCache.DefaultBudgetBytes)
+        {
+            _loadStatus.Text = "The selection exceeds the 512 MiB clipboard image budget. Copy fewer images at once.";
+            return;
+        }
+
         DisposeClipboardItems();
         _clipboardPasteCount = 0;
 
@@ -977,8 +995,7 @@ public sealed class ImageToPdfForm : Form
             }
 
             var item = _items[index];
-            var bitmapCopy = new Bitmap(item.Bitmap);
-            _clipboardItems.Add(new ClipboardImageItem(CloneItemSettings(item.Settings), bitmapCopy));
+            _clipboardItems.Add(new ClipboardImageItem(CloneItemSettings(item.Settings), new Bitmap(item.Bitmap)));
         }
 
         if (_clipboardItems.Count == 0)
@@ -994,6 +1011,7 @@ public sealed class ImageToPdfForm : Form
         catch
         {
         }
+        PruneBitmapCache();
     }
 
     private void CutSelectedImagesToClipboard()
@@ -1116,8 +1134,10 @@ public sealed class ImageToPdfForm : Form
             return;
         }
 
-        if (!TryAddBitmapItemInternal(sourcePath, new Bitmap(bitmap), null, false, out var errorMessage, out _))
+        var cachedBitmap = new Bitmap(bitmap);
+        if (!TryAddBitmapItemInternal(sourcePath, cachedBitmap, null, false, out var errorMessage, out _))
         {
+            cachedBitmap.Dispose();
             if (File.Exists(sourcePath))
                 File.Delete(sourcePath);
             ShowError(errorMessage ?? MediaActionMessages.ImageLoadFailed("Clipboard image"));
@@ -3058,28 +3078,47 @@ public sealed class ImageToPdfForm : Form
 
     private void UndoLastAction()
     {
-        if (_interactionMode != ImageInteractionMode.None || _undoHistory.Count == 0)
-        {
-            return;
-        }
-
-        var currentState = CaptureEditorHistoryState();
-        var previousState = _undoHistory.Pop();
-        _redoHistory.Push(currentState);
-        RestoreEditorHistoryState(previousState);
+        if (_pendingImports == 0 && !_closing)
+            _imageImportTask = MoveHistoryAsync(_undoHistory, _redoHistory);
     }
 
     private void RedoLastAction()
     {
-        if (_interactionMode != ImageInteractionMode.None || _redoHistory.Count == 0)
-        {
-            return;
-        }
+        if (_pendingImports == 0 && !_closing)
+            _imageImportTask = MoveHistoryAsync(_redoHistory, _undoHistory);
+    }
 
-        var currentState = CaptureEditorHistoryState();
-        var nextState = _redoHistory.Pop();
-        _undoHistory.Push(currentState);
-        RestoreEditorHistoryState(nextState);
+    private async Task MoveHistoryAsync(Stack<EditorHistoryState> from, Stack<EditorHistoryState> to)
+    {
+        if (_interactionMode != ImageInteractionMode.None || from.Count == 0) return;
+        _pendingImports++;
+        _editorBody.Enabled = false;
+        _buttonExport.Enabled = _buttonPrint.Enabled = false;
+        var token = _imageCancellation.Token;
+        try
+        {
+            var current = CaptureEditorHistoryState();
+            var target = from.Peek();
+            await _bitmapCache.LoadAsync(target.Items.Select(item => item.SourcePath), ActiveBitmapPaths(), token);
+            token.ThrowIfCancellationRequested();
+            if (_closing || IsDisposed) return;
+            RestoreEditorHistoryState(target);
+            from.Pop();
+            to.Push(current);
+            TrimHistoryStack(to);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex) { if (!_closing) _loadStatus.Text = ex.Message; }
+        finally
+        {
+            _pendingImports--;
+            if (!_closing && !IsDisposed && _pendingImports == 0)
+            {
+                PruneBitmapCache();
+                _editorBody.Enabled = true;
+                _buttonExport.Enabled = _buttonPrint.Enabled = _items.Count > 0;
+            }
+        }
     }
 
     private void CommitInteractionHistoryIfChanged()
@@ -3108,6 +3147,16 @@ public sealed class ImageToPdfForm : Form
         _undoHistory.Push(beforeState);
         TrimHistoryStack(_undoHistory);
         _redoHistory.Clear();
+        PruneBitmapCache();
+    }
+
+    private IEnumerable<string> ActiveBitmapPaths() => _items.Select(item => item.Settings.SourcePath);
+
+    private void PruneBitmapCache()
+    {
+        var reachable = ActiveBitmapPaths()
+            .Concat(_undoHistory.Concat(_redoHistory).SelectMany(state => state.Items).Select(item => item.SourcePath));
+        _bitmapCache.RetainOnly(reachable, ActiveBitmapPaths());
     }
 
     private EditorHistoryState CaptureEditorHistoryState()
@@ -3186,7 +3235,7 @@ public sealed class ImageToPdfForm : Form
 
     private bool TryGetOrLoadBitmap(string path, out Bitmap? bitmap, out string? errorMessage)
     {
-        // Imported sources stay cached for undo/redo; history never decodes on the UI thread.
+        // History reloads evicted snapshots asynchronously before applying its state.
         var found = _bitmapCache.TryGetValue(path, out bitmap);
         errorMessage = found ? null : MediaActionMessages.ImageFileInaccessible(path);
         return found;
@@ -3198,6 +3247,9 @@ public sealed class ImageToPdfForm : Form
         var extension = Path.GetExtension(path).ToLowerInvariant();
         if (!IsSupportedExtension(extension))
             throw new InvalidOperationException(MediaActionMessages.UnsupportedSourceFormat(extension, ImageCropSupport.GetSupportedExtensionsText()));
+        var info = await Task.Run(() => SafeImageReader.Identify(path), token);
+        ValidateImageSize(path, info.Width, info.Height);
+        _bitmapCache.Reserve(info.Width, info.Height, ActiveBitmapPaths());
         Bitmap? bitmap = null;
         try
         {
@@ -4249,13 +4301,10 @@ public sealed class ImageToPdfForm : Form
 
     private void DisposeLoadedImages()
     {
-        foreach (var bitmap in _bitmapCache.Values)
-        {
-            bitmap.Dispose();
-        }
-
         _items.Clear();
-        _bitmapCache.Clear();
+        _undoHistory.Clear();
+        _redoHistory.Clear();
+        _bitmapCache.Dispose();
     }
 
     private sealed class ImageCanvasItem

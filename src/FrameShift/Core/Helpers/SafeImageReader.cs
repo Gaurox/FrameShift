@@ -19,6 +19,12 @@ internal static class SafeImageReader
             new PngConfigurationModule(), new JpegConfigurationModule(),
             new WebpConfigurationModule(), new BmpConfigurationModule())
     };
+    private static readonly DecoderOptions FirstFrameOptions = new()
+    {
+        Configuration = Options.Configuration,
+        ColorProfileHandling = ColorProfileHandling.Preserve,
+        MaxFrames = 1
+    };
 
     public static Image<TPixel> Load<TPixel>(string path)
         where TPixel : unmanaged, IPixel<TPixel> => SharpImage.Load<TPixel>(Options, path);
@@ -26,10 +32,27 @@ internal static class SafeImageReader
     public static ImageInfo Identify(string path) => SharpImage.Identify(Options, path);
 
     public static Image<TPixel> LoadFirstFrame<TPixel>(string path)
-        where TPixel : unmanaged, IPixel<TPixel> => SharpImage.Load<TPixel>(new DecoderOptions
+        where TPixel : unmanaged, IPixel<TPixel> => SharpImage.Load<TPixel>(FirstFrameOptions, path);
+
+    public static Image<TPixel> LoadValidatedFirstFrame<TPixel>(
+        string path, Action<int, int> validateSize, CancellationToken token = default)
+        where TPixel : unmanaged, IPixel<TPixel>
+    {
+        token.ThrowIfCancellationRequested();
+        // Keep the same read handle between Identify and Decode: the source cannot
+        // be replaced with a larger image after validation on Windows.
+        using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var info = SharpImage.Identify(FirstFrameOptions, stream);
+        validateSize(info.Width, info.Height);
+        token.ThrowIfCancellationRequested();
+        stream.Position = 0;
+        var image = SharpImage.Load<TPixel>(FirstFrameOptions, stream);
+        try
         {
-            Configuration = Options.Configuration,
-            ColorProfileHandling = ColorProfileHandling.Preserve,
-            MaxFrames = 1
-        }, path);
+            token.ThrowIfCancellationRequested();
+            validateSize(image.Width, image.Height);
+            return image;
+        }
+        catch { image.Dispose(); throw; }
+    }
 }

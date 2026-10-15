@@ -88,6 +88,14 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
             settings.Request,
             sourceWidth,
             sourceHeight);
+        try
+        {
+            UpscaleFrameProcessor.ValidateOutputSize(sourceWidth, sourceHeight, settings.Request, executionModel.ScaleFactor);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new ActionExecutionResult(false, ex.Message);
+        }
         string modelPath = ModelLocator.GetModelPath(executionModel);
         if (!ModelDownloader.IsModelFileValid(modelPath, executionModel, request.Logger))
         {

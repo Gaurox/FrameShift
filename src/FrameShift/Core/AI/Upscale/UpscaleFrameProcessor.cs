@@ -23,6 +23,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     private static readonly int[] TileSizeLadder = [DefaultTileSize, 256, 128];
 
     public const long MaxInputPixels = 16_000_000L;
+    public const long MaxOutputPixels = 64_000_000L;
 
     private readonly UpscaleModelDefinition _definition;
     private readonly SemaphoreSlim _initGate = new(1, 1);
@@ -91,7 +92,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         FillTileDelegate fillTile)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        ValidateSourceSize(sourceWidth, sourceHeight);
+        ValidateOutputSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
 
         int tileIndex = 0;
         while (true)
@@ -163,9 +164,25 @@ internal sealed class UpscaleFrameProcessor : IDisposable
 
     public static void ValidateSourceSize(int width, int height)
     {
-        if ((long)width * height > MaxInputPixels)
+        if (width <= 0 || height <= 0 || (long)width * height > MaxInputPixels)
             throw new InvalidOperationException(
                 $"Image too large to upscale: {width}x{height}. Limit is {MaxInputPixels:N0} source pixels.");
+    }
+
+    internal static void ValidateOutputSize(int width, int height, UpscaleRequest request, int scale)
+    {
+        ValidateSourceSize(width, height);
+        if (scale < 1 || !double.IsFinite(request.Factor))
+            throw new InvalidOperationException("Invalid upscale factor.");
+        var nativeWidth = (long)width * scale;
+        var nativeHeight = (long)height * scale;
+        if (nativeWidth > int.MaxValue || nativeHeight > int.MaxValue ||
+            nativeWidth > MaxOutputPixels / nativeHeight)
+            throw new InvalidOperationException(
+                $"Upscale output too large: native {nativeWidth}x{nativeHeight}. Limit is {MaxOutputPixels:N0} pixels. Use a smaller source.");
+        var target = ResolveFinalSize(width, height, request, scale);
+        if ((long)target.Width * target.Height > MaxOutputPixels)
+            throw new InvalidOperationException("Upscale target exceeds the output pixel limit.");
     }
 
     // ONNX models process RGB only. Resize coverage independently at the final output

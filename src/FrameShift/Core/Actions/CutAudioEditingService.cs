@@ -2,10 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text;
+using System.Buffers.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.FFmpeg;
+using NAudio.Wave;
 
 namespace FrameShift.Core.Actions;
 
@@ -99,7 +100,7 @@ public sealed class CutAudioEditingService
                 "Cut Audio Waveform",
                 cancellationToken).ConfigureAwait(false);
 
-            return GetWaveformPointsFromWav(waveformPath, pointCount);
+            return GetWaveformPointsFromWav(waveformPath, pointCount, cancellationToken);
         }
         finally
         {
@@ -239,62 +240,44 @@ public sealed class CutAudioEditingService
         return previewPath;
     }
 
-    public static double[] GetWaveformPointsFromWav(string wavPath, int pointCount = DefaultWaveformPointCount)
+    public static double[] GetWaveformPointsFromWav(
+        string wavPath, int pointCount = DefaultWaveformPointCount, CancellationToken cancellationToken = default)
     {
-        if (pointCount < 32)
-        {
-            pointCount = 32;
-        }
+        cancellationToken.ThrowIfCancellationRequested();
+        using var stream = File.OpenRead(wavPath);
+        return ReadWaveform(stream, pointCount, cancellationToken);
+    }
 
-        var bytes = File.ReadAllBytes(wavPath);
-        if (bytes.Length < 44)
-        {
-            throw new InvalidOperationException("Invalid WAV data.");
-        }
+    internal static double[] ReadWaveform(Stream stream, int pointCount, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        using var reader = new WaveFileReader(stream);
+        if (reader.WaveFormat.Encoding != WaveFormatEncoding.Pcm ||
+            reader.WaveFormat.BitsPerSample != 16 || reader.WaveFormat.Channels != 1 || reader.Length % 2 != 0)
+            throw new InvalidDataException("Expected a mono PCM 16-bit WAV for the waveform.");
 
-        var dataOffset = FindDataOffset(bytes);
-        var dataLength = bytes.Length - dataOffset;
-        if (dataLength <= 0)
+        var sampleCount = reader.Length / 2;
+        if (sampleCount == 0) throw new InvalidDataException("No audio samples found.");
+        pointCount = Math.Max(32, pointCount);
+        var samplesPerBucket = Math.Max(1, (sampleCount + pointCount - 1) / pointCount);
+        var points = new double[pointCount];
+        var buffer = new byte[16 * 1024];
+        long sampleIndex = 0;
+        while (sampleIndex < sampleCount)
         {
-            throw new InvalidOperationException("WAV data chunk not found.");
-        }
-
-        var sampleCount = (int)Math.Floor(dataLength / 2d);
-        if (sampleCount <= 0)
-        {
-            throw new InvalidOperationException("No audio samples found.");
-        }
-
-        var samplesPerBucket = Math.Max(1, (int)Math.Ceiling(sampleCount / (double)pointCount));
-        var points = new List<double>(pointCount);
-
-        for (var bucket = 0; bucket < pointCount; bucket++)
-        {
-            var startSample = bucket * samplesPerBucket;
-            if (startSample >= sampleCount)
+            token.ThrowIfCancellationRequested();
+            var requested = (int)Math.Min(buffer.Length, (sampleCount - sampleIndex) * 2);
+            var read = reader.Read(buffer, 0, requested);
+            if (read == 0 || read % 2 != 0) throw new InvalidDataException("Truncated WAV samples.");
+            for (var offset = 0; offset < read; offset += 2, sampleIndex++)
             {
-                points.Add(0d);
-                continue;
+                var sample = BinaryPrimitives.ReadInt16LittleEndian(buffer.AsSpan(offset, 2));
+                var bucket = (int)(sampleIndex / samplesPerBucket);
+                points[bucket] = Math.Max(points[bucket], Math.Abs(sample / 32768d));
             }
-
-            var endSample = Math.Min(sampleCount, startSample + samplesPerBucket);
-            var peak = 0d;
-
-            for (var sampleIndex = startSample; sampleIndex < endSample; sampleIndex++)
-            {
-                var offset = dataOffset + (sampleIndex * 2);
-                var sample = BitConverter.ToInt16(bytes, offset);
-                var amplitude = Math.Abs(sample / 32768d);
-                if (amplitude > peak)
-                {
-                    peak = amplitude;
-                }
-            }
-
-            points.Add(peak);
         }
-
-        return points.ToArray();
+        token.ThrowIfCancellationRequested();
+        return points;
     }
 
     private async Task RunOutputCommandAsync(
@@ -370,28 +353,6 @@ public sealed class CutAudioEditingService
         }
 
         return $"[0:a]atrim=0:{FormatSeconds(startSeconds)},asetpts=PTS-STARTPTS[a0];[1:a]asetpts=PTS-STARTPTS[s];[0:a]atrim=start={FormatSeconds(endSeconds)},asetpts=PTS-STARTPTS[a1];[a0][s][a1]concat=n=3:v=0:a=1[out]";
-    }
-
-    private static int FindDataOffset(byte[] bytes)
-    {
-        var dataOffset = 44;
-        for (var index = 12; index <= bytes.Length - 8;)
-        {
-            var chunkId = Encoding.ASCII.GetString(bytes, index, 4);
-            var chunkSize = BitConverter.ToInt32(bytes, index + 4);
-            if (string.Equals(chunkId, "data", StringComparison.Ordinal))
-            {
-                return index + 8;
-            }
-
-            index += 8 + chunkSize;
-            if (chunkSize % 2 != 0)
-            {
-                index++;
-            }
-        }
-
-        return dataOffset;
     }
 
     private static string FormatSeconds(double seconds)

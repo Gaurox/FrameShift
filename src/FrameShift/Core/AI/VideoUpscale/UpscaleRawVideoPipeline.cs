@@ -52,6 +52,7 @@ internal sealed class UpscaleRawVideoPipeline
 
         int sourceWidth = probe.DisplayVideoWidth;
         int sourceHeight = probe.DisplayVideoHeight;
+        UpscaleFrameProcessor.ValidateOutputSize(sourceWidth, sourceHeight, request, model.ScaleFactor);
         var target = UpscaleFrameProcessor.ResolveFinalSize(sourceWidth, sourceHeight, request, model.ScaleFactor);
         int inputFrameBytes = checked(sourceWidth * sourceHeight * 3);
         int outputFrameBytes = checked(target.Width * target.Height * 3);
