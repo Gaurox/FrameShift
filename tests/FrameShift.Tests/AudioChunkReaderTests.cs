@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using FrameShift.Core.AI.SeparateAudio;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
@@ -80,6 +82,64 @@ public sealed class AudioChunkReaderTests
             reader.ReadChunk(0, OverlapAddRing.ChunkLen, cancellation.Token));
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void MonoAndStereoFiles_KeepDurationAndChannelOrder(int channels)
+    {
+        const int frames = 100;
+        var source = new float[frames * channels];
+        for (var frame = 0; frame < frames; frame++)
+        for (var channel = 0; channel < channels; channel++)
+            source[frame * channels + channel] = (frame - 50 + channel * 10) / 100f;
+        using var file = TemporaryWaveFile.Create(source, channels);
+        using var reader = new AudioChunkReader(file.Path, CancellationToken.None);
+
+        var chunk = reader.ReadChunk(0, OverlapAddRing.ChunkLen, CancellationToken.None);
+
+        Assert.Equal(frames, reader.EstimatedTotalSamplesPerChannel);
+        Assert.Equal(frames, reader.TotalSamplesPerChannel);
+        Assert.True(reader.IsLastChunk);
+        for (var frame = 0; frame < frames; frame++)
+        {
+            Assert.Equal(source[frame * channels], chunk[frame * 2]);
+            Assert.Equal(source[frame * channels + channels - 1], chunk[frame * 2 + 1]);
+        }
+    }
+
+    [Theory]
+    [InlineData(4)]
+    [InlineData(6)]
+    public void MultichannelFile_IsRejectedAndItsReaderIsDisposed(int channels)
+    {
+        using var file = TemporaryWaveFile.Create(new float[100 * channels], channels);
+
+        var exception = Assert.Throws<InvalidDataException>(() =>
+            new AudioChunkReader(file.Path, CancellationToken.None));
+
+        Assert.Contains($"{channels} channels", exception.Message);
+        Assert.Contains("Convert it to stereo", exception.Message);
+        using var exclusive = new FileStream(file.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        Assert.True(exclusive.Length > 0);
+    }
+
+    [Theory]
+    [InlineData(4)]
+    [InlineData(6)]
+    public async Task MultichannelFile_IsRejectedBeforeModelLoadingOrOutputCreation(int channels)
+    {
+        using var file = TemporaryWaveFile.Create(new float[100 * channels], channels);
+        using var engine = new AudioSeparationEngine();
+        var stages = new List<string>();
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => engine.SeparateAsync(
+            file.Path, new StemSelection { Vocals = true }, preferGpu: false,
+            new InlineProgress(p => stages.Add(p.Status)), CancellationToken.None));
+
+        Assert.DoesNotContain("Loading model...", stages);
+        Assert.Equal(new[] { file.Path }, Directory.GetFiles(System.IO.Path.GetDirectoryName(file.Path)!));
+    }
+
     private static float[] BuildStereoSamples(int frames)
     {
         var samples = new float[frames * 2];
@@ -115,7 +175,7 @@ public sealed class AudioChunkReaderTests
 
         public string Path { get; }
 
-        public static TemporaryWaveFile Create(float[] samples)
+        public static TemporaryWaveFile Create(float[] samples, int channels = 2)
         {
             var directory = System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
@@ -123,9 +183,9 @@ public sealed class AudioChunkReaderTests
                 "AudioChunkReader",
                 Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
-            var path = System.IO.Path.Combine(directory, "input.wav");
+            var path = System.IO.Path.Combine(directory, "source été.wav");
 
-            using (var writer = new WaveFileWriter(path, WaveFormat.CreateIeeeFloatWaveFormat(44100, 2)))
+            using (var writer = new WaveFileWriter(path, WaveFormat.CreateIeeeFloatWaveFormat(44100, channels)))
                 writer.WriteSamples(samples, 0, samples.Length);
 
             return new TemporaryWaveFile(directory, path);
@@ -136,6 +196,11 @@ public sealed class AudioChunkReaderTests
             if (Directory.Exists(_directory))
                 Directory.Delete(_directory, recursive: true);
         }
+    }
+
+    private sealed class InlineProgress(Action<AudioSeparationProgress> report) : IProgress<AudioSeparationProgress>
+    {
+        public void Report(AudioSeparationProgress value) => report(value);
     }
 
     private sealed class CancelAfterFirstReadProvider : ISampleProvider

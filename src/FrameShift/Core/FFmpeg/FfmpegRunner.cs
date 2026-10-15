@@ -217,11 +217,18 @@ internal readonly record struct FfmpegProgressSnapshot(int DisplayedPermille, Ff
 public sealed class FfmpegRunner
 {
     private readonly AppLogger _logger;
+    private readonly Action<Process> _killProcess;
     private readonly ConcurrentDictionary<(string ExecutablePath, string EncoderName), bool> _encoderCache = new();
 
-    public FfmpegRunner(AppLogger logger)
+    public FfmpegRunner(AppLogger logger) : this(logger, process => process.Kill(entireProcessTree: true))
+    {
+    }
+
+    // Allows process-lifecycle tests to simulate a failed OS kill without changing the wait path.
+    internal FfmpegRunner(AppLogger logger, Action<Process> killProcess)
     {
         _logger = logger;
+        _killProcess = killProcess;
     }
 
     public ProcessStartInfo CreateStartInfo(string executablePath, IReadOnlyCollection<string> arguments)
@@ -331,10 +338,11 @@ public sealed class FfmpegRunner
         string? pipelineDescription,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
         var stderrBuilder = new StringBuilder();
-        var canceled = false;
-        var cancellationScope = CancellationScope.None;
+        var cancellationSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var progressState = new FfmpegProgressState();
         using var itemCancellationSource = new CancellationTokenSource();
         using var monitorStopSource = new CancellationTokenSource();
@@ -347,19 +355,17 @@ public sealed class FfmpegRunner
         using var globalRegistration = cancellationToken.Register(() =>
         {
             _logger.Log($"FfmpegRunner: cancellation requested (global). pid={TryGetProcessId(process)}, currentFile={currentFile ?? "<none>"}.");
-            canceled = true;
-            SetCancellationScope(ref cancellationScope, CancellationScope.All);
             progressState.MarkFinalizing();
             TryKill(process, "global", currentFile);
+            cancellationSignal.TrySetResult();
         });
 
         using var itemRegistration = itemCancellationSource.Token.Register(() =>
         {
             _logger.Log($"FfmpegRunner: cancellation requested (current-item). pid={TryGetProcessId(process)}, currentFile={currentFile ?? "<none>"}.");
-            canceled = true;
-            SetCancellationScope(ref cancellationScope, CancellationScope.CurrentItem);
             progressState.MarkFinalizing();
             TryKill(process, "current-item", currentFile);
+            cancellationSignal.TrySetResult();
         });
 
         var visualProgressTask = ReportVisualProgressAsync(
@@ -387,15 +393,17 @@ public sealed class FfmpegRunner
 
         int exitCode;
         var processTerminationConfirmed = true;
-        if (canceled)
+        var waitForExitTask = process.WaitForExitAsync();
+        _logger.Log($"FfmpegRunner: waiting for process exit or cancellation. pid={TryGetProcessId(process)}.");
+        if (await Task.WhenAny(waitForExitTask, cancellationSignal.Task).ConfigureAwait(false) != waitForExitTask)
         {
-            processTerminationConfirmed = await WaitForExitAfterCancellationAsync(process).ConfigureAwait(false);
+            processTerminationConfirmed = await WaitForExitAfterCancellationAsync(process, waitForExitTask).ConfigureAwait(false);
             exitCode = processTerminationConfirmed ? process.ExitCode : -1;
         }
         else
         {
             _logger.Log($"FfmpegRunner: WaitForExitAsync started (normal). pid={TryGetProcessId(process)}.");
-            await process.WaitForExitAsync().ConfigureAwait(false);
+            await waitForExitTask.ConfigureAwait(false);
             exitCode = process.ExitCode;
             _logger.Log($"FfmpegRunner: WaitForExitAsync finished (normal). pid={TryGetProcessId(process)}, exitCode={exitCode}.");
         }
@@ -406,11 +414,16 @@ public sealed class FfmpegRunner
             stdoutTask,
             stderrTask,
             streamReadCancellationSource,
-            canceled).ConfigureAwait(false);
+            cancellationToken.IsCancellationRequested || itemCancellationSource.IsCancellationRequested).ConfigureAwait(false);
         await Task.WhenAll(
             SuppressCancellationAsync(visualProgressTask),
             SuppressCancellationAsync(queueCancellationTask)).ConfigureAwait(false);
 
+        // Derive the final scope from the tokens: global cancellation takes precedence
+        // even when it arrives while a current-item cancellation is already stopping FFmpeg.
+        var cancellationScope = cancellationToken.IsCancellationRequested ? CancellationScope.All
+            : itemCancellationSource.IsCancellationRequested ? CancellationScope.CurrentItem : CancellationScope.None;
+        var canceled = cancellationScope != CancellationScope.None;
         _logger.Log($"FfmpegRunner: RunAsync returning. canceled={canceled}, exitCode={exitCode}, scope={cancellationScope}, currentFile={currentFile ?? "<none>"}.");
         return new FfmpegRunResult(exitCode, stderrBuilder.ToString(), canceled, cancellationScope, processTerminationConfirmed);
     }
@@ -716,7 +729,7 @@ public sealed class FfmpegRunner
             _logger.Log($"FfmpegRunner: kill process requested. pid={TryGetProcessId(process)}, reason={reason}, currentFile={currentFile ?? "<none>"}, hasExited={process.HasExited}.");
             if (!process.HasExited)
             {
-                process.Kill(entireProcessTree: true);
+                _killProcess(process);
             }
             _logger.Log($"FfmpegRunner: kill process returned. pid={TryGetProcessId(process)}, reason={reason}, hasExited={process.HasExited}.");
         }
@@ -863,14 +876,6 @@ public sealed class FfmpegRunner
         catch
         {
             return -1;
-        }
-    }
-
-    private static void SetCancellationScope(ref CancellationScope currentScope, CancellationScope requestedScope)
-    {
-        if (requestedScope > currentScope)
-        {
-            currentScope = requestedScope;
         }
     }
 

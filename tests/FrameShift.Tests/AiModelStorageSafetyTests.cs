@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using FrameShift.Core.AI;
 using Xunit;
 
@@ -7,6 +9,69 @@ namespace FrameShift.Tests;
 
 public sealed class AiModelStorageSafetyTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DirectoryWriteProbe_PreservesExistingFileAndRemovesOnlyItsOwnProbe(bool readOnly)
+    {
+        var root = CreateTempDirectory("frameshift modèles partagés é");
+        var sentinel = Path.Combine(root, ".writetest");
+        var bytes = new byte[] { 0, 42, 128, 255 };
+        try
+        {
+            File.WriteAllBytes(sentinel, bytes);
+            if (readOnly) File.SetAttributes(sentinel, FileAttributes.ReadOnly);
+
+            var settings = new AiModelSettings { ModelsDirectory = root };
+            Assert.Equal(root, settings.GetEffectiveModelsDirectory());
+
+            Assert.Equal(bytes, File.ReadAllBytes(sentinel));
+            Assert.Equal(new[] { sentinel }, Directory.GetFileSystemEntries(root));
+            Assert.Equal(readOnly, File.GetAttributes(sentinel).HasFlag(FileAttributes.ReadOnly));
+        }
+        finally
+        {
+            if (File.Exists(sentinel)) File.SetAttributes(sentinel, FileAttributes.Normal);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task DirectoryWriteProbe_ConcurrentChecksDoNotInterfereOrLeaveFiles()
+    {
+        var root = CreateTempDirectory("frameshift concurrent modèles é");
+        try
+        {
+            var settings = new AiModelSettings { ModelsDirectory = root };
+            var checks = Enumerable.Range(0, 32)
+                .Select(_ => Task.Run(settings.GetEffectiveModelsDirectory));
+
+            var paths = await Task.WhenAll(checks);
+
+            Assert.All(paths, path => Assert.Equal(root, path));
+            Assert.Empty(Directory.GetFileSystemEntries(root));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
+    public void DirectoryWriteProbe_UnusablePathPreservesExistingContent()
+    {
+        var root = CreateTempDirectory("frameshift invalid modèles é");
+        try
+        {
+            var file = Path.Combine(root, "not a directory");
+            File.WriteAllText(file, "foreign data");
+            var settings = new AiModelSettings { ModelsDirectory = file };
+
+            Assert.Equal(AiModelSettings.DefaultModelsDirectoryPath, settings.GetEffectiveModelsDirectory());
+
+            Assert.Equal("foreign data", File.ReadAllText(file));
+            Assert.Equal(new[] { file }, Directory.GetFileSystemEntries(root));
+        }
+        finally { Directory.Delete(root, recursive: true); }
+    }
+
     [Fact]
     public void CustomModelsDirectory_RejectsDangerousRootsAndAllowsDedicatedFolder()
     {

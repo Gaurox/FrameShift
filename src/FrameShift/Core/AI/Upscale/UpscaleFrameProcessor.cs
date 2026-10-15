@@ -48,14 +48,26 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         Image<Rgba32> source,
         UpscaleRequest request,
         IProgress<UpscaleProgress>? progress,
-        CancellationToken cancellationToken) =>
-        UpscaleCore(
+        CancellationToken cancellationToken)
+    {
+        var output = UpscaleCore(
             source.Width,
             source.Height,
             request,
             progress,
             cancellationToken,
             (tile, input, padWidth, padHeight) => FillInputFromRgba32(source, tile, input, padWidth, padHeight));
+        try
+        {
+            RestoreAlpha(source, output, cancellationToken);
+            return output;
+        }
+        catch
+        {
+            output.Dispose();
+            throw;
+        }
+    }
 
     public Image<Rgba32> Upscale(
         Image<Rgb24> source,
@@ -154,6 +166,60 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         if ((long)width * height > MaxInputPixels)
             throw new InvalidOperationException(
                 $"Image too large to upscale: {width}x{height}. Limit is {MaxInputPixels:N0} source pixels.");
+    }
+
+    // ONNX models process RGB only. Resize coverage independently at the final output
+    // size so both tensor-writing paths preserve transparency without changing RGB.
+    private static void RestoreAlpha(Image<Rgba32> source, Image<Rgba32> output, CancellationToken token)
+    {
+        var transparent = false;
+        source.ProcessPixelRows(rows =>
+        {
+            for (var y = 0; y < rows.Height && !transparent; y++)
+            {
+                token.ThrowIfCancellationRequested();
+                foreach (var pixel in rows.GetRowSpan(y))
+                {
+                    if (pixel.A == 255) continue;
+                    transparent = true;
+                    break;
+                }
+            }
+        });
+        if (!transparent) return;
+
+        using var alpha = new Image<L8>(source.Width, source.Height);
+        source.ProcessPixelRows(alpha, (pixels, mask) =>
+        {
+            for (var y = 0; y < pixels.Height; y++)
+            {
+                token.ThrowIfCancellationRequested();
+                var input = pixels.GetRowSpan(y);
+                var row = mask.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++) row[x] = new L8(input[x].A);
+            }
+        });
+
+        if (alpha.Width != output.Width || alpha.Height != output.Height)
+        {
+            alpha.Mutate(ctx => ctx.Resize(new ResizeOptions
+            {
+                Size = new SixLabors.ImageSharp.Size(output.Width, output.Height),
+                Sampler = KnownResamplers.Lanczos3,
+                Mode = ResizeMode.Stretch
+            }));
+        }
+
+        output.ProcessPixelRows(alpha, (pixels, mask) =>
+        {
+            for (var y = 0; y < pixels.Height; y++)
+            {
+                token.ThrowIfCancellationRequested();
+                var row = pixels.GetRowSpan(y);
+                var coverage = mask.GetRowSpan(y);
+                for (var x = 0; x < row.Length; x++) row[x].A = coverage[x].PackedValue;
+            }
+        });
     }
 
     public static (int Width, int Height, string Suffix) ResolveFinalSize(

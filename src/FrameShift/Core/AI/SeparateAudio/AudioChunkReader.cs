@@ -38,9 +38,18 @@ internal sealed class AudioChunkReader : IDisposable
         if (!File.Exists(inputPath))
             throw new FileNotFoundException("Audio input not found.", inputPath);
 
-        _reader = new AudioFileReader(inputPath);
-        _provider = CreateNormalizedProvider(_reader);
-        EstimatedTotalSamplesPerChannel = EstimateTotalSamples(_reader);
+        var reader = new AudioFileReader(inputPath);
+        try
+        {
+            _provider = CreateNormalizedProvider(reader);
+            EstimatedTotalSamplesPerChannel = EstimateTotalSamples(reader);
+            _reader = reader;
+        }
+        catch
+        {
+            reader.Dispose();
+            throw;
+        }
     }
 
     // Test seam for cancellation and chunk-window behavior without depending on a media decoder.
@@ -155,6 +164,10 @@ internal sealed class AudioChunkReader : IDisposable
 
     private static ISampleProvider CreateNormalizedProvider(AudioFileReader reader)
     {
+        if (reader.WaveFormat.Channels is < 1 or > TargetChannels)
+            throw new InvalidDataException(
+                $"Audio Separation supports mono and stereo audio. This file has {reader.WaveFormat.Channels} channels. Convert it to stereo before separating audio.");
+
         ISampleProvider provider = reader;
 
         if (reader.WaveFormat.Channels == 1)

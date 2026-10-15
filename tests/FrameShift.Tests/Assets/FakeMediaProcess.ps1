@@ -69,7 +69,7 @@ switch ($Mode) {
         }
 
         $childArguments = '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File {0} -Mode child -ReadyPath {1}' -f (Quote-ProcessArgument $PSCommandPath), (Quote-ProcessArgument $ChildReadyPath)
-        Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $childArguments | Out-Null
+        Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $childArguments -WindowStyle Hidden | Out-Null
         Wait-Indefinitely
     }
     'child' {

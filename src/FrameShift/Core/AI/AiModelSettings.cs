@@ -87,10 +87,12 @@ public sealed class AiModelSettings
         try
         {
             Directory.CreateDirectory(path);
-            // Quick write test
-            var probe = Path.Combine(path, ".writetest");
-            File.WriteAllText(probe, "ok");
-            File.Delete(probe);
+            // Exclusive, handle-owned cleanup also preserves pre-existing/shared probe files.
+            using var probe = new FileStream(
+                Path.Combine(path, $".writetest-{Guid.NewGuid():N}"),
+                FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                bufferSize: 1, FileOptions.DeleteOnClose);
+            probe.WriteByte(0);
             return true;
         }
         catch

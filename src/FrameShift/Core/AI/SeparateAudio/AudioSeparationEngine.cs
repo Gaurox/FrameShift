@@ -55,13 +55,14 @@ internal sealed class AudioSeparationEngine : IDisposable
     {
         ValidateInput(inputPath);
 
-        progress.Report(new AudioSeparationProgress(1, 0, 0, "Loading model..."));
-        EnsureSession(preferGpu, cancellationToken);
-
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new AudioSeparationProgress(5, 0, 0, "Loading audio..."));
-
+        progress.Report(new AudioSeparationProgress(1, 0, 0, "Loading audio..."));
         using var reader = new AudioChunkReader(inputPath, cancellationToken);
+
+        progress.Report(new AudioSeparationProgress(5, 0, 0, "Loading model..."));
+        EnsureSession(preferGpu, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
         var estimatedChunkTotal = reader.EstimatedChunkCount;
         using var writers = OutputWriters.Create(inputPath, stems);
         var ring = new OverlapAddRing(StemCount);

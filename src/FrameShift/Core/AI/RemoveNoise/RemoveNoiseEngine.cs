@@ -38,6 +38,17 @@ internal sealed class RemoveNoiseEngine : IDisposable
     private bool _ready;
     private int _disposed;
 
+    public RemoveNoiseEngine() { }
+
+    // Sessions supplied here are owned by the engine, like the sessions loaded from disk.
+    internal RemoveNoiseEngine(InferenceSession encoder, InferenceSession erbDecoder, InferenceSession dfDecoder)
+    {
+        _encSession = encoder;
+        _erbDecSession = erbDecoder;
+        _dfDecSession = dfDecoder;
+        _ready = true;
+    }
+
     public async Task<string> RemoveNoiseAsync(
         string inputPath,
         IProgress<(int percent, string status)> progress,
@@ -85,18 +96,18 @@ internal sealed class RemoveNoiseEngine : IDisposable
         int[] dfCoeffsShape;
 
         cancellationToken.ThrowIfCancellationRequested();
-        using (var encoderResults = _encSession!.Run(encInputs))
+        using (var encoderResults = RunInference(_encSession!, encInputs, cancellationToken))
         {
             var erbDecInputs = BuildInputsFromResults(_erbDecSession!, emptyHidden, encoderResults);
             cancellationToken.ThrowIfCancellationRequested();
-            using (var erbResults = _erbDecSession!.Run(erbDecInputs))
+            using (var erbResults = RunInference(_erbDecSession!, erbDecInputs, cancellationToken))
             {
                 (rawErbGainsAll, erbGainsShape) = GetFirstDataOutput(erbResults);
             }
 
             var dfDecInputs = BuildInputsFromResults(_dfDecSession!, emptyHidden, encoderResults);
             cancellationToken.ThrowIfCancellationRequested();
-            using (var dfResults = _dfDecSession!.Run(dfDecInputs))
+            using (var dfResults = RunInference(_dfDecSession!, dfDecInputs, cancellationToken))
             {
                 (rawDfCoeffsAll, dfCoeffsShape) = GetDataOutput(dfResults, "coefs");
             }
@@ -179,6 +190,30 @@ internal sealed class RemoveNoiseEngine : IDisposable
 
         OutputOperation.NotifySaved(() => progress.Report((100, "Done.")));
         return outputPath;
+    }
+
+    internal static IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunInference(
+        InferenceSession session,
+        IReadOnlyCollection<NamedOnnxValue> inputs,
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        using var run = new RunOptions();
+        using var registration = token.Register(() => run.Terminate = true);
+        try
+        {
+            var results = session.Run(inputs, session.OutputNames, run);
+            if (token.IsCancellationRequested)
+            {
+                results.Dispose();
+                token.ThrowIfCancellationRequested();
+            }
+            return results;
+        }
+        catch (OnnxRuntimeException) when (token.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(token);
+        }
     }
 
     private void EnsureSessions(IProgress<(int percent, string status)> progress, CancellationToken cancellationToken)
