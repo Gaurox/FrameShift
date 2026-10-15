@@ -100,6 +100,29 @@ public sealed class FileQueueModelTests
     }
 
     [Fact]
+    public void RemoveRange_PreservesSurvivorOrderAndAllowsReaddingWithDifferentCase()
+    {
+        var model = new FileQueueModel();
+        model.AddRange([@"C:\a.mp4", @"C:\b.mp4", @"C:\c.mp4", @"C:\d.mp4"]);
+        Assert.Equal(2, model.RemoveRange([@"c:\B.MP4", @"C:\b.mp4", @"C:\missing.mp4", @"C:\d.mp4"]));
+        Assert.Equal(new[] { @"C:\a.mp4", @"C:\c.mp4" }, model.Items);
+        Assert.False(model.Contains(@"C:\b.mp4"));
+        Assert.True(model.Add(@"C:\B.MP4"));
+        Assert.Equal(3, model.Count);
+    }
+
+    [Fact]
+    public void RemoveRange_EmptyAndMissingPathsAreNoOpsAndNullIsRejected()
+    {
+        var model = new FileQueueModel();
+        model.Add(@"C:\a.mp4");
+        Assert.Equal(0, model.RemoveRange([]));
+        Assert.Equal(0, model.RemoveRange(["", null!, @"C:\missing.mp4"]));
+        Assert.Single(model.Items);
+        Assert.Throws<ArgumentNullException>(() => model.RemoveRange(null!));
+    }
+
+    [Fact]
     public void Clear_EmptiesQueue()
     {
         var model = new FileQueueModel();

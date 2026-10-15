@@ -26,6 +26,8 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     public const long MaxOutputPixels = 64_000_000L;
 
     private readonly UpscaleModelDefinition _definition;
+    private readonly Action<int, string>? _beforeTileRun;
+    private readonly Func<string, bool, (InferenceSession Session, string Provider)> _createSession;
     private readonly SemaphoreSlim _initGate = new(1, 1);
     private InferenceSession? _session;
     private DenseTensor<float>? _inputTensor;
@@ -36,10 +38,20 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     private bool _runtimeForceCpu;
     private int _bufferedInputWidth;
     private int _bufferedInputHeight;
+    private (int Width, int Height, string Provider)? _successfulTileProfile;
+    private int _successfulTileIndex;
 
     public UpscaleFrameProcessor(UpscaleModelDefinition definition)
+        : this(definition, null, null)
+    {
+    }
+
+    internal UpscaleFrameProcessor(UpscaleModelDefinition definition, Action<int, string>? beforeTileRun,
+        Func<string, bool, (InferenceSession Session, string Provider)>? createSession = null)
     {
         _definition = definition;
+        _beforeTileRun = beforeTileRun;
+        _createSession = createSession ?? ((path, forceCpu) => OnnxProviderHelper.CreateSessionPreferred(path, "UpscaleFrameProcessor", forceCpu));
         _runtimeForceCpu = definition.ForceCpu;
     }
 
@@ -94,7 +106,11 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
         ValidateOutputSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
 
-        int tileIndex = 0;
+        // Session/model errors are not tile-size failures. Initialize before the
+        // retry loop and key the remembered size by actual provider and geometry.
+        EnsureSession(_runtimeForceCpu, progress, cancellationToken);
+        int tileIndex = PreferredTileIndex(sourceWidth, sourceHeight);
+        Image<Rgba32> nativeOutput;
         while (true)
         {
             int tileSize = TileSizeLadder[tileIndex];
@@ -102,30 +118,9 @@ internal sealed class UpscaleFrameProcessor : IDisposable
 
             try
             {
-                EnsureSession(_runtimeForceCpu, progress, cancellationToken);
-                var nativeOutput = RunTiled(sourceWidth, sourceHeight, tileSize, progress, cancellationToken, fillTile);
-                try
-                {
-                    var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
-
-                    // Hand the freshly-built image straight to the caller; no per-frame clone.
-                    if (target.Width == nativeOutput.Width && target.Height == nativeOutput.Height)
-                        return nativeOutput;
-
-                    progress?.Report(new UpscaleProgress(93, "Resizing to target..."));
-                    nativeOutput.Mutate(ctx => ctx.Resize(new ResizeOptions
-                    {
-                        Size = new SixLabors.ImageSharp.Size(target.Width, target.Height),
-                        Sampler = KnownResamplers.Lanczos3,
-                        Mode = ResizeMode.Stretch
-                    }));
-                    return nativeOutput;
-                }
-                catch
-                {
-                    nativeOutput.Dispose();
-                    throw;
-                }
+                _beforeTileRun?.Invoke(tileSize, _providerName);
+                nativeOutput = RunTiled(sourceWidth, sourceHeight, tileSize, progress, cancellationToken, fillTile);
+                break;
             }
             catch (OperationCanceledException)
             {
@@ -135,7 +130,20 @@ internal sealed class UpscaleFrameProcessor : IDisposable
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                bool dmlFailure = !_runtimeForceCpu &&
+                var resourceFailure = IsTileResourceFailure(ex);
+                if (resourceFailure && tileIndex < TileSizeLadder.Length - 1)
+                {
+                    tileIndex++;
+                    AppLogger.LogStatic($"UpscaleFrameProcessor: resource limit at tileSize={tileSize}, retrying at {TileSizeLadder[tileIndex]}. {ex.Message}");
+                    var previousProvider = _providerName;
+                    ResetSession();
+                    EnsureSession(_runtimeForceCpu, progress, cancellationToken);
+                    if (!string.Equals(previousProvider, _providerName, StringComparison.Ordinal))
+                        tileIndex = PreferredTileIndex(sourceWidth, sourceHeight);
+                    continue;
+                }
+
+                bool dmlFailure = !_runtimeForceCpu && !IsPermanentModelFailure(ex) &&
                     string.Equals(_providerName, "DirectML", StringComparison.OrdinalIgnoreCase) &&
                     OnnxProviderHelper.IsLikelyDmlRuntimeFailure(ex);
                 if (dmlFailure)
@@ -144,23 +152,49 @@ internal sealed class UpscaleFrameProcessor : IDisposable
                     progress?.Report(new UpscaleProgress(5, OnnxProviderHelper.GetDmlFallbackUserMessage()));
                     _runtimeForceCpu = true;
                     ResetSession();
+                    EnsureSession(_runtimeForceCpu, progress, cancellationToken);
+                    tileIndex = PreferredTileIndex(sourceWidth, sourceHeight);
                     continue;
                 }
-
-                if (tileIndex < TileSizeLadder.Length - 1)
-                {
-                    tileIndex++;
-                    AppLogger.LogStatic(
-                        $"UpscaleFrameProcessor: tile run failed at tileSize={tileSize}, retrying at {TileSizeLadder[tileIndex]}. {ex.Message}");
-                    ResetSession();
-                    continue;
-                }
-
-                AppLogger.LogStatic($"UpscaleFrameProcessor: upscale failed after all fallbacks. {ex}");
+                AppLogger.LogStatic($"UpscaleFrameProcessor: upscale failed. {ex}");
                 throw;
             }
         }
+
+        try
+        {
+            var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
+            if (target.Width != nativeOutput.Width || target.Height != nativeOutput.Height)
+            {
+                progress?.Report(new UpscaleProgress(93, "Resizing to target..."));
+                cancellationToken.ThrowIfCancellationRequested();
+                nativeOutput.Mutate(ctx => ctx.Resize(new ResizeOptions
+                {
+                    Size = new SixLabors.ImageSharp.Size(target.Width, target.Height),
+                    Sampler = KnownResamplers.Lanczos3,
+                    Mode = ResizeMode.Stretch
+                }));
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            _successfulTileProfile = (sourceWidth, sourceHeight, _providerName);
+            _successfulTileIndex = tileIndex;
+            return nativeOutput;
+        }
+        catch { nativeOutput.Dispose(); throw; }
     }
+
+    private int PreferredTileIndex(int width, int height)
+        => _successfulTileProfile == (width, height, _providerName) ? _successfulTileIndex : 0;
+
+    internal static bool IsTileResourceFailure(Exception ex)
+        => !IsPermanentModelFailure(ex) && (ex is OutOfMemoryException || ex is OnnxRuntimeException &&
+            new[] { "out of memory", "bad_alloc", "failed to allocate", "not enough memory", "memory allocation", "E_OUTOFMEMORY", "0x8007000e" }
+                .Any(text => ex.Message.Contains(text, StringComparison.OrdinalIgnoreCase)));
+
+    private static bool IsPermanentModelFailure(Exception ex)
+        => ex is ArgumentException or InvalidDataException or FileNotFoundException ||
+            ex is OnnxRuntimeException && new[] { "INVALID_ARGUMENT", "InvalidArgument", "INVALID_GRAPH", "InvalidGraph", "INVALID_PROTOBUF", "InvalidProtobuf", "NO_SUCHFILE", "NoSuchFile", "NO_MODEL", "NoModel", "invalid dimensions", "input name", "output name" }
+                .Any(text => ex.Message.Contains(text, StringComparison.OrdinalIgnoreCase));
 
     public static void ValidateSourceSize(int width, int height)
     {
@@ -361,10 +395,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
             progress?.Report(new UpscaleProgress(3, "Loading ONNX model..."));
             var modelPath = ModelLocator.GetModelPath(_definition);
             AppLogger.LogStatic($"UpscaleFrameProcessor: loading session. model={modelPath}, forceCpu={forceCpu}");
-            (_session, _providerName) = OnnxProviderHelper.CreateSessionPreferred(
-                modelPath,
-                "UpscaleFrameProcessor",
-                forceCpu);
+            (_session, _providerName) = _createSession(modelPath, forceCpu);
             _sessionForcedCpu = forceCpu;
             _sessionReady = true;
             AppLogger.LogStatic($"UpscaleFrameProcessor: session ready. provider={_providerName}");

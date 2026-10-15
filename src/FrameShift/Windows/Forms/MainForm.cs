@@ -22,6 +22,10 @@ public sealed class MainForm : Form
     private readonly ActionsPanel _actionsPanel;
     private readonly SplitContainer _split;
     private readonly Panel _emptyState;
+    private readonly string[] _startupPaths;
+    private Task<int>? _initialImport;
+    private bool _closing;
+    private bool _allowClose;
 
     public MainForm()
         : this(Array.Empty<string>())
@@ -31,6 +35,7 @@ public sealed class MainForm : Form
     public MainForm(IEnumerable<string> startupPaths) : this(startupPaths, null) { }
     internal MainForm(IEnumerable<string> startupPaths, Action<ActionInvokedEventArgs>? actionHandler)
     {
+        _startupPaths = startupPaths?.ToArray() ?? [];
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(1000, 680), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, "FrameShift");
@@ -42,6 +47,7 @@ public sealed class MainForm : Form
 
         _queuePanel = new FileQueuePanel { Dock = DockStyle.Fill };
         _queuePanel.QueueChanged += (_, _) => OnQueueChanged();
+        _queuePanel.ImportStateChanged += (_, _) => UpdateState();
         _queuePanel.SelectionChanged += (_, _) => RefreshActions();
 
         _actionsPanel = new ActionsPanel { Dock = DockStyle.Fill };
@@ -89,12 +95,25 @@ public sealed class MainForm : Form
         _split.SizeChanged += (_, _) => SetSplitterDistance();
         _split.DpiChangedAfterParent += (_, _) => SetSplitterDistance();
         Load += (_, _) => UpdateState();
+        Shown += async (_, _) => await StartInitialPathsAsync();
+        FormClosing += CloseAfterImportsAsync;
         ResumeLayout(true);
-        var initial = ExpandPaths(startupPaths);
-        if (initial.Count > 0)
-        {
-            _queuePanel.AddFiles(initial);
-        }
+    }
+
+    internal Task<int> StartInitialPathsAsync() => _initialImport ??= _queuePanel.AddPathsAsync(_startupPaths);
+
+    private async void CloseAfterImportsAsync(object? sender, FormClosingEventArgs e)
+    {
+        if (_allowClose || e.Cancel) return;
+        var pending = _queuePanel.StopPathImportsAsync();
+        if (pending.IsCompleted) return;
+        e.Cancel = true;
+        if (_closing) return;
+        _closing = true;
+        Enabled = false;
+        await pending;
+        if (IsDisposed) return;
+        BeginInvoke(new Action(() => { if (IsDisposed) return; _allowClose = true; Close(); }));
     }
 
     private void OnQueueChanged()
@@ -110,7 +129,7 @@ public sealed class MainForm : Form
 
     private void UpdateState()
     {
-        var hasFiles = _queuePanel.Items.Count > 0;
+        var hasFiles = _queuePanel.Items.Count > 0 || _queuePanel.HasImportStatus;
         _split.Visible = hasFiles;
         _emptyState.Visible = !hasFiles;
 
@@ -159,48 +178,12 @@ public sealed class MainForm : Form
             : DragDropEffects.None;
     }
 
-    private void OnDragDrop(object? sender, DragEventArgs e)
+    private async void OnDragDrop(object? sender, DragEventArgs e)
     {
         if (e.Data?.GetData(DataFormats.FileDrop) is string[] dropped)
         {
-            _queuePanel.AddFiles(ExpandPaths(dropped));
+            await _queuePanel.AddPathsAsync(dropped);
         }
-    }
-
-    // Dropped directories are flattened one level to their immediate files; other paths pass through.
-    private static IReadOnlyList<string> ExpandPaths(IEnumerable<string>? paths)
-    {
-        var result = new List<string>();
-        if (paths is null)
-        {
-            return result;
-        }
-
-        foreach (var path in paths)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                continue;
-            }
-
-            try
-            {
-                if (Directory.Exists(path))
-                {
-                    result.AddRange(Directory.GetFiles(path));
-                }
-                else
-                {
-                    result.Add(path);
-                }
-            }
-            catch
-            {
-                // Ignore unreadable paths.
-            }
-        }
-
-        return result;
     }
 
     private Panel BuildEmptyState()

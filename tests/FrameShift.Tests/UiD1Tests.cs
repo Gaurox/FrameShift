@@ -94,6 +94,8 @@ public sealed class UiD1Tests
                 ActionInvokedEventArgs? invoked = null;
                 using var form = new MainForm(paths, e => invoked = e);
                 Handles(form);
+                SynchronizationContext.SetSynchronizationContext(new WindowsFormsSynchronizationContext());
+                Pump(form.StartInitialPathsAsync());
                 var split = Descendants(form).OfType<SplitContainer>().Single();
                 form.ClientSize = new Size(1000, 700); Layout(form);
                 Assert.Equal(Orientation.Vertical, split.Orientation);
@@ -194,6 +196,19 @@ public sealed class UiD1Tests
     }
 
     private static IEnumerable<Control> Descendants(Control control) => control.Controls.Cast<Control>().SelectMany(c => new[] { c }.Concat(Descendants(c)));
+    private static void Pump(Task task)
+    {
+        var context = SynchronizationContext.Current;
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (!task.IsCompleted && DateTime.UtcNow < deadline)
+        {
+            Application.DoEvents();
+            SynchronizationContext.SetSynchronizationContext(context);
+            Thread.Sleep(1);
+        }
+        Assert.True(task.IsCompleted);
+        task.GetAwaiter().GetResult();
+    }
     private static void Handles(Control control) { _ = control.Handle; foreach (Control child in control.Controls) Handles(child); }
     private static void Layout(Control control)
     {

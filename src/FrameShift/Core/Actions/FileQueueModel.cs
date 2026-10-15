@@ -76,6 +76,16 @@ public sealed class FileQueueModel
     public bool Contains(string path)
         => !string.IsNullOrWhiteSpace(path) && _seen.Contains(path);
 
+    /// <summary>Removes a batch in one pass, preserving the order of survivors.</summary>
+    public int RemoveRange(IEnumerable<string> paths)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        var removals = new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
+        var removed = _items.RemoveAll(removals.Contains);
+        _seen.ExceptWith(removals);
+        return removed;
+    }
+
     public void Clear()
     {
         _items.Clear();

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
+using FrameShift.Core.Logging;
 using FrameShift.Windows.Helpers;
 
 namespace FrameShift.Windows.Forms;
@@ -25,6 +26,17 @@ public sealed class FileQueuePanel : UserControl
     private readonly FileQueueModel _model = new();
     private readonly DataGridView _grid;
     private readonly Label _countLabel;
+    private readonly Label _importStatus;
+    private readonly Button _cancelImportButton;
+    private readonly HashSet<CancellationTokenSource> _imports = [];
+    private Task<int> _pathImportTask = Task.FromResult(0);
+    private bool _updatingQueue;
+    private bool _disposing;
+    private bool _acceptingImports = true;
+    private bool _showImportStatus;
+    internal const int ImportBatchSize = 256;
+    internal Task<int> PathImportTask => _pathImportTask;
+    internal bool HasImportStatus => _showImportStatus;
 
     public FileQueuePanel()
     {
@@ -36,14 +48,18 @@ public sealed class FileQueuePanel : UserControl
         _grid = CreateGrid();
         _grid.CellContentClick += OnCellContentClick;
         _grid.RowPrePaint += OnRowPrePaint;
-        _grid.SelectionChanged += (_, _) => SelectionChanged?.Invoke(this, EventArgs.Empty);
+        _grid.SelectionChanged += (_, _) =>
+        {
+            if (!_updatingQueue) SelectionChanged?.Invoke(this, EventArgs.Empty);
+        };
         _grid.KeyDown += OnGridKeyDown;
         _grid.AllowDrop = true;
         _grid.DragEnter += OnDragEnter;
         _grid.DragDrop += OnDragDrop;
 
-        var header = BuildHeader(out _countLabel);
-        var hint = FrameShiftUiFactory.CreateWrappingLabel("Drop files here to add · Delete removes selected files");
+        _importStatus = FrameShiftUiFactory.CreateWrappingLabel("");
+        var header = BuildHeader(out _countLabel, out _cancelImportButton);
+        var hint = FrameShiftUiFactory.CreateWrappingLabel("Drop files or folders · Immediate files only · Delete removes selected files");
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -92,6 +108,9 @@ public sealed class FileQueuePanel : UserControl
     }
 
     public event EventHandler? QueueChanged;
+    public event EventHandler? ImportStateChanged;
+    // Queue mutations notify QueueChanged once, with the final selection. Only
+    // independent user selection changes raise this event (avoids two rebuilds).
     public event EventHandler? SelectionChanged;
 
     /// <summary>
@@ -100,15 +119,17 @@ public sealed class FileQueuePanel : UserControl
     /// </summary>
     public int AddFiles(IEnumerable<string> paths)
     {
-        if (paths is null)
-        {
-            return 0;
-        }
+        return paths is null ? 0 : AddFilesCore(paths, validated: false);
+    }
+
+    private int AddFilesCore(IEnumerable<string> paths, bool validated)
+    {
 
         // DataGridView selects the first added row by default. Keep an existing user
         // selection, but leave a programmatically populated queue unscoped.
         var preserveSelection = _grid.SelectedRows.Count > 0;
         var added = 0;
+        _updatingQueue = true;
         _grid.SuspendLayout();
         try
         {
@@ -122,14 +143,14 @@ public sealed class FileQueuePanel : UserControl
                 string fullPath;
                 try
                 {
-                    fullPath = Path.GetFullPath(raw);
+                    fullPath = validated ? raw : Path.GetFullPath(raw);
                 }
                 catch
                 {
                     continue;
                 }
 
-                if (!File.Exists(fullPath) || !_model.Add(fullPath))
+                if ((!validated && !File.Exists(fullPath)) || !_model.Add(fullPath))
                 {
                     continue;
                 }
@@ -137,20 +158,20 @@ public sealed class FileQueuePanel : UserControl
                 AddGridRow(fullPath);
                 added++;
             }
-        }
-        finally
-        {
-            _grid.ResumeLayout();
-        }
-
-        if (added > 0)
-        {
-            if (!preserveSelection)
+            if (added > 0 && !preserveSelection)
             {
                 _grid.ClearSelection();
                 _grid.CurrentCell = null;
             }
+        }
+        finally
+        {
+            _grid.ResumeLayout();
+            _updatingQueue = false;
+        }
 
+        if (added > 0)
+        {
             UpdateHeader();
             QueueChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -158,18 +179,128 @@ public sealed class FileQueuePanel : UserControl
         return added;
     }
 
+    /// <summary>Add files/folders in order, with shallow folder expansion off the UI thread.
+    /// Cancellation keeps batches already added and returns their count.</summary>
+    public Task<int> AddPathsAsync(IEnumerable<string>? paths, CancellationToken token = default)
+    {
+        if (!_acceptingImports || IsDisposed || paths is null) return Task.FromResult(0);
+        var inputs = paths.ToArray();
+        if (inputs.Length == 0) return Task.FromResult(0);
+        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+        _imports.Add(cancellation);
+        _showImportStatus = true;
+        _cancelImportButton.Visible = true;
+        _importStatus.Text = "Adding files...";
+        ImportStateChanged?.Invoke(this, EventArgs.Empty);
+        return _pathImportTask = ImportPathsAsync(_pathImportTask, inputs, cancellation);
+    }
+
+    private async Task<int> ImportPathsAsync(Task previous, string[] paths, CancellationTokenSource cancellation)
+    {
+        var added = 0;
+        var errors = 0;
+        var token = cancellation.Token;
+        try
+        {
+            await previous;
+            token.ThrowIfCancellationRequested();
+            using var iterator = FileQueuePathExpander.Enumerate(paths, token, message =>
+            {
+                errors++;
+                AppLogger.LogStatic($"File queue: {message}");
+            }).GetEnumerator();
+            while (true)
+            {
+                var batch = await Task.Run(() => ReadPathBatch(iterator, token), token);
+                token.ThrowIfCancellationRequested();
+                if (_disposing || IsDisposed || batch.Count == 0) break;
+                added += AddFilesCore(batch, validated: true);
+                token.ThrowIfCancellationRequested();
+                if (_disposing || IsDisposed) break;
+                if (_showImportStatus) _importStatus.Text = $"Adding files... {added} added";
+                await Task.Yield();
+            }
+            if (!_disposing && !IsDisposed && _showImportStatus)
+                _importStatus.Text = errors == 0 ? $"{added} files added." : $"{added} files added. Some paths could not be read; see the log.";
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = "Adding files canceled.";
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogStatic($"File queue import failed: {ex}");
+            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = "Could not add all files. See the log.";
+        }
+        finally
+        {
+            _imports.Remove(cancellation);
+            cancellation.Dispose();
+            if (!_disposing && !IsDisposed)
+            {
+                _cancelImportButton.Visible = _imports.Count > 0;
+                ImportStateChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        return added;
+    }
+
+    private static List<string> ReadPathBatch(IEnumerator<string> iterator, CancellationToken token)
+    {
+        var batch = new List<string>(ImportBatchSize);
+        while (batch.Count < ImportBatchSize)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!iterator.MoveNext()) break;
+            batch.Add(iterator.Current);
+        }
+        return batch;
+    }
+
+    public void CancelPathImports()
+    {
+        foreach (var cancellation in _imports.ToArray())
+            if (_imports.Contains(cancellation)) cancellation.Cancel();
+    }
+
+    internal Task StopPathImportsAsync()
+    {
+        _acceptingImports = false;
+        CancelPathImports();
+        return _pathImportTask;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing && !_disposing)
+        {
+            _disposing = true;
+            _ = StopPathImportsAsync();
+        }
+        base.Dispose(disposing);
+    }
+
     /// <summary>Opens the file picker and adds the chosen files to the queue.</summary>
     public void PromptForFiles() => BrowseForFiles();
 
     public void Clear()
     {
+        CancelPathImports();
+        _showImportStatus = false;
+        _importStatus.Text = "";
+        ImportStateChanged?.Invoke(this, EventArgs.Empty);
         if (_model.Count == 0)
         {
             return;
         }
 
-        _model.Clear();
-        _grid.Rows.Clear();
+        _updatingQueue = true;
+        try
+        {
+            _model.Clear();
+            _grid.Rows.Clear();
+        }
+        finally { _updatingQueue = false; }
         UpdateHeader();
         QueueChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -195,11 +326,7 @@ public sealed class FileQueuePanel : UserControl
             return;
         }
 
-        if (_grid.Rows[e.RowIndex].Tag is string path && RemovePathCore(path))
-        {
-            UpdateHeader();
-            QueueChanged?.Invoke(this, EventArgs.Empty);
-        }
+        RemoveRows([e.RowIndex]);
     }
 
     private void OnGridKeyDown(object? sender, KeyEventArgs e)
@@ -209,46 +336,37 @@ public sealed class FileQueuePanel : UserControl
             return;
         }
 
-        var selected = SelectedPaths;
-        if (selected.Count == 0)
+        var selected = _grid.SelectedRows.Cast<DataGridViewRow>().Select(row => row.Index).OrderByDescending(index => index).ToArray();
+        if (selected.Length == 0)
         {
             return;
         }
 
-        var removedAny = false;
-        foreach (var path in selected)
-        {
-            removedAny |= RemovePathCore(path);
-        }
-
-        if (removedAny)
-        {
-            UpdateHeader();
-            QueueChanged?.Invoke(this, EventArgs.Empty);
-        }
-
+        RemoveRows(selected);
         e.Handled = true;
+        e.SuppressKeyPress = true;
     }
 
-    // Removes from the model and the grid without raising events (callers batch the event).
-    private bool RemovePathCore(string fullPath)
+    private void RemoveRows(IReadOnlyList<int> indices)
     {
-        if (!_model.Remove(fullPath))
+        var paths = indices.Select(index => (string)_grid.Rows[index].Tag!).ToArray();
+        var survivingSelection = SelectedPaths.Except(paths, StringComparer.OrdinalIgnoreCase).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _updatingQueue = true;
+        _grid.SuspendLayout();
+        try
         {
-            return false;
+            _model.RemoveRange(paths);
+            if (indices.Count == _grid.Rows.Count) _grid.Rows.Clear();
+            else foreach (var index in indices) _grid.Rows.RemoveAt(index);
+            _grid.ClearSelection();
+            _grid.CurrentCell = null;
+            if (survivingSelection.Count > 0)
+                foreach (DataGridViewRow row in _grid.Rows)
+                    row.Selected = row.Tag is string path && survivingSelection.Contains(path);
         }
-
-        for (var index = _grid.Rows.Count - 1; index >= 0; index--)
-        {
-            if (_grid.Rows[index].Tag is string rowPath &&
-                string.Equals(rowPath, fullPath, StringComparison.OrdinalIgnoreCase))
-            {
-                _grid.Rows.RemoveAt(index);
-                break;
-            }
-        }
-
-        return true;
+        finally { _grid.ResumeLayout(); _updatingQueue = false; }
+        UpdateHeader();
+        QueueChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnDragEnter(object? sender, DragEventArgs e)
@@ -258,11 +376,11 @@ public sealed class FileQueuePanel : UserControl
             : DragDropEffects.None;
     }
 
-    private void OnDragDrop(object? sender, DragEventArgs e)
+    private async void OnDragDrop(object? sender, DragEventArgs e)
     {
         if (e.Data?.GetData(DataFormats.FileDrop) is string[] dropped)
         {
-            AddFiles(dropped);
+            await AddPathsAsync(dropped);
         }
     }
 
@@ -301,16 +419,19 @@ public sealed class FileQueuePanel : UserControl
         _ => "other"
     };
 
-    private Panel BuildHeader(out Label countLabel)
+    private Panel BuildHeader(out Label countLabel, out Button cancelImport)
     {
         countLabel = FrameShiftUiFactory.CreateWrappingLabel("No files yet");
         var add = FrameShiftUiFactory.CreateMeasuredActionButton("Add…", false);
         var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear", false);
+        cancelImport = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel add", false);
+        cancelImport.Visible = false;
+        cancelImport.Click += (_, _) => CancelPathImports();
         add.Click += (_, _) => BrowseForFiles();
         clear.Click += (_, _) => Clear();
-        return FrameShiftUiFactory.CreateVerticalStack(countLabel, FrameShiftUiFactory.CreateChoiceRow(add, clear));
+        return FrameShiftUiFactory.CreateVerticalStack(countLabel, FrameShiftUiFactory.CreateChoiceRow(add, clear, cancelImport), _importStatus);
     }
-    private void BrowseForFiles()
+    private async void BrowseForFiles()
     {
         using var dialog = new OpenFileDialog
         {
@@ -322,7 +443,7 @@ public sealed class FileQueuePanel : UserControl
 
         if (dialog.ShowDialog(this) == DialogResult.OK)
         {
-            AddFiles(dialog.FileNames);
+            await AddPathsAsync(dialog.FileNames);
         }
     }
 

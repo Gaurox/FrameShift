@@ -12,7 +12,7 @@ public sealed class UpscaleTransparencyTests : IDisposable
 
     // A self-contained ONNX Resize graph: dynamic NCHW RGB, nearest x2, opset 13 / IR 8.
     // Tests exercise the real processor and PNG publication without downloading model weights.
-    private const string Nearest2xModel =
+    internal const string Nearest2xModel =
         "CAg6iAIKgAEKBWlucHV0CgAKBnNjYWxlcxIGb3V0cHV0IgZSZXNpemUqLwoeY29vcmRpbmF0ZV90cmFuc2Zvcm1hdGlvbl9tb2RlIgphc3ltbWV0cmljoAEDKhIKBG1vZGUiB25lYXJlc3SgAQMqGAoMbmVhcmVzdF9tb2RlIgVmbG9vcqABAxIaRnJhbWVTaGlmdCB0ZXN0IG5lYXJlc3QgeDIqHggEEAEiEAAAgD8AAIA/AAAAQAAAAEBCBnNjYWxlc1ohCgVpbnB1dBIYChYIARISCgIIAQoCCAMKAxIBaAoDEgF3YiQKBm91dHB1dBIaChgIARIUCgIIAQoCCAMKBBICb2gKBBICb3dCBAoAEA0=";
 
     [Theory]
