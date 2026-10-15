@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Pipes;
-using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
@@ -15,8 +13,8 @@ namespace FrameShift;
 
 internal static partial class Program
 {
-    private const string ImageToPdfMutexName = @"Local\FrameShift_ImageToPdf";
-    private const string ImageToPdfPipeName = "FrameShift_ImageToPdfQueue";
+    private static readonly string ImageToPdfMutexName = LocalPipeTransport.Name(@"Local\FrameShift_ImageToPdf");
+    private static readonly string ImageToPdfPipeName = LocalPipeTransport.Name("FrameShift_ImageToPdfQueue");
 
     private static int RunImageToPdf(
         IFrameShiftAction action,
@@ -51,13 +49,7 @@ internal static partial class Program
         {
             try
             {
-                using var pipe = new NamedPipeClientStream(".", ImageToPdfPipeName, PipeDirection.Out);
-                pipe.Connect(5000);
-                using var writer = new StreamWriter(pipe, Encoding.UTF8) { AutoFlush = true };
-                foreach (var path in inputPaths)
-                {
-                    writer.WriteLine(path);
-                }
+                LocalPipeTransport.SendPathsAsync(ImageToPdfPipeName, inputPaths).GetAwaiter().GetResult();
 
                 return 0;
             }
@@ -71,19 +63,24 @@ internal static partial class Program
 
         using var cts = new CancellationTokenSource();
         ImageToPdfForm? form = null;
+        Thread? listenerThread = null;
         try
         {
             var toolLocator = new ToolLocator();
             var ffmpegPath = toolLocator.ResolveFfmpegPath();
             form = new ImageToPdfForm(inputPaths, ffmpegPath, new FfmpegRunner(logger));
 
-            var listenerThread = new Thread(() => RunImageToPdfPipeListener(form, cts.Token))
+            _ = form.Handle;
+            listenerThread = new Thread(() => RunImageToPdfPipeListener(form, cts.Token))
             {
                 IsBackground = true
             };
             listenerThread.Start();
 
-            if (form.ShowDialog() != DialogResult.OK || form.Settings is null)
+            var dialogResult = form.ShowDialog();
+            cts.Cancel();
+            listenerThread.Join(TimeSpan.FromSeconds(1));
+            if (dialogResult != DialogResult.OK || form.Settings is null)
             {
                 return 0;
             }
@@ -99,61 +96,15 @@ internal static partial class Program
         finally
         {
             cts.Cancel();
+            listenerThread?.Join(TimeSpan.FromSeconds(1));
             form?.Dispose();
         }
     }
 
     private static void RunImageToPdfPipeListener(ImageToPdfForm form, CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            NamedPipeServerStream? pipe = null;
-            try
-            {
-                pipe = new NamedPipeServerStream(
-                    ImageToPdfPipeName,
-                    PipeDirection.In,
-                    NamedPipeServerStream.MaxAllowedServerInstances,
-                    PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous);
-
-                pipe.WaitForConnectionAsync(cancellationToken).GetAwaiter().GetResult();
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    pipe.Dispose();
-                    break;
-                }
-
-                using (pipe)
-                {
-                    using var reader = new StreamReader(pipe, Encoding.UTF8);
-                    var paths = new List<string>();
-                    string? line;
-                    while ((line = reader.ReadLine()) != null)
-                    {
-                        if (!string.IsNullOrWhiteSpace(line))
-                        {
-                            paths.Add(line);
-                        }
-                    }
-
-                    if (paths.Count > 0 && !form.IsDisposed)
-                    {
-                        form.AddPathsThreadSafe(paths);
-                    }
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                pipe?.Dispose();
-                break;
-            }
-            catch
-            {
-                pipe?.Dispose();
-            }
-        }
+        LocalPipeTransport.ListenForPathsAsync(ImageToPdfPipeName,
+            paths => { if (!form.IsDisposed) form.AddPathsThreadSafe(paths); }, cancellationToken).GetAwaiter().GetResult();
     }
 
     private static bool EnsureImageToPdfOptions(List<string> inputPaths, Dictionary<string, string> options)

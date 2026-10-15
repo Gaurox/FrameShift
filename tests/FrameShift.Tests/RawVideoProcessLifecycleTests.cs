@@ -1,3 +1,4 @@
+using FrameShift.Core.Helpers;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -295,7 +296,8 @@ public sealed class RawVideoProcessLifecycleTests
         {
             await process.WaitForExitAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(10));
             Assert.Equal(0, process.ExitCode);
-            Assert.Equal(LargeOutputBytes, process.StandardError.Length);
+            Assert.Equal(BoundedProcessText.DiagnosticLimit, process.StandardError.Length);
+            Assert.Contains("truncated", process.StandardError);
         }
         finally
         {

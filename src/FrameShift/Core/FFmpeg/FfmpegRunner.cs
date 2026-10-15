@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
 using FrameShift.Core.Progress;
+using FrameShift.Core.Helpers;
 
 namespace FrameShift.Core.FFmpeg;
 
@@ -217,6 +218,8 @@ internal readonly record struct FfmpegProgressSnapshot(int DisplayedPermille, Ff
 public sealed class FfmpegRunner
 {
     private readonly AppLogger _logger;
+    private readonly TimeSpan _captureTimeout;
+    private readonly int _captureLimit;
     private readonly Action<Process> _killProcess;
     private readonly ConcurrentDictionary<(string ExecutablePath, string EncoderName), bool> _encoderCache = new();
 
@@ -225,10 +228,12 @@ public sealed class FfmpegRunner
     }
 
     // Allows process-lifecycle tests to simulate a failed OS kill without changing the wait path.
-    internal FfmpegRunner(AppLogger logger, Action<Process> killProcess)
+    internal FfmpegRunner(AppLogger logger, Action<Process> killProcess, TimeSpan? captureTimeout = null, int captureLimit = BoundedProcessText.CaptureLimit)
     {
         _logger = logger;
         _killProcess = killProcess;
+        _captureTimeout = captureTimeout ?? TimeSpan.FromMinutes(2);
+        _captureLimit = captureLimit;
     }
 
     public ProcessStartInfo CreateStartInfo(string executablePath, IReadOnlyCollection<string> arguments)
@@ -287,7 +292,7 @@ public sealed class FfmpegRunner
         string? currentFile,
         string? currentAction,
         string? executionMode,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Action<string>? errorLineObserver = null)
     {
         return await RunAsync(
             executablePath,
@@ -299,7 +304,7 @@ public sealed class FfmpegRunner
             currentAction,
             executionMode,
             null,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken, errorLineObserver).ConfigureAwait(false);
     }
 
     public async Task<FfmpegRunResult> RunAsync(
@@ -336,12 +341,12 @@ public sealed class FfmpegRunner
         string? currentAction,
         string? executionMode,
         string? pipelineDescription,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, Action<string>? errorLineObserver = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
-        var stderrBuilder = new StringBuilder();
+        var stderrBuilder = new BoundedProcessText(BoundedProcessText.DiagnosticLimit);
         var cancellationSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var progressState = new FfmpegProgressState();
         using var itemCancellationSource = new CancellationTokenSource();
@@ -382,7 +387,16 @@ public sealed class FfmpegRunner
             estimatedFrameCount,
             progressState,
             streamReadCancellationSource.Token);
-        var stderrTask = ReadErrorAsync(process.StandardError, stderrBuilder, streamReadCancellationSource.Token);
+        var stderrTask = ReadErrorAsync(process.StandardError, stderrBuilder, streamReadCancellationSource.Token, line =>
+        {
+            try { errorLineObserver?.Invoke(line); }
+            catch
+            {
+                TryKill(process, "stderr-observer-failed", currentFile);
+                cancellationSignal.TrySetResult();
+                throw;
+            }
+        });
         var queueCancellationTask = MonitorCurrentQueueItemCancellationAsync(
             progressReporter,
             currentFile,
@@ -460,42 +474,11 @@ public sealed class FfmpegRunner
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
         process.Start();
 
-        var cancellationSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var cancellationRegistration = cancellationToken.Register(() =>
-        {
-            _logger.Log($"FfmpegRunner: capture cancellation requested. pid={TryGetProcessId(process)}.");
-            TryKill(process, "capture-cancellation", null);
-            cancellationSignal.TrySetResult(true);
-        });
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync();
-        var stderrTask = process.StandardError.ReadToEndAsync();
-        var waitForExitTask = process.WaitForExitAsync();
-
-        if (await Task.WhenAny(waitForExitTask, cancellationSignal.Task).ConfigureAwait(false) != waitForExitTask)
-        {
-            var processExited = await WaitForExitAfterCancellationAsync(process, waitForExitTask).ConfigureAwait(false);
-            if (!processExited)
-            {
-                throw new TimeoutException("FFmpeg capture process did not exit after cancellation.");
-            }
-        }
-        else
-        {
-            await waitForExitTask.ConfigureAwait(false);
-        }
-
-        var stdout = await stdoutTask.ConfigureAwait(false);
-        var stderr = await stderrTask.ConfigureAwait(false);
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!string.IsNullOrWhiteSpace(stderr))
-        {
-            _logger.Log(stderr.Trim());
-        }
-
-        return new CaptureResult(process.ExitCode == 0, stdout, stderr);
+        var capture = await BoundedProcessCapture.ReadAsync(process,
+            () => TryKill(process, "capture-stop", null),
+            () => WaitForExitAfterCancellationAsync(process), _captureTimeout, _captureLimit, cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(capture.Error)) _logger.Log(capture.Error);
+        return new CaptureResult(process.ExitCode == 0 && !capture.ExceededLimit && !capture.TimedOut, capture.Output, capture.Error);
     }
 
     private static async Task ReportVisualProgressAsync(
@@ -581,14 +564,8 @@ public sealed class FfmpegRunner
         _logger.Log("FfmpegRunner: stdout reader started.");
         try
         {
-            while (true)
+            await foreach (var line in BoundedProcessText.ReadLinesAsync(reader, cancellationToken).ConfigureAwait(false))
             {
-                var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                if (line is null)
-                {
-                    _logger.Log("FfmpegRunner: stdout reader finished.");
-                    return;
-                }
 
                 if (string.IsNullOrWhiteSpace(line))
                 {
@@ -652,27 +629,22 @@ public sealed class FfmpegRunner
 
     private async Task ReadErrorAsync(
         StreamReader reader,
-        StringBuilder stderrBuilder,
-        CancellationToken cancellationToken)
+        BoundedProcessText stderrBuilder,
+        CancellationToken cancellationToken, Action<string>? errorLineObserver)
     {
         _logger.Log("FfmpegRunner: stderr reader started.");
         try
         {
-            while (true)
+            await foreach (var line in BoundedProcessText.ReadLinesAsync(reader, cancellationToken).ConfigureAwait(false))
             {
-                var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
-                if (line is null)
-                {
-                    _logger.Log("FfmpegRunner: stderr reader finished.");
-                    return;
-                }
 
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
 
-                stderrBuilder.AppendLine(line);
+                errorLineObserver?.Invoke(line);
+                stderrBuilder.Append((line + Environment.NewLine).AsSpan());
                 _logger.Log(line);
             }
         }
@@ -888,7 +860,7 @@ public sealed class FfmpegRunner
         private readonly CancellationTokenRegistration _cancellationRegistration;
         private readonly Task _stderrDrainTask;
         private readonly Task _stdoutDrainTask;
-        private readonly StringBuilder _stderr = new();
+        private readonly BoundedProcessText _stderr = new(BoundedProcessText.DiagnosticLimit);
         private readonly object _drainSync = new();
         private Task? _drainTask;
         private int _standardInputClosed;
@@ -1036,7 +1008,7 @@ public sealed class FfmpegRunner
                         return;
                     }
 
-                    _stderr.Append(buffer, 0, read);
+                    _stderr.Append(buffer.AsSpan(0, read));
                 }
             }
             catch (OperationCanceledException) when (_streamReadCancellationSource.IsCancellationRequested)

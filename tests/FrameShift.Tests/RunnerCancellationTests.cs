@@ -176,7 +176,13 @@ public sealed class RunnerCancellationTests
         Assert.False(result.Canceled);
         Assert.Equal(CancellationScope.None, result.CancellationScope);
         Assert.True(result.ProcessTerminationConfirmed);
-        Assert.Equal(mode == "normal" ? "normal-error" : new string('e', bytes), result.StandardError.TrimEnd());
+        if (mode == "normal") Assert.Equal("normal-error", result.StandardError.TrimEnd());
+        else
+        {
+            Assert.InRange(result.StandardError.Length, 1, BoundedProcessText.DiagnosticLimit);
+            Assert.Contains("truncated", result.StandardError);
+            Assert.EndsWith(new string('e', 100), result.StandardError.TrimEnd());
+        }
     }
 
     [Fact]
@@ -274,7 +280,8 @@ public sealed class RunnerCancellationTests
 
         Assert.True(result.Success);
         Assert.Equal(LargeOutputBytes, result.StandardOutput.Length);
-        Assert.Equal(LargeOutputBytes, result.StandardError.Length);
+        Assert.Equal(BoundedProcessText.DiagnosticLimit, result.StandardError.Length);
+        Assert.Contains("truncated", result.StandardError);
     }
 
     [Theory]

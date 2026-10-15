@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -12,6 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
+using FrameShift.Core.Helpers;
 using FrameShift.Windows.Forms;
 using FrameShift.Windows.ProgressUI;
 
@@ -23,6 +23,7 @@ internal sealed class ConversionBatchSession : IDisposable
     private const int IdleCloseMilliseconds = 2500;
 
     private readonly BatchDefinition _definition;
+    private readonly TimeSpan _pipeTimeout;
     private readonly IFrameShiftAction _action;
     private readonly AppLogger _logger;
     private readonly ConcurrentQueue<BatchQueueItem> _pendingPaths = new();
@@ -52,9 +53,10 @@ internal sealed class ConversionBatchSession : IDisposable
         BatchDefinition definition,
         IFrameShiftAction action,
         AppLogger logger,
-        ProgressForm? progressForm = null)
+        ProgressForm? progressForm = null, TimeSpan? pipeTimeout = null)
     {
         _definition = definition;
+        _pipeTimeout = pipeTimeout ?? LocalPipeTransport.ConnectionTimeout;
         _action = action;
         _logger = logger;
         AttachProgressForm(progressForm);
@@ -172,42 +174,29 @@ internal sealed class ConversionBatchSession : IDisposable
     }
 
     public static bool SendPathsToPrimaryInstance(
-        BatchDefinition definition,
-        IEnumerable<string> inputPaths,
-        IReadOnlyDictionary<string, string>? options = null)
+        BatchDefinition definition, IEnumerable<string> inputPaths,
+        IReadOnlyDictionary<string, string>? options = null) =>
+        SendPathsToPrimaryInstanceAsync(definition, inputPaths, options, CancellationToken.None).GetAwaiter().GetResult();
+
+    internal static async Task<bool> SendPathsToPrimaryInstanceAsync(BatchDefinition definition,
+        IEnumerable<string> inputPaths, IReadOnlyDictionary<string, string>? options, CancellationToken token,
+        TimeSpan? timeout = null)
     {
-        var queueItems = inputPaths
-            .Where(inputPath => !string.IsNullOrWhiteSpace(inputPath))
-            .Select(inputPath => new QueueMessage(inputPath, options is { Count: > 0 }
-                ? new Dictionary<string, string>(options)
-                : null))
-            .ToArray();
-        if (queueItems.Length == 0)
-        {
-            return false;
-        }
-
-        using var pipeClient = new NamedPipeClientStream(".", definition.PipeName, PipeDirection.InOut);
-        pipeClient.Connect(5000);
-
-        var invocation = new QueueInvocationMessage(Guid.NewGuid().ToString("N"), queueItems);
-        WritePipeLine(pipeClient, JsonSerializer.Serialize(invocation, s_queueMessageJsonOptions));
-
-        var responseLine = ReadPipeLine(pipeClient);
-        if (string.IsNullOrWhiteSpace(responseLine))
-        {
-            throw new IOException("The primary batch session closed before confirming the queued invocation.");
-        }
-
-        try
-        {
-            var response = JsonSerializer.Deserialize<QueueInvocationResponse>(responseLine, s_queueMessageJsonOptions);
-            return response?.Accepted == true;
-        }
-        catch (JsonException ex)
-        {
-            throw new IOException("The primary batch session returned an invalid queue confirmation.", ex);
-        }
+        var paths = inputPaths.Where(path => !string.IsNullOrWhiteSpace(path)).Take(LocalPipeTransport.MaximumPaths + 1).ToArray();
+        if (paths.Length == 0) return false;
+        LocalPipeTransport.ValidatePaths(paths);
+        var copy = options is { Count: > 0 } ? new Dictionary<string, string>(options) : null;
+        var invocation = new QueueInvocationMessage(Guid.NewGuid().ToString("N"), paths.Select(path => new QueueMessage(path, copy)).ToArray());
+        var message = LocalPipeTransport.Serialize(invocation, s_queueMessageJsonOptions);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(timeout ?? LocalPipeTransport.ConnectionTimeout);
+        using var pipeClient = LocalPipeTransport.CreateClient(definition.PipeName, PipeDirection.InOut);
+        await pipeClient.ConnectAsync(deadline.Token).ConfigureAwait(false);
+        await LocalPipeTransport.WriteAsync(pipeClient, message, deadline.Token).ConfigureAwait(false);
+        var responseLine = await LocalPipeTransport.ReadAsync(pipeClient, deadline.Token).ConfigureAwait(false);
+        if (string.IsNullOrWhiteSpace(responseLine)) throw new IOException("The primary session closed before confirming the queue invocation.");
+        try { return JsonSerializer.Deserialize<QueueInvocationResponse>(responseLine, s_queueMessageJsonOptions)?.Accepted == true; }
+        catch (JsonException ex) { throw new IOException("The primary session returned an invalid queue confirmation.", ex); }
     }
 
     // Wire format helpers. Each queue message is a single-line JSON object. A bare path line
@@ -227,37 +216,6 @@ internal sealed class ConversionBatchSession : IDisposable
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
-
-    private static string? ReadPipeLine(Stream stream)
-    {
-        const int maxMessageLength = 1024 * 1024;
-        using var buffer = new MemoryStream();
-        while (buffer.Length < maxMessageLength)
-        {
-            var value = stream.ReadByte();
-            if (value < 0)
-            {
-                return buffer.Length == 0 ? null : Encoding.UTF8.GetString(buffer.ToArray());
-            }
-
-            if (value == '\n')
-            {
-                var line = Encoding.UTF8.GetString(buffer.ToArray());
-                return line.EndsWith('\r') ? line[..^1] : line;
-            }
-
-            buffer.WriteByte((byte)value);
-        }
-
-        throw new IOException("The batch queue invocation exceeded the maximum message length.");
-    }
-
-    private static void WritePipeLine(Stream stream, string message)
-    {
-        var bytes = Encoding.UTF8.GetBytes(message + "\n");
-        stream.Write(bytes, 0, bytes.Length);
-        stream.Flush();
-    }
 
     internal static string FormatQueueMessage(string inputPath, IReadOnlyDictionary<string, string>? options)
     {
@@ -297,8 +255,9 @@ internal sealed class ConversionBatchSession : IDisposable
             }
             catch (JsonException)
             {
-                // Fall through and treat the line as a bare path (backward compatibility).
+                return false;
             }
+            return false;
         }
 
         // Backward compatibility: a plain path line with no options.
@@ -1019,41 +978,34 @@ internal sealed class ConversionBatchSession : IDisposable
         var serverThread = new Thread(() =>
         {
             _logger.Log("ConversionBatchSession: pipe listener thread entered.");
-            while (!IsClosing())
+            while (!IsClosing() && !_sessionCancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    using var pipeServer = new NamedPipeServerStream(
-                        _definition.PipeName,
-                        PipeDirection.InOut,
-                        NamedPipeServerStream.MaxAllowedServerInstances,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                    using var pipeServer = LocalPipeTransport.CreateServer(_definition.PipeName, PipeDirection.InOut);
 
                     if (!TryRegisterPipeServer(pipeServer))
                     {
                         return;
                     }
 
-                    pipeServer.WaitForConnection();
-
-                    var accepted = false;
-                    var line = ReadPipeLine(pipeServer);
-                    if (TryParseQueueInvocation(line, out var invocation))
-                    {
-                        accepted = TryAcceptInvocationAndWriteConfirmation(pipeServer, invocation, out var acceptedItems);
-                        ReportAcceptedInvocation(acceptedItems);
-                    }
-                    else
-                    {
-                        WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
-                    }
+                    pipeServer.WaitForConnectionAsync(_sessionCancellationToken).GetAwaiter().GetResult();
+                    using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_sessionCancellationToken);
+                    deadline.CancelAfter(_pipeTimeout);
+                    var line = LocalPipeTransport.ReadAsync(pipeServer, deadline.Token).GetAwaiter().GetResult();
+                    IReadOnlyList<BatchQueueItem> acceptedItems = [];
+                    var accepted = TryParseQueueInvocation(line, out var invocation) && TryAcceptInvocation(invocation, out acceptedItems);
+                    if (accepted) ReportAcceptedInvocation(acceptedItems);
+                    // Acceptance is committed under _sync; potentially blocked I/O is always outside.
+                    LocalPipeTransport.WriteAsync(pipeServer, LocalPipeTransport.Serialize(new QueueInvocationResponse(accepted), s_queueMessageJsonOptions),
+                        deadline.Token).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {
                     if (!IsClosing())
                     {
                         _logger.Log($"Convert batch pipe server error ({_definition.ActionId}):{Environment.NewLine}{ex}");
+                        if (!_sessionCancellationToken.IsCancellationRequested) Thread.Sleep(100);
                     }
                 }
                 finally
@@ -1080,20 +1032,23 @@ internal sealed class ConversionBatchSession : IDisposable
             return false;
         }
 
-        try
+        if (line.TrimStart().StartsWith('{'))
         {
-            var parsed = JsonSerializer.Deserialize<QueueInvocationMessage>(line, s_queueMessageJsonOptions);
-            if (parsed is not null &&
-                !string.IsNullOrWhiteSpace(parsed.InvocationId) &&
-                parsed.Items is { Length: > 0 })
+            try
             {
-                invocation = parsed;
-                return true;
+                var parsed = JsonSerializer.Deserialize<QueueInvocationMessage>(line, s_queueMessageJsonOptions);
+                if (parsed is not null &&
+                    !string.IsNullOrWhiteSpace(parsed.InvocationId) &&
+                    parsed.Items is { Length: > 0 })
+                {
+                    invocation = parsed;
+                    return true;
+                }
             }
-        }
-        catch (JsonException)
-        {
-            // Fall through for a legacy single-message client.
+            catch (JsonException)
+            {
+                return false;
+            }
         }
 
         if (!TryParseQueueMessage(line, out var inputPath, out var options))
@@ -1107,75 +1062,30 @@ internal sealed class ConversionBatchSession : IDisposable
         return true;
     }
 
-    private bool TryAcceptInvocationAndWriteConfirmation(
-        Stream pipeServer,
-        QueueInvocationMessage invocation,
-        out IReadOnlyList<BatchQueueItem> acceptedItems)
+    private bool TryAcceptInvocation(QueueInvocationMessage invocation, out IReadOnlyList<BatchQueueItem> acceptedItems)
     {
         acceptedItems = [];
-        if (string.IsNullOrWhiteSpace(invocation.InvocationId) || invocation.Items is not { Length: > 0 })
-        {
-            WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
-            return false;
-        }
-
-        var items = invocation.Items
-            .Where(item => !string.IsNullOrWhiteSpace(item.Path))
-            .ToArray();
-        if (items.Length != invocation.Items.Length)
-        {
-            WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
-            return false;
-        }
-
+        if (string.IsNullOrWhiteSpace(invocation.InvocationId) || invocation.InvocationId.Length > 128 ||
+            invocation.Items is not { Length: > 0 and <= LocalPipeTransport.MaximumPaths } ||
+            invocation.Items.Any(item => item is null || string.IsNullOrWhiteSpace(item.Path))) return false;
+        try { LocalPipeTransport.ValidatePaths(invocation.Items.Select(item => item.Path).ToArray()); }
+        catch (InvalidDataException) { return false; }
         lock (_sync)
         {
-            if (_closing || _globalCancelRequested || _sessionCancellationToken.IsCancellationRequested)
+            if (_closing || _globalCancelRequested || _sessionCancellationToken.IsCancellationRequested) return false;
+            if (_acceptedInvocationIds.Contains(invocation.InvocationId)) return true;
+            var items = invocation.Items.Select(item => CreateQueueItem(item.Path, item.Options)).ToArray();
+            foreach (var item in items)
             {
-                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(false), s_queueMessageJsonOptions));
-                return false;
+                _knownItems[item.QueueItemId] = item;
+                _removedItems.Remove(item.QueueItemId);
+                _pendingPaths.Enqueue(item);
             }
-
-            if (_acceptedInvocationIds.Contains(invocation.InvocationId))
-            {
-                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(true), s_queueMessageJsonOptions));
-                return true;
-            }
-
-            var newlyAcceptedItems = items
-                .Select(item => CreateQueueItem(item.Path, item.Options))
-                .ToList();
-
-            foreach (var queueItem in newlyAcceptedItems)
-            {
-                _knownItems[queueItem.QueueItemId] = queueItem;
-                _removedItems.Remove(queueItem.QueueItemId);
-                _pendingPaths.Enqueue(queueItem);
-            }
-
             _acceptedInvocationIds.Add(invocation.InvocationId);
             Interlocked.Exchange(ref _queueState.LastActivityTicks, DateTime.UtcNow.Ticks);
-
-            try
-            {
-                WritePipeLine(pipeServer, JsonSerializer.Serialize(new QueueInvocationResponse(true), s_queueMessageJsonOptions));
-            }
-            catch
-            {
-                foreach (var queueItem in newlyAcceptedItems)
-                {
-                    _knownItems.Remove(queueItem.QueueItemId);
-                    _removedItems.Add(queueItem.QueueItemId);
-                }
-
-                _acceptedInvocationIds.Remove(invocation.InvocationId);
-                throw;
-            }
-
-            acceptedItems = newlyAcceptedItems;
+            acceptedItems = items;
+            return true;
         }
-
-        return true;
     }
 
     private void ReportAcceptedInvocation(IReadOnlyList<BatchQueueItem> acceptedItems)
@@ -1463,7 +1373,11 @@ internal sealed class ConversionBatchSession : IDisposable
         Func<IReadOnlyList<string>, IReadOnlyList<IConversionChoice>> GetTargetsForSelection,
         Func<IReadOnlyList<IConversionChoice>> GetProfiles,
         bool KeepWindowOpenOnFailure = false,
-        string PrimaryButtonText = "Convert");
+        string PrimaryButtonText = "Convert")
+    {
+        public string MutexName { get; init; } = LocalPipeTransport.Name(MutexName);
+        public string PipeName { get; init; } = LocalPipeTransport.Name(PipeName);
+    }
 
     private sealed class QueueSignalState
     {

@@ -38,6 +38,27 @@ switch ($Mode) {
     'long' {
         Wait-Indefinitely
     }
+    'log-then-wait' {
+        [Console]::Error.WriteLine('observer line')
+        Wait-Indefinitely
+    }
+    'diagnostic-flood' {
+        [Console]::Out.Write(('o' * [Math]::Max($Bytes, 1)))
+        [Console]::Error.Write(('e' * [Math]::Max($Bytes, 1)))
+        [Console]::Error.Write(' final diagnostic')
+        exit 0
+    }
+    'showinfo-flood' {
+        [Console]::Error.WriteLine('[Parsed_showinfo_0] config in time_base: 1/90000, frame_rate: 240/1')
+        for ($i = 0; $i -lt 3601; $i++) {
+            $ticks = 90000000L + 375L * $i
+            $seconds = ($ticks / 90000.0).ToString('0.######', [Globalization.CultureInfo]::InvariantCulture)
+            [Console]::Error.WriteLine("[Parsed_showinfo_0] n: $i pts: $ticks pts_time: $seconds duration: 375 duration_time: 0.00416667")
+        }
+        [Console]::Error.Write(('x' * 1048576))
+        [Console]::Error.WriteLine(' final diagnostic')
+        exit 0
+    }
     'raw-output' {
         $stream = [Console]::OpenStandardOutput()
         $buffer = New-Object byte[] 65536

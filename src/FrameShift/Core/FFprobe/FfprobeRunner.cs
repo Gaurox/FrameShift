@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
+using FrameShift.Core.Helpers;
 
 namespace FrameShift.Core.FFprobe;
 
@@ -18,9 +19,14 @@ public sealed class FfprobeRunner
 {
     private readonly AppLogger _logger;
 
-    public FfprobeRunner(AppLogger logger)
+    private readonly TimeSpan _probeTimeout;
+    private readonly int _captureLimit;
+    public FfprobeRunner(AppLogger logger) : this(logger, TimeSpan.FromSeconds(30)) { }
+    internal FfprobeRunner(AppLogger logger, TimeSpan probeTimeout, int captureLimit = BoundedProcessText.CaptureLimit)
     {
         _logger = logger;
+        _probeTimeout = probeTimeout;
+        _captureLimit = captureLimit;
     }
 
     public ProcessStartInfo CreateStartInfo(string executablePath, IReadOnlyCollection<string> arguments)
@@ -63,7 +69,7 @@ public sealed class FfprobeRunner
 
         try
         {
-            var document = JsonDocument.Parse(result.Output);
+            using var document = JsonDocument.Parse(result.Output);
             if (!document.RootElement.TryGetProperty("streams", out var streamsElement))
             {
                 return new MediaProbeAttemptResult(null, ConversionActionHelper.GetFriendlyProbeError(result.StandardError));
@@ -387,7 +393,7 @@ public sealed class FfprobeRunner
 
     private static MediaInfoData ParseMediaInfoData(string json, long fileSize)
     {
-        var document = JsonDocument.Parse(json);
+        using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
 
         string? formatName = null;
@@ -676,42 +682,11 @@ public sealed class FfprobeRunner
 
         process.Start();
 
-        var cancellationSignal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var cancellationRegistration = cancellationToken.Register(() =>
-        {
-            _logger.Log($"FfprobeRunner: cancellation requested. pid={TryGetProcessId(process)}.");
-            TryKill(process, "cancellation");
-            cancellationSignal.TrySetResult(true);
-        });
-
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        var waitForExitTask = process.WaitForExitAsync();
-
-        if (await Task.WhenAny(waitForExitTask, cancellationSignal.Task).ConfigureAwait(false) != waitForExitTask)
-        {
-            var processExited = await WaitForExitAfterCancellationAsync(process, waitForExitTask).ConfigureAwait(false);
-            if (!processExited)
-            {
-                throw new TimeoutException("FFprobe process did not exit after cancellation.");
-            }
-        }
-        else
-        {
-            await waitForExitTask.ConfigureAwait(false);
-        }
-
-        var output = await outputTask.ConfigureAwait(false);
-        var error = (await errorTask.ConfigureAwait(false)).Trim();
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        if (!string.IsNullOrWhiteSpace(error))
-        {
-            _logger.Log(error);
-        }
-
-        return new ProbeResult(process.ExitCode == 0, output, error);
+        var capture = await BoundedProcessCapture.ReadAsync(process,
+            () => TryKill(process, "probe-stop"),
+            () => WaitForExitAfterCancellationAsync(process), _probeTimeout, _captureLimit, cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(capture.Error)) _logger.Log(capture.Error);
+        return new ProbeResult(process.ExitCode == 0 && !capture.ExceededLimit && !capture.TimedOut, capture.Output, capture.Error.Trim());
     }
 
     private void TryKill(Process process, string reason)
