@@ -1,4 +1,4 @@
-# English and simplified Chinese
+# Localization
 
 FrameShift 1.22 prepares a single bilingual application and installer. It is not
 published yet. English is the fallback for development builds, missing installation
@@ -18,6 +18,15 @@ fixes and the language preference. Original third-party licence texts are unchan
 
 ## Language selection
 
+- `Core/Localization/AppLanguages.cs` is the application's supported-language catalog:
+  canonical culture code, native display name and optional aliases (including Inno
+  Setup language identifiers). **1.22 registers only English and simplified Chinese.**
+- Startup, preferences and the subtitle worker resolve languages through that catalog.
+  Matching ignores case and accepts regional parent cultures, such as `en-GB` -> `en`.
+  Empty, invalid or unregistered languages fall back to English. Adding a resource
+  file alone does not enable a language in the application.
+- Settings builds its choices from the catalog and saves the selected culture code;
+  it has no per-language index or English/Chinese conditional to extend.
 - The installer always offers English and 简体中文. Its custom pages, component
   captions, model instructions and optional Explorer entries use that selection.
 - The application reads the user's saved language preference, then the installation
@@ -40,13 +49,41 @@ each argument and its numeric format. Keep filenames, identifiers, state keys,
 regular expressions, raw FFmpeg diagnostics and processing parameters outside them.
 Display labels for enums and choices are separate from their stored values.
 
-The worker links the same managed resource files; neither project gains a package
-dependency. The Chinese Inno Setup language file is checked into `installer/Languages`
-with its provenance, instead of relying on a modified compiler installation.
+The worker links `Core/Localization/*.cs` and `Strings*.resx` automatically, with
+stable resource names. Neither project gains a package dependency. The Chinese Inno
+Setup language file is checked into `installer/Languages` with its provenance,
+instead of relying on a modified compiler installation.
 
-Tests check exact resource coverage and format arguments, Unicode paths, stable
-action IDs, both Settings languages and narrow Chinese button layouts. Release
-packaging must include both `zh-CN` satellite assemblies, for the app and worker.
+Tests check exact resource coverage and format arguments for **every registered
+translation**, catalog/installer agreement, aliases and regional fallbacks, unchanged
+numeric culture, Unicode paths, stable action IDs, Settings choices and narrow Chinese
+button layouts. Release packaging must include each registered language's satellite
+assemblies for both the app and worker.
 Screenshots can be saved by setting `FRAMESHIFT_LOCALIZATION_SCREENSHOTS` when
 running the targeted localization tests. Hidden rendering does not establish actual
 high-DPI, screen-reader, Explorer or installation acceptance.
+
+## Adding a future language
+
+For example, a future French release would require these focused changes; **French
+is not enabled or distributed in 1.22**:
+
+1. Copy `Strings.resx` to `Strings.fr.resx` and translate the display values, preserving
+   keys, arguments and format specifiers. Keep draft translations on a separate branch
+   until they are ready to ship.
+2. Add `new("fr", "Français", "french")` to `AppLanguages.Supported`. The last value is
+   the corresponding Inno Setup identifier. The settings selector, preference loading,
+   regional matching (`fr-CA` -> `fr`) and worker language forwarding then use this entry.
+   No form logic or per-language project-file entry is needed.
+3. In `installer/FrameShift.iss`, add the Inno `[Languages]` entry, its
+   `french.AppLanguage=fr` marker and all corresponding `[CustomMessages]` translations.
+   Vendor any required `.isl` with its provenance under `installer/Languages`. Inno's
+   explicit configuration is retained; no generator or runtime dependency is introduced.
+4. Run the localization tests and canonical Release build. The registered-resource
+   tests automatically include the new language, and installer/catalog mismatches fail.
+   Check both app/worker satellites, installed Explorer captions and actual layouts,
+   fonts, keyboard access and longer text before distributing that language.
+
+This mechanism selects supplied translations; it does not generate them. Languages
+requiring right-to-left layouts or additional plural forms need their corresponding
+UI/wording work and acceptance rather than just a new culture code.

@@ -16,18 +16,23 @@ namespace FrameShift.Tests;
 [Collection(WinFormsTestCollection.Name)]
 public sealed class LocalizationTests
 {
-    [Fact]
-    public void ChineseResources_AreComplete_AndRetainEveryFormatArgument()
+    public static IEnumerable<object[]> TranslatedLanguages => AppLanguages.Supported
+        .Where(language => language.Code != AppLanguages.Default.Code)
+        .Select(language => new object[] { language.Code });
+
+    [Theory]
+    [MemberData(nameof(TranslatedLanguages))]
+    public void RegisteredResources_AreComplete_AndRetainEveryFormatArgument(string language)
     {
         var manager = new ResourceManager("FrameShift.Core.Localization.Strings", typeof(MediaActionMessages).Assembly);
         var english = manager.GetResourceSet(CultureInfo.InvariantCulture, true, false)!;
-        var chinese = manager.GetResourceSet(CultureInfo.GetCultureInfo("zh-CN"), true, false);
-        Assert.NotNull(chinese);
+        var translatedResources = manager.GetResourceSet(CultureInfo.GetCultureInfo(language), true, false);
+        Assert.NotNull(translatedResources);
         Assert.True(english.Cast<DictionaryEntry>().Count() > 1700);
-        Assert.Equal(english.Cast<DictionaryEntry>().Count(), chinese.Cast<DictionaryEntry>().Count());
+        Assert.Equal(english.Cast<DictionaryEntry>().Count(), translatedResources.Cast<DictionaryEntry>().Count());
         foreach (DictionaryEntry entry in english)
         {
-            var translated = chinese.GetString((string)entry.Key);
+            var translated = translatedResources.GetString((string)entry.Key);
             Assert.False(string.IsNullOrWhiteSpace(translated), (string)entry.Key);
             if (!Regex.IsMatch((string)entry.Value!, @"\{\d+[}:,]")) continue;
             var en = CompositeFormat.Parse((string)entry.Value!);
@@ -45,9 +50,75 @@ public sealed class LocalizationTests
     [InlineData("english", "en")]
     [InlineData("chinesesimp", "zh-CN")]
     [InlineData("zh-Hans", "zh-CN")]
+    [InlineData("zh-Hans-CN", "zh-CN")]
+    [InlineData(" zh_cn ", "zh-CN")]
+    [InlineData(" CHINESESIMP ", "zh-CN")]
+    [InlineData("en-GB", "en")]
+    [InlineData("en_US", "en")]
+    [InlineData(null, "en")]
+    [InlineData(" ", "en")]
+    [InlineData("invalid/culture", "en")]
     [InlineData("unsupported", "en")]
-    public void InstallerAndUserLanguageNames_AreNormalized(string input, string expected) =>
+    public void InstallerAndUserLanguageNames_AreNormalized(string? input, string expected) =>
         Assert.Equal(expected, L.NormalizeLanguage(input));
+
+    [Fact]
+    public void Catalog_HasUniqueNames_ValidCultures_AndAnEnglishDefault()
+    {
+        Assert.Equal("en", AppLanguages.Default.Code);
+        Assert.Contains(AppLanguages.Default, AppLanguages.Supported);
+        var names = AppLanguages.Supported.SelectMany(language => language.Aliases.Prepend(language.Code)).ToArray();
+        Assert.Equal(names.Length, names.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        foreach (var language in AppLanguages.Supported)
+        {
+            Assert.False(string.IsNullOrWhiteSpace(language.NativeName));
+            Assert.Equal(language.Code, CultureInfo.GetCultureInfo(language.Code).Name);
+            Assert.Same(language, AppLanguages.Resolve(language.Code));
+        }
+    }
+
+    [Fact]
+    public void InstallerLanguages_MatchTheCatalogAndPersistCanonicalCodes()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss")))
+            directory = directory.Parent;
+        Assert.NotNull(directory);
+        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var section = Regex.Match(script, @"(?ms)^\[Languages\]\r?\n(.*?)(?=^\[)").Groups[1].Value;
+        var codes = new List<string>();
+        foreach (Match match in Regex.Matches(section, @"Name:\s*""([^""]+)"""))
+        {
+            var installerName = match.Groups[1].Value;
+            var marker = Regex.Match(script, @"(?m)^" + Regex.Escape(installerName) + @"\.AppLanguage=(\S+)\s*$");
+            Assert.True(marker.Success, installerName);
+            var code = marker.Groups[1].Value;
+            Assert.Equal(code, AppLanguages.Resolve(installerName).Code);
+            Assert.Equal(code, AppLanguages.Resolve(code).Code);
+            codes.Add(code);
+        }
+        Assert.Equal(AppLanguages.Supported.Select(language => language.Code).Order(), codes.Order());
+    }
+
+    [Fact]
+    public void DisplayLanguageInitialization_LeavesNumericCultureUnchanged()
+    {
+        var previousUiCulture = CultureInfo.CurrentUICulture;
+        var previousDefault = CultureInfo.DefaultThreadCurrentUICulture;
+        var numericCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            L.Initialize("zh-Hans-CN");
+            Assert.Equal("zh-CN", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal("zh-CN", CultureInfo.DefaultThreadCurrentUICulture!.Name);
+            Assert.Same(numericCulture, CultureInfo.CurrentCulture);
+        }
+        finally
+        {
+            CultureInfo.DefaultThreadCurrentUICulture = previousDefault;
+            CultureInfo.CurrentUICulture = previousUiCulture;
+        }
+    }
 
     [Fact]
     public void ChineseMessages_PreserveUnicodePaths_AndInternalActionValues()
@@ -81,7 +152,10 @@ public sealed class LocalizationTests
                 Assert.Equal(title, form.Text);
                 var controls = Descendants(form).ToArray();
                 var selector = Assert.Single(controls.OfType<ComboBox>(), c => c.Name == "languagePreference");
-                Assert.Equal(language == "zh-CN" ? 1 : 0, selector.SelectedIndex);
+                Assert.Equal(AppLanguages.Supported, selector.Items.Cast<AppLanguage>());
+                var selectedLanguage = Assert.IsType<AppLanguage>(selector.SelectedItem);
+                Assert.Equal(language, selectedLanguage.Code);
+                Assert.Equal(selectedLanguage.NativeName, selector.Text);
                 Assert.False(string.IsNullOrWhiteSpace(selector.Text));
                 var theme = Assert.Single(controls.OfType<ComboBox>(), c => c.Name == "themePreference");
                 Assert.IsType<FrameShiftThemePreference>(theme.Items[0]);

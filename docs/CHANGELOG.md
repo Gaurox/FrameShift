@@ -9,6 +9,8 @@ and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
 
 - English and Chinese display resources, language preference applied on next launch,
   translated installer/Explorer menus and corrected narrow action-list layout.
+- A small shared language catalog drives preferences and Settings; the worker includes
+  translation resources automatically. Only English and simplified Chinese ship in 1.22.
 - Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,
   cancellable folder imports and successful upscale tile reuse.
 - Protected model paths and bounded/coordinated downloads, safe installer cleanup,

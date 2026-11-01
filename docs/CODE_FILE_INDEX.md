@@ -41,6 +41,16 @@ Règles de lecture :
 - `build_installer.ps1`
 - `build_all.ps1`
 
+## Localisation
+
+- `src/FrameShift/Core/Localization/AppLanguages.cs` — catalogue des langues disponibles, noms natifs, alias et repli régional.
+- `src/FrameShift/Core/Localization/L.cs` — ressources et culture d'affichage, sans modifier la culture numérique.
+- `src/FrameShift/Core/Localization/Strings*.resx` — textes anglais et traductions, partagés automatiquement avec le worker.
+- `src/FrameShift/Windows/Helpers/FrameShiftLanguage.cs` — préférence utilisateur et langue par défaut de l'installation.
+- `src/FrameShift/Windows/Forms/SettingsForm.cs` — sélecteur alimenté par le catalogue.
+- `tests/FrameShift.Tests/LocalizationTests.cs` — ressources, catalogue, installeur et paramètres.
+- [Ajouter une traduction](LOCALIZATION.md#adding-a-future-language).
+
 ## Core/Actions
 
 Infrastructure :

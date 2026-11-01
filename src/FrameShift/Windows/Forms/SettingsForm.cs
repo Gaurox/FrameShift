@@ -56,13 +56,18 @@ public sealed class SettingsForm : Form
         _themeHint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("SettingsForm_Changes_apply_immediately_System_fol_f99a2e75"));
         var appearance = FrameShiftUiFactory.CreateSection(L.Get("SettingsForm_Appearance_7bcd3803"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateFieldRow(L.Get("SettingsForm_Theme_780ffaa9"), _themeSelector, logicalEditorWidth: 180), _themeHint));
-        var language = new ComboBox { Name = "languagePreference", DropDownStyle = ComboBoxStyle.DropDownList };
-        language.Items.AddRange(new object[] { "English", "简体中文" });
-        language.SelectedIndex = L.NormalizeLanguage(System.Globalization.CultureInfo.CurrentUICulture.Name) == "zh-CN" ? 1 : 0;
+        var language = new ComboBox
+        {
+            Name = "languagePreference", DropDownStyle = ComboBoxStyle.DropDownList,
+            DisplayMember = nameof(AppLanguage.NativeName)
+        };
+        language.Items.AddRange(AppLanguages.Supported.Cast<object>().ToArray());
+        language.SelectedItem = AppLanguages.Resolve(System.Globalization.CultureInfo.CurrentUICulture.Name);
         language.SelectedIndexChanged += (_, _) =>
         {
+            if (language.SelectedItem is not AppLanguage selectedLanguage) return;
             var settings = FrameShiftUiSettings.Load();
-            settings.Language = language.SelectedIndex == 1 ? "zh-CN" : "en";
+            settings.Language = selectedLanguage.Code;
             settings.Save();
         };
         var languageSection = FrameShiftUiFactory.CreateSection(L.Get("Settings_Language"),

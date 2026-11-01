@@ -9,11 +9,7 @@ internal static class L
 {
     private static readonly ResourceManager Resources = new("FrameShift.Core.Localization.Strings", typeof(L).Assembly);
 
-    internal static string NormalizeLanguage(string? language) => language?.Trim().ToLowerInvariant() switch
-    {
-        "zh" or "zh-cn" or "zh-hans" or "chinesesimp" => "zh-CN",
-        _ => "en"
-    };
+    internal static string NormalizeLanguage(string? language) => AppLanguages.Resolve(language).Code;
 
     internal static void Initialize(string? language)
     {

@@ -7,6 +7,9 @@ Unpublished bilingual release candidate. Find Loop is reserved for 1.23.
   installer's selected language. An application preference applies on next launch.
   Chinese translation and narrow-window corrections originate from
   [zhazhayu01](https://github.com/zhazhayu01/FrameShift).
+- **Future translations:** a shared language catalog supplies Settings and language
+  resolution; resource files are included automatically in the subtitle worker.
+  Version 1.22 continues to ship only English and simplified Chinese.
 - **Media integrity and cancellation:** reject unsupported multichannel separation,
   preserve transparent upscale pixels and existing write-probe files, propagate
   cancellation to FFmpeg and interrupt native noise-removal inference.

@@ -21,9 +21,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\FrameShift\Core\Localization\L.cs" Link="Localization\L.cs" />
-    <EmbeddedResource Include="..\FrameShift\Core\Localization\Strings.resx" Link="Localization\Strings.resx" LogicalName="FrameShift.Core.Localization.Strings.resources" />
-    <EmbeddedResource Include="..\FrameShift\Core\Localization\Strings.zh-CN.resx" Link="Localization\Strings.zh-CN.resx" LogicalName="FrameShift.Core.Localization.Strings.zh-CN.resources" />
+    <Compile Include="..\FrameShift\Core\Localization\*.cs" Link="Localization\%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\FrameShift\Core\Localization\Strings*.resx" Link="Localization\%(Filename)%(Extension)" LogicalName="FrameShift.Core.Localization.%(Filename).resources" />
     <PackageReference Include="NAudio.Core" Version="2.2.1" />
     <PackageReference Include="org.k2fsa.sherpa.onnx" Version="1.13.3" />
   </ItemGroup>
