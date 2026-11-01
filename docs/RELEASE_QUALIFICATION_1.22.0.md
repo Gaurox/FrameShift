@@ -489,7 +489,7 @@ English/Chinese menu refresh and return-to-English checks appeared correct. Thes
 are owner-reported observations, not automated desktop verification. Alternate
 administrator credentials remain unqualified.
 
-## Current language-save guard preparation
+## Current candidate with the language-save guard
 
 Settings now checks `FrameShiftUiSettings.TrySave` before invoking Explorer menu
 synchronization. A failed write leaves menu captions untouched and cannot request
@@ -511,7 +511,34 @@ Evidence: `scratch/release-1.22-language-save-before-fix.log`,
 `scratch/release-1.22-language-save-targeted.log`, and the corresponding TRX files
 under `scratch/release-1.22-language-save`. These tests use temporary preferences and
 registry keys; no installed menus, application preferences or desktop controls are
-changed. The previous installer above predates this guard; a clean rebuild is next.
+changed.
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`e4c65ec50ee9a1d5230a3db4d532a4ec2bbff829`, without `-AllowDirty` or `-RunInstaller`.
+All locked restores, Release compilation, payload checks and Inno Setup 6.7.1
+compilation pass without compiler/restore warnings. The full suite reports
+**1,079 passed, 0 failures, 17 conditional skips, 1,096 total**, in **4 m 40 s**.
+The existing real-model/OCR/subtitle prerequisites remain in effect. Inno compilation
+takes 77 seconds. The payload retains **808 files**, the five intended app/worker
+languages and runtime 8.0.31, with no loop source, private licences, model weights,
+debug symbols or test assemblies.
+
+An isolated harness also loads the actual packaged Settings form and passes the
+write-lock/failure/restored-selection/same-language-retry workflow in **all five
+languages**, including preservation of the other preferences. Its product version
+is `1.22.0+e4c65ec50ee9a1d5230a3db4d532a4ec2bbff829`.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,530,415 bytes | `1649CBB74D9AE0A44928CE37981182BF788310ADA27213D9DBE2D58DB7759C66` |
+| Application DLL | 5,652,480 bytes | `5622A5938B78ED4DA23E130AACD6EBFF7A6A4B5FDE0D937ACE0534F07BB4D034` |
+
+Evidence: `scratch/release-1.22-language-save-canonical.log`,
+`scratch/release-1.22-language-save-published.json`, and
+`builds/release-1.22-language-save/artifact-verification.json` (including all
+app/worker satellite hashes). The checksum beside the installer identifies this
+candidate. Later documentation/checksum commits do not change its binaries.
+The installer was not run; nothing was pushed or published.
 
 ## Work before a public release
 
