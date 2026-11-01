@@ -433,7 +433,7 @@ the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-pending-language-packaged-languages.jsonl`, and
 `builds/release-1.22-pending-language/artifact-verification.json`.
 
-## Explorer menu language synchronization
+## Current candidate with Explorer menu language synchronization
 
 Settings now synchronizes existing Explorer captions when its language changes.
 The Windows helper covers all **47 menu paths**, including frame submenus and AI
@@ -455,10 +455,38 @@ Evidence: `scratch/release-1.22-explorer-language-targeted.log` and
 `scratch/release-1.22-explorer-language/explorer-language-targeted.trx`.
 The sandboxed testhost attempt was stopped before execution; it is not a passing run.
 
-The previous installer above predates this change. A clean canonical rebuild is
-required to produce the updated candidate. Real installed UAC acceptance/refusal,
-alternate administrator credentials and Explorer cache refresh still require manual
-qualification; isolated registry tests do not claim that installed acceptance.
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`ed6b2a2eaf973d78682385ec542c4ec9b34e93f8`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, payload checks and Inno Setup 6.7.1
+compilation pass, with no compiler/restore warnings. The full suite reports
+**1,073 passed, 0 failures, 17 conditional skips, 1,090 total**, in **4 m 42 s**;
+the existing real-model/OCR/subtitle requirements remain in effect. Inno compilation
+takes 82 seconds. The self-contained payload retains **808 files** and exactly the
+five intended application/worker languages, with no loop source, private licences,
+model weights, debug symbols or test assemblies. Runtime pins remain 8.0.31.
+
+An isolated process loads the actual published application and worker assemblies:
+all **520 caption/status lookups** match the source resources, without changing its
+active UI culture. The packaged helper accepts the five registered codes; the
+actual application rejects an invalid helper command with exit code 2 before normal
+startup. The application product version is
+`1.22.0+ed6b2a2eaf973d78682385ec542c4ec9b34e93f8`.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,512,436 bytes | `33E00EDB6AFD28B26554DA3F7D631C589A61E3F8900074018A45719982DA7B9B` |
+| Application DLL | 5,652,480 bytes | `1DC553AD09D56112935CA369FFAA7C0CAAFB1D3ECD49D3F3257A750B8FC3CCA5` |
+
+Evidence: `scratch/release-1.22-explorer-language-canonical.log`,
+`scratch/release-1.22-explorer-language-packaged.json`, and
+`builds/release-1.22-explorer-language/artifact-verification.json` (including all
+app/worker satellite hashes). The checksum beside the installer identifies this
+candidate. Subsequent documentation/checksum commits do not change its binaries.
+The installer was not run, and nothing was pushed or published.
+
+Real installed UAC acceptance/refusal, alternate administrator credentials and
+Explorer cache refresh still require manual qualification; isolated registry tests
+do not claim that installed acceptance.
 
 ## Work before a public release
 
