@@ -61,7 +61,7 @@ Depois de configurar a integração ao Explorador pelo instalador, você também
 
 O instalador da 1.22.0 oferece **English**, **简体中文**, **Español**, **Português Brasileiro** e **Русский**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
 
-Em **Configurações → Idioma do aplicativo**, você pode salvar uma preferência pessoal. Escolha **Português (Brasil)** para usar esta tradução (`pt-BR`). A mudança é aplicada **na próxima inicialização do FrameShift** e tem prioridade sobre o idioma padrão do instalador. Ela não altera os menus do Explorador, que exigem permissões de administrador; execute novamente o instalador para mudar o idioma desses menus.
+Em **Configurações → Idioma do aplicativo**, você pode salvar uma preferência pessoal. Escolha **Português (Brasil)** para usar esta tradução (`pt-BR`). A mudança é aplicada **na próxima inicialização do FrameShift** e tem prioridade sobre o idioma padrão do instalador. Ela também atualiza automaticamente os menus instalados do Explorador. O Windows solicita autorização de administrador para alterar os menus compartilhados por todas as contas. Se a autorização for cancelada ou a atualização falhar, Configurações informa o problema e mantém o idioma salvo para o aplicativo.
 
 A mesma janela permite alterar o tema e escolher, abrir ou restaurar a pasta de modelos de IA. Escolha uma pasta comum e exclusiva para os modelos; raízes de unidades, pastas do sistema e a pasta de instalação não são permitidas.
 

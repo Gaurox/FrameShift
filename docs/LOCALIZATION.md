@@ -46,9 +46,14 @@ upstream credits; see [installer language sources](../installer/Languages/README
   forms and background work are created.
 - Settings can save any registered language for the next application launch. The
   selector shows the saved choice, including a change pending restart. Already open
-  windows and action catalogs are not rebuilt. Re-running the installer changes
-  Explorer's registered menu captions; changing a per-user application setting does
-  not write administrative Explorer registry entries.
+  windows and action catalogs are not rebuilt. Changing the language also updates
+  existing Explorer menu captions automatically, including AI and frame submenus.
+  Machine-wide menus require Windows administrator authorization and change for all
+  accounts; per-user menus are updated in the original account. Only captions for
+  this executable are changed, preserving commands, icons and installed components.
+  Settings reports cancelled authorization or failure without discarding the saved
+  application language. Selecting another language and then the desired language
+  retries the synchronization. Re-running the installer sets menu captions again.
 - The subtitle worker receives `FRAMESHIFT_UI_LANGUAGE` in its child environment.
   This changes its progress text without changing request/response protocol fields
   or the language it recognizes in media.
@@ -62,6 +67,13 @@ Chinese, Spanish, Brazilian Portuguese and Russian translations. `L.Get` retriev
 each argument and its numeric format. Keep filenames, identifiers, state keys,
 regular expressions, raw FFmpeg diagnostics and processing parameters outside them.
 Display labels for enums and choices are separate from their stored values.
+
+`ExplorerMenu_*` resources retain the installer's existing translations. The small
+Windows helper maps known installed menu paths to these resources; tests check all
+registered languages against the Inno messages and verify that only captions change.
+Add a mapping and matching resources when adding an Explorer action. The privileged
+command accepts only a registered language code, derives its own paths and exits
+before normal application startup; it never accepts registry paths or payload files.
 
 The worker links `Core/Localization/*.cs` and `Strings*.resx` automatically, with
 stable resource names. Neither project gains a package dependency. Chinese, Spanish,

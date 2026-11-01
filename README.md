@@ -7,6 +7,10 @@ English, simplified Chinese, Spanish, Brazilian Portuguese, Russian and general 
 fixes; Find Loop is reserved for 1.23. See the [draft notes](docs/RELEASE_NOTES_1.22.0.md) and
 [branch separation](docs/RELEASE_PLAN_1.22_1.23.md).
 
+In 1.22, changing **Settings → Application language** also updates installed Explorer
+menus. Windows may request administrator authorization; machine-wide menu changes
+apply to all accounts. The application language takes effect after restarting FrameShift.
+
 **Special thanks to [zhazhayu01](https://github.com/zhazhayu01)** for the simplified
 Chinese translation, Chinese README, and narrow-window layout fix for the search
 field and action buttons. This release adapts

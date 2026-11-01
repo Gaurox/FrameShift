@@ -61,7 +61,7 @@ Después de configurar la integración con el Explorador mediante el instalador,
 
 El instalador de la 1.22.0 ofrece **English**, **简体中文**, **Español**, **Português Brasileiro** y **Русский**. El idioma elegido se utiliza en sus páginas, las descripciones de componentes y los menús opcionales del Explorador, y establece el idioma predeterminado de la aplicación.
 
-En **Configuración → Idioma de la aplicación** puede guardar una preferencia personal. El cambio se aplica **al volver a iniciar FrameShift** y tiene prioridad sobre el idioma predeterminado del instalador. No cambia los menús del Explorador, que requieren permisos de administrador; vuelva a ejecutar el instalador para cambiar su idioma.
+En **Configuración → Idioma de la aplicación** puede guardar una preferencia personal. El cambio se aplica **al volver a iniciar FrameShift** y tiene prioridad sobre el idioma predeterminado del instalador. También actualiza automáticamente los menús instalados del Explorador. Windows solicita autorización de administrador para modificar los menús compartidos por todas las cuentas. Si cancela la autorización o falla la actualización, Configuración lo indica y conserva el idioma guardado para la aplicación.
 
 La misma ventana permite cambiar el tema y elegir, abrir o restablecer la carpeta de modelos de IA. Las carpetas de modelos deben ser ubicaciones normales y dedicadas: no se permiten raíces de unidades, carpetas del sistema ni la carpeta de instalación.
 

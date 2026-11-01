@@ -11,6 +11,9 @@ and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
   translated installer/Explorer menus and corrected narrow action-list layout.
 - Reopening Settings retains the saved next-launch language, allowing a pending
   choice to be changed back before restarting the application.
+- Changing the language in Settings automatically updates existing Explorer menu
+  captions, requesting administrator authorization for machine-wide changes and
+  reporting cancelled or failed updates without losing the application preference.
 - A small shared language catalog drives preferences and Settings; the worker includes
   translation resources automatically. English, simplified Chinese, Spanish, Brazilian Portuguese and Russian ship in 1.22.
 - Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,

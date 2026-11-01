@@ -378,7 +378,7 @@ Evidence: `scratch/release-1.22-pending-language-before-fix.log`,
 `scratch/release-1.22-pending-language-targeted.log`, and
 `scratch/release-1.22-pending-language/pending-language-fixed.trx`.
 
-## Current five-language candidate with pending-language fix
+## Previous five-language candidate with pending-language fix
 
 The clean canonical `build_installer.ps1` completed on 1 November 2026 from
 `d4dabacbd8d3176fde3d731cb151fb01f31a65e4`, without `-AllowDirty` or `-RunInstaller`.
@@ -432,6 +432,33 @@ the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-pending-language-managed-metadata.jsonl`,
 `scratch/release-1.22-pending-language-packaged-languages.jsonl`, and
 `builds/release-1.22-pending-language/artifact-verification.json`.
+
+## Explorer menu language synchronization
+
+Settings now synchronizes existing Explorer captions when its language changes.
+The Windows helper covers all **47 menu paths**, including frame submenus and AI
+actions, with the same translations as the installer in all five languages. Only
+captions belonging to this executable are updated; commands, icons, selections,
+unknown actions and menus belonging to another installation remain intact.
+
+Machine-wide updates request UAC only when needed. The privileged command accepts
+only a registered language code and exits before normal application initialization.
+Per-user menus are handled in the original account. Settings remains responsive,
+prevents overlapping changes, and reports cancellation or failure while retaining
+the saved next-launch language. Reopening Settings does not request authorization.
+
+The targeted Release run passes **108 tests, 0 failures, 0 skips**, including actual
+registry writes under isolated temporary HKCU keys, all five installer/resource
+comparisons, installed selection preservation, removed-menu preflight, strict helper
+arguments, saved preferences, asynchronous failure handling and translated layouts.
+Evidence: `scratch/release-1.22-explorer-language-targeted.log` and
+`scratch/release-1.22-explorer-language/explorer-language-targeted.trx`.
+The sandboxed testhost attempt was stopped before execution; it is not a passing run.
+
+The previous installer above predates this change. A clean canonical rebuild is
+required to produce the updated candidate. Real installed UAC acceptance/refusal,
+alternate administrator credentials and Explorer cache refresh still require manual
+qualification; isolated registry tests do not claim that installed acceptance.
 
 ## Work before a public release
 

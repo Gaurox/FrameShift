@@ -2,9 +2,23 @@
 
 Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
 
+## Short release note
+
+- Thanks to [@zhazhayu01](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da)
+  for the Simplified Chinese translation, Chinese README and narrow-window layout
+  fix, adapted and integrated into FrameShift 1.22.0.
+- Adds Spanish, Brazilian Portuguese and Russian. The application, installer and
+  READMEs now support five languages, including English and Simplified Chinese.
+- Changing the language in Settings also updates installed Explorer menus, with
+  Windows administrator authorization when required.
+
+## Preparation details
+
 - **English, simplified Chinese, Spanish, Brazilian Portuguese and Russian:** one application and installer, translated
   settings, tools, progress and errors, with optional Explorer menus in the
-  installer's selected language. An application preference applies on next launch.
+  installer's selected language. Settings also synchronizes installed Explorer
+  captions; machine-wide changes request administrator authorization. The application
+  preference applies on next launch.
   Chinese translation and narrow-window corrections originate from
   [zhazhayu01](https://github.com/zhazhayu01/FrameShift).
 - **Future translations:** a shared language catalog supplies Settings and language

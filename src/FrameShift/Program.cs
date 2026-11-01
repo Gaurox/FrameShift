@@ -17,6 +17,11 @@ internal static partial class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        // The elevated helper only updates menu captions. Do not initialize user
+        // preferences, media actions or temporary-file cleanup in this process.
+        if (ExplorerMenuLanguage.TryRunUpdateCommand(args, out var menuUpdateExitCode))
+            return menuUpdateExitCode;
+
         FrameShiftLanguage.Initialize();
         AppLogger.LogStatic($"DIAG BUILD ACTIVE - log path = {AppLogger.LogPath}");
         AppLogger.LogStatic($"Program: Main entered. baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}, argsCount={args.Length}.");

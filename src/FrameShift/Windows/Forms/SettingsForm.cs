@@ -19,12 +19,14 @@ public sealed class SettingsForm : Form
     private readonly ComboBox _themeSelector;
     private readonly Label _themeHint;
     private readonly string _uiSettingsPath;
+    private readonly Label _languageHint;
+    private bool _synchronizingMenus;
 
-    public SettingsForm() : this(FrameShiftUiSettings.ConfigFilePath)
+    public SettingsForm() : this(FrameShiftUiSettings.ConfigFilePath, ExplorerMenuLanguage.SynchronizeAsync)
     {
     }
 
-    internal SettingsForm(string uiSettingsPath)
+    internal SettingsForm(string uiSettingsPath, Func<string, Task<ExplorerMenuSyncResult>> synchronizeMenus)
     {
         _uiSettingsPath = uiSettingsPath;
         var uiSettings = FrameShiftUiSettings.Load(_uiSettingsPath);
@@ -74,16 +76,44 @@ public sealed class SettingsForm : Form
             ? System.Globalization.CultureInfo.CurrentUICulture.Name
             : uiSettings.Language;
         language.SelectedItem = AppLanguages.Resolve(preferredLanguage);
-        language.SelectedIndexChanged += (_, _) =>
+        _languageHint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("Settings_ExplorerLanguageHint"));
+        _languageHint.Name = "explorerLanguageStatus";
+        var close = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Close_6cf4a777"), true);
+        language.SelectedIndexChanged += async (_, _) =>
         {
-            if (language.SelectedItem is not AppLanguage selectedLanguage) return;
+            if (_synchronizingMenus || language.SelectedItem is not AppLanguage selectedLanguage) return;
             var settings = FrameShiftUiSettings.Load(_uiSettingsPath);
             settings.Language = selectedLanguage.Code;
             settings.Save(_uiSettingsPath);
+            _synchronizingMenus = true;
+            language.Enabled = close.Enabled = false;
+            _languageHint.Text = L.Get("Settings_ExplorerLanguageUpdating");
+            try
+            {
+                var result = await synchronizeMenus(selectedLanguage.Code);
+                _languageHint.Text = L.Get(result switch
+                {
+                    ExplorerMenuSyncResult.Updated => "Settings_ExplorerLanguageUpdated",
+                    ExplorerMenuSyncResult.Cancelled => "Settings_ExplorerLanguageCancelled",
+                    _ => "Settings_ExplorerLanguageFailed"
+                });
+            }
+            catch (Exception ex)
+            {
+                FrameShift.Core.Logging.AppLogger.LogStatic($"Settings menu language synchronization failed: {ex}");
+                _languageHint.Text = L.Get("Settings_ExplorerLanguageFailed");
+            }
+            finally
+            {
+                _synchronizingMenus = false;
+                language.Enabled = close.Enabled = true;
+                if (IsHandleCreated)
+                    FrameShiftDialogLayout.FitInitialHeight(this, Controls.OfType<TableLayoutPanel>().Single());
+            }
         };
         var languageSection = FrameShiftUiFactory.CreateSection(L.Get("Settings_Language"),
-            FrameShiftUiFactory.CreateVerticalStack(language, FrameShiftUiFactory.CreateWrappingLabel(L.Get("Settings_Restart"))));
-        var close = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Close_6cf4a777"), true);
+            FrameShiftUiFactory.CreateVerticalStack(language, _languageHint));
+        FormClosing += (_, e) => { if (_synchronizingMenus) e.Cancel = true; };
         close.DialogResult = DialogResult.Cancel;
         close.Click += (_, _) => Close();
         AcceptButton = CancelButton = close;

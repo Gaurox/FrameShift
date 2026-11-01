@@ -18,7 +18,9 @@ internal static class L
         CultureInfo.CurrentUICulture = culture;
     }
 
-    internal static string Get(string key) => Resources.GetString(key, CultureInfo.CurrentUICulture)
+    internal static string Get(string key) => Get(key, CultureInfo.CurrentUICulture);
+
+    internal static string Get(string key, CultureInfo culture) => Resources.GetString(key, culture)
         ?? throw new MissingManifestResourceException($"Missing FrameShift display resource: {key}");
 
     internal static string Format(string key, params object?[] arguments) =>

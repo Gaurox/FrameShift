@@ -5385,4 +5385,160 @@
   <data name="CutVideo_End" xml:space="preserve">
     <value>Конец</value>
   </data>
+  <data name="ExplorerMenu_convert_video" xml:space="preserve">
+    <value>Преобразовать видео</value>
+  </data>
+  <data name="ExplorerMenu_convert_audio" xml:space="preserve">
+    <value>Преобразовать аудио</value>
+  </data>
+  <data name="ExplorerMenu_cut_audio" xml:space="preserve">
+    <value>Обрезать аудио</value>
+  </data>
+  <data name="ExplorerMenu_remove_audio" xml:space="preserve">
+    <value>Удалить аудио</value>
+  </data>
+  <data name="ExplorerMenu_reverse_audio" xml:space="preserve">
+    <value>Развернуть аудио</value>
+  </data>
+  <data name="ExplorerMenu_compress_audio" xml:space="preserve">
+    <value>Сжать аудио</value>
+  </data>
+  <data name="ExplorerMenu_change_pitch" xml:space="preserve">
+    <value>Изменить высоту тона</value>
+  </data>
+  <data name="ExplorerMenu_change_audio_speed" xml:space="preserve">
+    <value>Изменить скорость аудио</value>
+  </data>
+  <data name="ExplorerMenu_change_video_speed" xml:space="preserve">
+    <value>Изменить скорость видео</value>
+  </data>
+  <data name="ExplorerMenu_create_gif" xml:space="preserve">
+    <value>Создать GIF</value>
+  </data>
+  <data name="ExplorerMenu_add_subtitles_video" xml:space="preserve">
+    <value>Добавить субтитры к видео</value>
+  </data>
+  <data name="ExplorerMenu_extract_audio" xml:space="preserve">
+    <value>Извлечь аудио</value>
+  </data>
+  <data name="ExplorerMenu_cut_video" xml:space="preserve">
+    <value>Обрезать видео</value>
+  </data>
+  <data name="ExplorerMenu_crop_video" xml:space="preserve">
+    <value>Кадрировать видео</value>
+  </data>
+  <data name="ExplorerMenu_resize_video" xml:space="preserve">
+    <value>Изменить размер видео</value>
+  </data>
+  <data name="ExplorerMenu_compress_video" xml:space="preserve">
+    <value>Сжать видео</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video" xml:space="preserve">
+    <value>Интерполировать видео</value>
+  </data>
+  <data name="ExplorerMenu_compress_image" xml:space="preserve">
+    <value>Сжать изображение</value>
+  </data>
+  <data name="ExplorerMenu_crop_image" xml:space="preserve">
+    <value>Кадрировать изображение</value>
+  </data>
+  <data name="ExplorerMenu_resize_image" xml:space="preserve">
+    <value>Изменить размер изображения</value>
+  </data>
+  <data name="ExplorerMenu_convert_image" xml:space="preserve">
+    <value>Преобразовать изображение</value>
+  </data>
+  <data name="ExplorerMenu_convert_icon" xml:space="preserve">
+    <value>Преобразовать в значок</value>
+  </data>
+  <data name="ExplorerMenu_image_to_pdf" xml:space="preserve">
+    <value>Изображения в PDF</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_image" xml:space="preserve">
+    <value>Повернуть / отразить изображение</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_video" xml:space="preserve">
+    <value>Повернуть / отразить видео</value>
+  </data>
+  <data name="ExplorerMenu_media_info" xml:space="preserve">
+    <value>Сведения о медиафайле</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_fast" xml:space="preserve">
+    <value>Удалить фон (быстро)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution" xml:space="preserve">
+    <value>Удалить фон (высокое разрешение, альфа-маска)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution_general" xml:space="preserve">
+    <value>Удалить фон (высокое разрешение, общий)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_balanced" xml:space="preserve">
+    <value>Удалить фон (BRIA, сбалансированный)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_high_quality" xml:space="preserve">
+    <value>Удалить фон (BRIA, высокое качество)</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise" xml:space="preserve">
+    <value>Удалить шум</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise_video" xml:space="preserve">
+    <value>Удалить шум (видео)</value>
+  </data>
+  <data name="ExplorerMenu_separate_audio" xml:space="preserve">
+    <value>Разделение аудио</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video_rife" xml:space="preserve">
+    <value>Интерполировать видео (RIFE)</value>
+  </data>
+  <data name="ExplorerMenu_remove_object" xml:space="preserve">
+    <value>Удалить объект</value>
+  </data>
+  <data name="ExplorerMenu_upscale_image" xml:space="preserve">
+    <value>Повысить разрешение изображения 4x</value>
+  </data>
+  <data name="ExplorerMenu_upscale_video" xml:space="preserve">
+    <value>Повысить разрешение видео 4x</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_audio" xml:space="preserve">
+    <value>Создать файл субтитров</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_video" xml:space="preserve">
+    <value>Создать файл субтитров</value>
+  </data>
+  <data name="ExplorerMenu_join_videos" xml:space="preserve">
+    <value>Объединить видео</value>
+  </data>
+  <data name="ExplorerMenu_extract_all_frames" xml:space="preserve">
+    <value>Извлечь все кадры</value>
+  </data>
+  <data name="ExplorerMenu_extract_specific_frames" xml:space="preserve">
+    <value>Извлечь отдельные кадры</value>
+  </data>
+  <data name="ExplorerMenu_first_frame" xml:space="preserve">
+    <value>Первый кадр</value>
+  </data>
+  <data name="ExplorerMenu_last_frame" xml:space="preserve">
+    <value>Последний кадр</value>
+  </data>
+  <data name="ExplorerMenu_keyframes" xml:space="preserve">
+    <value>Ключевые кадры</value>
+  </data>
+  <data name="Settings_ExplorerLanguageHint" xml:space="preserve">
+    <value>Язык приложения изменится после перезапуска. Меню Проводника обновляются автоматически для всех пользователей; Windows может запросить разрешение администратора.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdating" xml:space="preserve">
+    <value>Обновление меню Проводника…</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdated" xml:space="preserve">
+    <value>Меню Проводника обновлены. Перезапустите FrameShift, чтобы изменить язык приложения.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageCancelled" xml:space="preserve">
+    <value>Запрос разрешения Windows отменён. Меню Проводника не обновлены. Язык приложения сохранён для следующего запуска. Для повторной попытки выберите другой язык, а затем снова этот.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageFailed" xml:space="preserve">
+    <value>Не удалось обновить все меню Проводника. Язык приложения сохранён для следующего запуска. Для повторной попытки выберите другой язык, а затем снова этот.</value>
+  </data>
+  <data name="ExplorerMenu_extract_text" xml:space="preserve">
+    <value>Извлечь текст...</value>
+  </data>
 </root>

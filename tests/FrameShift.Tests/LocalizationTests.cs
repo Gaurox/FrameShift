@@ -207,7 +207,7 @@ public sealed class LocalizationTests
             {
                 CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
                 var settingsPath = Path.Combine(Path.GetTempPath(), "FrameShift language " + Guid.NewGuid().ToString("N"), "ui-settings.json");
-                using var form = new SettingsForm(settingsPath);
+                using var form = new SettingsForm(settingsPath, _ => Task.FromResult(ExplorerMenuSyncResult.Updated));
                 Assert.Equal(title, form.Text);
                 var controls = Descendants(form).ToArray();
                 var selector = Assert.Single(controls.OfType<ComboBox>(), c => c.Name == "languagePreference");
@@ -252,14 +252,14 @@ public sealed class LocalizationTests
                 CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
                 var path = Path.Combine(directory, "ui-settings.json");
                 new FrameShiftUiSettings { Language = "en", Theme = "Dark", OcrModel = "tiny", JoinVideosSortOrder = "Natural" }.Save(path);
-                using (var first = new SettingsForm(path))
+                using (var first = new SettingsForm(path, _ => Task.FromResult(ExplorerMenuSyncResult.Updated)))
                 {
                     var selector = Assert.Single(Descendants(first).OfType<ComboBox>(), c => c.Name == "languagePreference");
                     selector.SelectedItem = AppLanguages.Resolve(language);
                 }
                 Assert.Equal(language, FrameShiftUiSettings.Load(path).Language);
 
-                using (var reopened = new SettingsForm(path))
+                using (var reopened = new SettingsForm(path, _ => Task.FromResult(ExplorerMenuSyncResult.Updated)))
                 {
                     var selector = Assert.Single(Descendants(reopened).OfType<ComboBox>(), c => c.Name == "languagePreference");
                     Assert.Equal(language, Assert.IsType<AppLanguage>(selector.SelectedItem).Code);

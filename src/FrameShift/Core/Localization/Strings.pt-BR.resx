@@ -5385,4 +5385,160 @@ Os arquivos WAV de saída são criados ao lado da origem com nomes únicos.</val
   <data name="CutVideo_End" xml:space="preserve">
     <value>Fim</value>
   </data>
+  <data name="ExplorerMenu_convert_video" xml:space="preserve">
+    <value>Converter vídeo</value>
+  </data>
+  <data name="ExplorerMenu_convert_audio" xml:space="preserve">
+    <value>Converter áudio</value>
+  </data>
+  <data name="ExplorerMenu_cut_audio" xml:space="preserve">
+    <value>Cortar áudio</value>
+  </data>
+  <data name="ExplorerMenu_remove_audio" xml:space="preserve">
+    <value>Remover áudio</value>
+  </data>
+  <data name="ExplorerMenu_reverse_audio" xml:space="preserve">
+    <value>Inverter áudio</value>
+  </data>
+  <data name="ExplorerMenu_compress_audio" xml:space="preserve">
+    <value>Comprimir áudio</value>
+  </data>
+  <data name="ExplorerMenu_change_pitch" xml:space="preserve">
+    <value>Alterar tom</value>
+  </data>
+  <data name="ExplorerMenu_change_audio_speed" xml:space="preserve">
+    <value>Alterar velocidade do áudio</value>
+  </data>
+  <data name="ExplorerMenu_change_video_speed" xml:space="preserve">
+    <value>Alterar velocidade do vídeo</value>
+  </data>
+  <data name="ExplorerMenu_create_gif" xml:space="preserve">
+    <value>Criar GIF</value>
+  </data>
+  <data name="ExplorerMenu_add_subtitles_video" xml:space="preserve">
+    <value>Adicionar legendas ao vídeo</value>
+  </data>
+  <data name="ExplorerMenu_extract_audio" xml:space="preserve">
+    <value>Extrair áudio</value>
+  </data>
+  <data name="ExplorerMenu_cut_video" xml:space="preserve">
+    <value>Cortar vídeo</value>
+  </data>
+  <data name="ExplorerMenu_crop_video" xml:space="preserve">
+    <value>Recortar vídeo</value>
+  </data>
+  <data name="ExplorerMenu_resize_video" xml:space="preserve">
+    <value>Redimensionar vídeo</value>
+  </data>
+  <data name="ExplorerMenu_compress_video" xml:space="preserve">
+    <value>Comprimir vídeo</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video" xml:space="preserve">
+    <value>Interpolar vídeo</value>
+  </data>
+  <data name="ExplorerMenu_compress_image" xml:space="preserve">
+    <value>Comprimir imagem</value>
+  </data>
+  <data name="ExplorerMenu_crop_image" xml:space="preserve">
+    <value>Recortar imagem</value>
+  </data>
+  <data name="ExplorerMenu_resize_image" xml:space="preserve">
+    <value>Redimensionar imagem</value>
+  </data>
+  <data name="ExplorerMenu_convert_image" xml:space="preserve">
+    <value>Converter imagem</value>
+  </data>
+  <data name="ExplorerMenu_convert_icon" xml:space="preserve">
+    <value>Converter em ícone</value>
+  </data>
+  <data name="ExplorerMenu_image_to_pdf" xml:space="preserve">
+    <value>Imagem para PDF</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_image" xml:space="preserve">
+    <value>Girar / espelhar imagem</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_video" xml:space="preserve">
+    <value>Girar / espelhar vídeo</value>
+  </data>
+  <data name="ExplorerMenu_media_info" xml:space="preserve">
+    <value>Informações da mídia</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_fast" xml:space="preserve">
+    <value>Remover fundo (rápido)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution" xml:space="preserve">
+    <value>Remover fundo (alta resolução com máscara alfa)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution_general" xml:space="preserve">
+    <value>Remover fundo (alta resolução geral)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_balanced" xml:space="preserve">
+    <value>Remover fundo (BRIA equilibrado)</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_high_quality" xml:space="preserve">
+    <value>Remover fundo (BRIA alta qualidade)</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise" xml:space="preserve">
+    <value>Remover ruído</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise_video" xml:space="preserve">
+    <value>Remover ruído (vídeo)</value>
+  </data>
+  <data name="ExplorerMenu_separate_audio" xml:space="preserve">
+    <value>Separação de áudio</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video_rife" xml:space="preserve">
+    <value>Interpolar vídeo (RIFE)</value>
+  </data>
+  <data name="ExplorerMenu_remove_object" xml:space="preserve">
+    <value>Remover objeto</value>
+  </data>
+  <data name="ExplorerMenu_upscale_image" xml:space="preserve">
+    <value>Aumentar resolução da imagem 4x</value>
+  </data>
+  <data name="ExplorerMenu_upscale_video" xml:space="preserve">
+    <value>Aumentar resolução do vídeo 4x</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_audio" xml:space="preserve">
+    <value>Criar arquivo de legendas</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_video" xml:space="preserve">
+    <value>Criar arquivo de legendas</value>
+  </data>
+  <data name="ExplorerMenu_join_videos" xml:space="preserve">
+    <value>Unir vídeos</value>
+  </data>
+  <data name="ExplorerMenu_extract_all_frames" xml:space="preserve">
+    <value>Extrair todos os quadros</value>
+  </data>
+  <data name="ExplorerMenu_extract_specific_frames" xml:space="preserve">
+    <value>Extrair quadros específicos</value>
+  </data>
+  <data name="ExplorerMenu_first_frame" xml:space="preserve">
+    <value>Primeiro quadro</value>
+  </data>
+  <data name="ExplorerMenu_last_frame" xml:space="preserve">
+    <value>Último quadro</value>
+  </data>
+  <data name="ExplorerMenu_keyframes" xml:space="preserve">
+    <value>Quadros-chave</value>
+  </data>
+  <data name="Settings_ExplorerLanguageHint" xml:space="preserve">
+    <value>O idioma do aplicativo muda após reiniciá-lo. Os menus do Explorador são atualizados automaticamente para todos os usuários; o Windows pode solicitar permissão de administrador.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdating" xml:space="preserve">
+    <value>Atualizando os menus do Explorador…</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdated" xml:space="preserve">
+    <value>Os menus do Explorador estão atualizados. Reinicie o FrameShift para mudar o idioma do aplicativo.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageCancelled" xml:space="preserve">
+    <value>A autorização do Windows foi cancelada. Os menus do Explorador não foram atualizados. O idioma do aplicativo foi salvo para a próxima inicialização. Para tentar novamente, selecione outro idioma e depois este.</value>
+  </data>
+  <data name="Settings_ExplorerLanguageFailed" xml:space="preserve">
+    <value>Não foi possível atualizar todos os menus do Explorador. O idioma do aplicativo foi salvo para a próxima inicialização. Para tentar novamente, selecione outro idioma e depois este.</value>
+  </data>
+  <data name="ExplorerMenu_extract_text" xml:space="preserve">
+    <value>Extrair texto...</value>
+  </data>
 </root>

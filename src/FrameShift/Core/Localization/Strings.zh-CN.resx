@@ -5385,4 +5385,160 @@
   <data name="CutVideo_End" xml:space="preserve">
     <value>结束</value>
   </data>
+  <data name="ExplorerMenu_convert_video" xml:space="preserve">
+    <value>转换视频</value>
+  </data>
+  <data name="ExplorerMenu_convert_audio" xml:space="preserve">
+    <value>转换音频</value>
+  </data>
+  <data name="ExplorerMenu_cut_audio" xml:space="preserve">
+    <value>截取音频</value>
+  </data>
+  <data name="ExplorerMenu_remove_audio" xml:space="preserve">
+    <value>移除音频</value>
+  </data>
+  <data name="ExplorerMenu_reverse_audio" xml:space="preserve">
+    <value>倒放音频</value>
+  </data>
+  <data name="ExplorerMenu_compress_audio" xml:space="preserve">
+    <value>压缩音频</value>
+  </data>
+  <data name="ExplorerMenu_change_pitch" xml:space="preserve">
+    <value>调整音高</value>
+  </data>
+  <data name="ExplorerMenu_change_audio_speed" xml:space="preserve">
+    <value>调整音频速度</value>
+  </data>
+  <data name="ExplorerMenu_change_video_speed" xml:space="preserve">
+    <value>调整视频速度</value>
+  </data>
+  <data name="ExplorerMenu_create_gif" xml:space="preserve">
+    <value>制作 GIF</value>
+  </data>
+  <data name="ExplorerMenu_add_subtitles_video" xml:space="preserve">
+    <value>为视频添加字幕</value>
+  </data>
+  <data name="ExplorerMenu_extract_audio" xml:space="preserve">
+    <value>提取音频</value>
+  </data>
+  <data name="ExplorerMenu_cut_video" xml:space="preserve">
+    <value>截取视频</value>
+  </data>
+  <data name="ExplorerMenu_crop_video" xml:space="preserve">
+    <value>裁剪视频</value>
+  </data>
+  <data name="ExplorerMenu_resize_video" xml:space="preserve">
+    <value>调整视频尺寸</value>
+  </data>
+  <data name="ExplorerMenu_compress_video" xml:space="preserve">
+    <value>压缩视频</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video" xml:space="preserve">
+    <value>视频插帧</value>
+  </data>
+  <data name="ExplorerMenu_compress_image" xml:space="preserve">
+    <value>压缩图像</value>
+  </data>
+  <data name="ExplorerMenu_crop_image" xml:space="preserve">
+    <value>裁剪图像</value>
+  </data>
+  <data name="ExplorerMenu_resize_image" xml:space="preserve">
+    <value>调整图像尺寸</value>
+  </data>
+  <data name="ExplorerMenu_convert_image" xml:space="preserve">
+    <value>转换图像</value>
+  </data>
+  <data name="ExplorerMenu_convert_icon" xml:space="preserve">
+    <value>转换为图标</value>
+  </data>
+  <data name="ExplorerMenu_image_to_pdf" xml:space="preserve">
+    <value>图像转 PDF</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_image" xml:space="preserve">
+    <value>旋转／翻转图像</value>
+  </data>
+  <data name="ExplorerMenu_rotate_flip_video" xml:space="preserve">
+    <value>旋转／翻转视频</value>
+  </data>
+  <data name="ExplorerMenu_media_info" xml:space="preserve">
+    <value>媒体信息</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_fast" xml:space="preserve">
+    <value>移除背景（快速）</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution" xml:space="preserve">
+    <value>移除背景（高分辨率抠图）</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_high_resolution_general" xml:space="preserve">
+    <value>移除背景（高分辨率通用）</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_balanced" xml:space="preserve">
+    <value>移除背景（BRIA 均衡）</value>
+  </data>
+  <data name="ExplorerMenu_remove_background_bria_high_quality" xml:space="preserve">
+    <value>移除背景（BRIA 高质量）</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise" xml:space="preserve">
+    <value>降噪</value>
+  </data>
+  <data name="ExplorerMenu_remove_noise_video" xml:space="preserve">
+    <value>视频降噪</value>
+  </data>
+  <data name="ExplorerMenu_separate_audio" xml:space="preserve">
+    <value>音轨分离</value>
+  </data>
+  <data name="ExplorerMenu_interpolate_video_rife" xml:space="preserve">
+    <value>视频插帧（RIFE）</value>
+  </data>
+  <data name="ExplorerMenu_remove_object" xml:space="preserve">
+    <value>移除物体</value>
+  </data>
+  <data name="ExplorerMenu_upscale_image" xml:space="preserve">
+    <value>图像超分辨率（4 倍）</value>
+  </data>
+  <data name="ExplorerMenu_upscale_video" xml:space="preserve">
+    <value>视频超分辨率（4 倍）</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_audio" xml:space="preserve">
+    <value>生成字幕文件</value>
+  </data>
+  <data name="ExplorerMenu_create_subtitles_video" xml:space="preserve">
+    <value>生成字幕文件</value>
+  </data>
+  <data name="ExplorerMenu_join_videos" xml:space="preserve">
+    <value>合并视频</value>
+  </data>
+  <data name="ExplorerMenu_extract_all_frames" xml:space="preserve">
+    <value>提取全部帧</value>
+  </data>
+  <data name="ExplorerMenu_extract_specific_frames" xml:space="preserve">
+    <value>提取指定帧</value>
+  </data>
+  <data name="ExplorerMenu_first_frame" xml:space="preserve">
+    <value>第一帧</value>
+  </data>
+  <data name="ExplorerMenu_last_frame" xml:space="preserve">
+    <value>最后一帧</value>
+  </data>
+  <data name="ExplorerMenu_keyframes" xml:space="preserve">
+    <value>关键帧</value>
+  </data>
+  <data name="Settings_ExplorerLanguageHint" xml:space="preserve">
+    <value>重启后应用程序将切换语言。资源管理器菜单会自动为所有用户更新；Windows 可能会请求管理员授权。</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdating" xml:space="preserve">
+    <value>正在更新资源管理器菜单…</value>
+  </data>
+  <data name="Settings_ExplorerLanguageUpdated" xml:space="preserve">
+    <value>资源管理器菜单已是最新状态。请重启 FrameShift 以切换应用程序语言。</value>
+  </data>
+  <data name="Settings_ExplorerLanguageCancelled" xml:space="preserve">
+    <value>已取消 Windows 授权，资源管理器菜单未更新。应用程序语言已保存，将在下次启动时生效。如需重试，请先选择另一种语言，再重新选择此语言。</value>
+  </data>
+  <data name="Settings_ExplorerLanguageFailed" xml:space="preserve">
+    <value>未能更新全部资源管理器菜单。应用程序语言已保存，将在下次启动时生效。如需重试，请先选择另一种语言，再重新选择此语言。</value>
+  </data>
+  <data name="ExplorerMenu_extract_text" xml:space="preserve">
+    <value>提取文字…</value>
+  </data>
 </root>
