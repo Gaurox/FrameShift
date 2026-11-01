@@ -299,6 +299,56 @@ Evidence: `scratch/release-1.22-ru-targeted.log`,
 `scratch/release-1.22-ru-screenshots/`, and
 `scratch/release-1.22-ru-ui-probe.log`.
 
+## Current five-language candidate
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`b0788216d0bfb862537a5b1bf19d6c7874f3354e`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, mandatory tests, self-contained
+win-x64 publication, payload/runtime/tool/notice checks and Inno Setup 6.7.1
+compilation pass. The canonical build reports no compiler or restore warnings.
+
+- **1,044 passed, 0 failures, 17 conditional skips, 1,061 total**, in **5 m 9 s**.
+  The existing six OCR, six real-model AI and five subtitle cases retain their
+  activation/model/corpus requirements; they are not counted as passing.
+- The payload contains **808 files**, with exactly the Chinese, Spanish,
+  Brazilian Portuguese and Russian FrameShift satellite assemblies for both the
+  application and worker, alongside English neutral resources. No additional
+  FrameShift translation, loop types, private licence files, model weights, debug
+  symbols or test assemblies are packaged.
+- Managed metadata verifies ten app/worker/resource assemblies and their expected
+  resource names. The application is 1.22.0.0, with product version
+  `1.22.0+b0788216d0bfb862537a5b1bf19d6c7874f3354e`. The worker remains 1.18.1.0;
+  both self-contained runtimes remain 8.0.31.
+- An isolated process loads the actual published application and worker assemblies
+  and invokes their shared language initializer/resource loader. **22 lookups pass**:
+  all five languages, regional/installer aliases including `ru-RU`, `ru_KZ` and
+  `russian`, and English fallback for `pt-PT`, with numeric culture preserved.
+  This verifies packaged language selection and text without starting native models;
+  it does not claim model inference or installed acceptance. The actual worker uses
+  the existing `FRAMESHIFT_UI_LANGUAGE` environment setting with the same loader.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,481,899 bytes | `25C3ACA46292FE2B7315DAAD668976ADFF5F5845DC5D92BF6690EB59C0623FAD` |
+| Application DLL | 5,586,944 bytes | `F33FAE32CE9D279FFB2B6F32B7023A355474C116BF7D97D571B4B4B523A6183A` |
+| Subtitle worker DLL | 296,448 bytes | `A567BB9DB64F3CF244C3B4676B7B0061A833FDD4FB3F3313C54B66393D2A5C8D` |
+| Application Chinese satellite | 260,608 bytes | `75356E57A3410890712EB501057F4FDF46301FFF35003CA14E9850CF172DD934` |
+| Application Spanish satellite | 272,896 bytes | `1DFA09477BA27B68984BE7E83B5EA39ED0B0167CEB7063C248CCD26408063B37` |
+| Application Brazilian Portuguese satellite | 273,920 bytes | `CCD410FDA8DB77AFF9A17934037144BFCFC9437CD6CEB64D53822D3DDADE0020` |
+| Application Russian satellite | 316,416 bytes | `92952003751EE55313A343BBE278177BC28E1C3367F716FE2CF5ECD4DBF502F3` |
+| Worker Chinese satellite | 260,608 bytes | `42D4A1133F7C7B8E5CEB6E772D0276AC3200DCBE1A6672AAD1E0592ED2433734` |
+| Worker Spanish satellite | 272,896 bytes | `1FD256FD155FBDA2E0D4E35F648A9F57C13DA221CAF15C9B2B36DA028EB11934` |
+| Worker Brazilian Portuguese satellite | 273,920 bytes | `60B36BD93B818814FFF93658E77E2777739817315F064FD957E94F865DA22682` |
+| Worker Russian satellite | 316,416 bytes | `D36C721B8393D6FE2A36EEC01061D6E0D3EFF299AC16D09C8E0C189B5C177B70` |
+
+The installer was **not run**; nothing was pushed or published. The checksum beside
+the installer identifies this exact candidate. Documentation/checksum commits after
+the clean source build do not change its binaries. Evidence:
+`scratch/release-1.22-ru-canonical.log`,
+`scratch/release-1.22-ru-managed-metadata.jsonl`,
+`scratch/release-1.22-ru-packaged-languages.jsonl`, and
+`builds/release-1.22-ru/artifact-verification.json`.
+
 ## Work before a public release
 
 - Qualify the dependency/runtime maintenance identified by the retained audit work:
