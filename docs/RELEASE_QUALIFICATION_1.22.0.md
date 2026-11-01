@@ -540,7 +540,7 @@ app/worker satellite hashes). The checksum beside the installer identifies this
 candidate. Later documentation/checksum commits do not change its binaries.
 The installer was not run; nothing was pushed or published.
 
-## Current dependency-security preparation
+## Current candidate with dependency-security servicing
 
 The three findings from the 1 November dependency review are addressed:
 
@@ -578,9 +578,40 @@ orientation, localization and theme behavior with the serviced runtime.
 Evidence: `scratch/release-1.22-serviced-*-vulnerabilities.json`,
 `scratch/release-1.22-security-ffmpeg-materialization.log`, and the targeted TRX
 files under `scratch/release-1.22-security-servicing`, including
-`security-servicing-targeted-final.trx`. The clean canonical rebuild
-will identify the new installer. None of these checks installs the application or
-operates the desktop; nothing is pushed or published.
+`security-servicing-targeted-final.trx`.
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`0e818872e562c60ce3d602e325af763588b7f7b4`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, payload/runtime/PKCS/tool/notice
+checks and Inno Setup 6.7.1 compilation pass, with no compiler/restore warnings.
+The full suite reports **1,086 passed, 0 failures, 17 conditional skips, 1,103 total**,
+in **4 m 47 s**. Existing real-model/OCR/subtitle prerequisites remain unchanged.
+Inno compilation takes 81 seconds.
+
+Independent final-payload checks confirm **808 files**, runtime **8.0.33** in both
+application and worker, PKCS **8.0.2** in the dependency graph, and the actual
+packaged PKCS DLL at **8.0.3326.52219**. CoreCLR/CoreLib are **8.0.3326.52219** and
+WinForms is **8.0.3326.52211**. The exact pinned FFmpeg/FFprobe hashes match the
+vendor's verified binaries. The ZIP, development provenance files, ffplay, private
+licences, model weights, debug symbols, test assemblies and loop source are absent.
+All five application/worker languages remain present.
+
+The actual packaged Settings form also passes the locked-preferences/no-menu-call/
+restored-selection/retry workflow in all five languages under the serviced runtime.
+Its product version is `1.22.0+0e818872e562c60ce3d602e325af763588b7f7b4`.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 178,745,554 bytes | `7B2D0E2C7B157A80D2BCD5019F8361AFE960D63C6B279F37AE727B84E049CF9C` |
+| Application DLL | 5,652,480 bytes | `E80847FF13B870BB1E8BE6DF6E4721647FC9D818AD26B663630F494E6D516540` |
+
+Evidence: `scratch/release-1.22-security-servicing-canonical.log`,
+`scratch/release-1.22-security-servicing-managed-metadata.json`,
+`scratch/release-1.22-security-servicing-language-probe.json`, and
+`builds/release-1.22-security-servicing/artifact-verification.json` (including
+app/worker satellite and tool hashes). The checksum beside the installer identifies
+this exact candidate; later documentation/checksum commits do not change its binaries.
+The installer was not run, no desktop was controlled, and nothing was pushed or published.
 
 ## Work before a public release
 
