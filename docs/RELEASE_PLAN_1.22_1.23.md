@@ -13,7 +13,7 @@ including the private installer qualification recorded on 29 October. The origin
 search, previews, timing, HDR handling and queue export. Their common-code changes
 and the timing collector/tests from `3a21ade` belong to future 1.23 integration.
 The retained branch's version and old private artifacts still say 1.22.0; they are
-historical and must not be confused with the new bilingual candidate.
+historical and must not be confused with the new multilingual candidate.
 
 The 29 October loop installer is archived locally under
 `builds/loop-1.23-preserved/FrameShift_1.22.0_Setup.exe`, alongside its qualification

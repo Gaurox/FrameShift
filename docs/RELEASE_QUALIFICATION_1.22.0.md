@@ -143,6 +143,49 @@ The isolated UI probe's restore reports NU1900 because the sandbox cannot reach 
 NuGet vulnerability feed. It is not a completed vulnerability audit; the canonical
 release build below performs its own locked restores and required checks.
 
+## Current English/Chinese/Spanish candidate
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`63703429fe4e9e11a6bf012aad5cee2305c22a1a`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, mandatory tests, self-contained
+win-x64 publication, payload/runtime/tool/notice checks and Inno Setup 6.7.1
+compilation pass. The canonical build reports no compiler or restore warnings.
+
+- **1,019 passed, 0 failures, 17 conditional skips, 1,036 total**, in **4 m 27 s**.
+  The existing six OCR, six real-model AI and five subtitle cases retain their
+  activation/model/corpus requirements. They are not counted as passing.
+- The payload contains **804 files**, with exactly the Chinese and Spanish
+  satellite assemblies for both the application and worker, alongside English
+  neutral resources. No additional translation, loop types, private licence files,
+  model weights, debug symbols or test assemblies are packaged.
+- Managed metadata confirms the expected base resource names and versions. The
+  application is 1.22.0.0, with product version
+  `1.22.0+63703429fe4e9e11a6bf012aad5cee2305c22a1a`. The worker remains 1.18.1.0;
+  both self-contained runtimes remain 8.0.31.
+- A real child-worker probe verifies UTF-8 progress in English, Chinese, Spanish and
+  regional `es-MX`, using the display-language environment variable. The fixture
+  deliberately supplies missing model paths; every case ends with the same native
+  startup exit `0xC0000005`. This only verifies localized progress, not inference
+  or graceful model-error handling, and does not change the recognition language.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,408,941 bytes | `AB1E3ED525D8F842173FAD9B09B3A345368B1DEB04254E2F412BCED1F114C6C0` |
+| Application DLL | 5,586,944 bytes | `007E349BBE09435A83D2F5A2DD7EC7E3051B2AFA0B589C515AC900736B619954` |
+| Subtitle worker DLL | 295,936 bytes | `CFFF695A5D90B25F0DD51979FFCCFD6A5CEE082A0B5074B501FCB0EAA4A531F9` |
+| Application Chinese satellite | 260,608 bytes | `A4D8B76D8B9BAF384796C0BD754DE745472A0CC0F4D1313FDD2D3C5BF9E1E346` |
+| Application Spanish satellite | 272,896 bytes | `763933DA71A869DBB65C3960DB9F7CB5FA15101E8DC0648374EF38CADFA2D33C` |
+| Worker Chinese satellite | 260,608 bytes | `367917344CEE2E7707C2BB3CA04A4D9F2301A5DC86728C970411FE54E9258E5A` |
+| Worker Spanish satellite | 272,896 bytes | `9C09371763B635B076529835F6294763F2D206B92F231BF06C8AC361CFE910EC` |
+
+The installer was **not run**; nothing was pushed or published. The checksum beside
+the installer identifies this exact candidate. Documentation/checksum commits after
+the clean source build do not change its binaries. Evidence:
+`scratch/release-1.22-spanish-canonical.log`,
+`scratch/release-1.22-spanish-worker/probe.log`,
+`scratch/release-1.22-spanish-managed-metadata.jsonl`, and
+`builds/release-1.22-spanish/artifact-verification.json`.
+
 ## Work before a public release
 
 - Qualify the dependency/runtime maintenance identified by the retained audit work:
