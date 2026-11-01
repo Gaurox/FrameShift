@@ -1,6 +1,6 @@
 # FrameShift 简体中文说明
 
-🌐 [English](README.md) | **简体中文** | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md)
+🌐 [English](README.md) | **简体中文** | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md)
 
 FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#、.NET 8 和 WinForms，基于 FFmpeg、FFprobe 及可选的本地 AI 模型处理视频、音频、图像和 PDF。
 
@@ -18,9 +18,9 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 **[下载当前公开发行版](https://github.com/Gaurox/FrameShift/releases/latest)**。
 
-当前公开版本仍为 **[1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1)**，该公开版本尚不包含本分支的多语言改动。本分支正在准备 **1.22.0 英文／简体中文／西班牙文／巴西葡萄牙文版本**；安装包已在本地构建，但**尚未公开发布**。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
+当前公开版本仍为 **[1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1)**，该公开版本尚不包含本分支的多语言改动。本分支正在准备 **1.22.0 英文／简体中文／西班牙文／巴西葡萄牙文／俄文版本**；安装包已在本地构建，但**尚未公开发布**。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
 
-1.22.0 包含通用可靠性修复与四种语言支持，**不包含 Find Loop**；循环视频功能保留到未来的 1.23。当前变更与验证范围见 [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)。
+1.22.0 包含通用可靠性修复与五种语言支持，**不包含 Find Loop**；循环视频功能保留到未来的 1.23。当前变更与验证范围见 [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)。
 
 ## 快速使用
 
@@ -33,7 +33,7 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 ## 语言选择与界面
 
-1.22.0 安装程序提供 **English**、**简体中文**、**Español** 和 **Português Brasileiro** 四种语言。安装页面、组件说明、模型说明及所选资源管理器右键菜单使用安装时选择的语言；同一安装包包含四种应用程序语言。
+1.22.0 安装程序提供 **English**、**简体中文**、**Español**、**Português Brasileiro** 和 **Русский** 五种语言。安装页面、组件说明、模型说明及所选资源管理器右键菜单使用安装时选择的语言；同一安装包包含五种应用程序语言。
 
 应用程序优先使用用户在“设置”中保存的语言，否则使用安装时选择的默认语言。可以在“设置”的“应用程序语言”中切换，**下次启动时生效**。该设置不会修改需要管理员权限的资源管理器菜单；重新运行安装程序可更改菜单语言。
 

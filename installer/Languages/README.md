@@ -21,8 +21,15 @@ Its header credits Cesar82 and remains unchanged. `INNO-LICENSE.txt` also applie
 
 SHA-256 of the vendored file: `E7E5E3DBD0DDEE4C5A1F502F3035E431A21F87E68CEF9A0295680B63ED61200B`.
 
+`Russian.isl` is the unmodified Russian translation shipped with Inno Setup 6.7.1,
+also available at [jrsoftware/issrc, tag is-6_7_1](https://github.com/jrsoftware/issrc/blob/is-6_7_1/Files/Languages/Russian.isl).
+Its header credits Dmitry Kann (yktoo.com) and remains unchanged. `INNO-LICENSE.txt`
+also applies.
+
+SHA-256 of the vendored file: `81981FE6CFEF7F3B2F744BEAC1494F4D2B29CEA69C96A08D1C0A6B79DC0ED8F2`.
+
 FrameShift's own component, Explorer and Pascal-script messages live in the
 `[CustomMessages]` section of `../FrameShift.iss`, with `english`, `chinesesimp`,
-`spanish` and `brazilianportuguese` entries. All four languages use the same payload, application ID,
+`spanish`, `brazilianportuguese` and `russian` entries. All five languages use the same payload, application ID,
 component IDs and command lines. The installer stores its application language
 default in `{app}/language.txt`; uninstall removes that owned file.

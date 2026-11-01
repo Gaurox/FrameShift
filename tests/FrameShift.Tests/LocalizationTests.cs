@@ -66,6 +66,11 @@ public sealed class LocalizationTests
     [InlineData("brazilianportuguese", "pt-BR")]
     [InlineData("pt-PT", "en")]
     [InlineData("pt", "en")]
+    [InlineData("russian", "ru")]
+    [InlineData("ru", "ru")]
+    [InlineData("ru-RU", "ru")]
+    [InlineData("ru-BY", "ru")]
+    [InlineData(" ru_KZ ", "ru")]
     [InlineData(null, "en")]
     [InlineData(" ", "en")]
     [InlineData("invalid/culture", "en")]
@@ -146,6 +151,7 @@ public sealed class LocalizationTests
     [InlineData("zh-Hans-CN", "zh-CN")]
     [InlineData("es-MX", "es")]
     [InlineData("pt_BR", "pt-BR")]
+    [InlineData("ru-RU", "ru")]
     public void DisplayLanguageInitialization_LeavesNumericCultureUnchanged(string language, string expected)
     {
         var previousUiCulture = CultureInfo.CurrentUICulture;
@@ -169,13 +175,14 @@ public sealed class LocalizationTests
     [InlineData("zh-CN", "视频", "转换")]
     [InlineData("es", "video", "Convertir")]
     [InlineData("pt-BR", "vídeo", "Converter")]
+    [InlineData("ru", "видео", "Преобразовать")]
     public void LocalizedMessages_PreserveUnicodePaths_AndInternalActionValues(string language, string mediaName, string actionName)
     {
         var previous = CultureInfo.CurrentUICulture;
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
-            const string source = @"C:\测试 médias\été vidéo.mp4";
+            const string source = @"C:\测试 médias проверка\été vidéo.mp4";
             Assert.Contains(source, MediaActionMessages.InputFileNotFound(source));
             Assert.Contains(mediaName, MediaActionMessages.FfmpegFailure("video"));
             Assert.True(ActionRegistry.CreateDefault().TryGet("convert-video", out var action));
@@ -190,6 +197,7 @@ public sealed class LocalizationTests
     [InlineData("zh-CN", "FrameShift - 设置", "跟随系统")]
     [InlineData("es", "FrameShift - Configuración", "Sistema")]
     [InlineData("pt-BR", "FrameShift - Configurações", "Sistema")]
+    [InlineData("ru", "FrameShift - Настройки", "Системная")]
     public void Settings_RenderInSupportedLanguages_WithStablePreferenceValues(string language, string title, string systemTheme)
     {
         StaTest.Run(() =>
@@ -233,6 +241,7 @@ public sealed class LocalizationTests
     [InlineData("zh-Hans", "zh-CN")]
     [InlineData("es-MX", "es")]
     [InlineData("pt_br", "pt-BR")]
+    [InlineData("ru_KZ", "ru")]
     public void LanguagePreference_RoundTrips_WithoutDroppingExistingSettings(string language, string expected)
     {
         var directory = Path.Combine(Path.GetTempPath(), "FrameShift language été 中文 " + Guid.NewGuid().ToString("N"));

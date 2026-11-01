@@ -15,6 +15,8 @@ public sealed class LocalizationLayoutTests
     [InlineData(360, "Extraer texto y cambiar tamaño de imagen - ")]
     [InlineData(580, "Extrair texto e aumentar resolução da imagem - ")]
     [InlineData(360, "Extrair texto e aumentar resolução da imagem - ")]
+    [InlineData(580, "Извлечь текст и повысить разрешение изображения - ")]
+    [InlineData(360, "Извлечь текст и повысить разрешение изображения - ")]
     public void LongLocalizedActionCaptions_KeepSearchAndButtonsInsideTheViewport(int width, string prefix)
     {
         StaTest.Run(() =>

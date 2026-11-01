@@ -1,10 +1,10 @@
 # FrameShift
 
-🌐 [English](README.md) | [简体中文](README.zh-CN.md) | [Español](README.es.md) | **Português (Brasil)**
+🌐 [English](README.md) | [简体中文](README.zh-CN.md) | [Español](README.es.md) | **Português (Brasil)** | [Русский](README.ru.md)
 
 **Ferramenta gratuita e de código aberto para processar vídeos, áudios, imagens e PDFs no Windows, com integração ao Explorador e IA local.**
 
-A versão pública continua sendo a **1.21.1**. Esta ramificação prepara a **1.22.0 em inglês, chinês simplificado, espanhol e português brasileiro**, ainda **não publicada**. O recurso Find Loop fica reservado para a futura 1.23. Consulte as [notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
+A versão pública continua sendo a **1.21.1**. Esta ramificação prepara a **1.22.0 em inglês, chinês simplificado, espanhol, português brasileiro e russo**, ainda **não publicada**. O recurso Find Loop fica reservado para a futura 1.23. Consulte as [notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
 
 Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para chinês simplificado, pelo README chinês e pela correção da disposição em janelas estreitas. Sua [contribuição original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada nesta preparação. A tradução para português brasileiro parte dos recursos originais e usa o mesmo catálogo de idiomas.
 
@@ -46,7 +46,7 @@ O FrameShift permite iniciar tarefas de mídia pelo menu de contexto do Explorad
 - Modelos de IA locais para tarefas como remoção de fundo, aumento de resolução, legendas e OCR.
 - Interface WinForms leve, temas claro e escuro e integração opcional ao Explorador.
 
-A 1.22.0 reúne os quatro idiomas e correções gerais de integridade, cancelamento, memória, importação de pastas, downloads de modelos e comunicação local. Os detalhes e as verificações pendentes estão no relatório de validação.
+A 1.22.0 reúne os cinco idiomas e correções gerais de integridade, cancelamento, memória, importação de pastas, downloads de modelos e comunicação local. Os detalhes e as verificações pendentes estão no relatório de validação.
 
 ## Uso rápido
 
@@ -59,7 +59,7 @@ Depois de configurar a integração ao Explorador pelo instalador, você também
 
 ## Idioma e aparência
 
-O instalador da 1.22.0 oferece **English**, **简体中文**, **Español** e **Português Brasileiro**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
+O instalador da 1.22.0 oferece **English**, **简体中文**, **Español**, **Português Brasileiro** e **Русский**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
 
 Em **Configurações → Idioma do aplicativo**, você pode salvar uma preferência pessoal. Escolha **Português (Brasil)** para usar esta tradução (`pt-BR`). A mudança é aplicada **na próxima inicialização do FrameShift** e tem prioridade sobre o idioma padrão do instalador. Ela não altera os menus do Explorador, que exigem permissões de administrador; execute novamente o instalador para mudar o idioma desses menus.
 
@@ -154,7 +154,7 @@ Sem uma preferência salva nem um arquivo de idioma de instalação, o programa 
 
 As compilações Release usam ImageSharp 4 e exigem uma licença privada válida `sixlabors.lic`, indicada por `SixLaborsLicenseFile`. Os responsáveis devem verificar sua validade; a chave não deve ser publicada nem incluída no instalador, e a validação não deve ser ignorada. Os usuários finais não precisam dessa licença de compilação.
 
-A preparação atual usa **Inno Setup 6.7.1**. Os arquivos de idioma chinês, espanhol e português brasileiro do instalador são mantidos em [`installer/Languages`](installer/Languages/README.md), com fontes, créditos e licença. Não é necessário modificar a instalação do compilador para adicioná-los.
+A preparação atual usa **Inno Setup 6.7.1**. Os arquivos de idioma chinês, espanhol, português brasileiro e russo do instalador são mantidos em [`installer/Languages`](installer/Languages/README.md), com fontes, créditos e licença. Não é necessário modificar a instalação do compilador para adicioná-los.
 
 O único comando oficial para compilar o instalador é:
 

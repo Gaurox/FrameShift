@@ -15,7 +15,8 @@ internal static class AppLanguages
         Default,
         new("zh-CN", "简体中文", "zh", "zh-Hans", "chinesesimp"),
         new("es", "Español", "spanish"),
-        new("pt-BR", "Português (Brasil)", "brazilianportuguese")
+        new("pt-BR", "Português (Brasil)", "brazilianportuguese"),
+        new("ru", "Русский", "russian")
     ]);
 
     internal static AppLanguage Resolve(string? value)

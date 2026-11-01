@@ -1,6 +1,6 @@
 # FrameShift 1.22.0 multilingual preparation
 
-Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish/Brazilian Portuguese candidate,
+Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish/Brazilian Portuguese/Russian candidate,
 based on published 1.21.1 and the six general correction lots. It contains no Find
 Loop code. The former private loop candidate is preserved separately; see the
 [branch plan](RELEASE_PLAN_1.22_1.23.md). Nothing is pushed, installed or published
@@ -188,7 +188,7 @@ the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-spanish-managed-metadata.jsonl`, and
 `builds/release-1.22-spanish/artifact-verification.json`.
 
-## Brazilian Portuguese addition
+## Brazilian Portuguese addition (archived candidate)
 
 - The existing shared catalog registers **`pt-BR` / Português (Brasil)** and the
   installer alias `brazilianportuguese`. Generic `pt` and `pt-PT` remain unsupported
@@ -219,7 +219,7 @@ Evidence: `scratch/release-1.22-ptbr-targeted.log`,
 `scratch/release-1.22-ptbr-screenshots/`, and
 `scratch/release-1.22-ptbr-ui-probe.log`.
 
-## Current four-language candidate
+## Four-language candidate (archived)
 
 The clean canonical `build_installer.ps1` completed on 1 November 2026 from
 `b1ac337dac3b128148b733a25935c4bf24bf9230`, without `-AllowDirty` or `-RunInstaller`.
@@ -258,13 +258,46 @@ compilation pass. The canonical build reports no compiler or restore warnings.
 | Worker Spanish satellite | 272,896 bytes | `8108D0DAD5247A91DCD9D804879E5E9DB64B9D3D10F0450BC2CDB5121DC75577` |
 | Worker Brazilian Portuguese satellite | 273,920 bytes | `4A5DFA51A0F77AB6605576D1A1DF0FDF107E2A66045920E7C7FE4309D57F31E7` |
 
-The installer was **not run**; nothing was pushed or published. The checksum beside
-the installer identifies this exact candidate. Documentation/checksum commits after
+The installer was **not run**; nothing was pushed or published. This installer, its checksum, qualification and artifact report are archived under
+`builds/release-1.22-ptbr/`. The checksum beside the installer identifies the newest
+candidate. Documentation/checksum commits after
 the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-ptbr-canonical.log`,
 `scratch/release-1.22-ptbr-managed-metadata.jsonl`,
 `scratch/release-1.22-ptbr-packaged-languages.jsonl`, and
 `builds/release-1.22-ptbr/artifact-verification.json`.
+
+## Russian addition
+
+- The shared catalog registers neutral **`ru` / Русский**, installer alias `russian`
+  and regional resolution for `ru-RU`, `ru-BY` and `ru-KZ`. No framework, dependency,
+  per-form language logic or media-processing contract is changed. English, Chinese,
+  Spanish and Brazilian Portuguese resource files are unchanged.
+- All **1,790 resources** are translated, including actions, dialogs, progress,
+  errors and subtitle-worker text. Exact composite arguments and numeric format
+  specifiers, newlines and file-filter patterns match English. Labels distinguish
+  temporal cutting from spatial cropping and the light theme from light denoising.
+- All **139 installer custom messages** are translated alongside the four existing
+  sets. `Russian.isl` matches the official Inno Setup 6.7.1 source; Dmitry Kann's
+  original credits and the Inno Setup licence are retained.
+- **60 targeted Release tests pass, 0 failures, 0 skips**: every registered resource,
+  installer consistency, aliases, regional fallback, numeric culture, stable action
+  IDs, Unicode/Cyrillic paths, preference persistence, five Settings renders and
+  eight long-caption/narrow-layout cases.
+- A separate hidden WinForms process initializes Russian before action catalogs and
+  checks **43 translated actions at 360 and 580 pixels**, with action buttons and
+  search controls inside their containers. The Settings and 360-pixel action renders
+  were inspected. Neither probe saves user preferences or installs the application.
+- `README.ru.md` covers installation, usage, all feature families, local models,
+  development and packaging. Five language banners and all local links/images were
+  checked. Credits for zhazhayu01's Chinese translation, README and narrow-window
+  fix remain in the Russian README. Native-speaker linguistic review and installed
+  acceptance remain pending.
+
+Evidence: `scratch/release-1.22-ru-targeted.log`,
+`scratch/release-1.22-ru/localization-ru.trx`,
+`scratch/release-1.22-ru-screenshots/`, and
+`scratch/release-1.22-ru-ui-probe.log`.
 
 ## Work before a public release
 
@@ -273,7 +306,7 @@ the clean source build do not change its binaries. Evidence:
   ImageSharp 4.1.2 pins are unchanged by the localization work. Recheck appropriate
   versions and the transitive vulnerability scan before public distribution.
 - Validate a fresh install, upgrade from published 1.21.1, switching the installer
-  language, Explorer component selection and uninstall in all four languages. In particular,
+  language, Explorer component selection and uninstall in all five languages. In particular,
   foreign model files and existing user preferences must survive.
 - Check actual Windows font scaling/DPI, keyboard/accessibility, both themes and
   native menu rendering. Hidden render/layout tests do not replace this acceptance.

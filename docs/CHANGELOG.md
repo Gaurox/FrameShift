@@ -2,15 +2,15 @@
 
 ## 1.22.0
 
-Unpublished preparation: English/simplified Chinese/Spanish/Brazilian Portuguese application and installer, plus
+Unpublished preparation: English/simplified Chinese/Spanish/Brazilian Portuguese/Russian application and installer, plus
 the six general correction lots. **Find Loop is reserved for 1.23.** See the
 [draft notes](RELEASE_NOTES_1.22.0.md), [qualification](RELEASE_QUALIFICATION_1.22.0.md)
 and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
 
-- English, Chinese, Spanish and Brazilian Portuguese display resources, language preference applied on next launch,
+- English, Chinese, Spanish, Brazilian Portuguese and Russian display resources, language preference applied on next launch,
   translated installer/Explorer menus and corrected narrow action-list layout.
 - A small shared language catalog drives preferences and Settings; the worker includes
-  translation resources automatically. English, simplified Chinese, Spanish and Brazilian Portuguese ship in 1.22.
+  translation resources automatically. English, simplified Chinese, Spanish, Brazilian Portuguese and Russian ship in 1.22.
 - Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,
   cancellable folder imports and successful upscale tile reuse.
 - Protected model paths and bounded/coordinated downloads, safe installer cleanup,

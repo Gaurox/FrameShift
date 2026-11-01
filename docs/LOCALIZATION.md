@@ -1,7 +1,7 @@
 # Localization
 
 FrameShift 1.22 prepares one application and installer in English, simplified Chinese,
-Spanish and Brazilian Portuguese. It is not published yet. English is the fallback
+Spanish, Brazilian Portuguese and Russian. It is not published yet. English is the fallback
 for development builds, missing installation defaults and unsupported language values.
 Only display culture is selected; numeric
 parsing, CLI options, model IDs, persisted values, FFmpeg parameters and output
@@ -22,21 +22,23 @@ catalog. Neutral `es` covers regional preferences such as `es-ES`, `es-MX` and `
 Brazilian Portuguese uses `pt-BR` and the native label `Português (Brasil)`; its
 installer identifier is `brazilianportuguese`. Generic `pt` and `pt-PT` remain
 unregistered and fall back to English; no other Portuguese variant is enabled.
-All four READMEs link to each other. Inno Setup translations retain their own
+Russian uses neutral `ru` and the native label `Русский`, with the installer alias
+`russian`. Regional preferences such as `ru-RU`, `ru-BY` and `ru-KZ` resolve to `ru`.
+All five READMEs link to each other. Inno Setup translations retain their own
 upstream credits; see [installer language sources](../installer/Languages/README.md).
 
 ## Language selection
 
 - `Core/Localization/AppLanguages.cs` is the application's supported-language catalog:
   canonical culture code, native display name and optional aliases (including Inno
-  Setup language identifiers). **1.22 registers English, simplified Chinese, Spanish and Brazilian Portuguese.**
+  Setup language identifiers). **1.22 registers English, simplified Chinese, Spanish, Brazilian Portuguese and Russian.**
 - Startup, preferences and the subtitle worker resolve languages through that catalog.
   Matching ignores case and accepts regional parent cultures, such as `en-GB` -> `en`.
   Empty, invalid or unregistered languages fall back to English. Adding a resource
   file alone does not enable a language in the application.
 - Settings builds its choices from the catalog and saves the selected culture code;
   it has no per-language index or display-name conditional to extend.
-- The installer offers English, 简体中文, Español and Português Brasileiro. Its custom
+- The installer offers English, 简体中文, Español, Português Brasileiro and Русский. Its custom
   pages, component captions, model instructions and optional Explorer entries use
   that selection.
 - The application reads the user's saved language preference, then the installation
@@ -53,23 +55,23 @@ upstream credits; see [installer language sources](../installer/Languages/README
 ## Maintaining translations
 
 `Core/Localization/Strings.resx` is the English source. `Strings.zh-CN.resx`,
-`Strings.es.resx` and `Strings.pt-BR.resx` contain the simplified Chinese, Spanish
-and Brazilian Portuguese translations. `L.Get` retrieves text;
+`Strings.es.resx`, `Strings.pt-BR.resx` and `Strings.ru.resx` contain the simplified
+Chinese, Spanish, Brazilian Portuguese and Russian translations. `L.Get` retrieves text;
 `L.Format` formats numbered arguments. Add matching keys to all resources, retaining
 each argument and its numeric format. Keep filenames, identifiers, state keys,
 regular expressions, raw FFmpeg diagnostics and processing parameters outside them.
 Display labels for enums and choices are separate from their stored values.
 
 The worker links `Core/Localization/*.cs` and `Strings*.resx` automatically, with
-stable resource names. Neither project gains a package dependency. Chinese, Spanish
-and Brazilian Portuguese Inno Setup language files are checked into
+stable resource names. Neither project gains a package dependency. Chinese, Spanish,
+Brazilian Portuguese and Russian Inno Setup language files are checked into
 `installer/Languages` with their provenance,
 instead of relying on a modified compiler installation.
 
 Tests check exact resource coverage and format arguments for **every registered
 translation**, catalog/installer agreement, aliases and regional fallbacks, unchanged
 numeric culture, Unicode paths, stable action IDs, Settings choices and narrow
-Chinese/Spanish/Brazilian Portuguese button layouts. Release packaging must include each registered language's satellite
+Chinese/Spanish/Brazilian Portuguese/Russian button layouts. Release packaging must include each registered language's satellite
 assemblies for both the app and worker.
 Screenshots can be saved by setting `FRAMESHIFT_LOCALIZATION_SCREENSHOTS` when
 running the targeted localization tests. Hidden rendering does not establish actual
