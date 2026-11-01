@@ -1,12 +1,12 @@
-# FrameShift 1.22.0 bilingual preparation
+# FrameShift 1.22.0 multilingual preparation
 
-Prepared on 1 November 2026. This is the new English/simplified Chinese candidate,
+Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish candidate,
 based on published 1.21.1 and the six general correction lots. It contains no Find
 Loop code. The former private loop candidate is preserved separately; see the
 [branch plan](RELEASE_PLAN_1.22_1.23.md). Nothing is pushed, installed or published
 as part of this preparation.
 
-## Scope and initial verification
+## Scope and initial bilingual verification
 
 - Source version is 1.22.0. App ID, component identifiers, processing options,
   output naming, packages and pinned runtime/tool versions remain unchanged.
@@ -60,7 +60,7 @@ keys**; format specifiers and file-filter wildcards match between languages.
 
 This first bilingual installer, its checksum, qualification and artifact report
 are preserved under `builds/release-1.22-bilingual-a4bfb65/`. The adjacent installer
-checksum now identifies the newer catalog candidate below. Neither candidate was
+checksum identifies the latest candidate. Neither archived candidate was
 installed or publicly released. Documentation/checksum commits after a clean
 build do not change its binaries.
 
@@ -69,7 +69,7 @@ Detailed evidence: `scratch/release-1.22-bilingual-canonical-final.log`,
 `scratch/release-1.22-screenshots/`, and
 `builds/release-1.22-bilingual-a4bfb65/artifact-verification.json`.
 
-## Current candidate with extensible language catalog
+## Extensible language catalog candidate (archived)
 
 On 1 November 2026 the clean canonical `build_installer.ps1` completed from
 `86b78c33ba9f0433bbd3291680e3cd48afff5df5`, without `-AllowDirty` or `-RunInstaller`.
@@ -93,10 +93,10 @@ payload/runtime/tool/notice validation and Inno Setup 6.7.1 compilation pass.
   licences, model weights, debug or test assemblies. The 1,790 translated keys are
   unchanged. Both runtimes remain 8.0.31; the worker version remains 1.18.1.0.
 
-| Current artifact | Size/version | SHA-256 |
+| Historical artifact (`86b78c3`) | Size/version | SHA-256 |
 | --- | --- | --- |
-| `installer/FrameShift_1.22.0_Setup.exe` | 175,326,882 bytes; 1.22.0 | `941E63236098347491DC601727B23234961F2255F33185A7B031951891DD495C` |
-| `publish/FrameShift-win-x64/FrameShift.dll` | 1.22.0.0 | `C242D13621FD8D686FA337A8BC0C648D4AC497AD94950079AB9D997BDD8CE4F2` |
+| Archived `86b78c3` installer | 175,326,882 bytes; 1.22.0 | `941E63236098347491DC601727B23234961F2255F33185A7B031951891DD495C` |
+| Historical app DLL | 1.22.0.0 | `C242D13621FD8D686FA337A8BC0C648D4AC497AD94950079AB9D997BDD8CE4F2` |
 | Application Chinese satellite | 260,608 bytes | `FA5E68B8F2012E0D975936904CD372E98D5164747CED818BFE5FC093A5A6D1B1` |
 | Subtitle worker Chinese satellite | 260,608 bytes | `87C700BC15599A9504C41EF092D3F0EB9829DE1DBBB56C05D0C5EF9D51E5ED48` |
 
@@ -105,9 +105,43 @@ was **not run**, and nothing was pushed or published. Evidence:
 `scratch/release-1.22-language-catalog-canonical.log`,
 `scratch/release-1.22-language-catalog/localization-catalog.trx`,
 `scratch/language-extension-probe/`, and
-`builds/release-1.22-bilingual/artifact-verification.json`.
+`builds/release-1.22-bilingual-86b78c3/artifact-verification.json`.
+The installer, checksum, qualification and report are archived in that same folder.
 The [translation procedure](LOCALIZATION.md#adding-a-future-language) documents the
 remaining explicit installer registration and translation/layout acceptance work.
+
+## Spanish addition
+
+- The catalog now registers neutral Spanish (`es`), including regional preferences
+  such as `es-ES`, `es-MX` and `es-AR`, with no new architecture or dependencies.
+- All **1,790 application resources** are translated. Their composite format
+  specifiers, arguments and file-filter wildcards match English. The worker includes
+  the Spanish resource automatically. English and Chinese resources are unchanged.
+- All **139 installer custom-message keys** exist in each of the three languages.
+  The installer uses the vendored official Spanish translation and stores `es` as
+  its application default when Spanish is selected. Original upstream credits and
+  the Inno Setup licence are retained in `installer/Languages`.
+- **35 targeted Release tests pass, 0 failures, 0 skips**: full resource coverage,
+  installer/catalog/message consistency, aliases, numeric culture, stable action IDs,
+  language persistence, three Settings renders and four long-caption layout cases.
+- A separate hidden WinForms process initializes Spanish before the action catalog
+  and checks **43 translated actions at 360 and 580 pixels**. All action buttons and
+  search bounds remain inside their containers. The 360-pixel render was inspected;
+  Settings was also rendered and inspected in Spanish. These probes do not write
+  user preferences or install the application.
+- `README.es.md` covers installation, usage, features, local AI, development and
+  packaging. All three READMEs link to each other; local links and images resolve.
+  Credits specifically retain the Chinese translation, README and narrow-window
+  contribution from zhazhayu01. Spanish linguistic review by a native speaker and
+  installed acceptance remain pending.
+
+Evidence: `scratch/release-1.22-spanish-targeted.log`,
+`scratch/release-1.22-spanish/localization-spanish.trx`,
+`scratch/release-1.22-spanish-screenshots/`, and
+`scratch/release-1.22-spanish-ui-probe.log`.
+The isolated UI probe's restore reports NU1900 because the sandbox cannot reach the
+NuGet vulnerability feed. It is not a completed vulnerability audit; the canonical
+release build below performs its own locked restores and required checks.
 
 ## Work before a public release
 
@@ -116,7 +150,7 @@ remaining explicit installer registration and translation/layout acceptance work
   ImageSharp 4.1.2 pins are unchanged by the localization work. Recheck appropriate
   versions and the transitive vulnerability scan before public distribution.
 - Validate a fresh install, upgrade from published 1.21.1, switching the installer
-  language, Explorer component selection and uninstall in both languages. In particular,
+  language, Explorer component selection and uninstall in all three languages. In particular,
   foreign model files and existing user preferences must survive.
 - Check actual Windows font scaling/DPI, keyboard/accessibility, both themes and
   native menu rendering. Hidden render/layout tests do not replace this acceptance.

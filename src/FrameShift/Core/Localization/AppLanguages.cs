@@ -13,7 +13,8 @@ internal static class AppLanguages
     internal static IReadOnlyList<AppLanguage> Supported { get; } = Array.AsReadOnly<AppLanguage>(
     [
         Default,
-        new("zh-CN", "简体中文", "zh", "zh-Hans", "chinesesimp")
+        new("zh-CN", "简体中文", "zh", "zh-Hans", "chinesesimp"),
+        new("es", "Español", "spanish")
     ]);
 
     internal static AppLanguage Resolve(string? value)

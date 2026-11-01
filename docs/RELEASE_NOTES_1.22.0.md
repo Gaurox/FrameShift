@@ -1,15 +1,16 @@
 # FrameShift 1.22.0 — draft
 
-Unpublished bilingual release candidate. Find Loop is reserved for 1.23.
+Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
 
-- **English and simplified Chinese:** one application and installer, translated
+- **English, simplified Chinese and Spanish:** one application and installer, translated
   settings, tools, progress and errors, with optional Explorer menus in the
   installer's selected language. An application preference applies on next launch.
   Chinese translation and narrow-window corrections originate from
   [zhazhayu01](https://github.com/zhazhayu01/FrameShift).
 - **Future translations:** a shared language catalog supplies Settings and language
   resolution; resource files are included automatically in the subtitle worker.
-  Version 1.22 continues to ship only English and simplified Chinese.
+  Version 1.22 ships English, simplified Chinese and neutral Spanish (`es`), including
+  the installer and linked READMEs. Regional Spanish preferences use this translation.
 - **Media integrity and cancellation:** reject unsupported multichannel separation,
   preserve transparent upscale pixels and existing write-probe files, propagate
   cancellation to FFmpeg and interrupt native noise-removal inference.

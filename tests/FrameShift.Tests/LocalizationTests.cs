@@ -55,6 +55,11 @@ public sealed class LocalizationTests
     [InlineData(" CHINESESIMP ", "zh-CN")]
     [InlineData("en-GB", "en")]
     [InlineData("en_US", "en")]
+    [InlineData("spanish", "es")]
+    [InlineData("es", "es")]
+    [InlineData("es-MX", "es")]
+    [InlineData("es-AR", "es")]
+    [InlineData(" es_ES ", "es")]
     [InlineData(null, "en")]
     [InlineData(" ", "en")]
     [InlineData("invalid/culture", "en")]
@@ -101,16 +106,49 @@ public sealed class LocalizationTests
     }
 
     [Fact]
-    public void DisplayLanguageInitialization_LeavesNumericCultureUnchanged()
+    public void InstallerMessages_AreCompleteInEveryLanguage_AndKeepTheirArguments()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss")))
+            directory = directory.Parent;
+        Assert.NotNull(directory);
+        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var section = Regex.Match(script, @"(?ms)^\[CustomMessages\]\r?\n(.*?)(?=^\[)").Groups[1].Value;
+        var entries = Regex.Matches(section, @"(?m)^(\w+)\.(\w+)=(.*)\r?$")
+            .GroupBy(match => match.Groups[1].Value)
+            .ToDictionary(group => group.Key, group => group.ToDictionary(match => match.Groups[2].Value, match => match.Groups[3].Value.TrimEnd('\r')));
+        var english = entries["english"];
+        var installerNames = Regex.Matches(Regex.Match(script, @"(?ms)^\[Languages\]\r?\n(.*?)(?=^\[)").Groups[1].Value,
+            @"Name:\s*""([^""]+)""").Select(match => match.Groups[1].Value);
+        foreach (var name in installerNames)
+        {
+            var translated = entries[name];
+            Assert.Equal(english.Keys.Order(), translated.Keys.Order());
+            foreach (var key in english.Keys)
+            {
+                Assert.False(string.IsNullOrWhiteSpace(translated[key]), name + "." + key);
+                // The whitespace macro is punctuation/layout, not a runtime argument;
+                // Chinese labels deliberately use a colon without an added space.
+                var expected = Regex.Matches(english[key].Replace("{#InstallerSpace}", " "), @"\{[^}]+\}|%[1-9n]").Select(match => match.Value).Order();
+                var actual = Regex.Matches(translated[key].Replace("{#InstallerSpace}", " "), @"\{[^}]+\}|%[1-9n]").Select(match => match.Value).Order();
+                Assert.Equal(expected, actual);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("zh-Hans-CN", "zh-CN")]
+    [InlineData("es-MX", "es")]
+    public void DisplayLanguageInitialization_LeavesNumericCultureUnchanged(string language, string expected)
     {
         var previousUiCulture = CultureInfo.CurrentUICulture;
         var previousDefault = CultureInfo.DefaultThreadCurrentUICulture;
         var numericCulture = CultureInfo.CurrentCulture;
         try
         {
-            L.Initialize("zh-Hans-CN");
-            Assert.Equal("zh-CN", CultureInfo.CurrentUICulture.Name);
-            Assert.Equal("zh-CN", CultureInfo.DefaultThreadCurrentUICulture!.Name);
+            L.Initialize(language);
+            Assert.Equal(expected, CultureInfo.CurrentUICulture.Name);
+            Assert.Equal(expected, CultureInfo.DefaultThreadCurrentUICulture!.Name);
             Assert.Same(numericCulture, CultureInfo.CurrentCulture);
         }
         finally
@@ -120,27 +158,30 @@ public sealed class LocalizationTests
         }
     }
 
-    [Fact]
-    public void ChineseMessages_PreserveUnicodePaths_AndInternalActionValues()
+    [Theory]
+    [InlineData("zh-CN", "视频", "转换")]
+    [InlineData("es", "video", "Convertir")]
+    public void LocalizedMessages_PreserveUnicodePaths_AndInternalActionValues(string language, string mediaName, string actionName)
     {
         var previous = CultureInfo.CurrentUICulture;
         try
         {
-            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-CN");
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
             const string source = @"C:\测试 médias\été vidéo.mp4";
             Assert.Contains(source, MediaActionMessages.InputFileNotFound(source));
-            Assert.Contains("视频", MediaActionMessages.FfmpegFailure("video"));
+            Assert.Contains(mediaName, MediaActionMessages.FfmpegFailure("video"));
             Assert.True(ActionRegistry.CreateDefault().TryGet("convert-video", out var action));
             Assert.Equal("convert-video", action.Descriptor.Id);
-            Assert.Contains("转换", action.Descriptor.DisplayName);
+            Assert.Contains(actionName, action.Descriptor.DisplayName);
         }
         finally { CultureInfo.CurrentUICulture = previous; }
     }
 
     [Theory]
-    [InlineData("en", "FrameShift - Settings")]
-    [InlineData("zh-CN", "FrameShift - 设置")]
-    public void Settings_RenderInBothLanguages_WithStablePreferenceValues(string language, string title)
+    [InlineData("en", "FrameShift - Settings", "System")]
+    [InlineData("zh-CN", "FrameShift - 设置", "跟随系统")]
+    [InlineData("es", "FrameShift - Configuración", "Sistema")]
+    public void Settings_RenderInSupportedLanguages_WithStablePreferenceValues(string language, string title, string systemTheme)
     {
         StaTest.Run(() =>
         {
@@ -160,7 +201,7 @@ public sealed class LocalizationTests
                 var theme = Assert.Single(controls.OfType<ComboBox>(), c => c.Name == "themePreference");
                 Assert.IsType<FrameShiftThemePreference>(theme.Items[0]);
                 Assert.False(string.IsNullOrWhiteSpace(theme.Text));
-                Assert.Equal(language == "zh-CN" ? "跟随系统" : "System", theme.GetItemText(theme.Items[0]));
+                Assert.Equal(systemTheme, theme.GetItemText(theme.Items[0]));
                 _ = form.Handle;
                 foreach (var control in controls) _ = control.Handle;
                 FrameShiftDialogLayout.FitInitialHeight(form, form.Controls.OfType<TableLayoutPanel>().Single());
@@ -179,16 +220,18 @@ public sealed class LocalizationTests
         });
     }
 
-    [Fact]
-    public void LanguagePreference_RoundTrips_WithoutDroppingExistingSettings()
+    [Theory]
+    [InlineData("zh-Hans", "zh-CN")]
+    [InlineData("es-MX", "es")]
+    public void LanguagePreference_RoundTrips_WithoutDroppingExistingSettings(string language, string expected)
     {
         var directory = Path.Combine(Path.GetTempPath(), "FrameShift language été 中文 " + Guid.NewGuid().ToString("N"));
         try
         {
             var path = Path.Combine(directory, "ui-settings.json");
-            new FrameShiftUiSettings { Language = "zh-Hans", Theme = "Dark", OcrModel = "tiny", JoinVideosSortOrder = "Natural" }.Save(path);
+            new FrameShiftUiSettings { Language = language, Theme = "Dark", OcrModel = "tiny", JoinVideosSortOrder = "Natural" }.Save(path);
             var loaded = FrameShiftUiSettings.Load(path);
-            Assert.Equal("zh-CN", loaded.Language);
+            Assert.Equal(expected, loaded.Language);
             Assert.Equal("Dark", loaded.Theme);
             Assert.Equal("tiny", loaded.OcrModel);
             Assert.Equal("Natural", loaded.JoinVideosSortOrder);

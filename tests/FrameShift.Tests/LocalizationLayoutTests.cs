@@ -9,9 +9,11 @@ namespace FrameShift.Tests;
 public sealed class LocalizationLayoutTests
 {
     [Theory]
-    [InlineData(580)]
-    [InlineData(360)]
-    public void ChineseActionCaptions_KeepSearchAndButtonsInsideTheViewport(int width)
+    [InlineData(580, "提取文字和调整图像尺寸 - ")]
+    [InlineData(360, "提取文字和调整图像尺寸 - ")]
+    [InlineData(580, "Extraer texto y cambiar tamaño de imagen - ")]
+    [InlineData(360, "Extraer texto y cambiar tamaño de imagen - ")]
+    public void LongLocalizedActionCaptions_KeepSearchAndButtonsInsideTheViewport(int width, string prefix)
     {
         StaTest.Run(() =>
         {
@@ -19,9 +21,9 @@ public sealed class LocalizationLayoutTests
             var panel = new ActionsPanel { Dock = DockStyle.Fill };
             host.Controls.Add(panel);
             panel.SetFiles([@"C:\missing\中文图像.png"], []);
-            // Long Chinese captions must be measured without changing cached action IDs.
+            // Long translated captions must be measured without changing cached action IDs.
             foreach (var button in Descendants(panel).OfType<Button>())
-                button.Text = "提取文字和调整图像尺寸 - " + button.Text;
+                button.Text = prefix + button.Text;
             _ = host.Handle;
             foreach (var control in Descendants(host)) _ = control.Handle;
             for (var i = 0; i < 3; i++)

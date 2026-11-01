@@ -20,11 +20,11 @@ The 29 October loop installer is archived locally under
 and checksum. Repackaging its untouched payload/script reproduced the exact original
 SHA-256 `D342D2CE8215ADE229AAE3D1C66E49703DDA079E1AAFC5FCE860C5A90FDF28D1`.
 
-After bilingual 1.22 is finalized, create the actual 1.23 integration branch from
+After multilingual 1.22 is finalized, create the actual 1.23 integration branch from
 that final commit and selectively port the loop feature. Preserve its translations,
 general fixes and installer rather than replacing files from the old branch.
 
-## Bilingual 1.22
+## Multilingual 1.22
 
 `codex/release-1.22` starts at published `main` commit `b777b55`, above tag 1.21.1.
 It retains six general correction lots without Find Loop:
@@ -44,3 +44,5 @@ loop documentation were not copied into the new release.
 
 The Chinese contribution is pinned at `f078b0c`; its resource-based integration
 and language behavior are described in [LOCALIZATION.md](LOCALIZATION.md).
+The later Spanish addition uses the same catalog and resource mechanism; the final
+1.22 candidate includes English, simplified Chinese and Spanish, with no loop code.
