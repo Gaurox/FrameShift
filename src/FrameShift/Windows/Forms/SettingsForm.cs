@@ -84,12 +84,20 @@ public sealed class SettingsForm : Form
             if (_synchronizingMenus || language.SelectedItem is not AppLanguage selectedLanguage) return;
             var settings = FrameShiftUiSettings.Load(_uiSettingsPath);
             settings.Language = selectedLanguage.Code;
-            settings.Save(_uiSettingsPath);
             _synchronizingMenus = true;
             language.Enabled = close.Enabled = false;
-            _languageHint.Text = L.Get("Settings_ExplorerLanguageUpdating");
             try
             {
+                if (!settings.TrySave(_uiSettingsPath))
+                {
+                    // Suppress the selection event while restoring the last saved
+                    // preference, so retrying the same language remains possible.
+                    language.SelectedItem = AppLanguages.Resolve(preferredLanguage);
+                    _languageHint.Text = L.Get("Settings_LanguageSaveFailed");
+                    return;
+                }
+                preferredLanguage = selectedLanguage.Code;
+                _languageHint.Text = L.Get("Settings_ExplorerLanguageUpdating");
                 var result = await synchronizeMenus(selectedLanguage.Code);
                 _languageHint.Text = L.Get(result switch
                 {

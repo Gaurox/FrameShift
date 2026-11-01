@@ -5541,4 +5541,7 @@
   <data name="ExplorerMenu_extract_text" xml:space="preserve">
     <value>Извлечь текст...</value>
   </data>
+  <data name="Settings_LanguageSaveFailed" xml:space="preserve">
+    <value>Не удалось сохранить язык. Меню Проводника не изменены. Проверьте доступ к файлу настроек и выберите язык повторно.</value>
+  </data>
 </root>

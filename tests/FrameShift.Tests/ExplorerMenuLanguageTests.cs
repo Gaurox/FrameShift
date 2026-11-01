@@ -218,6 +218,99 @@ public sealed class ExplorerMenuLanguageTests
         });
     }
 
+    [Theory]
+    [MemberData(nameof(Languages))]
+    public void Settings_DoesNotSynchronizeMenus_WhenSavingLanguageFails_AndAllowsRetry(string language)
+    {
+        StaTest.Run(() =>
+        {
+            var previousCulture = CultureInfo.CurrentUICulture;
+            var directory = Path.Combine(Path.GetTempPath(), "FrameShift menu save été 中文 русский " + Guid.NewGuid().ToString("N"));
+            try
+            {
+                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                var path = Path.Combine(directory, "ui-settings.json");
+                var savedLanguage = language == "en" ? "zh-CN" : "en";
+                new FrameShiftUiSettings
+                {
+                    Language = savedLanguage, Theme = "Dark", OcrModel = "tiny", OcrFormat = "txt",
+                    OcrParagraphs = true, OcrDpi = 200, JoinVideosSortOrder = "Natural"
+                }.Save(path);
+                var original = File.ReadAllText(path);
+                var calls = new List<string>();
+                using var form = new SettingsForm(path, code =>
+                {
+                    calls.Add(code);
+                    Assert.Equal(code, FrameShiftUiSettings.Load(path).Language);
+                    return Task.FromResult(ExplorerMenuSyncResult.Updated);
+                });
+                _ = form.Handle;
+                var controls = Descendants(form).ToArray();
+                var selector = controls.OfType<ComboBox>().Single(control => control.Name == "languagePreference");
+                var close = controls.OfType<Button>().Single(button => button.DialogResult == DialogResult.Cancel);
+                var hint = controls.OfType<Label>().Single(label => label.Name == "explorerLanguageStatus");
+                using (var locked = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    selector.SelectedItem = AppLanguages.Resolve(language);
+                    Assert.Empty(calls); // No menu update or UAC request without a saved preference.
+                    Assert.Equal(original, File.ReadAllText(path));
+                    Assert.Equal(savedLanguage, Assert.IsType<AppLanguage>(selector.SelectedItem).Code);
+                    Assert.Equal(L.Get("Settings_LanguageSaveFailed"), hint.Text);
+                    Assert.True(selector.Enabled);
+                    Assert.True(close.Enabled);
+                    Assert.True(hint.Bottom <= hint.Parent!.ClientSize.Height);
+                }
+                // The failed selection was restored, so choosing the same language
+                // after unlocking the file really retries the operation.
+                selector.SelectedItem = AppLanguages.Resolve(language);
+                Assert.Equal(new[] { language }, calls);
+                var saved = FrameShiftUiSettings.Load(path);
+                Assert.Equal(language, saved.Language);
+                Assert.Equal("Dark", saved.Theme);
+                Assert.Equal("tiny", saved.OcrModel);
+                Assert.Equal("txt", saved.OcrFormat);
+                Assert.True(saved.OcrParagraphs);
+                Assert.Equal(200, saved.OcrDpi);
+                Assert.Equal("Natural", saved.JoinVideosSortOrder);
+                Assert.Equal(L.Get("Settings_ExplorerLanguageUpdated"), hint.Text);
+                Assert.Equal(language, CultureInfo.CurrentUICulture.Name);
+                Assert.False(form.Visible);
+            }
+            finally
+            {
+                CultureInfo.CurrentUICulture = previousCulture;
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+            }
+        });
+    }
+
+    [Fact]
+    public void UiSettings_TrySaveReportsReadOnlyFiles_WhileSaveRemainsBestEffort()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "FrameShift read-only settings " + Guid.NewGuid().ToString("N"));
+        var path = Path.Combine(directory, "ui-settings.json");
+        try
+        {
+            var settings = new FrameShiftUiSettings { Language = "en", Theme = "Dark" };
+            Assert.True(settings.TrySave(path));
+            var original = File.ReadAllText(path);
+            File.SetAttributes(path, FileAttributes.ReadOnly);
+            settings.Language = "ru";
+            Assert.False(settings.TrySave(path));
+            settings.Save(path); // Existing callers retain their non-throwing API.
+            Assert.Equal(original, File.ReadAllText(path));
+            File.SetAttributes(path, FileAttributes.Normal);
+            Assert.True(settings.TrySave(path));
+            Assert.Equal("ru", FrameShiftUiSettings.Load(path).Language);
+            Assert.Equal("Dark", FrameShiftUiSettings.Load(path).Theme);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.SetAttributes(path, FileAttributes.Normal);
+            if (Directory.Exists(directory)) Directory.Delete(directory, true);
+        }
+    }
+
     private static IEnumerable<Control> Descendants(Control root)
     {
         foreach (Control child in root.Controls)

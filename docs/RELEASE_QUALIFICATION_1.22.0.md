@@ -433,7 +433,7 @@ the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-pending-language-packaged-languages.jsonl`, and
 `builds/release-1.22-pending-language/artifact-verification.json`.
 
-## Current candidate with Explorer menu language synchronization
+## Previous candidate with Explorer menu language synchronization
 
 Settings now synchronizes existing Explorer captions when its language changes.
 The Windows helper covers all **47 menu paths**, including frame submenus and AI
@@ -484,9 +484,34 @@ app/worker satellite hashes). The checksum beside the installer identifies this
 candidate. Subsequent documentation/checksum commits do not change its binaries.
 The installer was not run, and nothing was pushed or published.
 
-Real installed UAC acceptance/refusal, alternate administrator credentials and
-Explorer cache refresh still require manual qualification; isolated registry tests
-do not claim that installed acceptance.
+The owner subsequently reported that the suggested manual UAC refusal/acceptance,
+English/Chinese menu refresh and return-to-English checks appeared correct. These
+are owner-reported observations, not automated desktop verification. Alternate
+administrator credentials remain unqualified.
+
+## Current language-save guard preparation
+
+Settings now checks `FrameShiftUiSettings.TrySave` before invoking Explorer menu
+synchronization. A failed write leaves menu captions untouched and cannot request
+UAC. The selector returns to its last saved choice, with an error in all five
+languages, so selecting the same desired language again retries after the file is
+unlocked. Successful saves keep the existing next-launch and menu update behavior.
+Existing callers retain the non-throwing `Save` methods.
+
+Five regression cases reproduce the old failure with a readable but write-locked
+preferences file: each incorrectly invoked menu synchronization before the fix.
+After the fix, the targeted Release run passes **114 tests, 0 failures, 0 skips**.
+The new cases cover all five languages, including an English target with a pending
+Chinese preference, byte-for-byte preservation of the locked settings, no menu/UAC
+invocation, restored selection, error layout and successful retry preserving other
+preferences. A read-only-file test also verifies `TrySave` failure/success and the
+existing non-throwing `Save` API.
+
+Evidence: `scratch/release-1.22-language-save-before-fix.log`,
+`scratch/release-1.22-language-save-targeted.log`, and the corresponding TRX files
+under `scratch/release-1.22-language-save`. These tests use temporary preferences and
+registry keys; no installed menus, application preferences or desktop controls are
+changed. The previous installer above predates this guard; a clean rebuild is next.
 
 ## Work before a public release
 

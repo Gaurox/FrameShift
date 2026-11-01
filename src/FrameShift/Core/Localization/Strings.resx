@@ -5541,4 +5541,7 @@ Output WAV files are created next to the source with unique naming.</value>
   <data name="ExplorerMenu_extract_text" xml:space="preserve">
     <value>Extract text...</value>
   </data>
+  <data name="Settings_LanguageSaveFailed" xml:space="preserve">
+    <value>The language could not be saved. Explorer menus were not changed. Check access to the settings file, then select the language again.</value>
+  </data>
 </root>

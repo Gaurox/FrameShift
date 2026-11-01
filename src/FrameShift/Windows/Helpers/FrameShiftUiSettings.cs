@@ -72,6 +72,11 @@ public sealed class FrameShiftUiSettings
 
     internal void Save(string configFilePath)
     {
+        TrySave(configFilePath);
+    }
+
+    internal bool TrySave(string configFilePath)
+    {
         try
         {
             var directory = Path.GetDirectoryName(configFilePath);
@@ -93,10 +98,12 @@ public sealed class FrameShiftUiSettings
             };
             var json = JsonSerializer.Serialize(settingsToSave, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(configFilePath, json);
+            return true;
         }
         catch (Exception ex)
         {
             AppLogger.LogStatic($"FrameShiftUiSettings.Save: failed to write UI settings. {ex.Message}");
+            return false;
         }
     }
 

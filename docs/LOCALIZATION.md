@@ -54,6 +54,10 @@ upstream credits; see [installer language sources](../installer/Languages/README
   Settings reports cancelled authorization or failure without discarding the saved
   application language. Selecting another language and then the desired language
   retries the synchronization. Re-running the installer sets menu captions again.
+  Synchronization starts only after the language preference is successfully saved.
+  If saving fails, Settings keeps menus unchanged, restores the previous selection
+  and displays an error in the active language; choosing the desired language again
+  retries after the settings file becomes writable.
 - The subtitle worker receives `FRAMESHIFT_UI_LANGUAGE` in its child environment.
   This changes its progress text without changing request/response protocol fields
   or the language it recognizes in media.

@@ -19,6 +19,7 @@ Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
   installer's selected language. Settings also synchronizes installed Explorer
   captions; machine-wide changes request administrator authorization. The application
   preference applies on next launch.
+  Failed preference saves leave Explorer menus unchanged and restore the saved selection.
   Chinese translation and narrow-window corrections originate from
   [zhazhayu01](https://github.com/zhazhayu01/FrameShift).
 - **Future translations:** a shared language catalog supplies Settings and language

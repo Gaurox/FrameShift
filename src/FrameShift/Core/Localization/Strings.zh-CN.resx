@@ -5541,4 +5541,7 @@
   <data name="ExplorerMenu_extract_text" xml:space="preserve">
     <value>提取文字…</value>
   </data>
+  <data name="Settings_LanguageSaveFailed" xml:space="preserve">
+    <value>无法保存语言设置，资源管理器菜单未更改。请检查设置文件的访问权限，然后重新选择语言。</value>
+  </data>
 </root>
