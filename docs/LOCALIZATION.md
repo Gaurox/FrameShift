@@ -44,8 +44,9 @@ upstream credits; see [installer language sources](../installer/Languages/README
 - The application reads the user's saved language preference, then the installation
   default in `language.txt`, then English. It initializes before action catalogs,
   forms and background work are created.
-- Settings can save any registered language for the next application launch. Already
-  open windows and action catalogs are not rebuilt. Re-running the installer changes
+- Settings can save any registered language for the next application launch. The
+  selector shows the saved choice, including a change pending restart. Already open
+  windows and action catalogs are not rebuilt. Re-running the installer changes
   Explorer's registered menu captions; changing a per-user application setting does
   not write administrative Explorer registry entries.
 - The subtitle worker receives `FRAMESHIFT_UI_LANGUAGE` in its child environment.

@@ -9,6 +9,8 @@ and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
 
 - English, Chinese, Spanish, Brazilian Portuguese and Russian display resources, language preference applied on next launch,
   translated installer/Explorer menus and corrected narrow action-list layout.
+- Reopening Settings retains the saved next-launch language, allowing a pending
+  choice to be changed back before restarting the application.
 - A small shared language catalog drives preferences and Settings; the worker includes
   translation resources automatically. English, simplified Chinese, Spanish, Brazilian Portuguese and Russian ship in 1.22.
 - Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,

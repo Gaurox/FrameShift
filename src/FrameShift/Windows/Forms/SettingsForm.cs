@@ -18,9 +18,16 @@ public sealed class SettingsForm : Form
     private readonly Label _pathLabel;
     private readonly ComboBox _themeSelector;
     private readonly Label _themeHint;
+    private readonly string _uiSettingsPath;
 
-    public SettingsForm()
+    public SettingsForm() : this(FrameShiftUiSettings.ConfigFilePath)
     {
+    }
+
+    internal SettingsForm(string uiSettingsPath)
+    {
+        _uiSettingsPath = uiSettingsPath;
+        var uiSettings = FrameShiftUiSettings.Load(_uiSettingsPath);
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(620, 440), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, L.Get("SettingsForm_FrameShift_Settings_c3e76047"));
@@ -51,7 +58,7 @@ public sealed class SettingsForm : Form
             FrameShiftThemePreference.Dark => L.Get("Theme_Dark"),
             _ => e.ListItem?.ToString() ?? string.Empty
         };
-        _themeSelector.SelectedItem = FrameShiftUiSettings.Load().GetThemePreference();
+        _themeSelector.SelectedItem = uiSettings.GetThemePreference();
         _themeSelector.SelectedIndexChanged += (_, _) => SaveThemePreference();
         _themeHint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("SettingsForm_Changes_apply_immediately_System_fol_f99a2e75"));
         var appearance = FrameShiftUiFactory.CreateSection(L.Get("SettingsForm_Appearance_7bcd3803"), FrameShiftUiFactory.CreateVerticalStack(
@@ -62,13 +69,17 @@ public sealed class SettingsForm : Form
             DisplayMember = nameof(AppLanguage.NativeName)
         };
         language.Items.AddRange(AppLanguages.Supported.Cast<object>().ToArray());
-        language.SelectedItem = AppLanguages.Resolve(System.Globalization.CultureInfo.CurrentUICulture.Name);
+        // Show the next-launch preference while the current UI keeps its active language.
+        var preferredLanguage = string.IsNullOrWhiteSpace(uiSettings.Language)
+            ? System.Globalization.CultureInfo.CurrentUICulture.Name
+            : uiSettings.Language;
+        language.SelectedItem = AppLanguages.Resolve(preferredLanguage);
         language.SelectedIndexChanged += (_, _) =>
         {
             if (language.SelectedItem is not AppLanguage selectedLanguage) return;
-            var settings = FrameShiftUiSettings.Load();
+            var settings = FrameShiftUiSettings.Load(_uiSettingsPath);
             settings.Language = selectedLanguage.Code;
-            settings.Save();
+            settings.Save(_uiSettingsPath);
         };
         var languageSection = FrameShiftUiFactory.CreateSection(L.Get("Settings_Language"),
             FrameShiftUiFactory.CreateVerticalStack(language, FrameShiftUiFactory.CreateWrappingLabel(L.Get("Settings_Restart"))));
@@ -154,9 +165,9 @@ public sealed class SettingsForm : Form
             return;
         }
 
-        var settings = FrameShiftUiSettings.Load();
+        var settings = FrameShiftUiSettings.Load(_uiSettingsPath);
         settings.Theme = preference.ToString();
-        settings.Save();
+        settings.Save(_uiSettingsPath);
         FrameShiftTheme.ApplyPreference(preference);
         _themeHint.Text = L.Get("SettingsForm_Changes_apply_immediately_System_fol_f99a2e75");
     }

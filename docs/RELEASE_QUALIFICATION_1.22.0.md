@@ -299,7 +299,7 @@ Evidence: `scratch/release-1.22-ru-targeted.log`,
 `scratch/release-1.22-ru-screenshots/`, and
 `scratch/release-1.22-ru-ui-probe.log`.
 
-## Current five-language candidate
+## Five-language candidate before the pending-language fix (archived)
 
 The clean canonical `build_installer.ps1` completed on 1 November 2026 from
 `b0788216d0bfb862537a5b1bf19d6c7874f3354e`, without `-AllowDirty` or `-RunInstaller`.
@@ -341,13 +341,42 @@ compilation pass. The canonical build reports no compiler or restore warnings.
 | Worker Brazilian Portuguese satellite | 273,920 bytes | `60B36BD93B818814FFF93658E77E2777739817315F064FD957E94F865DA22682` |
 | Worker Russian satellite | 316,416 bytes | `D36C721B8393D6FE2A36EEC01061D6E0D3EFF299AC16D09C8E0C189B5C177B70` |
 
-The installer was **not run**; nothing was pushed or published. The checksum beside
-the installer identifies this exact candidate. Documentation/checksum commits after
+The installer was **not run**; nothing was pushed or published. This candidate,
+its checksum, qualification and artifact report are archived under
+`builds/release-1.22-ru/`. The checksum beside the installer identifies the newest
+candidate. Documentation/checksum commits after
 the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-ru-canonical.log`,
 `scratch/release-1.22-ru-managed-metadata.jsonl`,
 `scratch/release-1.22-ru-packaged-languages.jsonl`, and
 `builds/release-1.22-ru/artifact-verification.json`.
+
+## Pending-language preference fix
+
+The focused localization review found one new preference defect: while the UI was
+still English, selecting another language, closing Settings and reopening it showed
+English again even though the new language remained saved. Selecting English then
+did not fire a change event and could not undo the pending preference.
+
+- Settings now initializes its selector from the saved next-launch choice. If no
+  preference exists, it uses the active display language. The current UI still keeps
+  its language until restart.
+- The public constructor keeps the normal preferences file. An internal constructor
+  accepts a concrete temporary file path so tests exercise the actual form and save
+  handler without modifying user preferences. Both language and theme handlers use
+  that same path and reload the latest settings when saving.
+- The four new regression cases reproduce the defect before the fix, one for each
+  translation. After the fix, selecting, closing/reopening and returning to English
+  works while preserving theme, OCR and ordering preferences.
+- **82 targeted Release tests pass, 0 failures, 0 skips**: 64 localization/layout
+  cases, including the four regression cases, plus 18 theme tests. The five Settings
+  render cases also verify that opening a form without a preference does not write
+  a settings file. No translation, processing option or installer script changes.
+
+Evidence: `scratch/release-1.22-pending-language-before-fix.log`,
+`scratch/release-1.22-pending-language/pending-language-before-fix.trx`,
+`scratch/release-1.22-pending-language-targeted.log`, and
+`scratch/release-1.22-pending-language/pending-language-fixed.trx`.
 
 ## Work before a public release
 
