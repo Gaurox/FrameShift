@@ -24,8 +24,8 @@ public sealed class CompressVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "compress-video",
-        "Compress Video",
-        "Compresses a video using a standard, widely compatible codec profile.");
+        L.Get("CompressVideoAction_Compress_Video_5667dc11"),
+        L.Get("CompressVideoAction_Compresses_a_video_using_a_standard__5df155d4"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -132,7 +132,7 @@ public sealed class CompressVideoAction : IFrameShiftAction
             if (runResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CompressVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, runResult.CancellationScope);
             }
 
@@ -149,7 +149,7 @@ public sealed class CompressVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CompressVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

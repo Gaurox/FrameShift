@@ -30,7 +30,7 @@ internal sealed class PdfOcrDocument : IDisposable
 
             _document = path is null ? fpdf_edit.FPDF_CreateNewDocument() : fpdfview.FPDF_LoadDocument(path, null!);
             if (_document is null)
-                throw new InvalidDataException(fpdfview.FPDF_GetLastError() == 4 ? "This PDF requires a password. Save an unlocked copy before extracting text." : "Cannot open the PDF. The file may be damaged or unsupported.");
+                throw new InvalidDataException(fpdfview.FPDF_GetLastError() == 4 ? L.Get("PdfOcrDocument_This_PDF_requires_a_password_Save_an_02642ff8") : L.Get("PdfOcrDocument_Cannot_open_the_PDF_The_file_may_be__e4029fa0"));
         }
         catch
         {
@@ -39,7 +39,7 @@ internal sealed class PdfOcrDocument : IDisposable
         }
     }
 
-    private FpdfPageT LoadPage(int number) => fpdfview.FPDF_LoadPage(_document!, number - 1) ?? throw new InvalidDataException($"Cannot open PDF page {number}.");
+    private FpdfPageT LoadPage(int number) => fpdfview.FPDF_LoadPage(_document!, number - 1) ?? throw new InvalidDataException(L.Format("PdfOcrDocument_Cannot_open_PDF_page_0_502e57dd",number));
     public OcrPage ReadText(int number, out bool hasImages, CancellationToken token)
     {
         var page = LoadPage(number);
@@ -81,7 +81,7 @@ internal sealed class PdfOcrDocument : IDisposable
 
                 var count = fpdf_text.FPDFTextCountChars(text);
                 if (count > 2_000_000)
-                    throw new InvalidDataException("This PDF page contains too many characters.");
+                    throw new InvalidDataException(L.Get("PdfOcrDocument_This_PDF_page_contains_too_many_char_5fc7eff1"));
                 for (var i = 0; i < count; i++)
                 {
                     if ((i & 1023) == 0)
@@ -146,23 +146,23 @@ internal sealed class PdfOcrDocument : IDisposable
     private static OcrPoint ToDisplay(FpdfPageT page, OcrPoint p, double width, double height)
     {
         int x = 0, y = 0;
-        Require(fpdfview.FPDF_PageToDevice(page, 0, 0, (int)Math.Round(width * 1000), (int)Math.Round(height * 1000), 0, p.X, p.Y, ref x, ref y), "Cannot map PDF text coordinates.");
+        Require(fpdfview.FPDF_PageToDevice(page, 0, 0, (int)Math.Round(width * 1000), (int)Math.Round(height * 1000), 0, p.X, p.Y, ref x, ref y), L.Get("PdfOcrDocument_Cannot_map_PDF_text_coordinates_d81cadc4"));
         return new(x / 1000d, y / 1000d);
     }
 
     private static OcrPoint ToPage(FpdfPageT page, OcrPoint p, double width, double height)
     {
         double x = 0, y = 0;
-        Require(fpdfview.FPDF_DeviceToPage(page, 0, 0, (int)Math.Round(width * 1000), (int)Math.Round(height * 1000), 0, (int)Math.Round(p.X * 1000), (int)Math.Round(p.Y * 1000), ref x, ref y), "Cannot map OCR text coordinates.");
+        Require(fpdfview.FPDF_DeviceToPage(page, 0, 0, (int)Math.Round(width * 1000), (int)Math.Round(height * 1000), 0, (int)Math.Round(p.X * 1000), (int)Math.Round(p.Y * 1000), ref x, ref y), L.Get("PdfOcrDocument_Cannot_map_OCR_text_coordinates_ae53ae0d"));
         return new(x, y);
     }
 
     internal static (int Width, int Height, int Dpi) GetRenderSize(double width, double height, int requestedDpi)
     {
         if (!double.IsFinite(width) || !double.IsFinite(height) || width <= 0 || height <= 0)
-            throw new InvalidDataException("This PDF page has invalid dimensions.");
+            throw new InvalidDataException(L.Get("PdfOcrDocument_This_PDF_page_has_invalid_dimensions_26b75b56"));
         if (requestedDpi <= 0 || requestedDpi > 300)
-            throw new ArgumentOutOfRangeException(nameof(requestedDpi), "PDF rendering quality must be between 1 and 300 DPI.");
+            throw new ArgumentOutOfRangeException(nameof(requestedDpi), L.Get("PdfOcrDocument_PDF_rendering_quality_must_be_betwee_2eaa50d3"));
 
         // Calculate before allocating a bitmap. Bound individual dimensions too,
         // so very narrow pages and double-to-int overflow cannot bypass the cap.
@@ -177,7 +177,7 @@ internal sealed class PdfOcrDocument : IDisposable
                 return ((int)w, (int)h, dpi);
         }
 
-        throw new InvalidDataException("This PDF page is too large to render even at 1 DPI. Select other pages or use a smaller page.");
+        throw new InvalidDataException(L.Get("PdfOcrDocument_This_PDF_page_is_too_large_to_render_c091bac7"));
     }
 
     public Image<Rgb24> Render(int number, int dpi, CancellationToken token, Action<int>? onQualityReduced = null)
@@ -190,10 +190,10 @@ internal sealed class PdfOcrDocument : IDisposable
             if (actualDpi < dpi)
                 onQualityReduced?.Invoke(actualDpi);
             token.ThrowIfCancellationRequested();
-            var bitmap = fpdfview.FPDFBitmapCreateEx(w, h, 4, IntPtr.Zero, 0) ?? throw new OutOfMemoryException("Cannot allocate the PDF page image.");
+            var bitmap = fpdfview.FPDFBitmapCreateEx(w, h, 4, IntPtr.Zero, 0) ?? throw new OutOfMemoryException(L.Get("PdfOcrDocument_Cannot_allocate_the_PDF_page_image_3f88d4a8"));
             try
             {
-                Require(fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, w, h, 0xffffffff), "Cannot initialize the PDF page image.");
+                Require(fpdfview.FPDFBitmapFillRect(bitmap, 0, 0, w, h, 0xffffffff), L.Get("PdfOcrDocument_Cannot_initialize_the_PDF_page_image_c5a0220b"));
                 fpdfview.FPDF_RenderPageBitmap(bitmap, page, 0, 0, w, h, 0, 1);
                 token.ThrowIfCancellationRequested();
                 var stride = fpdfview.FPDFBitmapGetStride(bitmap);
@@ -229,7 +229,7 @@ internal sealed class PdfOcrDocument : IDisposable
     {
         var width = image.Width * 72d / 300;
         var height = image.Height * 72d / 300;
-        var page = fpdf_edit.FPDFPageNew(_document!, PageCount, width, height) ?? throw new InvalidDataException("Cannot create the PDF page.");
+        var page = fpdf_edit.FPDFPageNew(_document!, PageCount, width, height) ?? throw new InvalidDataException(L.Get("PdfOcrDocument_Cannot_create_the_PDF_page_d91be1e7"));
         var bitmap = fpdfview.FPDFBitmapCreateEx(image.Width, image.Height, 4, IntPtr.Zero, 0) ?? throw new OutOfMemoryException();
         try
         {
@@ -251,14 +251,14 @@ internal sealed class PdfOcrDocument : IDisposable
                 }
             });
             Marshal.Copy(bytes, 0, fpdfview.FPDFBitmapGetBuffer(bitmap), bytes.Length);
-            var obj = fpdf_edit.FPDFPageObjNewImageObj(_document!) ?? throw new InvalidDataException("Cannot create the PDF image.");
+            var obj = fpdf_edit.FPDFPageObjNewImageObj(_document!) ?? throw new InvalidDataException(L.Get("PdfOcrDocument_Cannot_create_the_PDF_image_a7d75266"));
             try
             {
-                Require(fpdf_edit.FPDFImageObjSetBitmap(page, 1, obj, bitmap), "Cannot embed the image in the PDF.");
-                Require(fpdf_edit.FPDFImageObjSetMatrix(obj, width, 0, 0, height, 0, 0), "Cannot position the PDF image.");
-                Require(fpdf_edit.FPDFPageInsertObject(page, obj), "Cannot insert the PDF image.");
+                Require(fpdf_edit.FPDFImageObjSetBitmap(page, 1, obj, bitmap), L.Get("PdfOcrDocument_Cannot_embed_the_image_in_the_PDF_381a7a82"));
+                Require(fpdf_edit.FPDFImageObjSetMatrix(obj, width, 0, 0, height, 0, 0), L.Get("PdfOcrDocument_Cannot_position_the_PDF_image_520f5cfb"));
+                Require(fpdf_edit.FPDFPageInsertObject(page, obj), L.Get("PdfOcrDocument_Cannot_insert_the_PDF_image_cd545fbc"));
                 obj = null!;
-                Require(fpdf_edit.FPDFPageGenerateContent(page), "Cannot write the PDF page.");
+                Require(fpdf_edit.FPDFPageGenerateContent(page), L.Get("PdfOcrDocument_Cannot_write_the_PDF_page_6c1fed2c"));
             }
             finally
             {
@@ -284,7 +284,7 @@ internal sealed class PdfOcrDocument : IDisposable
         {
             var runes = lines.SelectMany(l => l.Text.EnumerateRunes()).Distinct().ToArray();
             if (runes.Length > 65534)
-                throw new InvalidDataException("Too many unique characters on this PDF page.");
+                throw new InvalidDataException(L.Get("PdfOcrDocument_Too_many_unique_characters_on_this_P_1d92579a"));
             var codes = runes.Select((r, i) => (r.Value, Code: (uint)i + 1)).ToDictionary(v => v.Value, v => v.Code);
             var cmap = new StringBuilder("/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> def /CMapName /FrameShiftOCR def /CMapType 2 def 1 begincodespacerange <0000> <FFFF> endcodespacerange\n");
             foreach (var group in runes.Chunk(100))
@@ -306,7 +306,7 @@ internal sealed class PdfOcrDocument : IDisposable
             FpdfFontT font;
             fixed (byte* f = fontData)
             fixed (byte* m = glyphMap)
-                font = fpdf_edit.FPDFTextLoadCidType2Font(_document!, f, (uint)fontData.Length, cmap.ToString(), m, (uint)glyphMap.Length) ?? throw new InvalidDataException("Cannot create the searchable PDF font.");
+                font = fpdf_edit.FPDFTextLoadCidType2Font(_document!, f, (uint)fontData.Length, cmap.ToString(), m, (uint)glyphMap.Length) ?? throw new InvalidDataException(L.Get("PdfOcrDocument_Cannot_create_the_searchable_PDF_fon_27a67a17"));
             try
             {
                 foreach (var line in lines)
@@ -317,17 +317,17 @@ internal sealed class PdfOcrDocument : IDisposable
                     var height = fpdfview.FPDF_GetPageHeight(page);
                     var p = points.Select(point => ToPage(page, point, width, height)).ToArray();
                     var chars = line.Text.EnumerateRunes().Select(r => codes[r.Value]).ToArray();
-                    var obj = fpdf_edit.FPDFPageObjCreateTextObj(_document!, font, 1) ?? throw new InvalidDataException("Cannot create searchable text.");
+                    var obj = fpdf_edit.FPDFPageObjCreateTextObj(_document!, font, 1) ?? throw new InvalidDataException(L.Get("PdfOcrDocument_Cannot_create_searchable_text_b66818b6"));
                     try
                     {
-                        Require(fpdf_edit.FPDFTextSetCharcodes(obj, ref chars[0], (ulong)chars.Length), "Cannot encode searchable text.");
-                        Require(fpdf_edit.FPDFTextObjSetTextRenderMode(obj, FPDF_TEXT_RENDERMODE.FPDF_TEXTRENDERMODE_INVISIBLE), "Cannot make the OCR layer invisible.");
+                        Require(fpdf_edit.FPDFTextSetCharcodes(obj, ref chars[0], (ulong)chars.Length), L.Get("PdfOcrDocument_Cannot_encode_searchable_text_e6464916"));
+                        Require(fpdf_edit.FPDFTextObjSetTextRenderMode(obj, FPDF_TEXT_RENDERMODE.FPDF_TEXTRENDERMODE_INVISIBLE), L.Get("PdfOcrDocument_Cannot_make_the_OCR_layer_invisible_a25c2c27"));
                         var dx = p[2].X - p[3].X;
                         var dy = p[2].Y - p[3].Y;
                         var vx = p[0].X - p[3].X;
                         var vy = p[0].Y - p[3].Y;
                         fpdf_edit.FPDFPageObjTransform(obj, dx / (chars.Length * .5), dy / (chars.Length * .5), vx, vy, p[3].X, p[3].Y);
-                        Require(fpdf_edit.FPDFPageInsertObject(page, obj), "Cannot insert searchable text.");
+                        Require(fpdf_edit.FPDFPageInsertObject(page, obj), L.Get("PdfOcrDocument_Cannot_insert_searchable_text_4de6c1fc"));
                         obj = null!;
                     }
                     finally
@@ -337,7 +337,7 @@ internal sealed class PdfOcrDocument : IDisposable
                     }
                 }
 
-                Require(fpdf_edit.FPDFPageGenerateContent(page), "Cannot write the OCR text layer.");
+                Require(fpdf_edit.FPDFPageGenerateContent(page), L.Get("PdfOcrDocument_Cannot_write_the_OCR_text_layer_5c646594"));
             }
             finally
             {
@@ -360,7 +360,7 @@ internal sealed class PdfOcrDocument : IDisposable
             {
                 token.ThrowIfCancellationRequested();
                 if (length > int.MaxValue)
-                    throw new IOException("PDF output block is too large.");
+                    throw new IOException(L.Get("PdfOcrDocument_PDF_output_block_is_too_large_4f18fe6b"));
                 output.Write(new ReadOnlySpan<byte>(data.ToPointer(), (int)length));
                 return 1;
             }
@@ -379,7 +379,7 @@ internal sealed class PdfOcrDocument : IDisposable
         GC.KeepAlive(callback);
         if (callbackError is not null)
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(callbackError).Throw();
-        Require(result, "Cannot save the searchable PDF.");
+        Require(result, L.Get("PdfOcrDocument_Cannot_save_the_searchable_PDF_8230c1e9"));
         token.ThrowIfCancellationRequested();
     }
 

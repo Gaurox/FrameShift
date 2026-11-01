@@ -56,7 +56,7 @@ internal static partial class Program
             catch (Exception ex)
             {
                 logger.Log($"Program: RunImageToPdf failed to send to primary instance: {ex}");
-                ShowCliError("FrameShift is already running, but the new image could not be added.");
+                ShowCliError(L.Get("ProgramImageToPdf_FrameShift_is_already_running_but_th_c7923d22"));
                 return 1;
             }
         }
@@ -90,7 +90,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Image to PDF")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramImageToPdf_Image_to_PDF_c9e73f3d"))));
             return 0;
         }
         finally
@@ -145,7 +145,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Image to PDF")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramImageToPdf_Image_to_PDF_c9e73f3d"))));
             return false;
         }
     }

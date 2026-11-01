@@ -28,8 +28,8 @@ public sealed class CompressAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "compress-audio",
-        "Compress Audio",
-        "Compresses an audio file using a preset profile or a target file size.");
+        L.Get("CompressAudioAction_Compress_Audio_7810ba2d"),
+        L.Get("CompressAudioAction_Compresses_an_audio_file_using_a_pre_79b40691"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -107,7 +107,7 @@ public sealed class CompressAudioAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing audio compression on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("CompressAudioAction_Preparing_audio_compression_on_CPU_8fa1b664"));
 
         try
         {
@@ -125,7 +125,7 @@ public sealed class CompressAudioAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CompressAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -142,7 +142,7 @@ public sealed class CompressAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CompressAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -202,7 +202,7 @@ public sealed class CompressAudioAction : IFrameShiftAction
             ".wav" or ".wave" => new AudioEncodingPlan("Audio",
                 profileId == CompressAudioSettings.ProfileHigh ? "adpcm_ms" : "adpcm_ima_wav",
                 new[] { "-ar", rateArg, "-ac", chArg }),
-            _ => throw new NotSupportedException($"Unsupported audio format '{extension}' for compression.")
+            _ => throw new NotSupportedException(L.Format("CompressAudioAction_Unsupported_audio_format_0_for_compr_bdaaa2b6",extension))
         };
     }
 

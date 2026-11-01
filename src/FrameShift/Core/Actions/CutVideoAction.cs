@@ -26,8 +26,8 @@ public sealed class CutVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "cut-video",
-        "Cut Video",
-        "Cuts a video between two frame boundaries.");
+        L.Get("CutVideoAction_Cut_Video_2106db79"),
+        L.Get("CutVideoAction_Cuts_a_video_between_two_frame_bound_2c39a62a"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -99,7 +99,7 @@ public sealed class CutVideoAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Cut video strategy: re-encode to {sourceExtension} for frame-accurate trimming.");
-        request.ProgressReporter?.ReportState("processing", $"Preparing cut on {encodingPlan.Primary.ModeLabel}...");
+        request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Preparing_cut_on_0_f63f727c",encodingPlan.Primary.ModeLabel));
 
         try
         {
@@ -117,7 +117,7 @@ public sealed class CutVideoAction : IFrameShiftAction
             if (primaryResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CutVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, primaryResult.CancellationScope);
             }
 
@@ -129,7 +129,7 @@ public sealed class CutVideoAction : IFrameShiftAction
             if (encodingPlan.Fallback is not null)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("processing", $"Retrying cut on {encodingPlan.Fallback.ModeLabel}...");
+                request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Retrying_cut_on_0_11e479fe",encodingPlan.Fallback.ModeLabel));
 
                 var fallbackResult = await RunEncodingAttemptAsync(
                     ffmpegPath,
@@ -145,7 +145,7 @@ public sealed class CutVideoAction : IFrameShiftAction
                 if (fallbackResult.Canceled)
                 {
                     ConversionActionHelper.DeleteIfExists(outputPath);
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("CutVideoAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, fallbackResult.CancellationScope);
                 }
 
@@ -157,7 +157,7 @@ public sealed class CutVideoAction : IFrameShiftAction
                 ConversionActionHelper.DeleteIfExists(outputPath);
                 var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(
                     fallbackResult.StandardError,
-                    "FFmpeg failed during Cut Video processing.");
+                    L.Get("CutVideoAction_FFmpeg_failed_during_Cut_Video_proce_170c6576"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -165,14 +165,14 @@ public sealed class CutVideoAction : IFrameShiftAction
             ConversionActionHelper.DeleteIfExists(outputPath);
             var primaryFailureMessage = ConversionActionHelper.GetFriendlyFfmpegError(
                 primaryResult.StandardError,
-                "FFmpeg failed during Cut Video processing.");
+                L.Get("CutVideoAction_FFmpeg_failed_during_Cut_Video_proce_170c6576"));
             request.ProgressReporter?.ReportState("failed", primaryFailureMessage);
             return new ActionExecutionResult(false, primaryFailureMessage, null, false);
         }
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CutVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -281,7 +281,7 @@ public sealed class CutVideoAction : IFrameShiftAction
                 cancellationToken,
                 new EncodingPlan("CPU", "libx264", ["-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart"], "aac", ["-b:a", "320k"]),
                 new EncodingPlan("NVIDIA GPU", "h264_nvenc", ["-preset", "p5", "-cq", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart"], "aac", ["-b:a", "320k"])).ConfigureAwait(false),
-            _ => throw new NotSupportedException("Unsupported input format. Only .mp4, .mkv, .avi, .mov, .webm and .m4v are supported.")
+            _ => throw new NotSupportedException(L.Get("CutVideoAction_Unsupported_input_format_Only_mp4_mk_b0d46086"))
         };
     }
 

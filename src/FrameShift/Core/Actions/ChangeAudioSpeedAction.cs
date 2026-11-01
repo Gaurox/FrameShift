@@ -27,8 +27,8 @@ public sealed class ChangeAudioSpeedAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "change-audio-speed",
-        "Change Audio Speed",
-        "Changes the playback speed of an audio file.");
+        L.Get("ChangeAudioSpeedAction_Change_Audio_Speed_fbfa40e5"),
+        L.Get("ChangeAudioSpeedAction_Changes_the_playback_speed_of_an_aud_771a2450"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -87,7 +87,7 @@ public sealed class ChangeAudioSpeedAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"SpeedFactor: {settings.SpeedFactor:0.######}, keepPitch={settings.KeepPitch}, sampleRate={sampleRate}");
-        request.ProgressReporter?.ReportState("processing", "Changing audio speed...");
+        request.ProgressReporter?.ReportState("processing", L.Get("ChangeAudioSpeedAction_Changing_audio_speed_080f2763"));
 
         try
         {
@@ -105,14 +105,14 @@ public sealed class ChangeAudioSpeedAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ChangeAudioSpeedAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during audio speed change.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ChangeAudioSpeedAction_FFmpeg_failed_during_audio_speed_cha_fd6cb22d"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -122,7 +122,7 @@ public sealed class ChangeAudioSpeedAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ChangeAudioSpeedAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -207,7 +207,7 @@ public sealed class ChangeAudioSpeedAction : IFrameShiftAction
             ".flac" => new AudioEncodingPlan("Audio", "flac", ["-compression_level", "5"]),
             ".m4a"  => new AudioEncodingPlan("Audio", "aac", ["-b:a", "256k"]),
             ".ogg"  => new AudioEncodingPlan("Audio", "libvorbis", ["-q:a", "6"]),
-            _       => throw new NotSupportedException($"Unsupported audio extension '{extension}'.")
+            _       => throw new NotSupportedException(L.Format("ChangeAudioSpeedAction_Unsupported_audio_extension_0_433af169",extension))
         };
     }
 

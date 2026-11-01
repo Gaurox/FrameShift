@@ -48,35 +48,35 @@ public sealed class RotateFlipVideoForm : Form
         _probe = probe;
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(900, 740), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Rotate / Flip Video");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Rotate / Flip Video", $"Source: {Path.GetFileName(inputPath)}",
+        FrameShiftWindowChrome.Apply(this, L.Get("RotateFlipVideoForm_FrameShift_Rotate_Flip_Video_4e16afe6"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("RotateFlipVideoForm_FrameShift_Rotate_Flip_Video_4e16afe6"), L.Format("RotateFlipVideoForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             IconPaths.ContextMenuIco("rotate-video-image-icon.ico"), IconPaths.AppIcon, "↻");
         _previewPanel = new Panel { Name = "preview", Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32) };
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.Resize += (_, _) => _previewPanel.Invalidate();
-        _rotateCcwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↶ Rotate left", false);
-        _rotateCwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↷ Rotate right", false);
-        _flipHButton = FrameShiftUiFactory.CreateMeasuredActionButton("↔ Flip horizontal", false);
-        _flipVButton = FrameShiftUiFactory.CreateMeasuredActionButton("↕ Flip vertical", false);
+        _rotateCcwButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Rotate_left_9e20293b"), false);
+        _rotateCwButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Rotate_right_f316ebc1"), false);
+        _flipHButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Flip_horizontal_014031ed"), false);
+        _flipVButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Flip_vertical_e9b61839"), false);
         _rotateCcwButton.Click += (_, _) => ApplyRotate(false);
         _rotateCwButton.Click += (_, _) => ApplyRotate(true);
         _flipHButton.Click += (_, _) => ApplyFlipH();
         _flipVButton.Click += (_, _) => ApplyFlipV();
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Reset_24745fdf"), false);
         reset.Click += (_, _) => ResetTransforms();
-        _summaryLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading preview…");
-        var transforms = FrameShiftUiFactory.CreateSection("Transform", FrameShiftUiFactory.CreateVerticalStack(
+        _summaryLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("RotateFlipVideoForm_Loading_preview_58455073"));
+        var transforms = FrameShiftUiFactory.CreateSection(L.Get("RotateFlipVideoForm_Transform_2e7cc3f0"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_rotateCcwButton, _rotateCwButton, _flipHButton, _flipVButton, reset), _summaryLabel));
         _timelineBar = new SeekTrackBar { Name = "timeline", Minimum = 0, Maximum = 1000,
             TickFrequency = 100, SmallChange = 5, LargeChange = 50, AutoSize = true };
         _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-        var timeline = FrameShiftUiFactory.CreateSection("Preview position", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateWrappingLabel("Drag the slider to preview another moment of the video."), _timelineBar));
+        var timeline = FrameShiftUiFactory.CreateSection(L.Get("RotateFlipVideoForm_Preview_position_a7b0aca0"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("RotateFlipVideoForm_Drag_the_slider_to_preview_another_m_d6534b0a")), _timelineBar));
         var options = FrameShiftUiFactory.CreateVerticalStack(timeline, transforms);
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        _applyButton = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        _applyButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipVideoForm_Apply_3d57c12e"), true);
         _applyButton.Enabled = false;
         _applyButton.Click += (_, _) =>
         {
@@ -87,7 +87,7 @@ public sealed class RotateFlipVideoForm : Form
         AcceptButton = _applyButton;
         CancelButton = cancel;
         Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header,
-            FrameShiftUiFactory.CreateSection("Preview", _previewPanel, fill: true), options,
+            FrameShiftUiFactory.CreateSection(L.Get("RotateFlipVideoForm_Preview_68dd3b5d"), _previewPanel, fill: true), options,
             FrameShiftDialogLayout.CreateActions(cancel, _applyButton)));
         _debounceTimer = new System.Windows.Forms.Timer { Interval = 140 };
         _debounceTimer.Tick += async (_, _) =>
@@ -159,7 +159,7 @@ public sealed class RotateFlipVideoForm : Form
 
             if (!_closing && !IsDisposed)
             {
-                var errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Rotate / Flip Video"));
+                var errorMessage = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("RotateFlipVideoForm_Rotate_Flip_Video_d0a33e8a")));
                 _summaryLabel.Text = errorMessage;
                 _applyButton.Enabled = false;
             }
@@ -237,10 +237,10 @@ public sealed class RotateFlipVideoForm : Form
     {
         // Rotation buttons perform a step; only mirrors have an on/off state.
         // Keep the standard palette and express the persistent state with a check mark.
-        _flipHButton.Text = _flipH ? "↔ Flip horizontal ✓" : "↔ Flip horizontal";
-        _flipVButton.Text = _flipV ? "↕ Flip vertical ✓" : "↕ Flip vertical";
-        _flipHButton.AccessibleDescription = _flipH ? "Horizontal mirror enabled" : "Horizontal mirror disabled";
-        _flipVButton.AccessibleDescription = _flipV ? "Vertical mirror enabled" : "Vertical mirror disabled";
+        _flipHButton.Text = _flipH ? L.Get("RotateFlipVideoForm_Flip_horizontal_8f4b97ca") : L.Get("RotateFlipVideoForm_Flip_horizontal_014031ed");
+        _flipVButton.Text = _flipV ? L.Get("RotateFlipVideoForm_Flip_vertical_86e4301e") : L.Get("RotateFlipVideoForm_Flip_vertical_e9b61839");
+        _flipHButton.AccessibleDescription = _flipH ? L.Get("RotateFlipVideoForm_Horizontal_mirror_enabled_df2d72b4") : L.Get("RotateFlipVideoForm_Horizontal_mirror_disabled_39108e4a");
+        _flipVButton.AccessibleDescription = _flipV ? L.Get("RotateFlipVideoForm_Vertical_mirror_enabled_ca1417e6") : L.Get("RotateFlipVideoForm_Vertical_mirror_disabled_11bc54fb");
     }
 
     private static Bitmap BuildTransformedBitmap(Bitmap source, RotateFlipSettings settings)

@@ -33,7 +33,7 @@ internal sealed class OcrEngine : IDisposable
             ""
         }.Concat(dictionary.Children.Cast<YamlScalarNode>().Select(node => node.Value ?? "")).Append(" ").ToArray();
         if (_characters.Length != model.Classes)
-            throw new InvalidDataException("The OCR model and character dictionary do not match.");
+            throw new InvalidDataException(L.Get("OcrEngine_The_OCR_model_and_character_dictiona_e8f898f1"));
         (_det, Provider) = OnnxProviderHelper.CreateSessionPreferred(Path.Combine(_directory, "det/inference.onnx"), "OCR detector", forceCpu);
         try
         {
@@ -64,7 +64,7 @@ internal sealed class OcrEngine : IDisposable
         if (_rec.OutputMetadata.Values.First().Dimensions[^1] != model.Classes)
         {
             Dispose();
-            throw new InvalidDataException("Unexpected OCR recognition output.");
+            throw new InvalidDataException(L.Get("OcrEngine_Unexpected_OCR_recognition_output_dc4107c6"));
         }
     }
 
@@ -72,11 +72,11 @@ internal sealed class OcrEngine : IDisposable
     {
         var info = SafeImageReader.Identify(path);
         if ((long)info.Width * info.Height > 64_000_000)
-            throw new InvalidDataException("The image is too large. Use an image containing at most 64 million pixels.");
+            throw new InvalidDataException(L.Get("OcrEngine_The_image_is_too_large_Use_an_image__a3efb017"));
         using var rgba = SafeImageReader.LoadFirstFrame<Rgba32>(path);
         rgba.Mutate(ctx => ctx.AutoOrient());
         if ((long)rgba.Width * rgba.Height > 64_000_000)
-            throw new InvalidDataException("The image is too large. Use an image containing at most 64 million pixels.");
+            throw new InvalidDataException(L.Get("OcrEngine_The_image_is_too_large_Use_an_image__a3efb017"));
         var image = new Image<Rgb24>(rgba.Width, rgba.Height);
         rgba.ProcessPixelRows(image, (input, output) =>
         {
@@ -119,7 +119,7 @@ internal sealed class OcrEngine : IDisposable
             var output = Run(input, true, token);
             var boxes = OcrGeometry.Detect(output.Values, output.Width, output.Height, _model.BoxThreshold, token);
             polygons.AddRange(boxes.Select(box => box.Select(p => new OcrPoint(p.X * crop.Width / output.Width + x, p.Y * crop.Height / output.Height + y)).ToArray()));
-            progress?.Invoke((i + 1) * 30 / positions.Count, $"Detecting text: tile {i + 1} of {positions.Count}");
+            progress?.Invoke((i + 1) * 30 / positions.Count, L.Format("OcrEngine_Detecting_text_tile_0_of_1_49eb02c7",i + 1,positions.Count));
         }
 
         polygons = OcrGeometry.MergeTiles(polygons);
@@ -148,7 +148,7 @@ internal sealed class OcrEngine : IDisposable
                     lines[duplicate] = line;
             }
 
-            progress?.Invoke(30 + (++processed) * 65 / Math.Max(1, polygons.Count), $"Recognizing line {processed} of {polygons.Count}");
+            progress?.Invoke(30 + (++processed) * 65 / Math.Max(1, polygons.Count), L.Format("OcrEngine_Recognizing_line_0_of_1_0ceb2d1a",processed,polygons.Count));
         }
 
         return OcrReadingOrder.Sort(lines);

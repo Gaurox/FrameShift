@@ -17,6 +17,7 @@ internal static partial class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        FrameShiftLanguage.Initialize();
         AppLogger.LogStatic($"DIAG BUILD ACTIVE - log path = {AppLogger.LogPath}");
         AppLogger.LogStatic($"Program: Main entered. baseDirectory={AppContext.BaseDirectory}, processPath={Environment.ProcessPath ?? "<null>"}, argsCount={args.Length}.");
         TryCleanOrphanedTempDirectories();
@@ -377,7 +378,7 @@ internal static partial class Program
 
         if (!File.Exists(ffprobePath))
         {
-            ShowCliError("ffprobe not found. Check your FrameShift installation.");
+            ShowCliError(L.Get("Program_ffprobe_not_found_Check_your_FrameSh_3eb454df"));
             return 1;
         }
 

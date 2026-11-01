@@ -56,10 +56,10 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!File.Exists(inputPath))
-            throw new FileNotFoundException("Input image not found.", inputPath);
+            throw new FileNotFoundException(L.Get("ObjectRemovalEngine_Input_image_not_found_a14ff9b1"), inputPath);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InpaintProgress(10, "Loading image..."));
+        progress.Report(new InpaintProgress(10, L.Get("ObjectRemovalEngine_Loading_image_829651fa")));
 
         using var original = SafeImageReader.LoadValidatedFirstFrame<Rgba32>(inputPath, (width, height) =>
         {
@@ -71,18 +71,18 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         AppLogger.LogStatic($"ObjectRemovalEngine: image loaded. size={original.Width}x{original.Height}, model={_def.Id}");
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InpaintProgress(25, "Preparing inputs..."));
+        progress.Report(new InpaintProgress(25, L.Get("ObjectRemovalEngine_Preparing_inputs_b9517d3f")));
 
         using var resized = original.Clone(ctx => ctx.Resize(ModelSize, ModelSize));
         var mask512 = ScaleMask(mask, original.Width, original.Height, ModelSize, ModelSize);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InpaintProgress(45, "Running AI inference..."));
+        progress.Report(new InpaintProgress(45, L.Get("ObjectRemovalEngine_Running_AI_inference_50feba68")));
 
         var output = RunLama(resized, mask512);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InpaintProgress(78, "Recompositing image..."));
+        progress.Report(new InpaintProgress(78, L.Get("ObjectRemovalEngine_Recompositing_image_c9d53ae4")));
 
         using var outputAt512 = BuildOutputImage(output, ModelSize, ModelSize);
         outputAt512.Mutate(ctx => ctx.Resize(original.Width, original.Height));
@@ -90,7 +90,7 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         using var finalImage = ComposeResult(original, outputAt512, mask);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InpaintProgress(93, "Saving PNG..."));
+        progress.Report(new InpaintProgress(93, L.Get("ObjectRemovalEngine_Saving_PNG_d1cfb92e")));
 
         using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_cleaned", ".png"));
         outputPath = publication.WorkingPath;
@@ -105,7 +105,7 @@ internal sealed class ObjectRemovalEngine : IObjectRemovalEngine
         }
         outputPath = publication.Publish(cancellationToken);
 
-        OutputOperation.NotifySaved(() => progress.Report(new InpaintProgress(100, "Done.")));
+        OutputOperation.NotifySaved(() => progress.Report(new InpaintProgress(100, L.Get("ObjectRemovalEngine_Done_7aa25384"))));
         OutputOperation.NotifySaved(() => AppLogger.LogStatic($"ObjectRemovalEngine: complete. output={outputPath}"));
         return outputPath;
     }
@@ -208,7 +208,7 @@ private static float[,] ScaleMask(bool[,] mask, int srcW, int srcH, int dstW, in
         try
         {
             if (_sessionReady) return;
-            progress.Report(new InpaintProgress(3, "Loading ONNX model..."));
+            progress.Report(new InpaintProgress(3, L.Get("ObjectRemovalEngine_Loading_ONNX_model_559af544")));
             var modelPath = ModelLocator.GetModelPath(_def);
             AppLogger.LogStatic($"ObjectRemovalEngine: loading session. model={modelPath}");
             // ForceCpu=true: LaMa-based models use FFC/FFT operators unsupported by DirectML at runtime

@@ -30,8 +30,8 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "upscale-video",
-        "Upscale Video",
-        "Upscales every video frame with a local AI model while preserving frame rate and audio.");
+        L.Get("UpscaleVideoAction_Upscale_Video_a5fd36b8"),
+        L.Get("UpscaleVideoAction_Upscales_every_video_frame_with_a_lo_dd331947"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -45,11 +45,11 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.UnsupportedSourceFormat(extension, SupportedFormatsText));
 
         if (!UpscaleVideoSettings.TryFromOptions(request.Options, out var settings, out var settingsError) || settings is null)
-            return new ActionExecutionResult(false, settingsError ?? "Invalid Upscale Video settings.");
+            return new ActionExecutionResult(false, settingsError ?? L.Get("UpscaleVideoAction_Invalid_Upscale_Video_settings_e918d007"));
 
         var selectedModel = UpscaleModelCatalog.GetById(settings.ModelId);
         if (selectedModel is null || !selectedModel.RecommendedForVideo)
-            return new ActionExecutionResult(false, $"Unknown or unsupported video upscale model: {settings.ModelId}.");
+            return new ActionExecutionResult(false, L.Format("UpscaleVideoAction_Unknown_or_unsupported_video_upscale_c91d95c3",settings.ModelId));
 
         string ffmpegPath = _toolLocator.ResolveFfmpegPath();
         string ffprobePath = _toolLocator.ResolveFfprobePath();
@@ -70,12 +70,12 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         var sourceWidth = probe.DisplayVideoWidth;
         var sourceHeight = probe.DisplayVideoHeight;
         if (sourceWidth <= 0 || sourceHeight <= 0)
-            return new ActionExecutionResult(false, "Video dimensions are unavailable.");
+            return new ActionExecutionResult(false, L.Get("UpscaleVideoAction_Video_dimensions_are_unavailable_3a3ce444"));
         if ((long)sourceWidth * sourceHeight > UpscaleFrameProcessor.MaxInputPixels)
         {
             return new ActionExecutionResult(
                 false,
-                $"Video frame size {sourceWidth}x{sourceHeight} exceeds the {UpscaleFrameProcessor.MaxInputPixels:N0}-pixel safety limit.");
+                L.Format("UpscaleVideoAction_Video_frame_size_0_x_1_exceeds_the_2_85cdb00d",sourceWidth,sourceHeight,UpscaleFrameProcessor.MaxInputPixels));
         }
 
         var target = UpscaleFrameProcessor.ResolveFinalSize(
@@ -101,11 +101,11 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
         {
             return new ActionExecutionResult(
                 false,
-                "AI model not found or invalid. Run FrameShift.exe --action upscale-video from Explorer to verify and download it first.");
+                L.Get("UpscaleVideoAction_AI_model_not_found_or_invalid_Run_Fr_f94809ad"));
         }
         if (target.Width > 8192)
         {
-            string warning = $"Large output ({target.Width}x{target.Height}); processing and encoding may take a long time.";
+            string warning = L.Format("UpscaleVideoAction_Large_output_0_x_1_processing_and_en_cd1069df",target.Width,target.Height);
             request.Logger.Log($"UpscaleVideoAction: {warning}");
             request.ProgressReporter?.ReportState("processing", warning);
         }
@@ -160,15 +160,15 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                         }
 
                         string status = attempt.TranscodeAudio
-                            ? "Upscaling video with compatible audio..."
-                            : $"Upscaling video on {attempt.Plan.ModeLabel}...";
+                            ? L.Get("UpscaleVideoAction_Upscaling_video_with_compatible_audi_576ce7d1")
+                            : L.Format("UpscaleVideoAction_Upscaling_video_on_0_3215bf1d",attempt.Plan.ModeLabel);
                         request.ProgressReporter?.ReportState("processing", status);
 
                         var frameProgress = new Progress<(int Processed, int Total)>(value =>
                         {
                             double fraction = value.Processed / (double)Math.Max(1, value.Total);
                             int permille = 100 + (int)Math.Round(fraction * 850d, MidpointRounding.AwayFromZero);
-                            string frameStatus = $"Upscaling frames... {value.Processed}/{value.Total}";
+                            string frameStatus = L.Format("UpscaleVideoAction_Upscaling_frames_0_1_e9fa11a5",value.Processed,value.Total);
                             request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName, frameStatus);
                             request.ProgressReporter?.ReportState("processing", frameStatus);
                         });
@@ -206,13 +206,13 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                         }
                     }
 
-                    throw lastRawPipelineError ?? new InvalidOperationException("Rawvideo upscale pipeline failed.");
+                    throw lastRawPipelineError ?? new InvalidOperationException(L.Get("UpscaleVideoAction_Rawvideo_upscale_pipeline_failed_2faf9186"));
                 }
                 catch (Exception ex) when (!string.Equals(requestedPipeline, "rawvideo", StringComparison.OrdinalIgnoreCase))
                 {
                     ConversionActionHelper.DeleteIfExists(outputPath);
                     request.Logger.Log($"UpscaleVideoAction: rawvideo pipeline failed in auto mode. Falling back to BMP pipeline. {ex.Message}");
-                    request.ProgressReporter?.ReportState("processing", "Rawvideo pipeline unavailable. Falling back to frame files...");
+                    request.ProgressReporter?.ReportState("processing", L.Get("UpscaleVideoAction_Rawvideo_pipeline_unavailable_Fallin_81fffc6a"));
                 }
             }
 
@@ -252,13 +252,13 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
 
             Directory.CreateDirectory(inputFrames);
             Directory.CreateDirectory(outputFrames);
-            request.ProgressReporter?.ReportState("processing", "Extracting source frames...");
+            request.ProgressReporter?.ReportState("processing", L.Get("UpscaleVideoAction_Extracting_source_frames_87f89abc"));
 
             var extractionReporter = new MappedProgressReporter(
                 request.ProgressReporter,
                 20,
                 150,
-                "Extracting source frames...");
+                L.Get("UpscaleVideoAction_Extracting_source_frames_87f89abc"));
             var extractionResult = await _ffmpegRunner.RunAsync(
                 ffmpegPath,
                 BuildExtractArguments(request.InputPath, Path.Combine(inputFrames, TempFramePattern)),
@@ -289,7 +289,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                 {
                     double fraction = value.Processed / (double)Math.Max(1, value.Total);
                     int permille = 150 + (int)Math.Round(fraction * 750d, MidpointRounding.AwayFromZero);
-                    string status = $"Upscaling frames... {value.Processed}/{value.Total}";
+                    string status = L.Format("UpscaleVideoAction_Upscaling_frames_0_1_e9fa11a5",value.Processed,value.Total);
                     request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName, status);
                     request.ProgressReporter?.ReportState("processing", status);
                 });
@@ -316,8 +316,8 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                 }
 
                 string status = attempt.TranscodeAudio
-                    ? "Encoding output with compatible audio..."
-                    : $"Encoding output on {attempt.Plan.ModeLabel}...";
+                    ? L.Get("UpscaleVideoAction_Encoding_output_with_compatible_audi_7135d28b")
+                    : L.Format("UpscaleVideoAction_Encoding_output_on_0_1bee3e8b",attempt.Plan.ModeLabel);
                 request.ProgressReporter?.ReportState("processing", status);
                 var encodeReporter = new MappedProgressReporter(request.ProgressReporter, 900, 1000, status);
                 encodeResult = await _ffmpegRunner.RunAsync(
@@ -352,7 +352,7 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
                 ConversionActionHelper.DeleteIfExists(outputPath);
                 string failure = ConversionActionHelper.GetFriendlyFfmpegError(
                     encodeResult?.StandardError ?? string.Empty,
-                    "FFmpeg failed while encoding the upscaled video.");
+                    L.Get("UpscaleVideoAction_FFmpeg_failed_while_encoding_the_ups_7b4e58d7"));
                 return FailedResult(request, failure);
             }
 
@@ -471,8 +471,8 @@ public sealed class UpscaleVideoAction : IFrameShiftAction
             : itemSource.IsCancellationRequested
                 ? CancellationScope.CurrentItem
                 : runnerScope;
-        request.ProgressReporter?.ReportState("canceled", "Canceled.");
-        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled("Upscale Video"), null, true, scope);
+        request.ProgressReporter?.ReportState("canceled", L.Get("UpscaleVideoAction_Canceled_437433cc"));
+        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(L.Get("UpscaleVideoAction_Upscale_Video_a5fd36b8")), null, true, scope);
     }
 
     private static ActionExecutionResult FailedResult(ActionRequest request, string message)

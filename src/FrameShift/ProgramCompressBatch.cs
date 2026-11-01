@@ -66,7 +66,7 @@ internal static partial class Program
 
                 if (!ownsBatchMutex)
                 {
-                    ShowCliError("FrameShift is already running, but the file could not be queued.");
+                    ShowCliError(L.Get("ProgramCompressBatch_FrameShift_is_already_running_but_th_4f0b2832"));
                     return 1;
                 }
 

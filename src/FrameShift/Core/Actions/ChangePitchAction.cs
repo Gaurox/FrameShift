@@ -26,8 +26,8 @@ public sealed class ChangePitchAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "change-pitch",
-        "Change Pitch",
-        "Changes the pitch of an audio file.");
+        L.Get("ChangePitchAction_Change_Pitch_9a8443c3"),
+        L.Get("ChangePitchAction_Changes_the_pitch_of_an_audio_file_42d84a60"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -86,7 +86,7 @@ public sealed class ChangePitchAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Pitch: {settings.Semitones:0.##} semitones, factor={settings.PitchFactor:0.######}, keepDuration={settings.KeepDuration}, sampleRate={sampleRate}");
-        request.ProgressReporter?.ReportState("processing", "Changing audio pitch...");
+        request.ProgressReporter?.ReportState("processing", L.Get("ChangePitchAction_Changing_audio_pitch_280f6563"));
 
         try
         {
@@ -104,14 +104,14 @@ public sealed class ChangePitchAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ChangePitchAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during pitch change.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ChangePitchAction_FFmpeg_failed_during_pitch_change_62453c17"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -121,7 +121,7 @@ public sealed class ChangePitchAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ChangePitchAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -182,7 +182,7 @@ public sealed class ChangePitchAction : IFrameShiftAction
             ".flac" => new AudioEncodingPlan("Audio", "flac", ["-compression_level", "5"]),
             ".m4a"  => new AudioEncodingPlan("Audio", "aac", ["-b:a", "256k"]),
             ".ogg"  => new AudioEncodingPlan("Audio", "libvorbis", ["-q:a", "6"]),
-            _       => throw new NotSupportedException($"Unsupported audio extension '{extension}'.")
+            _       => throw new NotSupportedException(L.Format("ChangePitchAction_Unsupported_audio_extension_0_433af169",extension))
         };
     }
 

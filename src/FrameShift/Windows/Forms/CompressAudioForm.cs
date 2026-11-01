@@ -18,18 +18,18 @@ public sealed class CompressAudioForm : Form
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(600, 500), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Compress Audio");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Compress Audio",
+        FrameShiftWindowChrome.Apply(this, L.Get("CompressAudioForm_FrameShift_Compress_Audio_c5afc06c"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CompressAudioForm_FrameShift_Compress_Audio_c5afc06c"),
             $"{Path.GetFileName(sourcePath)}    {sourceExtension.TrimStart('.').ToUpperInvariant()}    {FormatFileSize(sourceBytes)}    {FormatAudioInfo(sampleRate, channels)}",
             IconPaths.CompressVideoIcon, IconPaths.AppIcon, "▶");
-        var high = new FrameShiftChoiceCard("High quality", "Preserves more detail") { Checked = true };
-        var balanced = new FrameShiftChoiceCard("Balanced", "Quality and size");
-        var small = new FrameShiftChoiceCard("Small file", "Strongest reduction");
+        var high = new FrameShiftChoiceCard(L.Get("CompressAudioForm_High_quality_f9552ad2"), L.Get("CompressAudioForm_Preserves_more_detail_2874f302")) { Checked = true };
+        var balanced = new FrameShiftChoiceCard(L.Get("CompressAudioForm_Balanced_b9f90b2b"), L.Get("CompressAudioForm_Quality_and_size_6d6829ce"));
+        var small = new FrameShiftChoiceCard(L.Get("CompressAudioForm_Small_file_461660a8"), L.Get("CompressAudioForm_Strongest_reduction_d4f68c80"));
         high.CheckedChanged += (_, _) => { if (high.Checked) _selectedProfileId = "high"; };
         balanced.CheckedChanged += (_, _) => { if (balanced.Checked) _selectedProfileId = "balanced"; };
         small.CheckedChanged += (_, _) => { if (small.Checked) _selectedProfileId = "small"; };
         var supported = CompressAudioSettings.IsTargetSizeSupportedForExtension(sourceExtension);
-        _checkTarget = new CheckBox { Name = "useTarget", Text = "Target file size (optional)", AutoSize = true, Enabled = supported };
+        _checkTarget = new CheckBox { Name = "useTarget", Text = L.Get("CompressAudioForm_Target_file_size_optional_48bbbfd1"), AutoSize = true, Enabled = supported };
         _textTarget = new TextBox { Name = "targetSize", ReadOnly = true, Enabled = supported };
         _unitSelector = new ComboBox { Name = "targetUnit", DropDownStyle = ComboBoxStyle.DropDownList, Enabled = false };
         _unitSelector.Items.AddRange(["KB", "MB"]);
@@ -40,22 +40,22 @@ public sealed class CompressAudioForm : Form
             _unitSelector.Enabled = supported && _checkTarget.Checked;
         };
         var content = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Compression profile", FrameShiftUiFactory.CreateChoiceRow(high, balanced, small)),
-            FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateChoiceRow(_checkTarget),
-                FrameShiftUiFactory.CreateFieldWithUnit("&Size", _textTarget, _unitSelector),
-                FrameShiftUiFactory.CreateWrappingLabel(supported ? "Approximate target size; the original format is kept."
-                    : $"Target size is available for MP3, M4A and OGG only. {sourceExtension.TrimStart('.').ToUpperInvariant()} uses the quality profile above."))));
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+            FrameShiftUiFactory.CreateSection(L.Get("CompressAudioForm_Compression_profile_a73f05f6"), FrameShiftUiFactory.CreateChoiceRow(high, balanced, small)),
+            FrameShiftUiFactory.CreateSection(L.Get("CompressAudioForm_Output_8520bb37"), FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateChoiceRow(_checkTarget),
+                FrameShiftUiFactory.CreateFieldWithUnit(L.Get("CompressAudioForm_Size_bf30e36d"), _textTarget, _unitSelector),
+                FrameShiftUiFactory.CreateWrappingLabel(supported ? L.Get("CompressAudioForm_Approximate_target_size_the_original_b91530bf")
+                    : L.Format("CompressAudioForm_Target_size_is_available_for_MP3_M4A_cc7101be",sourceExtension.TrimStart('.').ToUpperInvariant())))));
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CompressAudioForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
         cancel.Name = "cancelButton";
-        var primary = FrameShiftUiFactory.CreateMeasuredActionButton("Compress", true);
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CompressAudioForm_Compress_5830ffa3"), true);
         primary.Name = "primaryButton";
         primary.DialogResult = DialogResult.OK;
         AcceptButton = primary;
         CancelButton = cancel;
         var layout = FrameShiftDialogLayout.Create(header, content,
             FrameShiftDialogLayout.CreateActions(cancel, primary),
-            FrameShiftUiFactory.CreateStatusMessage("The compressed audio is created next to the original file. The format stays the same."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("CompressAudioForm_The_compressed_audio_is_created_next_ab489077")));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         ResumeLayout(true);
@@ -73,7 +73,7 @@ public sealed class CompressAudioForm : Form
                 if (!TryParseTargetBytes(out var targetBytes))
                 {
                     MessageBox.Show(
-                        "Target file size must be a positive number.",
+                        L.Get("CompressAudioForm_Target_file_size_must_be_a_positive__028fded9"),
                         "FrameShift",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -111,13 +111,13 @@ public sealed class CompressAudioForm : Form
     {
         var rateText = sampleRate > 0
             ? $"{sampleRate / 1000.0:0.#} kHz"
-            : "unknown Hz";
+            : L.Get("CompressAudioForm_unknown_Hz_bdcb7b7e");
         var chText = channels switch
         {
-            1 => "mono",
-            2 => "stereo",
-            _ when channels > 0 => $"{channels} ch",
-            _ => "unknown ch"
+            1 => L.Get("CompressAudioForm_mono_48caf5cb"),
+            2 => L.Get("CompressAudioForm_stereo_af4c74f2"),
+            _ when channels > 0 => L.Format("CompressAudioForm_0_ch_f7da5f15",channels),
+            _ => L.Get("CompressAudioForm_unknown_ch_d9bb9351")
         };
         return $"{rateText} / {chText}";
     }

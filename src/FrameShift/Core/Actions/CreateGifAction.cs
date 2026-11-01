@@ -25,8 +25,8 @@ public sealed class CreateGifAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "create-gif",
-        "Create GIF",
-        "Creates a GIF from a selected video range.");
+        L.Get("CreateGifAction_Create_GIF_456a6ed8"),
+        L.Get("CreateGifAction_Creates_a_GIF_from_a_selected_video__20fe37a4"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -79,7 +79,7 @@ public sealed class CreateGifAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Create GIF output path: {outputPath}");
-        request.ProgressReporter?.ReportState("processing", "Preparing GIF creation on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("CreateGifAction_Preparing_GIF_creation_on_CPU_f90dd7e8"));
 
         try
         {
@@ -98,7 +98,7 @@ public sealed class CreateGifAction : IFrameShiftAction
             if (runResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CreateGifAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, runResult.CancellationScope);
             }
 
@@ -117,7 +117,7 @@ public sealed class CreateGifAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CreateGifAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

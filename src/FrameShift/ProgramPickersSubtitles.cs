@@ -18,7 +18,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Add Subtitles to Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersSubtitles_Add_Subtitles_to_Video_6002227a")));
             return false;
         }
 
@@ -95,7 +95,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Add Subtitles to Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersSubtitles_Add_Subtitles_to_Video_6002227a"))));
             return false;
         }
     }

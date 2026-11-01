@@ -21,8 +21,8 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "rotate-flip-image",
-        "Rotate / Flip Image",
-        "Rotates or flips an image.");
+        L.Get("RotateFlipImageAction_Rotate_Flip_Image_227e42ea"),
+        L.Get("RotateFlipImageAction_Rotates_or_flips_an_image_9c051572"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -52,7 +52,7 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Applying transform...");
+        request.ProgressReporter?.ReportState("processing", L.Get("RotateFlipImageAction_Applying_transform_121b6ad6"));
 
         try
         {
@@ -70,7 +70,7 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("RotateFlipImageAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -87,7 +87,7 @@ public sealed class RotateFlipImageAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("RotateFlipImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

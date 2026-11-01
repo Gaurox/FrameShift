@@ -53,19 +53,19 @@ internal sealed class RifeRawVideoPipeline
     {
         if (settings.TargetMultiplier != 2)
         {
-            throw new InvalidOperationException("The rawvideo RIFE pipeline prototype currently supports x2 only.");
+            throw new InvalidOperationException(L.Get("RifeRawVideoPipeline_The_rawvideo_RIFE_pipeline_prototype_cb991015"));
         }
 
         if (probe.VideoFrameRate is null || probe.VideoFrameRate <= 0 || !probe.Duration.HasValue)
         {
-            throw new InvalidOperationException("Rawvideo RIFE pipeline requires a probed source FPS and duration.");
+            throw new InvalidOperationException(L.Get("RifeRawVideoPipeline_Rawvideo_RIFE_pipeline_requires_a_pr_d00f8c01"));
         }
 
         var width = probe.DisplayVideoWidth;
         var height = probe.DisplayVideoHeight;
         if (width <= 0 || height <= 0)
         {
-            throw new InvalidOperationException("Rawvideo RIFE pipeline requires a valid source resolution.");
+            throw new InvalidOperationException(L.Get("RifeRawVideoPipeline_Rawvideo_RIFE_pipeline_requires_a_va_852e6f78"));
         }
 
         var frameBytes = checked(width * height * 3);
@@ -121,7 +121,7 @@ internal sealed class RifeRawVideoPipeline
             var decodeFirstFrameStopwatch = Stopwatch.StartNew();
             if (!await TryReadFrameAsync(decoder.StandardOutput, firstFrame.AsMemory(0, frameBytes), cancellationToken).ConfigureAwait(false))
             {
-                throw new InvalidOperationException("Rawvideo decoder did not produce any frame.");
+                throw new InvalidOperationException(L.Get("RifeRawVideoPipeline_Rawvideo_decoder_did_not_produce_any_1d3b4d98"));
             }
             decodeFirstFrameStopwatch.Stop();
             metrics.AddExtraction(decodeFirstFrameStopwatch.Elapsed);
@@ -181,12 +181,12 @@ internal sealed class RifeRawVideoPipeline
 
             if (decoder.ExitCode != 0)
             {
-                throw new InvalidOperationException($"Rawvideo decoder failed: {decoder.StandardError}");
+                throw new InvalidOperationException(L.Format("RifeRawVideoPipeline_Rawvideo_decoder_failed_0_f1d6f125",decoder.StandardError));
             }
 
             if (encoder.ExitCode != 0 || !File.Exists(outputPath))
             {
-                throw new InvalidOperationException($"Rawvideo encoder failed: {encoder.StandardError}");
+                throw new InvalidOperationException(L.Format("RifeRawVideoPipeline_Rawvideo_encoder_failed_0_6aa774c1",encoder.StandardError));
             }
 
             totalStopwatch.Stop();
@@ -391,7 +391,7 @@ internal sealed class RifeRawVideoPipeline
                     return false;
                 }
 
-                throw new EndOfStreamException("Rawvideo decoder ended mid-frame.");
+                throw new EndOfStreamException(L.Get("RifeRawVideoPipeline_Rawvideo_decoder_ended_mid_frame_1465d027"));
             }
 
             totalRead += bytesRead;

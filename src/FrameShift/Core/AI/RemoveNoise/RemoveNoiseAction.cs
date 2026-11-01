@@ -35,8 +35,8 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
 
     public ActionDescriptor Descriptor { get; } = new(
         "remove-noise",
-        "Remove Noise",
-        "Supprime le bruit de fond d'un fichier audio via un modèle IA local (DeepFilterNet3).");
+        L.Get("RemoveNoiseAction_Remove_Noise_1056e64f"),
+        L.Get("RemoveNoiseAction_Supprime_le_bruit_de_fond_d_un_fichi_01c42e21"));
 
     public Task<ActionExecutionResult> ExecuteAsync(
         ActionRequest request,
@@ -57,7 +57,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
         if (!DeepFilterNetModelLocator.AllModelsExist())
             return Task.FromResult(new ActionExecutionResult(
                 false,
-                "AI model not found. Run FrameShift.exe --action remove-noise from Explorer to download it first."));
+                L.Get("RemoveNoiseAction_AI_model_not_found_Run_FrameShift_ex_761a0980")));
 
         if (!RemoveNoiseMemoryEstimator.TryValidateAudioFile(request.InputPath, out var memoryFailure))
         {
@@ -123,7 +123,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
             if (!processStereo)
             {
                 // ── Mono path ────────────────────────────────────────────────
-                request.ProgressReporter?.ReportState("processing", "Loading AI model...");
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseAction_Loading_AI_model_02e72081"));
 
                 _engine ??= new RemoveNoiseEngine();
                 var progress = new Progress<(int percent, string status)>(p =>
@@ -145,8 +145,8 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
                 var ffmpegPath = _toolLocator.ResolveFfmpegPath();
 
                 // Phase 1 — extract L and R channels in one pass (0→50 permille)
-                request.ProgressReporter?.ReportProgress(10, request.InputPath!, Descriptor.DisplayName, "Extracting stereo channels...");
-                request.ProgressReporter?.ReportState("processing", "Extracting stereo channels...");
+                request.ProgressReporter?.ReportProgress(10, request.InputPath!, Descriptor.DisplayName, L.Get("RemoveNoiseAction_Extracting_stereo_channels_ba4ec890"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseAction_Extracting_stereo_channels_ba4ec890"));
 
                 var extractArgs = new[]
                 {
@@ -163,20 +163,20 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
 
                 if (extractResult.Canceled)
                 {
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
                 }
 
                 if (extractResult.ExitCode != 0)
                 {
-                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractResult.StandardError, "Stereo channel extraction failed.");
+                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractResult.StandardError, L.Get("RemoveNoiseAction_Stereo_channel_extraction_failed_b3c0802c"));
                     request.ProgressReporter?.ReportState("failed", err);
                     return new ActionExecutionResult(false, err);
                 }
 
                 // Phase 2a — AI denoising L (50→520 permille)
-                request.ProgressReporter?.ReportProgress(50, request.InputPath!, Descriptor.DisplayName, "Denoising L channel...");
-                request.ProgressReporter?.ReportState("processing", "Denoising L channel...");
+                request.ProgressReporter?.ReportProgress(50, request.InputPath!, Descriptor.DisplayName, L.Get("RemoveNoiseAction_Denoising_L_channel_cda34913"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseAction_Denoising_L_channel_cda34913"));
 
                 _engine ??= new RemoveNoiseEngine();
                 var aiProgressL = new Progress<(int percent, string status)>(p =>
@@ -190,8 +190,8 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
                     .ConfigureAwait(false);
 
                 // Phase 2b — AI denoising R (520→900 permille)
-                request.ProgressReporter?.ReportProgress(520, request.InputPath!, Descriptor.DisplayName, "Denoising R channel...");
-                request.ProgressReporter?.ReportState("processing", "Denoising R channel...");
+                request.ProgressReporter?.ReportProgress(520, request.InputPath!, Descriptor.DisplayName, L.Get("RemoveNoiseAction_Denoising_R_channel_1b539daf"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseAction_Denoising_R_channel_1b539daf"));
 
                 var aiProgressR = new Progress<(int percent, string status)>(p =>
                 {
@@ -204,8 +204,8 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
                     .ConfigureAwait(false);
 
                 // Phase 3 — merge L+R → stereo audio output (900→1000 permille)
-                request.ProgressReporter?.ReportProgress(900, request.InputPath!, Descriptor.DisplayName, "Merging stereo channels...");
-                request.ProgressReporter?.ReportState("processing", "Merging stereo channels...");
+                request.ProgressReporter?.ReportProgress(900, request.InputPath!, Descriptor.DisplayName, L.Get("RemoveNoiseAction_Merging_stereo_channels_77cd1054"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseAction_Merging_stereo_channels_77cd1054"));
 
                 publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath!, "_clean"));
                 outputPath = publication.WorkingPath;
@@ -241,14 +241,14 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
                 if (mergeResult.Canceled)
                 {
                     TryDeleteTemp(outputPath);
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
                 }
 
                 if (mergeResult.ExitCode != 0)
                 {
                     TryDeleteTemp(outputPath);
-                    var err = ConversionActionHelper.GetFriendlyFfmpegError(mergeResult.StandardError, "Stereo merge failed.");
+                    var err = ConversionActionHelper.GetFriendlyFfmpegError(mergeResult.StandardError, L.Get("RemoveNoiseAction_Stereo_merge_failed_50301b02"));
                     request.ProgressReporter?.ReportState("failed", err);
                     return new ActionExecutionResult(false, err);
                 }
@@ -262,7 +262,7 @@ internal sealed class RemoveNoiseAction : IFrameShiftAction, IDisposable
         {
             TryDeleteTemp(outputPath);
             var scope = GetCancellationScope(cancellationToken, itemCancellationSource.IsCancellationRequested);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, scope);
         }
         catch (Exception ex)

@@ -21,8 +21,8 @@ internal static partial class Program
         return EnsureConversionOptions(
             inputPaths,
             options,
-            "FrameShift - Convert Video",
-            "Select a target container and a profile.",
+            L.Get("ProgramPickersConversion_FrameShift_Convert_Video_5b59db29"),
+            L.Get("ProgramPickersConversion_Select_a_target_container_and_a_prof_9c3037fd"),
             VideoConversionCatalog.GetTargets(),
             VideoConversionCatalog.GetProfiles(),
             true);
@@ -40,8 +40,8 @@ internal static partial class Program
         return EnsureConversionOptions(
             inputPaths,
             options,
-            "FrameShift - Convert Audio",
-            "Select an output format and a profile.",
+            L.Get("ProgramPickersConversion_FrameShift_Convert_Audio_5533886d"),
+            L.Get("ProgramPickersConversion_Select_an_output_format_and_a_profil_31b8e5ca"),
             AudioConversionCatalog.GetTargets(),
             AudioConversionCatalog.GetProfiles(),
             true);
@@ -59,8 +59,8 @@ internal static partial class Program
         return EnsureConversionOptions(
             inputPaths,
             options,
-            "FrameShift - Convert Image",
-            "Select an output format and a profile.",
+            L.Get("ProgramPickersConversion_FrameShift_Convert_Image_8258f3d7"),
+            L.Get("ProgramPickersConversion_Select_an_output_format_and_a_profil_31b8e5ca"),
             ImageConversionCatalog.GetTargets(),
             ImageConversionCatalog.GetProfiles(),
             true);
@@ -78,8 +78,8 @@ internal static partial class Program
         return EnsureConversionOptions(
             inputPaths,
             options,
-            "FrameShift - Extract Audio",
-            "Choose the output audio format.",
+            L.Get("ProgramPickersConversion_FrameShift_Extract_Audio_3f130bf9"),
+            L.Get("ProgramPickersConversion_Choose_the_output_audio_format_8396bb3b"),
             ExtractAudioCatalog.GetTargets(),
             [],
             false,
@@ -109,7 +109,7 @@ internal static partial class Program
 
         var sourceLabel = inputPaths.Count == 1
             ? FormatSelectionLabel(Path.GetFileName(inputPaths[0]))
-            : $"{inputPaths.Count} selected files";
+            : L.Format("ProgramPickersConversion_0_selected_files_dd068a4b",inputPaths.Count);
 
         var initialTargetId = options.TryGetValue(ActionOptionKeys.Target, out var targetId) ? targetId : targets[0].Id;
         var initialProfileId = showProfiles && options.TryGetValue(ActionOptionKeys.Profile, out var profileId) ? profileId : profiles.FirstOrDefault()?.Id;
@@ -142,7 +142,7 @@ internal static partial class Program
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {
-            return "selected file";
+            return L.Get("ProgramPickersConversion_selected_file_d65a205d");
         }
 
         const int maxLength = 72;

@@ -22,7 +22,7 @@ internal sealed class OutputOperation : IDisposable
             if (CreateDirectory(ToNativeDirectoryPath(WorkspacePath), IntPtr.Zero)) break;
             var error = Marshal.GetLastWin32Error();
             if (error == 183 && attempt < 9) continue;
-            throw new IOException("Cannot create output workspace.", new Win32Exception(error));
+            throw new IOException(L.Get("OutputOperation_Cannot_create_output_workspace_2754d3cb"), new Win32Exception(error));
         }
         WorkingPath = Path.Combine(WorkspacePath, directory ? "payload" : Path.GetFileName(_desiredPath));
     }

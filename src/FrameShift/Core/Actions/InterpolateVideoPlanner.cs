@@ -22,7 +22,7 @@ internal static class InterpolateVideoPlanner
     public static string BuildPipelineDescription(InterpolateVideoPlan plan, double targetFps)
     {
         var fpsText = targetFps.ToString("0.###", CultureInfo.InvariantCulture);
-        return $"cpu minterpolate ({fpsText} fps) -> {plan.VideoCodec}";
+        return L.Format("InterpolateVideoPlanner_cpu_minterpolate_0_fps_1_5f51e27a",fpsText,plan.VideoCodec);
     }
 
     public static IReadOnlyList<string> BuildArguments(

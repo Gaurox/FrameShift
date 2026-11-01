@@ -22,12 +22,12 @@ public sealed class ConversionPickerForm : Form
         IReadOnlyList<IConversionChoice> profiles,
         string? initialTargetId = null,
         string? initialProfileId = null,
-        string primaryButtonText = "Convert")
+        string? primaryButtonText = null)
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(600, 500), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, title);
-        var header = FrameShiftUiFactory.CreateHeader(title, $"Source: {sourceLabel}",
+        var header = FrameShiftUiFactory.CreateHeader(title, L.Format("ConversionPickerForm_Source_0_653ab450",sourceLabel),
             IconPaths.ConvertVideoIcon, IconPaths.AppIcon, "▶");
         _targetCombo = new ComboBox { Name = "target", DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var target in targets)
@@ -35,8 +35,8 @@ public sealed class ConversionPickerForm : Form
         _targetCombo.SelectedIndex = FindIndexById(_targetCombo, initialTargetId);
         _descriptionLabel = FrameShiftUiFactory.CreateWrappingLabel(description);
         var content = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Target format", FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateFieldRow("&Target", _targetCombo), _descriptionLabel)));
+            FrameShiftUiFactory.CreateSection(L.Get("ConversionPickerForm_Target_format_43a04b11"), FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateFieldRow(L.Get("ConversionPickerForm_Target_1b0d9f46"), _targetCombo), _descriptionLabel)));
         if (profiles.Count > 0)
         {
             _profileCombo = new ComboBox { Name = "profile", DropDownStyle = ComboBoxStyle.DropDownList };
@@ -44,24 +44,24 @@ public sealed class ConversionPickerForm : Form
                 _profileCombo.Items.Add(new ComboItem(profile.DisplayName, profile.Id, profile.Description));
             _profileCombo.SelectedIndex = FindIndexById(_profileCombo, initialProfileId);
             _profileDescriptionLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-            var section = FrameShiftUiFactory.CreateSection("Encoding profile", FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateFieldRow("&Profile", _profileCombo), _profileDescriptionLabel));
+            var section = FrameShiftUiFactory.CreateSection(L.Get("ConversionPickerForm_Encoding_profile_b8d20553"), FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateFieldRow(L.Get("ConversionPickerForm_Profile_1cb6079d"), _profileCombo), _profileDescriptionLabel));
             content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             content.Controls.Add(section, 0, content.RowCount++);
             _profileCombo.SelectedIndexChanged += (_, _) => UpdateDescription();
         }
         _targetCombo.SelectedIndexChanged += (_, _) => UpdateDescription();
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ConversionPickerForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
         cancel.Name = "cancelButton";
-        var primary = FrameShiftUiFactory.CreateMeasuredActionButton(primaryButtonText, true);
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton(primaryButtonText ?? L.Get("Common_Convert"), true);
         primary.Name = "primaryButton";
         primary.DialogResult = DialogResult.OK;
         AcceptButton = primary;
         CancelButton = cancel;
         var layout = FrameShiftDialogLayout.Create(header, content,
             FrameShiftDialogLayout.CreateActions(cancel, primary),
-            FrameShiftUiFactory.CreateStatusMessage("The output is created next to the original file."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("ConversionPickerForm_The_output_is_created_next_to_the_or_12789d86")));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         UpdateDescription();

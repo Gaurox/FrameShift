@@ -119,7 +119,7 @@ public sealed class CutAudioEditingService
     {
         if (startSeconds <= 0.0005d && endSeconds >= currentDurationSeconds - 0.0005d)
         {
-            throw new InvalidOperationException("Remove selection cannot delete the entire audio.");
+            throw new InvalidOperationException(L.Get("CutAudioEditingService_Remove_selection_cannot_delete_the_e_77702c9d"));
         }
 
         var outputPath = Path.Combine(temporaryRoot, $"edit_{Guid.NewGuid():N}.wav");
@@ -162,7 +162,7 @@ public sealed class CutAudioEditingService
         var silenceDuration = endSeconds - startSeconds;
         if (silenceDuration <= 0.0005d)
         {
-            throw new InvalidOperationException("Selection is too short to silence.");
+            throw new InvalidOperationException(L.Get("CutAudioEditingService_Selection_is_too_short_to_silence_2474fe02"));
         }
 
         var outputPath = Path.Combine(temporaryRoot, $"edit_{Guid.NewGuid():N}.wav");
@@ -207,7 +207,7 @@ public sealed class CutAudioEditingService
         var durationSeconds = endSeconds - startSeconds;
         if (durationSeconds <= 0.05d)
         {
-            throw new InvalidOperationException("Selection is too short to preview.");
+            throw new InvalidOperationException(L.Get("CutAudioEditingService_Selection_is_too_short_to_preview_8e9a0f99"));
         }
 
         var previewPath = Path.Combine(temporaryRoot, $"preview_{Guid.NewGuid():N}.wav");
@@ -257,7 +257,7 @@ public sealed class CutAudioEditingService
             throw new InvalidDataException("Expected a mono PCM 16-bit WAV for the waveform.");
 
         var sampleCount = reader.Length / 2;
-        if (sampleCount == 0) throw new InvalidDataException("No audio samples found.");
+        if (sampleCount == 0) throw new InvalidDataException(L.Get("CutAudioEditingService_No_audio_samples_found_7177388c"));
         pointCount = Math.Max(32, pointCount);
         var samplesPerBucket = Math.Max(1, (sampleCount + pointCount - 1) / pointCount);
         var points = new double[pointCount];
@@ -304,7 +304,7 @@ public sealed class CutAudioEditingService
         {
             if (!result.ProcessTerminationConfirmed)
             {
-                throw new TimeoutException("FFmpeg did not confirm process termination after Cut Audio cancellation.");
+                throw new TimeoutException(L.Get("CutAudioEditingService_FFmpeg_did_not_confirm_process_termi_b062c283"));
             }
 
             ConversionActionHelper.DeleteIfExists(outputPath);
@@ -314,7 +314,7 @@ public sealed class CutAudioEditingService
         if (result.ExitCode != 0 || !File.Exists(outputPath))
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during Cut Audio processing."));
+            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("CutAudioEditingService_FFmpeg_failed_during_Cut_Audio_proce_4d68ed5c")));
         }
     }
 

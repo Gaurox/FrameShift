@@ -57,13 +57,13 @@ public sealed class CropImageForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(1120, 720), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Crop image");
+        FrameShiftWindowChrome.Apply(this, L.Get("CropImageForm_FrameShift_Crop_image_915520f6"));
         ControlHelper.SetDoubleBuffered(this);
         _resizeRefreshTimer = new System.Windows.Forms.Timer { Interval = 35 };
         _resizeRefreshTimer.Tick += (_, _) => { _resizeRefreshTimer.Stop(); RefreshPreviewLayout(); };
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
-        _previewPanel.AccessibleName = "Image crop preview";
-        _previewPanel.AccessibleDescription = "Crop rectangle. Use the position and size fields to set exact coordinates.";
+        _previewPanel.AccessibleName = L.Get("CropImageForm_Image_crop_preview_302169d1");
+        _previewPanel.AccessibleDescription = L.Get("CropImageForm_Crop_rectangle_Use_the_position_and__39279608");
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;
@@ -81,18 +81,18 @@ public sealed class CropImageForm : Form
         }).ToArray();
         foreach (var radio in _ratioButtons)
             radio.CheckedChanged += (_, _) => { if (radio.Checked && _previewBitmap is not null) ApplyRatioToCurrentCrop(); };
-        var ratioSection = FrameShiftUiFactory.CreateSection("Ratio", FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
-        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel("Image: loading...");
+        var ratioSection = FrameShiftUiFactory.CreateSection(L.Get("CropImageForm_Ratio_04dac9c3"), FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
+        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CropImageForm_Image_loading_df9859cf"));
         _sizeLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        var mediaSection = FrameShiftUiFactory.CreateSection("Image", FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _sizeLabel));
-        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton("Auto crop", false);
+        var mediaSection = FrameShiftUiFactory.CreateSection(L.Get("CropImageForm_Image_c24ad07a"), FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _sizeLabel));
+        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropImageForm_Auto_crop_9d7b6aa6"), false);
         autoCrop.Click += (_, _) => ApplyAutoCrop();
-        var fit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        var fit = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropImageForm_Fit_2df06cb4"), false);
         fit.Click += (_, _) => FitPreviewToView();
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropImageForm_Reset_24745fdf"), false);
         reset.Click += (_, _) => ResetCropRect();
-        var tools = FrameShiftUiFactory.CreateSection("Tools", FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
-        var ok = _okButton = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        var tools = FrameShiftUiFactory.CreateSection(L.Get("CropImageForm_Tools_f622b4dd"), FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
+        var ok = _okButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropImageForm_OK_3215dae8"), true);
         ok.Enabled = false;
         ok.Click += (_, _) =>
         {
@@ -101,9 +101,9 @@ public sealed class CropImageForm : Form
             DialogResult = DialogResult.OK;
             Close();
         };
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropImageForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Crop image", $"Source: {Path.GetFileName(_inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CropImageForm_FrameShift_Crop_image_915520f6"), L.Format("CropImageForm_Source_0_653ab450",Path.GetFileName(_inputPath)),
             IconPaths.ContextMenuIco("crop-video-image-icon.ico"), IconPaths.AppIcon, "◧");
         Controls.Add(FrameShiftCropEditorUi.Create(header, _previewPanel,
             FrameShiftUiFactory.CreateVerticalStack(ratioSection, mediaSection, tools), cancel, ok));
@@ -164,7 +164,7 @@ public sealed class CropImageForm : Form
         catch (Exception ex)
         {
             if (!_closing && !IsDisposed)
-                _sourceLabel.Text = $"Preview unavailable: {ImageCropSupport.GetFriendlyLoadError(ex)}";
+                _sourceLabel.Text = L.Format("CropImageForm_Preview_unavailable_0_e54ee09c",ImageCropSupport.GetFriendlyLoadError(ex));
         }
         finally { bitmap?.Dispose(); }
     }
@@ -209,7 +209,7 @@ public sealed class CropImageForm : Form
     }
     private void UpdateSourceLabel()
     {
-        _sourceLabel.Text = $"Image: {_sourceWidth} x {_sourceHeight} px";
+        _sourceLabel.Text = L.Format("CropImageForm_Image_0_x_1_px_0d0b928e",_sourceWidth,_sourceHeight);
     }
 
     private void UpdateImageBounds()
@@ -298,7 +298,7 @@ public sealed class CropImageForm : Form
         {
             if (!ImageAutoCropDetector.TryDetectCropBounds(_previewBitmap, out var detectedBounds))
             {
-                MessageBox.Show(this, "Auto crop could not detect clear borders on this image.", "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, L.Get("CropImageForm_Auto_crop_could_not_detect_clear_bor_71fa67f9"), "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -310,7 +310,7 @@ public sealed class CropImageForm : Form
         }
         catch (Exception ex)
         {
-            var message = ConversionActionHelper.GetFriendlyExceptionMessage(ex, "Auto crop failed.");
+            var message = ConversionActionHelper.GetFriendlyExceptionMessage(ex, L.Get("CropImageForm_Auto_crop_failed_41e3ac83"));
             MessageBox.Show(this, message, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
@@ -351,7 +351,7 @@ public sealed class CropImageForm : Form
     private void UpdateSizeLabel()
     {
         var sourceCrop = GetSourceCropRect();
-        _sizeLabel.Text = $"Crop: {sourceCrop.Width} x {sourceCrop.Height} px";
+        _sizeLabel.Text = L.Format("CropImageForm_Crop_0_x_1_px_49270acd",sourceCrop.Width,sourceCrop.Height);
     }
 
     private void DisposePreviewBitmaps()

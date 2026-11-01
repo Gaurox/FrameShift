@@ -6,11 +6,11 @@ namespace FrameShift.Windows.ProgressUI;
 
 public sealed partial class ProgressForm
 {
-    private readonly Label _stateLabel = FrameShiftUiFactory.CreateWrappingLabel("Waiting for a task");
-    private readonly Label _detailsContext = FrameShiftUiFactory.CreateWrappingLabel("Current task · Waiting");
-    private readonly Button _followButton = FrameShiftUiFactory.CreateMeasuredActionButton("Current task", false);
+    private readonly Label _stateLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("ProgressForm_Details_Waiting_for_a_task_62e616fe"));
+    private readonly Label _detailsContext = FrameShiftUiFactory.CreateWrappingLabel(L.Get("ProgressForm_Details_Current_task_Waiting_dcd5d410"));
+    private readonly Button _followButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ProgressForm_Details_Current_task_4ea6fa94"), false);
     private string _liveState = "waiting";
-    private string _liveMessage = "Waiting...";
+    private string _liveMessage = L.Get("ProgressForm_Details_Waiting_84214567");
     private string _liveFile = "";
     private string? _selectedDetailId;
 
@@ -18,7 +18,7 @@ public sealed partial class ProgressForm
     {
         _stateLabel.Name = "progressSummary";
         _detailsContext.Name = "detailsContext";
-        var copy = FrameShiftUiFactory.CreateMeasuredActionButton("Copy details", false);
+        var copy = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ProgressForm_Details_Copy_details_6572d29d"), false);
         copy.Name = "copyProgressDetails";
         copy.Click += (_, _) => { if (_statusLabel.TextLength > 0) Clipboard.SetText(_statusLabel.Text); };
         _followButton.Name = "followCurrentTask";
@@ -36,17 +36,17 @@ public sealed partial class ProgressForm
         detailsBody.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         detailsBody.Controls.Add(toolbar, 0, 0);
         detailsBody.Controls.Add(_statusLabel, 0, 1);
-        var details = FrameShiftUiFactory.CreateSection("Messages & details", detailsBody, fill: true);
+        var details = FrameShiftUiFactory.CreateSection(L.Get("ProgressForm_Details_Messages_details_7aeceb46"), detailsBody, fill: true);
         var queueBody = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
         queueBody.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         queueBody.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         queueBody.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         queueBody.Controls.Add(_queueGrid, 0, 0);
-        var hint = FrameShiftUiFactory.CreateWrappingLabel("Select a file to read its message below. × removes or cancels it.");
+        var hint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("ProgressForm_Details_Select_a_file_to_read_its_message_be_2b5513c2"));
         queueBody.Controls.Add(hint, 0, 1);
-        var queue = FrameShiftUiFactory.CreateSection("Files", queueBody, fill: true);
+        var queue = FrameShiftUiFactory.CreateSection(L.Get("ProgressForm_Details_Files_c79ddc2f"), queueBody, fill: true);
         var queueTitle = (Label)queue.GetControlFromPosition(0, 0)!;
-        void UpdateCount() => queueTitle.Text = $"Files · {_queueGrid.Rows.Count}";
+        void UpdateCount() => queueTitle.Text = L.Format("ProgressForm_Details_Files_0_798bca9e",_queueGrid.Rows.Count);
         _queueGrid.RowsAdded += (_, _) => UpdateCount();
         _queueGrid.RowsRemoved += (_, _) => UpdateCount();
         UpdateCount();
@@ -132,7 +132,7 @@ public sealed partial class ProgressForm
         else _selectedDetailId = null;
         _followButton.Enabled = _selectedDetailId is not null;
         _detailsContext.ForeColor = GetStateColor(state);
-        _detailsContext.Text = $"{(_selectedDetailId is null ? "Current task" : "Selected file")} · {DescribeState(state)}";
+        _detailsContext.Text = $"{(_selectedDetailId is null ? L.Get("ProgressForm_Details_Current_task_4ea6fa94") : L.Get("ProgressForm_Details_Selected_file_3f609f2e"))} · {DescribeState(state)}";
         var text = string.IsNullOrEmpty(file) ? message : file + Environment.NewLine + Environment.NewLine + message;
         // Identical progress ticks must not disturb an error being read or selected.
         if (_statusLabel.Text == text) return;
@@ -143,9 +143,9 @@ public sealed partial class ProgressForm
 
     private static string DescribeState(string state) => state.ToLowerInvariant() switch
     {
-        "waiting" => "Waiting for a task", "queued" => "Waiting in queue", "processing" => "Processing",
-        "done" or "completed" => "Completed", "failed" => "Failed — see details",
-        "canceling" => "Canceling…", "canceled" => "Canceled", "finished" => "Finished",
+        "waiting" => L.Get("ProgressForm_Details_Waiting_for_a_task_62e616fe"), "queued" => L.Get("ProgressForm_Details_Waiting_in_queue_b96e001c"), "processing" => L.Get("ProgressForm_Details_Processing_f3aff0b5"),
+        "done" or "completed" => L.Get("ProgressForm_Details_Completed_6ff49bc9"), "failed" => L.Get("ProgressForm_Details_Failed_see_details_2c4a8314"),
+        "canceling" => L.Get("ProgressForm_Details_Canceling_1e79297f"), "canceled" => L.Get("ProgressForm_Details_Canceled_82b27371"), "finished" => L.Get("ProgressForm_Details_Finished_b1b98bcc"),
         _ => state
     };
 }

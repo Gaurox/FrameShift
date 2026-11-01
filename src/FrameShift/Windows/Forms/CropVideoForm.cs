@@ -70,13 +70,13 @@ public sealed class CropVideoForm : Form
         SuspendLayout();
 
         FrameShiftWindowPolicy.Initialize(this, new Size(1120, 720), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Crop video");
+        FrameShiftWindowChrome.Apply(this, L.Get("CropVideoForm_FrameShift_Crop_video_43dc49a9"));
         ControlHelper.SetDoubleBuffered(this);
         _resizeRefreshTimer = new System.Windows.Forms.Timer { Interval = 35 };
         _resizeRefreshTimer.Tick += (_, _) => { _resizeRefreshTimer.Stop(); RefreshPreviewLayout(); };
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
-        _previewPanel.AccessibleName = "Video crop preview";
-        _previewPanel.AccessibleDescription = "Crop rectangle. Use the position and size fields to set exact coordinates.";
+        _previewPanel.AccessibleName = L.Get("CropVideoForm_Video_crop_preview_e3b719e4");
+        _previewPanel.AccessibleDescription = L.Get("CropVideoForm_Crop_rectangle_Use_the_position_and__39279608");
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;
@@ -89,23 +89,23 @@ public sealed class CropVideoForm : Form
         _previewPanel.TabStop = true;
         _timelineBar = new SeekTrackBar { Minimum = 0, Maximum = 1000, TickFrequency = 100, SmallChange = 5, LargeChange = 50 };
         _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel($"Source: {_probe.VideoWidth} × {_probe.VideoHeight} px");
-        _frameLabel = FrameShiftUiFactory.CreateWrappingLabel("Frame: loading...");
-        _sizeLabel = FrameShiftUiFactory.CreateWrappingLabel("Crop: ---");
+        _sourceLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Format("CropVideoForm_Source_0_1_px_7fbb6f4b",_probe.VideoWidth,_probe.VideoHeight));
+        _frameLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CropVideoForm_Frame_loading_30da1b16"));
+        _sizeLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CropVideoForm_Crop_fe9fd6b5"));
         _ratioButtons = new[] { "Free", "Square", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3" }
             .Select((option, index) => new RadioButton { Text = option, Tag = option, AutoSize = true, Checked = index == 0 }).ToArray();
         foreach (var radio in _ratioButtons)
             radio.CheckedChanged += (_, _) => { if (radio.Checked && _previewBitmap is not null) ApplyRatioToCurrentCrop(); };
-        var ratio = FrameShiftUiFactory.CreateSection("Ratio", FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
-        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton("Auto crop", false);
+        var ratio = FrameShiftUiFactory.CreateSection(L.Get("CropVideoForm_Ratio_04dac9c3"), FrameShiftUiFactory.CreateVerticalStack(_ratioButtons));
+        var autoCrop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropVideoForm_Auto_crop_9d7b6aa6"), false);
         autoCrop.Click += (_, _) => ApplyAutoCrop();
-        var fit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        var fit = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropVideoForm_Fit_2df06cb4"), false);
         fit.Click += (_, _) => FitPreviewToView();
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropVideoForm_Reset_24745fdf"), false);
         reset.Click += (_, _) => ResetCropRect();
-        var tools = FrameShiftUiFactory.CreateSection("Tools", FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
-        var media = FrameShiftUiFactory.CreateSection("Video", FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _frameLabel, _sizeLabel));
-        _okButton = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        var tools = FrameShiftUiFactory.CreateSection(L.Get("CropVideoForm_Tools_f622b4dd"), FrameShiftUiFactory.CreateVerticalStack(autoCrop, fit, reset));
+        var media = FrameShiftUiFactory.CreateSection(L.Get("CropVideoForm_Video_dc664e59"), FrameShiftUiFactory.CreateVerticalStack(_sourceLabel, _frameLabel, _sizeLabel));
+        _okButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropVideoForm_OK_3215dae8"), true);
         _okButton.Enabled = false;
         _okButton.Click += (_, _) =>
         {
@@ -114,9 +114,9 @@ public sealed class CropVideoForm : Form
             DialogResult = DialogResult.OK;
             Close();
         };
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CropVideoForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Crop video", $"Source: {Path.GetFileName(inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CropVideoForm_FrameShift_Crop_video_43dc49a9"), L.Format("CropVideoForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             IconPaths.ContextMenuIco("crop-video-image-icon.ico"), IconPaths.AppIcon, "◧");
         var workspace = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
         workspace.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -124,7 +124,7 @@ public sealed class CropVideoForm : Form
         workspace.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         workspace.Controls.Add(_previewPanel, 0, 0);
         var seek = FrameShiftUiFactory.CreateVerticalStack(_timelineBar,
-            FrameShiftUiFactory.CreateWrappingLabel("Drag the slider to preview another moment."));
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("CropVideoForm_Drag_the_slider_to_preview_another_m_4c087d94")));
         workspace.Controls.Add(seek, 0, 1);
         Controls.Add(FrameShiftCropEditorUi.Create(header, workspace,
             FrameShiftUiFactory.CreateVerticalStack(ratio, media, tools), cancel, _okButton));
@@ -177,7 +177,7 @@ public sealed class CropVideoForm : Form
             _previewPanel.Invalidate();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (!_closing && !IsDisposed) _frameLabel.Text = $"Preview unavailable: {ex.Message}"; }
+        catch (Exception ex) { if (!_closing && !IsDisposed) _frameLabel.Text = L.Format("CropVideoForm_Preview_unavailable_0_e54ee09c",ex.Message); }
         finally { bitmap?.Dispose(); }
     });
 
@@ -295,7 +295,7 @@ public sealed class CropVideoForm : Form
         {
             if (!ImageAutoCropDetector.TryDetectCropBounds(_previewBitmap, out var detectedBounds))
             {
-                MessageBox.Show(this, "Auto crop could not detect clear borders on this frame.", "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, L.Get("CropVideoForm_Auto_crop_could_not_detect_clear_bor_e9de9350"), "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -308,7 +308,7 @@ public sealed class CropVideoForm : Form
         }
         catch (Exception ex)
         {
-            var message = ConversionActionHelper.GetFriendlyExceptionMessage(ex, "Auto crop failed.");
+            var message = ConversionActionHelper.GetFriendlyExceptionMessage(ex, L.Get("CropVideoForm_Auto_crop_failed_41e3ac83"));
             MessageBox.Show(this, message, "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
@@ -349,12 +349,12 @@ public sealed class CropVideoForm : Form
     private void UpdateSizeLabel()
     {
         var sourceCrop = GetSourceCropRect();
-        _sizeLabel.Text = $"Crop: {sourceCrop.Width} x {sourceCrop.Height} px";
+        _sizeLabel.Text = L.Format("CropVideoForm_Crop_0_x_1_px_49270acd",sourceCrop.Width,sourceCrop.Height);
     }
 
     private void UpdateFrameLabel(double seconds)
     {
-        _frameLabel.Text = $"Frame: {FormatTimeForDisplay(seconds)}";
+        _frameLabel.Text = L.Format("CropVideoForm_Frame_0_de4f158d",FormatTimeForDisplay(seconds));
     }
 
     private void DisposePreviewBitmaps()

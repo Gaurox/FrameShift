@@ -5,7 +5,7 @@ internal static class OcrModelDirectorySafety
     public static void ValidateDownloadPath(string root, string path)
     {
         if (!AiModelDirectorySafety.IsSameOrChildPath(path, root))
-            throw new InvalidOperationException("OCR downloads must stay inside the configured models directory.");
+            throw new InvalidOperationException(L.Get("OcrModelDirectorySafety_OCR_downloads_must_stay_inside_the_c_438d82b1"));
         AiModelDirectorySafety.ValidateAncestors(path);
     }
 

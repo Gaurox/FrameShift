@@ -18,8 +18,8 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
 
     public ActionDescriptor Descriptor { get; } = new(
         "upscale-image",
-        "Upscale Image 4x",
-        "Agrandit une image x4 via un modèle IA local (Real-ESRGAN).");
+        L.Get("UpscaleImageAction_Upscale_Image_4x_b6d78c92"),
+        L.Get("UpscaleImageAction_Agrandit_une_image_x4_via_un_mod_le__8d6a095b"));
 
     public void Dispose()
     {
@@ -55,10 +55,10 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
         {
             return new ActionExecutionResult(
                 false,
-                "AI model not found. Run FrameShift.exe --action upscale-image from Explorer to download it first.");
+                L.Get("UpscaleImageAction_AI_model_not_found_Run_FrameShift_ex_bddea053"));
         }
 
-        request.ProgressReporter?.ReportState("processing", "Loading ONNX model...");
+        request.ProgressReporter?.ReportState("processing", L.Get("UpscaleImageAction_Loading_ONNX_model_559af544"));
 
         using var itemCancellationSource = new CancellationTokenSource();
         using var linkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(
@@ -84,8 +84,8 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
             var progress = new Progress<UpscaleProgress>(p =>
             {
                 var currentAction = _engine.Provider is "DirectML" or "CPU"
-                    ? $"Upscale Image 4x ({_engine.Provider})"
-                    : "Upscale Image 4x";
+                    ? L.Format("UpscaleImageAction_Upscale_Image_4x_0_312eeb8d",_engine.Provider)
+                    : L.Get("UpscaleImageAction_Upscale_Image_4x_b6d78c92");
                 request.ProgressReporter?.ReportProgress(
                     p.Percent * 10,
                     request.InputPath,
@@ -99,7 +99,7 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
                 progress,
                 linkedCancellationSource.Token).ConfigureAwait(false);
 
-            return new ActionExecutionResult(true, "Image upscaled.", outputPath);
+            return new ActionExecutionResult(true, L.Get("UpscaleImageAction_Image_upscaled_150e0e40"), outputPath);
         }
         catch (OperationCanceledException)
         {
@@ -108,13 +108,13 @@ internal sealed class UpscaleImageAction : IFrameShiftAction, IDisposable
                 request.InputPath,
                 cancellationToken,
                 itemCancellationSource.IsCancellationRequested);
-            return new ActionExecutionResult(false, "Canceled.", null, true, cancellationScope);
+            return new ActionExecutionResult(false, L.Get("UpscaleImageAction_Canceled_437433cc"), null, true, cancellationScope);
         }
         catch (Exception ex)
         {
             request.Logger.Log($"UpscaleImageAction: failed. {ex}");
             return new ActionExecutionResult(false,
-                OnnxProviderHelper.GetCleanUserMessage(ex, "Upscale Image 4x"));
+                OnnxProviderHelper.GetCleanUserMessage(ex, L.Get("UpscaleImageAction_Upscale_Image_4x_b6d78c92")));
         }
         finally
         {

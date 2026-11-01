@@ -33,14 +33,14 @@ public abstract class ResizeMediaFormBase : Form
         _originalHeight = originalHeight;
         _ratio = (double)originalWidth / originalHeight;
         var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {functionName}",
-            $"{Path.GetFileName(sourcePath)}    Original: {originalWidth} × {originalHeight} px",
+            L.Format("ResizeMediaFormBase_0_Original_1_2_px_354dc1ab",Path.GetFileName(sourcePath),originalWidth,originalHeight),
             IconPaths.ResizeImageVideoIcon, IconPaths.AppIcon, fallbackGlyph);
         _textWidthPx = CreateValueTextBox("widthPx");
         _textHeightPx = CreateValueTextBox("heightPx");
         _textWidthPct = CreateValueTextBox("widthPct");
         _textHeightPct = CreateValueTextBox("heightPct");
-        _checkLockRatio = new CheckBox { Name = "keepRatio", Text = "Keep ratio", Checked = true, AutoSize = true };
-        var dimensions = FrameShiftUiFactory.CreateSection("New size", FrameShiftUiFactory.CreateVerticalStack(
+        _checkLockRatio = new CheckBox { Name = "keepRatio", Text = L.Get("ResizeMediaFormBase_Keep_ratio_7d211076"), Checked = true, AutoSize = true };
+        var dimensions = FrameShiftUiFactory.CreateSection(L.Get("ResizeMediaFormBase_New_size_202d2892"), FrameShiftUiFactory.CreateVerticalStack(
             CreateDimensionsGrid(), FrameShiftUiFactory.CreateChoiceRow(_checkLockRatio)));
         var presets = FrameShiftUiFactory.CreateChoiceRow();
         foreach (var scale in new[] { 0.5, 0.75, 1.5, 2.0, 4.0 })
@@ -49,7 +49,7 @@ public abstract class ResizeMediaFormBase : Form
             button.Click += (_, _) => ApplyScalePreset(scale);
             presets.Controls.Add(button);
         }
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false, 80);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ResizeMediaFormBase_Reset_24745fdf"), false, 80);
         reset.Click += (_, _) =>
         {
             _checkLockRatio.Checked = true;
@@ -59,18 +59,18 @@ public abstract class ResizeMediaFormBase : Form
         };
         presets.Controls.Add(reset);
         var content = FrameShiftUiFactory.CreateVerticalStack(dimensions,
-            FrameShiftUiFactory.CreateSection("Quick scale", presets));
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+            FrameShiftUiFactory.CreateSection(L.Get("ResizeMediaFormBase_Quick_scale_f22e330c"), presets));
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ResizeMediaFormBase_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
         cancel.Name = "cancelButton";
-        var primary = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        var primary = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ResizeMediaFormBase_OK_3215dae8"), true);
         primary.Name = "primaryButton";
         primary.DialogResult = DialogResult.OK;
         AcceptButton = primary;
         CancelButton = cancel;
         var layout = FrameShiftDialogLayout.Create(header, content,
             FrameShiftDialogLayout.CreateActions(cancel, primary),
-            FrameShiftUiFactory.CreateStatusMessage("Creates a resized file next to the original with unique naming."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("ResizeMediaFormBase_Creates_a_resized_file_next_to_the_o_d572c2f1")));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         RegisterFieldHandlers();
@@ -93,18 +93,18 @@ public abstract class ResizeMediaFormBase : Form
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         for (var row = 0; row < 3; row++) grid.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel("Pixels (px)"), 1, 0);
-        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel("Scale (%)"), 2, 0);
-        grid.Controls.Add(new Label { Text = "&Width", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 1);
-        grid.Controls.Add(new Label { Text = "&Height", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
+        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel(L.Get("ResizeMediaFormBase_Pixels_px_0600d487")), 1, 0);
+        grid.Controls.Add(FrameShiftUiFactory.CreateWrappingLabel(L.Get("ResizeMediaFormBase_Scale_6ab8dd5b")), 2, 0);
+        grid.Controls.Add(new Label { Text = L.Get("ResizeMediaFormBase_Width_fa63f448"), AutoSize = true, Anchor = AnchorStyles.Left }, 0, 1);
+        grid.Controls.Add(new Label { Text = L.Get("ResizeMediaFormBase_Height_b88589ff"), AutoSize = true, Anchor = AnchorStyles.Left }, 0, 2);
         grid.Controls.Add(_textWidthPx, 1, 1);
         grid.Controls.Add(_textWidthPct, 2, 1);
         grid.Controls.Add(_textHeightPx, 1, 2);
         grid.Controls.Add(_textHeightPct, 2, 2);
         foreach (var (box, caption, index) in new[]
         {
-            (_textWidthPx, "Width in pixels", 0), (_textWidthPct, "Width scale in percent", 1),
-            (_textHeightPx, "Height in pixels", 2), (_textHeightPct, "Height scale in percent", 3)
+            (_textWidthPx, L.Get("ResizeMediaFormBase_Width_in_pixels_64d6740f"), 0), (_textWidthPct, L.Get("ResizeMediaFormBase_Width_scale_in_percent_f077e01a"), 1),
+            (_textHeightPx, L.Get("ResizeMediaFormBase_Height_in_pixels_a6be6ab0"), 2), (_textHeightPct, L.Get("ResizeMediaFormBase_Height_scale_in_percent_f4924bc9"), 3)
         })
         {
             box.Dock = DockStyle.Fill;
@@ -140,7 +140,7 @@ public abstract class ResizeMediaFormBase : Form
             if (width is null || height is null)
             {
                 MessageBox.Show(
-                    "Width and height must be positive values.",
+                    L.Get("ResizeMediaFormBase_Width_and_height_must_be_positive_va_3a9f4dc9"),
                     "FrameShift",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

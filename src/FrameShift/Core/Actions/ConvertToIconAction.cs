@@ -22,8 +22,8 @@ public sealed class ConvertToIconAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "convert-to-icon",
-        "Convert to Icon",
-        "Creates a Windows .ico file from a supported image source.");
+        L.Get("ConvertToIconAction_Convert_to_Icon_04080829"),
+        L.Get("ConvertToIconAction_Creates_a_Windows_ico_file_from_a_su_838595d4"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -54,7 +54,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"frameshift_icon_{Guid.NewGuid():N}");
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing icon conversion on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("ConvertToIconAction_Preparing_icon_conversion_on_CPU_22215628"));
 
         try
         {
@@ -67,7 +67,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
 
                 var size = settings.Sizes[index];
                 var pngPath = Path.Combine(tempDirectory, $"icon_{size}.png");
-                request.ProgressReporter?.ReportState("processing", $"Generating {size}x{size} icon layer ({index + 1}/{settings.Sizes.Count}) on CPU...");
+                request.ProgressReporter?.ReportState("processing", L.Format("ConvertToIconAction_Generating_0_x_1_icon_layer_2_3_on_C_5611cad4",size,size,index + 1,settings.Sizes.Count));
 
                 var pngResult = await _ffmpegRunner.RunAsync(
                     ffmpegPath,
@@ -82,7 +82,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
                 if (pngResult.Canceled)
                 {
                     ConversionActionHelper.DeleteIfExists(outputPath);
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("ConvertToIconAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, pngResult.CancellationScope);
                 }
 
@@ -97,7 +97,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
                 pngFiles.Add(pngPath);
             }
 
-            request.ProgressReporter?.ReportState("processing", "Assembling icon file on CPU...");
+            request.ProgressReporter?.ReportState("processing", L.Get("ConvertToIconAction_Assembling_icon_file_on_CPU_9fe0f05b"));
             var iconResult = await _ffmpegRunner.RunAsync(
                 ffmpegPath,
                 BuildIconArguments(pngFiles, outputPath),
@@ -111,7 +111,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
             if (iconResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ConvertToIconAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, iconResult.CancellationScope);
             }
 
@@ -128,7 +128,7 @@ public sealed class ConvertToIconAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ConvertToIconAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

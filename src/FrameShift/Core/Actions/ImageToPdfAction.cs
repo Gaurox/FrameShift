@@ -20,8 +20,8 @@ public sealed class ImageToPdfAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "image-to-pdf",
-        "Image to PDF",
-        "Creates a simple one-page PDF from one or more images using the interactive page editor.");
+        L.Get("ImageToPdfAction_Image_to_PDF_c9e73f3d"),
+        L.Get("ImageToPdfAction_Creates_a_simple_one_page_PDF_from_o_9605e64f"));
 
     public Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {

@@ -12,17 +12,17 @@ public static class ImageConversionCatalog
 {
     private static readonly ImageTarget[] Targets =
     [
-        new("png", "PNG", "Lossless image format with wide support."),
-        new("jpg", "JPG", "Compressed image format for photos and general sharing."),
-        new("webp", "WEBP", "Modern image format with good compression."),
-        new("bmp", "BMP", "Uncompressed bitmap format.")
+        new("png", "PNG", L.Get("ImageConversionCatalog_Lossless_image_format_with_wide_supp_857589f9")),
+        new("jpg", "JPG", L.Get("ImageConversionCatalog_Compressed_image_format_for_photos_a_5410c9a9")),
+        new("webp", "WEBP", L.Get("ImageConversionCatalog_Modern_image_format_with_good_compre_15d5fd38")),
+        new("bmp", "BMP", L.Get("ImageConversionCatalog_Uncompressed_bitmap_format_35aed712"))
     ];
 
     private static readonly ImageProfile[] Profiles =
     [
-        new("standard", "Standard", "Balanced preset for most images."),
-        new("high", "High quality", "Stronger compression or higher-quality output when available."),
-        new("small", "Small file", "Favors smaller files over speed.")
+        new("standard", L.Get("ImageConversionCatalog_Standard_89eefd94"), L.Get("ImageConversionCatalog_Balanced_preset_for_most_images_60d8ac30")),
+        new("high", L.Get("ImageConversionCatalog_High_quality_f9552ad2"), L.Get("ImageConversionCatalog_Stronger_compression_or_higher_quali_d4c8f401")),
+        new("small", L.Get("ImageConversionCatalog_Small_file_461660a8"), L.Get("ImageConversionCatalog_Favors_smaller_files_over_speed_1e5e4947"))
     ];
 
     public static IReadOnlyList<IConversionChoice> GetTargets() => Targets;
@@ -61,7 +61,7 @@ public static class ImageConversionCatalog
         return Profiles[0];
     }
 
-    public static string GetSupportedSourceFormatsText() => ".png, .jpg, .jpeg, .webp and .bmp";
+    public static string GetSupportedSourceFormatsText() => L.Get("ImageConversionCatalog_png_jpg_jpeg_webp_and_bmp_394c0690");
 
     public static bool IsSupportedSourceExtension(string extension)
     {
@@ -116,7 +116,7 @@ public static class ImageConversionCatalog
                 _ => ["-c:v", "libwebp", "-quality", "90", "-compression_level", "4"]
             },
             "bmp" => Array.Empty<string>(),
-            _ => throw new NotSupportedException($"Unsupported image target '{targetId}'.")
+            _ => throw new NotSupportedException(L.Format("ImageConversionCatalog_Unsupported_image_target_0_7c661285",targetId))
         };
     }
 

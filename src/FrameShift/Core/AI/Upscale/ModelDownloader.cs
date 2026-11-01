@@ -22,9 +22,9 @@ internal static class ModelDownloader
             AppLogger.LogStatic(
                 $"{LogPrefix}: download blocked — SHA256 is a placeholder (model not finalized). modelId={def.Id}.");
             throw new InvalidOperationException(
-                "This AI model is not finalized yet: its integrity checksum (SHA256) is missing, so the " +
-                "download cannot be verified and has been blocked. The model still needs to be uploaded to " +
-                "the FrameShift model host.");
+                L.Get("ModelDownloader_This_AI_model_is_not_finalized_yet_i_4258ced7") +
+                L.Get("ModelDownloader_download_cannot_be_verified_and_has__8bc356f1") +
+                L.Get("ModelDownloader_the_FrameShift_model_host_89ab011c"));
         }
 
         await AiModelFileDownloader.DownloadAsync(

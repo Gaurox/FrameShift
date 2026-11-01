@@ -26,8 +26,8 @@ public sealed class ResizeVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "resize-video",
-        "Resize Video",
-        "Resizes a video to a new width and height.");
+        L.Get("ResizeVideoAction_Resize_Video_0ffcaad3"),
+        L.Get("ResizeVideoAction_Resizes_a_video_to_a_new_width_and_h_e79a3311"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -84,7 +84,7 @@ public sealed class ResizeVideoAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", $"Preparing video resize on {plan.ModeLabel}...");
+        request.ProgressReporter?.ReportState("processing", L.Format("ResizeVideoAction_Preparing_video_resize_on_0_5e1b3397",plan.ModeLabel));
 
         try
         {
@@ -103,7 +103,7 @@ public sealed class ResizeVideoAction : IFrameShiftAction
             if (runResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ResizeVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, runResult.CancellationScope);
             }
 
@@ -120,7 +120,7 @@ public sealed class ResizeVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ResizeVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

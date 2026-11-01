@@ -46,9 +46,9 @@ internal sealed class UpscaleRawVideoPipeline
         CancellationToken cancellationToken)
     {
         if (probe.VideoFrameRate is null || probe.VideoFrameRate <= 0 || !probe.Duration.HasValue)
-            throw new InvalidOperationException("Rawvideo upscale pipeline requires a probed source FPS and duration.");
+            throw new InvalidOperationException(L.Get("UpscaleRawVideoPipeline_Rawvideo_upscale_pipeline_requires_a_53809bfd"));
         if (probe.DisplayVideoWidth <= 0 || probe.DisplayVideoHeight <= 0)
-            throw new InvalidOperationException("Rawvideo upscale pipeline requires a valid source resolution.");
+            throw new InvalidOperationException(L.Get("UpscaleRawVideoPipeline_Rawvideo_upscale_pipeline_requires_a_adaaf9a1"));
 
         int sourceWidth = probe.DisplayVideoWidth;
         int sourceHeight = probe.DisplayVideoHeight;
@@ -127,9 +127,9 @@ internal sealed class UpscaleRawVideoPipeline
             await decoder.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
             if (decoder.ExitCode != 0)
-                throw new InvalidOperationException($"Rawvideo decoder failed: {decoder.StandardError}");
+                throw new InvalidOperationException(L.Format("UpscaleRawVideoPipeline_Rawvideo_decoder_failed_0_f1d6f125",decoder.StandardError));
             if (encoder.ExitCode != 0 || !File.Exists(outputPath))
-                throw new InvalidOperationException($"Rawvideo encoder failed: {encoder.StandardError}");
+                throw new InvalidOperationException(L.Format("UpscaleRawVideoPipeline_Rawvideo_encoder_failed_0_6aa774c1",encoder.StandardError));
 
             completed = true;
             return new UpscaleRawVideoPipelineResult(processor.Provider, sourceFrameCount, sourceFrameCount);
@@ -266,7 +266,7 @@ internal sealed class UpscaleRawVideoPipeline
         {
             int read = await stream.ReadAsync(buffer[offset..], cancellationToken).ConfigureAwait(false);
             if (read == 0)
-                return offset == 0 ? false : throw new InvalidOperationException("Rawvideo frame stream ended mid-frame.");
+                return offset == 0 ? false : throw new InvalidOperationException(L.Get("UpscaleRawVideoPipeline_Rawvideo_frame_stream_ended_mid_fram_d7d1e1ed"));
             offset += read;
         }
 

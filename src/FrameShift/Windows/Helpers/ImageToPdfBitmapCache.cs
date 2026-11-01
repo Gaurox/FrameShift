@@ -51,7 +51,7 @@ internal sealed class ImageToPdfBitmapCache : IDisposable
     {
         var targets = paths.ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (targets.Sum(path => _entries[path].Bytes) > _budget)
-            throw new InvalidOperationException("The PDF document exceeds the 512 MiB image memory budget. Remove an image before adding more.");
+            throw new InvalidOperationException(L.Get("ImageToPdfBitmapCache_51ba53986b"));
         var pinned = targets.Concat(currentPaths).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var path in targets)
         {
@@ -91,7 +91,7 @@ internal sealed class ImageToPdfBitmapCache : IDisposable
         var pinned = pinnedPaths.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var pinnedBytes = _entries.Where(pair => pinned.Contains(pair.Key) && pair.Value.Bitmap is not null).Sum(pair => pair.Value.Bytes);
         if (additionalBytes > limit - pinnedBytes)
-            throw new InvalidOperationException("The PDF document exceeds the 512 MiB image memory budget. Remove an image before adding more.");
+            throw new InvalidOperationException(L.Get("ImageToPdfBitmapCache_51ba53986b"));
         var resident = ResidentBytes;
         foreach (var pair in _entries)
         {

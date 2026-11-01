@@ -71,8 +71,8 @@ internal sealed class RemoveNoiseEngine : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
         EnsureSessions(progress, cancellationToken);
 
-        progress.Report((5, "Loading audio..."));
-        progress.Report((15, "Analyzing audio..."));
+        progress.Report((5, L.Get("RemoveNoiseEngine_Loading_audio_edd11db2")));
+        progress.Report((15, L.Get("RemoveNoiseEngine_Analyzing_audio_4f4bba9a")));
         var analysis = LoadAnalyzeAndBuildFeatures(inputPath, progress, cancellationToken);
         int sampleCount = analysis.SampleCount;
         int totalFrames = analysis.TotalFrames;
@@ -83,7 +83,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
         var fft = new BluesteinFft(FftSize);
         var synthesisState = new OfficialLibDfState(FftSize, HopSize, fft);
 
-        progress.Report((45, "Running AI inference..."));
+        progress.Report((45, L.Get("RemoveNoiseEngine_Running_AI_inference_50feba68")));
 
         var emptyHidden = new Dictionary<string, DenseTensor<float>>(StringComparer.Ordinal);
         var encInputs = BuildInputs(_encSession!, emptyHidden,
@@ -119,17 +119,17 @@ internal sealed class RemoveNoiseEngine : IDisposable
         if (dfOrder != 5)
         {
             throw new InvalidOperationException(
-                $"Unexpected DF order inferred from runtime output: {dfOrder}. Runtime shape: [{string.Join(",", dfCoeffsShape)}].");
+                L.Format("RemoveNoiseEngine_Unexpected_DF_order_inferred_from_ru_7b94da2f",dfOrder,string.Join(",", dfCoeffsShape)));
         }
 
         if (dfCoeffsShape.Length != 4 || dfCoeffsShape[1] != totalFrames || dfCoeffsShape[2] != NbDf || dfCoeffsShape[3] != dfOrder * 2)
         {
             throw new InvalidOperationException(
-                $"Unexpected df_dec runtime shape: [{string.Join(",", dfCoeffsShape)}]. " +
-                $"Expected [1,{totalFrames},{NbDf},{dfOrder * 2}] for full-sequence inference.");
+                L.Format("RemoveNoiseEngine_Unexpected_df_dec_runtime_shape_0_1b574c6c",string.Join(",", dfCoeffsShape)) +
+                L.Format("RemoveNoiseEngine_Expected_1_0_1_2_for_full_sequence_i_f55050b3",totalFrames,NbDf,dfOrder * 2));
         }
 
-        progress.Report((70, "Reconstructing cleaned audio..."));
+        progress.Report((70, L.Get("RemoveNoiseEngine_Reconstructing_cleaned_audio_e1cb027f")));
         var outputRe = new float[SpecBins];
         var outputIm = new float[SpecBins];
         var synthChunk = new float[HopSize];
@@ -174,7 +174,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             CopySynthesisChunkToClean(synthChunk, clean, frameIdx, delay);
         }
 
-        progress.Report((92, "Saving cleaned file..."));
+        progress.Report((92, L.Get("RemoveNoiseEngine_Saving_cleaned_file_326310a3")));
         using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_clean", ".wav"));
         outputPath = publication.WorkingPath;
         try
@@ -188,7 +188,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
         }
         outputPath = publication.Publish(cancellationToken);
 
-        OutputOperation.NotifySaved(() => progress.Report((100, "Done.")));
+        OutputOperation.NotifySaved(() => progress.Report((100, L.Get("RemoveNoiseEngine_Done_7aa25384"))));
         return outputPath;
     }
 
@@ -227,7 +227,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             if (_ready)
                 return;
 
-            progress.Report((2, "Loading AI models..."));
+            progress.Report((2, L.Get("RemoveNoiseEngine_Loading_AI_models_2e78054c")));
             cancellationToken.ThrowIfCancellationRequested();
             var options = new SessionOptions
             {
@@ -277,7 +277,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             analysisState.AnalysisFrame(analysisChunk, analyzedRe[frameIdx], analyzedIm[frameIdx]);
         }
 
-        progress.Report((30, "Building model features..."));
+        progress.Report((30, L.Get("RemoveNoiseEngine_Building_model_features_792771f6")));
         var erbFeatures = new float[checked(totalFrames * NbErb)];
         var specFeatures = new float[checked(2 * totalFrames * NbDf)];
         var erbFeatureFrame = new float[NbErb];
@@ -575,7 +575,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             if (match is null)
             {
                 throw new InvalidOperationException(
-                    $"Required input '{inputName}' not found in encoder outputs. Have: [{string.Join(", ", available.Select(result => result.Name))}]");
+                    L.Format("RemoveNoiseEngine_Required_input_0_not_found_in_encode_94536171",inputName,string.Join(", ", available.Select(result => result.Name))));
             }
 
             // The encoder result remains alive while both decoders run. Passing its tensor
@@ -598,7 +598,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
             return (tensor.ToArray(), tensor.Dimensions.ToArray());
         }
 
-        throw new InvalidOperationException("No data output found.");
+        throw new InvalidOperationException(L.Get("RemoveNoiseEngine_No_data_output_found_67edbd1b"));
     }
 
     private static (float[] data, int[] shape) GetDataOutput(
@@ -610,7 +610,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
         if (result is null)
         {
             throw new InvalidOperationException(
-                $"df_dec output '{outputName}' not found. Have: [{string.Join(", ", results.Select(value => value.Name))}]");
+                L.Format("RemoveNoiseEngine_df_dec_output_0_not_found_Have_1_0535800b",outputName,string.Join(", ", results.Select(value => value.Name))));
         }
 
         var tensor = result.AsTensor<float>();
@@ -799,7 +799,7 @@ internal sealed class RemoveNoiseEngine : IDisposable
         public void Forward(Complex[] x)
         {
             if (x.Length != _n)
-                throw new ArgumentException($"Expected length {_n}");
+                throw new ArgumentException(L.Format("RemoveNoiseEngine_Expected_length_0_052052a1",_n));
 
             var a = new Complex[_m];
             for (int k = 0; k < _n; k++)

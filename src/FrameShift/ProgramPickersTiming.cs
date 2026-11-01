@@ -18,7 +18,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Change Pitch"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersTiming_Change_Pitch_9a8443c3")));
             return false;
         }
 
@@ -59,7 +59,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Change Pitch")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersTiming_Change_Pitch_9a8443c3"))));
             return false;
         }
     }
@@ -68,7 +68,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Change Audio Speed"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersTiming_Change_Audio_Speed_fbfa40e5")));
             return false;
         }
 
@@ -137,7 +137,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Change Audio Speed")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersTiming_Change_Audio_Speed_fbfa40e5"))));
             return false;
         }
     }
@@ -146,7 +146,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Change Video Speed"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersTiming_Change_Video_Speed_2f7bf506")));
             return false;
         }
 
@@ -216,7 +216,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Change Video Speed")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersTiming_Change_Video_Speed_2f7bf506"))));
             return false;
         }
     }
@@ -225,7 +225,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Interpolate Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersTiming_Interpolate_Video_d654f3b0")));
             return false;
         }
 
@@ -288,7 +288,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Interpolate Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersTiming_Interpolate_Video_d654f3b0"))));
             return false;
         }
     }
@@ -297,7 +297,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Interpolate Video (RIFE)"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersTiming_Interpolate_Video_RIFE_ff20b6fe")));
             return false;
         }
 
@@ -360,7 +360,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Interpolate Video (RIFE)")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersTiming_Interpolate_Video_RIFE_ff20b6fe"))));
             return false;
         }
     }

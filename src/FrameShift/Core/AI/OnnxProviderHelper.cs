@@ -60,7 +60,7 @@ internal static class OnnxProviderHelper
     /// Returns a user-visible message for a DirectML inference failure (no internal paths).
     /// </summary>
     public static string GetDmlFallbackUserMessage() =>
-        "GPU processing (DirectML) failed. Automatically switched to CPU.";
+        L.Get("OnnxProviderHelper_GPU_processing_DirectML_failed_Autom_48c4569b");
 
     /// <summary>
     /// Returns a clean user-visible message for an ONNX inference error (strips internal paths).
@@ -68,8 +68,8 @@ internal static class OnnxProviderHelper
     public static string GetCleanUserMessage(Exception ex, string actionName)
     {
         if (ex is OnnxRuntimeException)
-            return $"{actionName} failed: ONNX Runtime error. Check the diagnostic log for details.";
+            return L.Format("OnnxProviderHelper_0_failed_ONNX_Runtime_error_Check_th_606b985b",actionName);
 
-        return $"{actionName} failed: {ex.Message}";
+        return L.Format("OnnxProviderHelper_0_failed_1_bd5cc80f",actionName,ex.Message);
     }
 }

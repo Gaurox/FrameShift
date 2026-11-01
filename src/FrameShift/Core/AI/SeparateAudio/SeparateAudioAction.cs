@@ -12,8 +12,8 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
 {
     public ActionDescriptor Descriptor { get; } = new(
         "separate-audio",
-        "Audio Separation",
-        "Sépare les pistes audio (voix, batterie, basse, autres) via un modèle IA local.");
+        L.Get("SeparateAudioAction_Audio_Separation_e0f92f56"),
+        L.Get("SeparateAudioAction_S_pare_les_pistes_audio_voix_batteri_90ab3574"));
 
     // Engines are created on first use and reused across all batch calls.
     // Two separate instances cover the GPU and CPU code paths independently.
@@ -39,7 +39,7 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
 
         var stems = StemSelection.FromOptions(request.Options ?? new Dictionary<string, string>());
         if (!stems.HasAnyStem)
-            return new ActionExecutionResult(false, "No stems selected. Select at least one stem to extract.");
+            return new ActionExecutionResult(false, L.Get("SeparateAudioAction_No_stems_selected_Select_at_least_on_3e9cfbad"));
 
         var options = request.Options ?? new Dictionary<string, string>();
         var preferGpu = !string.Equals(
@@ -55,9 +55,9 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
         if (!canRun)
             return new ActionExecutionResult(
                 false,
-                "AI model not found. Run FrameShift.exe --action separate-audio from Explorer to download it first.");
+                L.Get("SeparateAudioAction_AI_model_not_found_Run_FrameShift_ex_b2acee75"));
 
-        request.ProgressReporter?.ReportState("processing", "Loading model...");
+        request.ProgressReporter?.ReportState("processing", L.Get("SeparateAudioAction_Loading_model_78fa2536"));
 
         using var itemCancellationSource = new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, itemCancellationSource.Token);
@@ -71,7 +71,7 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
 
             var progress = new Progress<AudioSeparationProgress>(p =>
             {
-                var label = $"Audio Separation ({engine.Provider})";
+                var label = L.Format("SeparateAudioAction_Audio_Separation_0_a7272ffe",engine.Provider);
                 request.ProgressReporter?.ReportProgress(p.Percent * 10, request.InputPath, label, p.Status);
             });
 
@@ -80,22 +80,22 @@ internal sealed class SeparateAudioAction : IFrameShiftAction, IDisposable
 
             Helpers.OutputOperation.NotifySaved(() =>
             {
-                request.ProgressReporter?.ReportProgress(1000, request.InputPath, $"Audio Separation ({engine.Provider})", "Completed.");
-                request.ProgressReporter?.ReportState("done", "Completed.");
+                request.ProgressReporter?.ReportProgress(1000, request.InputPath, L.Format("SeparateAudioAction_Audio_Separation_0_a7272ffe",engine.Provider), L.Get("SeparateAudioAction_Completed_f2a24a08"));
+                request.ProgressReporter?.ReportState("done", L.Get("SeparateAudioAction_Completed_f2a24a08"));
             });
 
-            return new ActionExecutionResult(true, "Audio separation complete.");
+            return new ActionExecutionResult(true, L.Get("SeparateAudioAction_Audio_separation_complete_aa20424c"));
         }
         catch (OperationCanceledException)
         {
             var scope = GetCancellationScope(
                 request.ProgressReporter, request.InputPath, cancellationToken, itemCancellationSource.IsCancellationRequested);
-            return new ActionExecutionResult(false, "Canceled.", null, true, scope);
+            return new ActionExecutionResult(false, L.Get("SeparateAudioAction_Canceled_437433cc"), null, true, scope);
         }
         catch (Exception ex)
         {
             request.Logger.Log($"SeparateAudioAction: failed. {ex}");
-            return new ActionExecutionResult(false, $"Audio Separation failed: {ex.Message}");
+            return new ActionExecutionResult(false, L.Format("SeparateAudioAction_Audio_Separation_failed_0_3e05baa8",ex.Message));
         }
         finally
         {

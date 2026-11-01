@@ -30,7 +30,7 @@ public sealed partial class CutVideoForm
             await previous;
             cancellation.Token.ThrowIfCancellationRequested();
             if (_closing || IsDisposed) return;
-            _labelPreviewState.Text = "Loading preview...";
+            _labelPreviewState.Text = L.Get("CutVideoForm_Preview_Loading_preview_7e19fdfb");
             var seconds = Math.Max(0d, (frame - 1) / _fps);
             bitmap = await _capturePreview(seconds, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
@@ -39,13 +39,13 @@ public sealed partial class CutVideoForm
             _currentPreviewBitmap = bitmap;
             _previewBox.Image = bitmap;
             bitmap = null; // The form now owns the image.
-            _labelPreviewState.Text = $"Previewing {Capitalize(boundary)} frame: {frame} ({CutVideoMath.FormatPreciseTime(seconds)})";
+            _labelPreviewState.Text = L.Format("CutVideoForm_Preview_Previewing_0_frame_1_2_439822df",Capitalize(boundary),frame,CutVideoMath.FormatPreciseTime(seconds));
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         catch (Exception ex)
         {
             if (!_closing && !IsDisposed && !cancellation.IsCancellationRequested)
-                _labelPreviewState.Text = $"Preview unavailable: {ex.Message}";
+                _labelPreviewState.Text = L.Format("CutVideoForm_Preview_Preview_unavailable_0_e54ee09c",ex.Message);
         }
         finally
         {

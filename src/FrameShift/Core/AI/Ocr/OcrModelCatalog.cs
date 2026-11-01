@@ -16,7 +16,7 @@ internal static class OcrModelCatalog
 {
     public const string Revision = "b4f8fa610edff25e059959fb478bd3879e26f7a7";
     private static readonly IReadOnlyDictionary<string, OcrModelDefinition> Models = Load();
-    public static OcrModelDefinition Get(string id) => Models.TryGetValue(id, out var model) ? model : throw new ArgumentException("Unknown OCR model. Select small or tiny.");
+    public static OcrModelDefinition Get(string id) => Models.TryGetValue(id, out var model) ? model : throw new ArgumentException(L.Get("OcrModelCatalog_Unknown_OCR_model_Select_small_or_ti_b5f9373f"));
     private static IReadOnlyDictionary<string, OcrModelDefinition> Load()
     {
         using var stream = typeof(OcrModelCatalog).Assembly.GetManifestResourceStream("FrameShift.Core.AI.Ocr.model-files.json")!;
@@ -62,7 +62,7 @@ internal static class OcrModelDownloader
                 $"https://huggingface.co/Gaurox/frameshift-models/resolve/{OcrModelCatalog.Revision}/{model.Folder}/{file.Path}",
                 destination, file.Sha256, file.Bytes, fileProgress, token, "OCR").ConfigureAwait(false);
             complete += file.Bytes;
-            progress.Report(new((int)(complete * 100 / model.SizeBytes), $"Verified {file.Path}"));
+            progress.Report(new((int)(complete * 100 / model.SizeBytes), L.Format("OcrModelCatalog_Verified_0_ad147669",file.Path)));
         }
     }
 }

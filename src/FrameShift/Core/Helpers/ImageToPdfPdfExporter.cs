@@ -31,7 +31,7 @@ public sealed class ImageToPdfPdfExporter
         {
             if (string.IsNullOrWhiteSpace(item.SourcePath) || !File.Exists(item.SourcePath))
             {
-                throw new FileNotFoundException("Source image not found.", item.SourcePath);
+                throw new FileNotFoundException(L.Get("ImageToPdfPdfExporter_Source_image_not_found_982de648"), item.SourcePath);
             }
 
             XImage image;

@@ -22,8 +22,8 @@ public static class ConversionActionHelper
         try
         {
             request.Logger.Log($"Output published: {publishedPath}");
-            request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, "Completed.");
-            request.ProgressReporter?.ReportState("done", "Completed.");
+            request.ProgressReporter?.ReportProgress(1000, request.InputPath, actionName, L.Get("ConversionActionHelper_Completed_f2a24a08"));
+            request.ProgressReporter?.ReportState("done", L.Get("ConversionActionHelper_Completed_f2a24a08"));
         }
         catch (Exception ex)
         {
@@ -117,19 +117,19 @@ public static class ConversionActionHelper
 
         if (lower.Contains("stream map") || lower.Contains("no streams to mux") || lower.Contains("does not contain any stream") || lower.Contains("cannot find a matching stream"))
         {
-            return "The source file does not contain a stream that FFmpeg can convert.";
+            return L.Get("ConversionActionHelper_The_source_file_does_not_contain_a_s_41c712e6");
         }
 
         if (lower.Contains("invalid channel layout") ||
             lower.Contains("error while opening encoder") ||
             lower.Contains("unsupported channel layout"))
         {
-            return "The selected output audio settings are not compatible with this source file.";
+            return L.Get("ConversionActionHelper_The_selected_output_audio_settings_a_f7c77a1a");
         }
 
         if (lower.Contains("invalid argument") || lower.Contains("error initializing filter") || lower.Contains("failed to configure input pad"))
         {
-            return "The selected output settings are not compatible with this source file.";
+            return L.Get("ConversionActionHelper_The_selected_output_settings_are_not_b16f9cf3");
         }
 
         if (lower.Contains("unsupported") || lower.Contains("not found") || lower.Contains("unknown encoder") || lower.Contains("unknown decoder"))

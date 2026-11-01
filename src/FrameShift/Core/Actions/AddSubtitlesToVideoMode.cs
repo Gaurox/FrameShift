@@ -44,7 +44,7 @@ internal static class AddSubtitlesToVideoModes
 
     public static string GetDisplayName(this AddSubtitlesToVideoMode mode) => mode switch
     {
-        AddSubtitlesToVideoMode.BurnIntoVideo => "Burn Subtitles Into Video",
-        _ => "Selectable Subtitle Track"
+        AddSubtitlesToVideoMode.BurnIntoVideo => L.Get("AddSubtitlesToVideoMode_Burn_Subtitles_Into_Video_50d88f09"),
+        _ => L.Get("AddSubtitlesToVideoMode_Selectable_Subtitle_Track_4fadfa69")
     };
 }

@@ -14,18 +14,18 @@ public static class AudioConversionCatalog
 {
     private static readonly AudioTarget[] Targets =
     [
-        new("mp3", "MP3", "General-purpose audio format with broad compatibility."),
-        new("wav", "WAV", "Uncompressed PCM audio for editing and exchange."),
-        new("flac", "FLAC", "Lossless audio for archiving."),
-        new("m4a", "M4A", "AAC audio for library and Apple workflows."),
-        new("ogg", "OGG", "Open audio format for compatible playback.")
+        new("mp3", "MP3", L.Get("AudioConversionCatalog_General_purpose_audio_format_with_br_3fb4d201")),
+        new("wav", "WAV", L.Get("AudioConversionCatalog_Uncompressed_PCM_audio_for_editing_a_687723fd")),
+        new("flac", "FLAC", L.Get("AudioConversionCatalog_Lossless_audio_for_archiving_dcfa76c8")),
+        new("m4a", "M4A", L.Get("AudioConversionCatalog_AAC_audio_for_library_and_Apple_work_a58642a1")),
+        new("ogg", "OGG", L.Get("AudioConversionCatalog_Open_audio_format_for_compatible_pla_c82df6f3"))
     ];
 
     private static readonly AudioProfile[] Profiles =
     [
-        new("standard", "Standard", "Recommended for most files. Good quality without oversized output."),
-        new("high", "High quality", "Higher bitrate or quality settings when the target format supports it."),
-        new("small", "Small file", "Lower bitrate or lighter settings to reduce output size.")
+        new("standard", L.Get("AudioConversionCatalog_Standard_89eefd94"), L.Get("AudioConversionCatalog_Recommended_for_most_files_Good_qual_bd293396")),
+        new("high", L.Get("AudioConversionCatalog_High_quality_f9552ad2"), L.Get("AudioConversionCatalog_Higher_bitrate_or_quality_settings_w_470f4391")),
+        new("small", L.Get("AudioConversionCatalog_Small_file_461660a8"), L.Get("AudioConversionCatalog_Lower_bitrate_or_lighter_settings_to_c71395e6"))
     ];
 
     public static IReadOnlyList<IConversionChoice> GetTargets() => Targets;
@@ -38,7 +38,7 @@ public static class AudioConversionCatalog
 
     public static IReadOnlyList<IConversionChoice> GetProfiles() => Profiles;
 
-    public static string GetSupportedSourceFormatsText() => ".mp3, .wav, .wave, .flac, .m4a and .ogg";
+    public static string GetSupportedSourceFormatsText() => L.Get("AudioConversionCatalog_mp3_wav_wave_flac_m4a_and_ogg_92ede3e8");
 
     public static AudioTarget GetTargetById(string id)
     {
@@ -139,7 +139,7 @@ public static class AudioConversionCatalog
                     "small" => ["-q:a", "4"],
                     _ => ["-q:a", "6"]
                 }),
-            _ => throw new NotSupportedException($"Unsupported audio target '{targetId}'.")
+            _ => throw new NotSupportedException(L.Format("AudioConversionCatalog_Unsupported_audio_target_0_db7f0d7b",targetId))
         };
     }
 

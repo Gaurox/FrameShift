@@ -10,17 +10,17 @@ internal static class ObjectRemovalModelCatalog
     [
         new(
             "lama",
-            "LaMa FP32 (Quality)",
+            L.Get("ObjectRemovalModelCatalog_LaMa_FP32_Quality_4fe013eb"),
             "lama-onnx",
             "lama_fp32.onnx",
             "https://huggingface.co/Gaurox/frameshift-models/resolve/main/lama-onnx/lama_fp32.onnx",
             "1FAEF5301D78DB7DDA502FE59966957EC4B79DD64E16F03ED96913C7A4EB68D6",
             208_044_816L,
-            "Apache-2.0 (code) — weights trained on Places2; commercial use not guaranteed"),
+            L.Get("ObjectRemovalModelCatalog_Apache_2_0_code_weights_trained_on_P_14b31c28")),
 
         new(
             "lama-fast",
-            "LaMa 2025 (Fast)",
+            L.Get("ObjectRemovalModelCatalog_LaMa_2025_Fast_707b9ad0"),
             "lama-opencv-onnx",
             "inpainting_lama_2025jan.onnx",
             "https://huggingface.co/Gaurox/frameshift-models/resolve/main/lama-opencv-onnx/inpainting_lama_2025jan.onnx",

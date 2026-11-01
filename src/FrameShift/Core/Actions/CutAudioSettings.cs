@@ -57,7 +57,7 @@ public sealed record CutAudioSettings(double StartSeconds, double EndSeconds)
         var startSeconds = 0d;
         if (hasStart && !TryParseTimeText(startText!, out startSeconds))
         {
-            errorMessage = "Start time must use seconds, MM:SS, or HH:MM:SS.";
+            errorMessage = L.Get("CutAudioSettings_Start_time_must_use_seconds_MM_SS_or_709d843a");
             return false;
         }
 
@@ -72,7 +72,7 @@ public sealed record CutAudioSettings(double StartSeconds, double EndSeconds)
         {
             if (!TryParseTimeText(endText!, out endSeconds))
             {
-                errorMessage = "End time must use seconds, MM:SS, or HH:MM:SS.";
+                errorMessage = L.Get("CutAudioSettings_End_time_must_use_seconds_MM_SS_or_H_cd2f2978");
                 return false;
             }
         }
@@ -80,7 +80,7 @@ public sealed record CutAudioSettings(double StartSeconds, double EndSeconds)
         {
             if (!TryParseTimeText(durationText!, out var durationSeconds))
             {
-                errorMessage = "Duration must use seconds, MM:SS, or HH:MM:SS.";
+                errorMessage = L.Get("CutAudioSettings_Duration_must_use_seconds_MM_SS_or_H_5bc455e6");
                 return false;
             }
 
@@ -88,7 +88,7 @@ public sealed record CutAudioSettings(double StartSeconds, double EndSeconds)
         }
         else
         {
-            errorMessage = "Provide an end time or a duration for Cut Audio.";
+            errorMessage = L.Get("CutAudioSettings_Provide_an_end_time_or_a_duration_fo_198d76d3");
             return false;
         }
 

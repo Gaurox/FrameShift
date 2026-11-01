@@ -67,14 +67,14 @@ public sealed class ChangeSpeedForm : Form
     {
         _inputPath = inputPath;
         _runPreview = runPreview ?? ((arguments, duration, token) => ffmpegRunner.RunAsync(
-            ffmpegPath, arguments, duration, null, inputPath, mediaKind == ChangeSpeedMediaKind.Audio ? "Change Audio Speed" : "Change Video Speed",
+            ffmpegPath, arguments, duration, null, inputPath, mediaKind == ChangeSpeedMediaKind.Audio ? L.Get("ChangeSpeedForm_Change_Audio_Speed_fbfa40e5") : L.Get("ChangeSpeedForm_Change_Video_Speed_2f7bf506"),
                 mediaKind == ChangeSpeedMediaKind.Audio ? "Audio" : "Video", token));
         _mediaKind = mediaKind;
         _sourceDurationSeconds = sourceDurationSeconds;
         _hasAudio = hasAudio;
         _sampleRate = sampleRate;
         var isAudio = mediaKind == ChangeSpeedMediaKind.Audio;
-        var title = isAudio ? "Change Audio Speed" : "Change Video Speed";
+        var title = isAudio ? L.Get("ChangeSpeedForm_Change_Audio_Speed_fbfa40e5") : L.Get("ChangeSpeedForm_Change_Video_Speed_2f7bf506");
         var iconPath = IconPaths.ContextMenuIco(isAudio ? "change-audio-speed-audio-icon.ico" : "change-video-speed-video-icon.ico");
         var initialWidth = isAudio ? 640 : Math.Max(640,
             VideoPresets.Length * (PresetButtonWidth + FrameShiftUiMetrics.LineGap)
@@ -82,14 +82,14 @@ public sealed class ChangeSpeedForm : Form
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(initialWidth, 600), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, $"FrameShift - {title}");
-        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", $"Source: {Path.GetFileName(inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", L.Format("ChangeSpeedForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             iconPath, IconPaths.AppIcon, "♪");
         _infoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
         _trackBar = new TrackBar { Name = "speedSlider", Minimum = SliderMin, Maximum = SliderMax, Value = 100,
             SmallChange = 1, LargeChange = 25, TickFrequency = 25, AutoSize = true };
         _textPercent = new TextBox { Name = "percent", Text = "100" };
         _textDuration = new TextBox { Name = "duration", Text = FormatDuration(sourceDurationSeconds) };
-        _checkKeepPitch = new CheckBox { Name = "keepPitch", Text = "Keep original audio pitch", AutoSize = true,
+        _checkKeepPitch = new CheckBox { Name = "keepPitch", Text = L.Get("ChangeSpeedForm_Keep_original_audio_pitch_daf8cdcd"), AutoSize = true,
             Checked = isAudio || hasAudio, Enabled = isAudio || hasAudio };
         _trackBar.ValueChanged += (_, _) => OnTrackBarChanged();
         _textPercent.TextChanged += (_, _) => OnPercentTextChanged();
@@ -106,23 +106,23 @@ public sealed class ChangeSpeedForm : Form
             presets.Controls.Add(button);
         }
         var content = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Speed", FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateWrappingLabel($"Original duration: {FormatDuration(sourceDurationSeconds)}"),
-                _trackBar, FrameShiftUiFactory.CreateFieldRow("&Speed", _textPercent, "%", 120),
-                FrameShiftUiFactory.CreateFieldRow("&Target duration", _textDuration, null, 180),
-                FrameShiftUiFactory.CreateWrappingLabel("Speed: 25% to 400%. Duration: seconds or hh:mm:ss."))),
-            FrameShiftUiFactory.CreateSection("Presets", presets),
-            FrameShiftUiFactory.CreateSection("Options", FrameShiftUiFactory.CreateChoiceRow(_checkKeepPitch)));
-        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
+            FrameShiftUiFactory.CreateSection(L.Get("ChangeSpeedForm_Speed_8c32c2ee"), FrameShiftUiFactory.CreateVerticalStack(
+                FrameShiftUiFactory.CreateWrappingLabel(L.Format("ChangeSpeedForm_Original_duration_0_3220913d",FormatDuration(sourceDurationSeconds))),
+                _trackBar, FrameShiftUiFactory.CreateFieldRow(L.Get("ChangeSpeedForm_Speed_3950a8bc"), _textPercent, "%", 120),
+                FrameShiftUiFactory.CreateFieldRow(L.Get("ChangeSpeedForm_Target_duration_010246af"), _textDuration, null, 180),
+                FrameShiftUiFactory.CreateWrappingLabel(L.Get("ChangeSpeedForm_Speed_25_to_400_Duration_seconds_or__ea5c4e20")))),
+            FrameShiftUiFactory.CreateSection(L.Get("ChangeSpeedForm_Presets_66948156"), presets),
+            FrameShiftUiFactory.CreateSection(L.Get("ChangeSpeedForm_Options_59a2f992"), FrameShiftUiFactory.CreateChoiceRow(_checkKeepPitch)));
+        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangeSpeedForm_Preview_5s_dbda04dc"), false);
         _buttonPreview.Name = "previewButton";
         _buttonPreview.Click += async (_, _) => await PreviewAsync();
-        var previewSection = FrameShiftUiFactory.CreateSection("Preview", FrameShiftUiFactory.CreateVerticalStack(
+        var previewSection = FrameShiftUiFactory.CreateSection(L.Get("ChangeSpeedForm_Preview_68dd3b5d"), FrameShiftUiFactory.CreateVerticalStack(
             _buttonPreview, _infoLabel));
         content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         content.Controls.Add(previewSection, 0, content.RowCount++);
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangeSpeedForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var apply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        var apply = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangeSpeedForm_Apply_3d57c12e"), true);
         apply.DialogResult = DialogResult.OK;
         AcceptButton = apply;
         CancelButton = cancel;
@@ -209,14 +209,14 @@ public sealed class ChangeSpeedForm : Form
         var raw = _textPercent.Text.Trim().Replace(',', '.');
         if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var pct) || pct <= 0)
         {
-            _infoLabel.Text = "Enter a speed percentage greater than 0.";
+            _infoLabel.Text = L.Get("ChangeSpeedForm_Enter_a_speed_percentage_greater_tha_21af0105");
             return;
         }
 
         var factor = pct / 100.0;
         if (factor < UiMinFactor || factor > UiMaxFactor)
         {
-            _infoLabel.Text = $"Speed must stay between {SliderMin}% and {SliderMax}%.";
+            _infoLabel.Text = L.Format("ChangeSpeedForm_Speed_must_stay_between_0_and_1_67172cb9",SliderMin,SliderMax);
             return;
         }
 
@@ -244,7 +244,7 @@ public sealed class ChangeSpeedForm : Form
 
         if (!TryParseDuration(_textDuration.Text, out var targetSeconds) || targetSeconds <= 0)
         {
-            _infoLabel.Text = "Enter a valid target duration greater than 0.";
+            _infoLabel.Text = L.Get("ChangeSpeedForm_Enter_a_valid_target_duration_greate_54ec749b");
             return;
         }
 
@@ -256,7 +256,7 @@ public sealed class ChangeSpeedForm : Form
         var factor = _sourceDurationSeconds / targetSeconds;
         if (factor < UiMinFactor || factor > UiMaxFactor)
         {
-            _infoLabel.Text = $"Speed must stay between {SliderMin}% and {SliderMax}%.";
+            _infoLabel.Text = L.Format("ChangeSpeedForm_Speed_must_stay_between_0_and_1_67172cb9",SliderMin,SliderMax);
             return;
         }
 
@@ -324,8 +324,8 @@ public sealed class ChangeSpeedForm : Form
     private void RefreshInfoLabel()
     {
         var newDuration = _sourceDurationSeconds / _speedFactor;
-        var verb = _speedFactor > 1.0 ? "faster" : _speedFactor < 1.0 ? "slower" : "same speed";
-        _infoLabel.Text = $"New duration: {FormatDuration(newDuration)} — Speed: x{_speedFactor:0.###} ({verb}) — Output saved next to source.";
+        var verb = _speedFactor > 1.0 ? L.Get("ChangeSpeedForm_faster_0037f1e5") : _speedFactor < 1.0 ? L.Get("ChangeSpeedForm_slower_1389af0c") : L.Get("ChangeSpeedForm_same_speed_24ba04ad");
+        _infoLabel.Text = L.Format("ChangeSpeedForm_New_duration_0_Speed_x_1_0_2_Output__9a240055",FormatDuration(newDuration),_speedFactor,verb);
     }
 
     // ── Preview ─────────────────────────────────────────────────────────────────

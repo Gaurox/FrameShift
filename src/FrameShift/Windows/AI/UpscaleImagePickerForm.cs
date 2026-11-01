@@ -58,10 +58,10 @@ public class UpscaleImagePickerForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 500), new Size(400, 300));
-        string actionTitle = videoMode ? "Upscale Video" : "Upscale Image";
+        string actionTitle = videoMode ? L.Get("UpscaleImagePickerForm_Upscale_Video_a5fd36b8") : L.Get("UpscaleImagePickerForm_Upscale_Image_a28d14ef");
         string actionIcon = videoMode ? IconPaths.UpscaleVideoAiIcon : IconPaths.UpscaleImageAiIcon;
         FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", $"Source: {sourceLabel}",
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", L.Format("UpscaleImagePickerForm_Source_0_653ab450",sourceLabel),
             actionIcon, IconPaths.FrameShiftAiIcon, "AI");
         _modelSelector = new ComboBox { Name = "model", DropDownStyle = ComboBoxStyle.DropDownList, DisplayMember = "DisplayName" };
         foreach (var model in models) _modelSelector.Items.Add(model);
@@ -71,23 +71,23 @@ public class UpscaleImagePickerForm : Form
             if (_modelSelector.SelectedItem is UpscaleModelDefinition model) SelectModel(model.Id);
         };
         _modelSelector.SelectedItem = initial;
-        var modelSection = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("&Model", _modelSelector), _descriptionLabel));
+        var modelSection = FrameShiftUiFactory.CreateSection(L.Get("UpscaleImagePickerForm_Model_44c0cd42"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("UpscaleImagePickerForm_Model_a53a5cc6"), _modelSelector), _descriptionLabel));
         _scale2 = CreateScaleRadio("2x");
         _scale3 = CreateScaleRadio("3x");
         _scale4 = CreateScaleRadio("4x");
-        _scaleCustom = CreateScaleRadio("Custom size");
+        _scaleCustom = CreateScaleRadio(L.Get("UpscaleImagePickerForm_Custom_size_ea19e183"));
         _scale4.Checked = true;
         _scaleCustom.Enabled = _allowCustom;
         _widthBox = new TextBox { Name = "width", TextAlign = HorizontalAlignment.Right };
         _heightBox = new TextBox { Name = "height", TextAlign = HorizontalAlignment.Right };
-        var scaleSection = FrameShiftUiFactory.CreateSection("Scale", FrameShiftUiFactory.CreateVerticalStack(
+        var scaleSection = FrameShiftUiFactory.CreateSection(L.Get("UpscaleImagePickerForm_Scale_935c8b30"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_scale2, _scale3, _scale4, _scaleCustom),
-            FrameShiftUiFactory.CreateFieldRow("&Width", _widthBox, "px", 128),
-            FrameShiftUiFactory.CreateFieldRow("&Height", _heightBox, "px", 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("UpscaleImagePickerForm_Width_fa63f448"), _widthBox, "px", 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("UpscaleImagePickerForm_Height_b88589ff"), _heightBox, "px", 128),
             FrameShiftUiFactory.CreateWrappingLabel(_allowCustom
-                ? $"Aspect locked to the source. Maximum {_sourceWidth * 4} × {_sourceHeight * 4} px (x4)."
-                : $"Custom size needs a single {(videoMode ? "video" : "image")}; x2 / x3 / x4 still apply to every selected file.")));
+                ? L.Format("UpscaleImagePickerForm_Aspect_locked_to_the_source_Maximum__231a4253",_sourceWidth * 4,_sourceHeight * 4)
+                : L.Format("UpscaleImagePickerForm_Custom_size_needs_a_single_0_x2_x3_x_72071df1",(videoMode ? L.Get("UpscaleImagePickerForm_video_516f7651") : L.Get("UpscaleImagePickerForm_image_ad51d0c7"))))));
         _scale2.CheckedChanged += (_, _) => RefreshCustomEnabled();
         _scale3.CheckedChanged += (_, _) => RefreshCustomEnabled();
         _scale4.CheckedChanged += (_, _) => RefreshCustomEnabled();
@@ -95,15 +95,15 @@ public class UpscaleImagePickerForm : Form
         _widthBox.TextChanged += (_, _) => OnWidthTyped();
         _heightBox.TextChanged += (_, _) => OnHeightTyped();
         RefreshCustomEnabled();
-        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("UpscaleImagePickerForm_Cancel_998b9c48"), false);
         cancelButton.DialogResult = DialogResult.Cancel;
-        var upscaleButton = FrameShiftUiFactory.CreateMeasuredActionButton("Upscale", true);
+        var upscaleButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("UpscaleImagePickerForm_Upscale_17a396e6"), true);
         upscaleButton.DialogResult = DialogResult.OK;
         AcceptButton = upscaleButton;
         CancelButton = cancelButton;
         var status = FrameShiftUiFactory.CreateStatusMessage(videoMode
-            ? "The upscaled video keeps its frame rate and audio when supported. The AI model is downloaded once if it is not already installed."
-            : "The upscaled image is saved as a new PNG next to the source. The AI model is downloaded once if it is not already installed.");
+            ? L.Get("UpscaleImagePickerForm_The_upscaled_video_keeps_its_frame_r_c8990db8")
+            : L.Get("UpscaleImagePickerForm_The_upscaled_image_is_saved_as_a_new_6002fd91"));
         var root = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(modelSection, scaleSection),
             FrameShiftDialogLayout.CreateActions(cancelButton, upscaleButton), status);
         Controls.Add(root);
@@ -155,7 +155,7 @@ public class UpscaleImagePickerForm : Form
             return Path.GetFileName(inputPaths[0]);
         }
 
-        return $"{inputPaths.Count} selected files";
+        return L.Format("UpscaleImagePickerForm_0_selected_files_dd068a4b",inputPaths.Count);
     }
 
     private void RefreshCustomEnabled()

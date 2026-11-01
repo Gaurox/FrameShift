@@ -9,7 +9,7 @@ namespace FrameShift.Core.AI.RemoveNoise;
 internal static class DeepFilterNetModelDownloader
 {
     public const string ModelDisplayName = "DeepFilterNet3 (enc + erb_dec + df_dec + config)";
-    public const string ModelLicense     = "MIT or Apache 2.0 — Upstream dual license";
+    public static string ModelLicense => L.Get("DeepFilterNetModelDownloader_MIT_or_Apache_2_0_Upstream_dual_lice_199c07be");
     public const long   TotalSizeBytes   = 9_738_000L;
 
     private const string BaseUrl =
@@ -45,6 +45,6 @@ internal static class DeepFilterNetModelDownloader
                 Path.Combine(modelsDirectory, file.Name), file.Sha256, maximumBytes,
                 fileProgress, cancellationToken, "DeepFilterNetModelDownloader").ConfigureAwait(false);
         }
-        progress.Report(new(100, "All files downloaded."));
+        progress.Report(new(100, L.Get("DeepFilterNetModelDownloader_All_files_downloaded_982b1ffb")));
     }
 }

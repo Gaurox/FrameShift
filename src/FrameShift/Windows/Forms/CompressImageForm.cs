@@ -25,40 +25,40 @@ public sealed class CompressImageForm : Form
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(600, 600), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Compress Image");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Compress Image",
-            $"{Path.GetFileName(sourcePath)}    Source: {sourceExtension.TrimStart('.').ToUpperInvariant()}    Size: {FormatFileSize(sourceBytes)}",
+        FrameShiftWindowChrome.Apply(this, L.Get("CompressImageForm_FrameShift_Compress_Image_a80dce39"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CompressImageForm_FrameShift_Compress_Image_a80dce39"),
+            L.Format("CompressImageForm_0_Source_1_Size_2_9058ea3c",Path.GetFileName(sourcePath),sourceExtension.TrimStart('.').ToUpperInvariant(),FormatFileSize(sourceBytes)),
             IconPaths.CompressVideoIcon, IconPaths.AppIcon, "▶");
-        _radioHigh = new FrameShiftChoiceCard("High quality", "Preserves more detail") { Checked = true };
-        _radioBalanced = new FrameShiftChoiceCard("Balanced", "Quality and size") { Checked = false };
-        _radioSmall = new FrameShiftChoiceCard("Small file", "Strongest reduction");
+        _radioHigh = new FrameShiftChoiceCard(L.Get("CompressImageForm_High_quality_f9552ad2"), L.Get("CompressImageForm_Preserves_more_detail_2874f302")) { Checked = true };
+        _radioBalanced = new FrameShiftChoiceCard(L.Get("CompressImageForm_Balanced_b9f90b2b"), L.Get("CompressImageForm_Quality_and_size_6d6829ce")) { Checked = false };
+        _radioSmall = new FrameShiftChoiceCard(L.Get("CompressImageForm_Small_file_461660a8"), L.Get("CompressImageForm_Strongest_reduction_d4f68c80"));
         _radioHigh.CheckedChanged += (_, _) => { if (_radioHigh.Checked) _selectedProfileId = CompressImageSettings.ProfileHigh; };
         _radioBalanced.CheckedChanged += (_, _) => { if (_radioBalanced.Checked) _selectedProfileId = CompressImageSettings.ProfileBalanced; };
         _radioSmall.CheckedChanged += (_, _) => { if (_radioSmall.Checked) _selectedProfileId = CompressImageSettings.ProfileSmall; };
-        var profiles = FrameShiftUiFactory.CreateSection("Compression profile", FrameShiftUiFactory.CreateVerticalStack(
+        var profiles = FrameShiftUiFactory.CreateSection(L.Get("CompressImageForm_Compression_profile_a73f05f6"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_radioHigh, _radioBalanced, _radioSmall),
-            FrameShiftUiFactory.CreateWrappingLabel("PNG stays lossless. JPG and WEBP usually give the strongest file size reduction.")));
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("CompressImageForm_PNG_stays_lossless_JPG_and_WEBP_usua_10f52a5c"))));
         _formatCombo = new ComboBox { Name = "outputFormat", DropDownStyle = ComboBoxStyle.DropDownList };
         _formatCombo.Items.AddRange(["PNG", "JPG", "WEBP"]);
         _formatCombo.SelectedItem = CompressImageSettings.GetDefaultOutputFormat(sourceExtension).ToUpperInvariant();
-        _checkTarget = new CheckBox { Name = "useTarget", Text = "Target file size (optional)", AutoSize = true };
+        _checkTarget = new CheckBox { Name = "useTarget", Text = L.Get("CompressImageForm_Target_file_size_optional_48bbbfd1"), AutoSize = true };
         _textTarget = new TextBox { Name = "targetSize" };
         _unitSelector = new ComboBox { Name = "targetUnit", DropDownStyle = ComboBoxStyle.DropDownList };
         _unitSelector.Items.AddRange(["KB", "MB"]);
         _unitSelector.SelectedIndex = 0;
         _targetHint = FrameShiftUiFactory.CreateWrappingLabel("");
-        var output = FrameShiftUiFactory.CreateSection("Output", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("&Format", _formatCombo, logicalEditorWidth: 160),
-            _checkTarget, FrameShiftUiFactory.CreateFieldWithUnit("&Size", _textTarget, _unitSelector), _targetHint));
+        var output = FrameShiftUiFactory.CreateSection(L.Get("CompressImageForm_Output_8520bb37"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CompressImageForm_Format_d6a6bb9c"), _formatCombo, logicalEditorWidth: 160),
+            _checkTarget, FrameShiftUiFactory.CreateFieldWithUnit(L.Get("CompressImageForm_Size_bf30e36d"), _textTarget, _unitSelector), _targetHint));
         var content = FrameShiftUiFactory.CreateVerticalStack(profiles, output);
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CompressImageForm_Cancel_998b9c48"), false);
         cancel.Name = "cancelButton";
         cancel.DialogResult = DialogResult.Cancel;
-        var compress = FrameShiftUiFactory.CreateMeasuredActionButton("Compress", true);
+        var compress = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CompressImageForm_Compress_5830ffa3"), true);
         compress.Name = "compressButton";
         compress.DialogResult = DialogResult.OK;
         var layout = FrameShiftDialogLayout.Create(header, content, FrameShiftDialogLayout.CreateActions(cancel, compress),
-            FrameShiftUiFactory.CreateStatusMessage("Creates a new image next to the source. The original is preserved."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("CompressImageForm_Creates_a_new_image_next_to_the_sour_322e9d7c")));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         AcceptButton = compress;
@@ -83,7 +83,7 @@ public sealed class CompressImageForm : Form
                 if (!TryParseTargetBytes(out var parsedTargetBytes))
                 {
                     MessageBox.Show(
-                        "Target file size must be a positive number.",
+                        L.Get("CompressImageForm_Target_file_size_must_be_a_positive__028fded9"),
                         "FrameShift",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -108,7 +108,7 @@ public sealed class CompressImageForm : Form
         _checkTarget.Enabled = supportsTarget;
         _textTarget.ReadOnly = !_checkTarget.Checked;
         _unitSelector.Enabled = supportsTarget && _checkTarget.Checked;
-        _targetHint.Text = supportsTarget ? "Best-effort target" : "Only available for JPG/WEBP";
+        _targetHint.Text = supportsTarget ? L.Get("CompressImageForm_Best_effort_target_ebaf584f") : L.Get("CompressImageForm_Only_available_for_JPG_WEBP_17baa4d3");
     }
 
     private bool TryParseTargetBytes(out long targetBytes)

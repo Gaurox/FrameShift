@@ -64,21 +64,21 @@ public static class MediaInfoFormatter
 
         var vStream = data.VideoStreams.Count > 0 ? data.VideoStreams[0] : null;
 
-        lines.Add("General");
-        lines.Add(AddLine("Complete name", fileInfo.FullName));
-        lines.Add(AddLine("Format", formatName));
-        lines.Add(AddLine("Format profile", formatProfile));
-        lines.Add(AddLine("Codec ID", codecId));
-        lines.Add(AddLine("File size", fileSize));
-        lines.Add(AddLine("Duration", duration));
-        lines.Add(AddLine("Overall bit rate mode", "Variable"));
-        lines.Add(AddLine("Overall bit rate", globalBitrate));
+        lines.Add(L.Get("MediaInfoFormatter_General_94d95d2c"));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Complete_name_d8f3518e"), fileInfo.FullName));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), formatName));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_profile_13165b04"), formatProfile));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Codec_ID_56b50c8e"), codecId));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_File_size_9dbe4c6c"), fileSize));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Duration_90e29fac"), duration));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Overall_bit_rate_mode_321a6960"), L.Get("MediaInfoFormatter_Variable_dc047645")));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Overall_bit_rate_42cc0643"), globalBitrate));
 
         if (vStream != null)
-            lines.Add(AddLine("Frame rate", FormatFps(vStream.AvgFrameRate)));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Frame_rate_22210a15"), FormatFps(vStream.AvgFrameRate)));
 
-        lines.Add(AddLine("Encoded date", encodedDate));
-        lines.Add(AddLine("Tagged date", encodedDate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Encoded_date_18046f1e"), encodedDate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Tagged_date_14214e77"), encodedDate));
         lines.Add(string.Empty);
 
         if (vStream != null)
@@ -87,38 +87,38 @@ public static class MediaInfoFormatter
             var vFormatInfo = GetVideoFormatInfo(vStream.CodecName);
             var vBitrate = FormatBitrate(vStream.BitRate);
             var vFps = FormatFps(vStream.AvgFrameRate);
-            var width = vStream.Width.HasValue ? $"{vStream.Width.Value} pixels" : "-";
-            var height = vStream.Height.HasValue ? $"{vStream.Height.Value} pixels" : "-";
+            var width = vStream.Width.HasValue ? L.Format("MediaInfoFormatter_0_pixels_ee332521",vStream.Width.Value) : "-";
+            var height = vStream.Height.HasValue ? L.Format("MediaInfoFormatter_0_pixels_ee332521",vStream.Height.Value) : "-";
             var chroma = GetChroma(vStream.PixFmt);
             var bitDepth = GetBitDepth(vStream.BitsPerRawSample, vStream.PixFmt);
             var codecTag = vStream.CodecTagString ?? "-";
             var vEncodedDate = vStream.TagCreationTime ?? "-";
 
-            lines.Add("Video");
+            lines.Add(L.Get("MediaInfoFormatter_Video_dc664e59"));
             lines.Add(AddLine("ID", vStream.Index.ToString()));
-            lines.Add(AddLine("Format", vFormat));
-            lines.Add(AddLine("Format/Info", vFormatInfo));
-            lines.Add(AddLine("Format profile", vStream.Profile ?? "-"));
-            lines.Add(AddLine("Codec ID", codecTag));
-            lines.Add(AddLine("Codec ID/Info", vFormatInfo));
-            lines.Add(AddLine("Duration", duration));
-            lines.Add(AddLine("Bit rate", vBitrate));
-            lines.Add(AddLine("Width", width));
-            lines.Add(AddLine("Height", height));
-            lines.Add(AddLine("Display aspect ratio", vStream.DisplayAspectRatio ?? "-"));
-            lines.Add(AddLine("Frame rate mode", "Constant"));
-            lines.Add(AddLine("Frame rate", vFps));
-            lines.Add(AddLine("Color space", vStream.PixFmt ?? "-"));
-            lines.Add(AddLine("Chroma subsampling", chroma));
-            lines.Add(AddLine("Bit depth", bitDepth));
-            lines.Add(AddLine("Bits/(Pixel*Frame)", "-"));
-            lines.Add(AddLine("Stream size", "-"));
-            lines.Add(AddLine("Writing library", vStream.TagEncoder ?? "-"));
-            lines.Add(AddLine("Language", vStream.TagLanguage ?? "-"));
-            lines.Add(AddLine("Encoded date", vEncodedDate));
-            lines.Add(AddLine("Tagged date", vEncodedDate));
-            lines.Add(AddLine("Color range", vStream.ColorRange ?? "-"));
-            lines.Add(AddLine("Codec configuration box", codecTag));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), vFormat));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_Info_9fbd409b"), vFormatInfo));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_profile_13165b04"), vStream.Profile ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Codec_ID_56b50c8e"), codecTag));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Codec_ID_Info_e42e7e8e"), vFormatInfo));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Duration_90e29fac"), duration));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_rate_b6ac4cbd"), vBitrate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Width_64403ac5"), width));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Height_1badde1a"), height));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Display_aspect_ratio_6dadf1e8"), vStream.DisplayAspectRatio ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Frame_rate_mode_ff9625f6"), L.Get("MediaInfoFormatter_Constant_bd9c6da1")));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Frame_rate_22210a15"), vFps));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Color_space_000000cd"), vStream.PixFmt ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Chroma_subsampling_4f504116"), chroma));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_depth_2f9035bd"), bitDepth));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Bits_Pixel_Frame_35be08cb"), "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Stream_size_3cd8e56c"), "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Writing_library_a327ba47"), vStream.TagEncoder ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Language_1200fa47"), vStream.TagLanguage ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Encoded_date_18046f1e"), vEncodedDate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Tagged_date_14214e77"), vEncodedDate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Color_range_186b3196"), vStream.ColorRange ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Codec_configuration_box_0b32b0df"), codecTag));
             lines.Add(string.Empty);
         }
 
@@ -136,24 +136,24 @@ public static class MediaInfoFormatter
             var codecTagA = aStream.CodecTagString ?? "-";
             var aEncodedDate = aStream.TagCreationTime ?? "-";
 
-            lines.Add("Audio");
+            lines.Add(L.Get("MediaInfoFormatter_Audio_2fd1cbe8"));
             lines.Add(AddLine("ID", aStream.Index.ToString()));
-            lines.Add(AddLine("Format", aFormat));
-            lines.Add(AddLine("Format/Info", aFormatInfo));
-            lines.Add(AddLine("Codec ID", codecTagA));
-            lines.Add(AddLine("Duration", duration));
-            lines.Add(AddLine("Bit rate mode", "Variable"));
-            lines.Add(AddLine("Bit rate", aBitrate));
-            lines.Add(AddLine("Maximum bit rate", "-"));
-            lines.Add(AddLine("Channel(s)", channels));
-            lines.Add(AddLine("Channel layout", channelLayout));
-            lines.Add(AddLine("Sampling rate", sampleRate));
-            lines.Add(AddLine("Frame rate", frameRate));
-            lines.Add(AddLine("Compression mode", GetCompressionMode(aStream.CodecName)));
-            lines.Add(AddLine("Stream size", "-"));
-            lines.Add(AddLine("Language", aStream.TagLanguage ?? "-"));
-            lines.Add(AddLine("Encoded date", aEncodedDate));
-            lines.Add(AddLine("Tagged date", aEncodedDate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), aFormat));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_Info_9fbd409b"), aFormatInfo));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Codec_ID_56b50c8e"), codecTagA));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Duration_90e29fac"), duration));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_rate_mode_ba8cdd87"), L.Get("MediaInfoFormatter_Variable_dc047645")));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_rate_b6ac4cbd"), aBitrate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Maximum_bit_rate_63d1295b"), "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Channel_s_1a4904be"), channels));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Channel_layout_dc73f627"), channelLayout));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Sampling_rate_4d469671"), sampleRate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Frame_rate_22210a15"), frameRate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Compression_mode_fbf48659"), GetCompressionMode(aStream.CodecName)));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Stream_size_3cd8e56c"), "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Language_1200fa47"), aStream.TagLanguage ?? "-"));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Encoded_date_18046f1e"), aEncodedDate));
+            lines.Add(AddLine(L.Get("MediaInfoFormatter_Tagged_date_14214e77"), aEncodedDate));
         }
 
         return string.Join("\r\n", lines);
@@ -201,27 +201,27 @@ public static class MediaInfoFormatter
             }
         }
 
-        lines.Add("General");
-        lines.Add(AddLine("Complete name", fileInfo.FullName));
-        lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("File size", fileSize));
-        lines.Add(AddLine("Duration", duration));
-        lines.Add(AddLine("Overall bit rate mode", "Variable"));
-        lines.Add(AddLine("Overall bit rate", globalBitrate));
-        lines.Add(AddLine("Writing library", library));
+        lines.Add(L.Get("MediaInfoFormatter_General_94d95d2c"));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Complete_name_d8f3518e"), fileInfo.FullName));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), format));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_File_size_9dbe4c6c"), fileSize));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Duration_90e29fac"), duration));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Overall_bit_rate_mode_321a6960"), L.Get("MediaInfoFormatter_Variable_dc047645")));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Overall_bit_rate_42cc0643"), globalBitrate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Writing_library_a327ba47"), library));
         lines.Add(string.Empty);
-        lines.Add("Audio");
-        lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Format version", version));
-        lines.Add(AddLine("Format profile", profile));
-        lines.Add(AddLine("Duration", duration));
-        lines.Add(AddLine("Bit rate mode", "Variable"));
-        lines.Add(AddLine("Bit rate", bitrate));
-        lines.Add(AddLine("Channel(s)", channels));
-        lines.Add(AddLine("Sampling rate", sampleRate));
-        lines.Add(AddLine("Frame rate", frameRate));
-        lines.Add(AddLine("Compression mode", compression));
-        lines.Add(AddLine("Stream size", $"{fileSize} (100%)"));
+        lines.Add(L.Get("MediaInfoFormatter_Audio_2fd1cbe8"));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), format));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_version_eacb86ed"), version));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_profile_13165b04"), profile));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Duration_90e29fac"), duration));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_rate_mode_ba8cdd87"), L.Get("MediaInfoFormatter_Variable_dc047645")));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_rate_b6ac4cbd"), bitrate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Channel_s_1a4904be"), channels));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Sampling_rate_4d469671"), sampleRate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Frame_rate_22210a15"), frameRate));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Compression_mode_fbf48659"), compression));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Stream_size_3cd8e56c"), $"{fileSize} (100%)"));
 
         return string.Join("\r\n", lines);
     }
@@ -242,10 +242,10 @@ public static class MediaInfoFormatter
         if (vStream != null)
         {
             if (vStream.Width.HasValue)
-                width = $"{vStream.Width.Value} pixels";
+                width = L.Format("MediaInfoFormatter_0_pixels_ee332521",vStream.Width.Value);
 
             if (vStream.Height.HasValue)
-                height = $"{vStream.Height.Value} pixels";
+                height = L.Format("MediaInfoFormatter_0_pixels_ee332521",vStream.Height.Value);
 
             if (!string.IsNullOrWhiteSpace(vStream.ColorSpace))
                 colorSpace = vStream.ColorSpace.ToUpperInvariant();
@@ -255,20 +255,20 @@ public static class MediaInfoFormatter
             bitDepth = GetBitDepth(vStream.BitsPerRawSample, vStream.PixFmt);
         }
 
-        lines.Add("General");
-        lines.Add(AddLine("Complete name", fileInfo.FullName));
-        lines.Add(AddLine("File name", fileInfo.Name));
-        lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("File size", fileSize));
+        lines.Add(L.Get("MediaInfoFormatter_General_94d95d2c"));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Complete_name_d8f3518e"), fileInfo.FullName));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_File_name_beb6b35b"), fileInfo.Name));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), format));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_File_size_9dbe4c6c"), fileSize));
         lines.Add(string.Empty);
-        lines.Add("Image");
-        lines.Add(AddLine("Format", format));
-        lines.Add(AddLine("Width", width));
-        lines.Add(AddLine("Height", height));
-        lines.Add(AddLine("Color space", colorSpace));
-        lines.Add(AddLine("Bit depth", bitDepth));
-        lines.Add(AddLine("Compression mode", compression));
-        lines.Add(AddLine("Stream size", $"{fileSize} (100%)"));
+        lines.Add(L.Get("MediaInfoFormatter_Image_c24ad07a"));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Format_bbaaeb1a"), format));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Width_64403ac5"), width));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Height_1badde1a"), height));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Color_space_000000cd"), colorSpace));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Bit_depth_2f9035bd"), bitDepth));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Compression_mode_fbf48659"), compression));
+        lines.Add(AddLine(L.Get("MediaInfoFormatter_Stream_size_3cd8e56c"), $"{fileSize} (100%)"));
 
         return string.Join("\r\n", lines);
     }
@@ -281,7 +281,7 @@ public static class MediaInfoFormatter
         if (bytes >= GiB) return $"{(double)bytes / GiB:N2} GiB";
         if (bytes >= MiB) return $"{(double)bytes / MiB:N0} MiB";
         if (bytes >= KiB) return $"{(double)bytes / KiB:N0} KiB";
-        return $"{bytes} bytes";
+        return L.Format("MediaInfoFormatter_0_bytes_11ccaf42",bytes);
     }
 
     private static string FormatDuration(string? seconds)
@@ -340,7 +340,7 @@ public static class MediaInfoFormatter
     private static string FormatChannels(string? channelsStr)
     {
         if (!int.TryParse(channelsStr, out var ch)) return "-";
-        return ch == 1 ? "1 channel" : $"{ch} channels";
+        return ch == 1 ? L.Get("MediaInfoFormatter_1_channel_d203407b") : L.Format("MediaInfoFormatter_0_channels_6975898a",ch);
     }
 
     private static string AddLine(string label, string? value)
@@ -412,10 +412,10 @@ public static class MediaInfoFormatter
         if (string.IsNullOrWhiteSpace(codecName)) return "-";
         return codecName.ToLowerInvariant() switch
         {
-            "flac" or "pcm_s16le" or "wav" or "png" => "Lossless",
-            "bmp" => "Uncompressed",
-            "tiff" => "Variable",
-            _ => "Lossy"
+            "flac" or "pcm_s16le" or "wav" or "png" => L.Get("MediaInfoFormatter_Lossless_2bdc3378"),
+            "bmp" => L.Get("MediaInfoFormatter_Uncompressed_75903782"),
+            "tiff" => L.Get("MediaInfoFormatter_Variable_dc047645"),
+            _ => L.Get("MediaInfoFormatter_Lossy_8c2e1cee")
         };
     }
 
@@ -431,13 +431,13 @@ public static class MediaInfoFormatter
     private static string GetBitDepth(string? bitsPerRawSample, string? pixFmt)
     {
         if (!string.IsNullOrWhiteSpace(bitsPerRawSample) && bitsPerRawSample != "0")
-            return $"{bitsPerRawSample} bits";
+            return L.Format("MediaInfoFormatter_0_bits_27c182d5",bitsPerRawSample);
 
         if (!string.IsNullOrWhiteSpace(pixFmt))
         {
-            if (pixFmt.Contains("10")) return "10 bits";
+            if (pixFmt.Contains("10")) return L.Get("MediaInfoFormatter_10_bits_de3ce0c5");
             if (pixFmt.Contains("yuv") || pixFmt.Contains("rgb") || pixFmt.Contains("gray"))
-                return "8 bits";
+                return L.Get("MediaInfoFormatter_8_bits_1852f995");
         }
 
         return "-";

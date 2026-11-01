@@ -55,7 +55,7 @@ public static class JoinVideosPlanner
         if (mode == JoinVideosMode.Copy)
         {
             return directCopyCompatible
-                ? CopyPlan(first, "Forced copy mode: all stream signatures match.")
+                ? CopyPlan(first, L.Get("JoinVideosPlanner_Forced_copy_mode_all_stream_signatur_53d8041f"))
                 : Unsupported(MediaActionMessages.JoinVideosCopyNotSafe());
         }
 
@@ -63,12 +63,12 @@ public static class JoinVideosPlanner
         {
             return containsHdr
                 ? Unsupported(MediaActionMessages.JoinVideosHdrNormalizationNotSupported())
-                : NormalizePlan(width, height, first.Video!.FrameRate!, probes.Any(probe => probe.HasAudio), "Forced normalize mode.");
+                : NormalizePlan(width, height, first.Video!.FrameRate!, probes.Any(probe => probe.HasAudio), L.Get("JoinVideosPlanner_Forced_normalize_mode_3bb98dae"));
         }
 
         if (directCopyCompatible)
         {
-            return CopyPlan(first, "All stream signatures match; joining without re-encoding.");
+            return CopyPlan(first, L.Get("JoinVideosPlanner_All_stream_signatures_match_joining__4a4a26d6"));
         }
 
         if (mixedHdr)
@@ -86,7 +86,7 @@ public static class JoinVideosPlanner
             height,
             first.Video!.FrameRate!,
             probes.Any(probe => probe.HasAudio),
-            "The clips differ; normalizing to SDR H.264/AAC MP4.");
+            L.Get("JoinVideosPlanner_The_clips_differ_normalizing_to_SDR__b4c6ada4"));
     }
 
     public static bool AreDirectCopyCompatible(IReadOnlyList<JoinVideoProbeResult> probes)

@@ -24,7 +24,7 @@ public static class ImageCropSupport
 
     public static string GetSupportedExtensionsText()
     {
-        return ".png, .jpg, .jpeg, .webp and .bmp";
+        return L.Get("ImageCropSupport_png_jpg_jpeg_webp_and_bmp_394c0690");
     }
 
     public static IReadOnlyList<string> GetOutputArguments(string extension)
@@ -35,7 +35,7 @@ public static class ImageCropSupport
             ".webp" => ["-c:v", "libwebp", "-quality", "90", "-compression_level", "4"],
             ".png" => ["-compression_level", "6"],
             ".bmp" => Array.Empty<string>(),
-            _ => throw new NotSupportedException($"Unsupported image format '{extension}'.")
+            _ => throw new NotSupportedException(L.Format("ImageCropSupport_Unsupported_image_format_0_d752e739",extension))
         };
     }
 
@@ -57,6 +57,6 @@ public static class ImageCropSupport
             return MediaActionMessages.FileCorrupted();
         }
 
-        return ConversionActionHelper.GetFriendlyExceptionMessage(exception, MediaActionMessages.Failed("Crop Image"));
+        return ConversionActionHelper.GetFriendlyExceptionMessage(exception, MediaActionMessages.Failed(L.Get("ImageCropSupport_Crop_Image_9aca1944")));
     }
 }

@@ -83,14 +83,14 @@ public sealed class MainForm : Form
 
         var header = FrameShiftUiFactory.CreateHeader("FrameShift", $"v{Application.ProductVersion}",
             IconPaths.AppIcon, IconPaths.AppIcon, "F");
-        var settings = FrameShiftUiFactory.CreateMeasuredActionButton("Settings", false);
+        var settings = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("MainForm_Settings_8d4d0d85"), false);
         settings.Click += (_, _) => { using var dialog = new SettingsForm(); dialog.ShowDialog(this); };
-        var close = FrameShiftUiFactory.CreateMeasuredActionButton("Close", true);
+        var close = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("MainForm_Close_6cf4a777"), true);
         close.Click += (_, _) => Close();
         CancelButton = close;
         Controls.Add(FrameShiftDialogLayout.CreateShell(header, body,
             FrameShiftDialogLayout.CreateActions(settings, close),
-            FrameShiftUiFactory.CreateStatusMessage("Outputs are saved next to each source file · nothing is uploaded")));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("MainForm_Outputs_are_saved_next_to_each_sourc_097da8ad"))));
         _split.BringToFront();
         _split.SizeChanged += (_, _) => SetSplitterDistance();
         _split.DpiChangedAfterParent += (_, _) => SetSplitterDistance();
@@ -164,7 +164,7 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Could not start the action:\n{ex.Message}",
+                L.Format("MainForm_Could_not_start_the_action_0_d8a4b165",ex.Message),
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -188,11 +188,11 @@ public sealed class MainForm : Form
 
     private Panel BuildEmptyState()
     {
-        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse…", true);
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("MainForm_Browse_2a9dd9af"), true);
         browse.Click += (_, _) => _queuePanel.PromptForFiles();
-        return FrameShiftDialogLayout.CreateScrollBody(FrameShiftUiFactory.CreateSection("Drop files here",
+        return FrameShiftDialogLayout.CreateScrollBody(FrameShiftUiFactory.CreateSection(L.Get("MainForm_Drop_files_here_6bb980c3"),
             FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateWrappingLabel("Add videos, audio, images or PDFs to see the available actions."),
+                FrameShiftUiFactory.CreateWrappingLabel(L.Get("MainForm_Add_videos_audio_images_or_PDFs_to_s_925e7d26")),
                 FrameShiftUiFactory.CreateChoiceRow(browse))));
     }
 }

@@ -17,7 +17,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Resize Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersResizeCompress_Resize_Video_0ffcaad3")));
             return false;
         }
 
@@ -75,7 +75,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Resize Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersResizeCompress_Resize_Video_0ffcaad3"))));
             return false;
         }
     }
@@ -84,7 +84,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Compress Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersResizeCompress_Compress_Video_5667dc11")));
             return false;
         }
 
@@ -147,7 +147,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Compress Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersResizeCompress_Compress_Video_5667dc11"))));
             return false;
         }
     }
@@ -156,7 +156,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Compress Audio"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersResizeCompress_Compress_Audio_7810ba2d")));
             return false;
         }
 
@@ -216,7 +216,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Compress Audio")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersResizeCompress_Compress_Audio_7810ba2d"))));
             return false;
         }
     }
@@ -225,7 +225,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Compress Image"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersResizeCompress_Compress_Image_6d46ce81")));
             return false;
         }
 
@@ -267,7 +267,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Compress Image")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersResizeCompress_Compress_Image_6d46ce81"))));
             return false;
         }
     }
@@ -276,7 +276,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Resize Image"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersResizeCompress_Resize_Image_86c18598")));
             return false;
         }
 
@@ -334,7 +334,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Resize Image")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersResizeCompress_Resize_Image_86c18598"))));
             return false;
         }
     }

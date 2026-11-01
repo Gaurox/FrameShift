@@ -37,30 +37,30 @@ public sealed class RotateFlipImageForm : Form
         _ffmpegRunner = ffmpegRunner;
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(900, 740), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Rotate / Flip Image");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Rotate / Flip Image", $"Source: {Path.GetFileName(inputPath)}",
+        FrameShiftWindowChrome.Apply(this, L.Get("RotateFlipImageForm_FrameShift_Rotate_Flip_Image_ba37655a"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("RotateFlipImageForm_FrameShift_Rotate_Flip_Image_ba37655a"), L.Format("RotateFlipImageForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             IconPaths.ContextMenuIco("rotate-video-image-icon.ico"), IconPaths.AppIcon, "↻");
         _previewPanel = new Panel { Name = "preview", Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32) };
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.Resize += (_, _) => _previewPanel.Invalidate();
-        _rotateCcwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↶ Rotate left", false);
-        _rotateCwButton = FrameShiftUiFactory.CreateMeasuredActionButton("↷ Rotate right", false);
-        _flipHButton = FrameShiftUiFactory.CreateMeasuredActionButton("↔ Flip horizontal", false);
-        _flipVButton = FrameShiftUiFactory.CreateMeasuredActionButton("↕ Flip vertical", false);
+        _rotateCcwButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Rotate_left_9e20293b"), false);
+        _rotateCwButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Rotate_right_f316ebc1"), false);
+        _flipHButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Flip_horizontal_014031ed"), false);
+        _flipVButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Flip_vertical_e9b61839"), false);
         _rotateCcwButton.Click += (_, _) => ApplyRotate(false);
         _rotateCwButton.Click += (_, _) => ApplyRotate(true);
         _flipHButton.Click += (_, _) => ApplyFlipH();
         _flipVButton.Click += (_, _) => ApplyFlipV();
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset", false);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Reset_24745fdf"), false);
         reset.Click += (_, _) => ResetTransforms();
-        _summaryLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading preview…");
-        var transforms = FrameShiftUiFactory.CreateSection("Transform", FrameShiftUiFactory.CreateVerticalStack(
+        _summaryLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("RotateFlipImageForm_Loading_preview_58455073"));
+        var transforms = FrameShiftUiFactory.CreateSection(L.Get("RotateFlipImageForm_Transform_2e7cc3f0"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_rotateCcwButton, _rotateCwButton, _flipHButton, _flipVButton, reset), _summaryLabel));
         var options = transforms;
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        _applyButton = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        _applyButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RotateFlipImageForm_Apply_3d57c12e"), true);
         _applyButton.Enabled = false;
         _applyButton.Click += (_, _) =>
         {
@@ -71,7 +71,7 @@ public sealed class RotateFlipImageForm : Form
         AcceptButton = _applyButton;
         CancelButton = cancel;
         Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header,
-            FrameShiftUiFactory.CreateSection("Preview", _previewPanel, fill: true), options,
+            FrameShiftUiFactory.CreateSection(L.Get("RotateFlipImageForm_Preview_68dd3b5d"), _previewPanel, fill: true), options,
             FrameShiftDialogLayout.CreateActions(cancel, _applyButton)));
         Shown += async (_, _) => await InitializePreviewAsync();
         FormClosing += (_, _) => StopPreview();
@@ -175,10 +175,10 @@ public sealed class RotateFlipImageForm : Form
     {
         // Rotation buttons perform a step; only mirrors have an on/off state.
         // Keep the standard palette and express the persistent state with a check mark.
-        _flipHButton.Text = _flipH ? "↔ Flip horizontal ✓" : "↔ Flip horizontal";
-        _flipVButton.Text = _flipV ? "↕ Flip vertical ✓" : "↕ Flip vertical";
-        _flipHButton.AccessibleDescription = _flipH ? "Horizontal mirror enabled" : "Horizontal mirror disabled";
-        _flipVButton.AccessibleDescription = _flipV ? "Vertical mirror enabled" : "Vertical mirror disabled";
+        _flipHButton.Text = _flipH ? L.Get("RotateFlipImageForm_Flip_horizontal_8f4b97ca") : L.Get("RotateFlipImageForm_Flip_horizontal_014031ed");
+        _flipVButton.Text = _flipV ? L.Get("RotateFlipImageForm_Flip_vertical_86e4301e") : L.Get("RotateFlipImageForm_Flip_vertical_e9b61839");
+        _flipHButton.AccessibleDescription = _flipH ? L.Get("RotateFlipImageForm_Horizontal_mirror_enabled_df2d72b4") : L.Get("RotateFlipImageForm_Horizontal_mirror_disabled_39108e4a");
+        _flipVButton.AccessibleDescription = _flipV ? L.Get("RotateFlipImageForm_Vertical_mirror_enabled_ca1417e6") : L.Get("RotateFlipImageForm_Vertical_mirror_disabled_11bc54fb");
     }
 
     private static Bitmap BuildTransformedBitmap(Bitmap source, RotateFlipSettings settings)

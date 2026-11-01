@@ -39,12 +39,12 @@ public sealed class ActionQueueRunner
             var queueItemId = CreateQueueItemId(index);
             if (reporter?.IsQueueItemRemovalRequested(request.InputPath, queueItemId) == true)
             {
-                results.Add(new ActionExecutionResult(false, "Removed from queue.", null, true, CancellationScope.CurrentItem));
+                results.Add(new ActionExecutionResult(false, L.Get("ActionQueueRunner_Removed_from_queue_ddc111da"), null, true, CancellationScope.CurrentItem));
                 continue;
             }
 
-            reporter?.ReportQueueItem(request.InputPath, "processing", $"Processing {index + 1}/{requests.Count}.");
-            reporter?.ReportProgress(0, request.InputPath, currentAction, "Starting.");
+            reporter?.ReportQueueItem(request.InputPath, "processing", L.Format("ActionQueueRunner_Processing_0_1_84b673f6",index + 1,requests.Count));
+            reporter?.ReportProgress(0, request.InputPath, currentAction, L.Get("ActionQueueRunner_Starting_1a300c49"));
 
             var result = await action.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
             results.Add(result);

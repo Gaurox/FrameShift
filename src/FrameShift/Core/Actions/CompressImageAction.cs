@@ -24,8 +24,8 @@ public sealed class CompressImageAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "compress-image",
-        "Compress Image",
-        "Compresses an image using a preset profile or a target file size.");
+        L.Get("CompressImageAction_Compress_Image_6d46ce81"),
+        L.Get("CompressImageAction_Compresses_an_image_using_a_preset_p_15b32f8b"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -60,7 +60,7 @@ public sealed class CompressImageAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing image compression on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("CompressImageAction_Preparing_image_compression_on_CPU_400c5690"));
 
         try
         {
@@ -74,7 +74,7 @@ public sealed class CompressImageAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CompressImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -108,7 +108,7 @@ public sealed class CompressImageAction : IFrameShiftAction
         if (result.Canceled)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CompressImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
         }
 
@@ -206,7 +206,7 @@ public sealed class CompressImageAction : IFrameShiftAction
         if (result.Canceled)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CompressImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
         }
 
@@ -294,7 +294,7 @@ public sealed class CompressImageAction : IFrameShiftAction
             "png" => profileId == CompressImageSettings.ProfileSmall
                 ? ["-c:v", "png", "-compression_level", "9", "-vf", "scale=iw:ih:flags=lanczos,format=rgb24"]
                 : ["-c:v", "png", "-compression_level", "9"],
-            _ => throw new NotSupportedException($"Unsupported image format '{outputFormat}' for compression.")
+            _ => throw new NotSupportedException(L.Format("CompressImageAction_Unsupported_image_format_0_for_compr_baded569",outputFormat))
         };
     }
 
@@ -304,7 +304,7 @@ public sealed class CompressImageAction : IFrameShiftAction
         {
             "jpg" => ["-q:v", quality.ToString(System.Globalization.CultureInfo.InvariantCulture)],
             "webp" => ["-c:v", "libwebp", "-quality", quality.ToString(System.Globalization.CultureInfo.InvariantCulture), "-compression_level", "6"],
-            _ => throw new NotSupportedException($"Quality-based encoding is not supported for '{outputFormat}'.")
+            _ => throw new NotSupportedException(L.Format("CompressImageAction_Quality_based_encoding_is_not_suppor_1a4cfe05",outputFormat))
         };
     }
 

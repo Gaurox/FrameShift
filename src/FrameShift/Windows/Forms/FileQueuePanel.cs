@@ -19,8 +19,7 @@ namespace FrameShift.Windows.Forms;
 /// </summary>
 public sealed class FileQueuePanel : UserControl
 {
-    private const string MediaFileFilter =
-        "Media and PDF files|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v;*.mp3;*.wav;*.wave;*.flac;*.m4a;*.ogg;*.aac;*.wma;*.png;*.jpg;*.jpeg;*.webp;*.bmp;*.pdf|All files|*.*";
+    private static string MediaFileFilter => L.Get("FileQueuePanel_Media_and_PDF_files_mp4_mkv_avi_mov__ec0939ed");
 
 
     private readonly FileQueueModel _model = new();
@@ -59,7 +58,7 @@ public sealed class FileQueuePanel : UserControl
 
         _importStatus = FrameShiftUiFactory.CreateWrappingLabel("");
         var header = BuildHeader(out _countLabel, out _cancelImportButton);
-        var hint = FrameShiftUiFactory.CreateWrappingLabel("Drop files or folders · Immediate files only · Delete removes selected files");
+        var hint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("FileQueuePanel_08522e591e"));
         var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -190,7 +189,7 @@ public sealed class FileQueuePanel : UserControl
         _imports.Add(cancellation);
         _showImportStatus = true;
         _cancelImportButton.Visible = true;
-        _importStatus.Text = "Adding files...";
+        _importStatus.Text = L.Get("FileQueuePanel_86f778ab17");
         ImportStateChanged?.Invoke(this, EventArgs.Empty);
         return _pathImportTask = ImportPathsAsync(_pathImportTask, inputs, cancellation);
     }
@@ -217,20 +216,20 @@ public sealed class FileQueuePanel : UserControl
                 added += AddFilesCore(batch, validated: true);
                 token.ThrowIfCancellationRequested();
                 if (_disposing || IsDisposed) break;
-                if (_showImportStatus) _importStatus.Text = $"Adding files... {added} added";
+                if (_showImportStatus) _importStatus.Text = L.Format("FileQueuePanel_fa57333112", added);
                 await Task.Yield();
             }
             if (!_disposing && !IsDisposed && _showImportStatus)
-                _importStatus.Text = errors == 0 ? $"{added} files added." : $"{added} files added. Some paths could not be read; see the log.";
+                _importStatus.Text = errors == 0 ? L.Format("FileQueuePanel_f43b8d1a2e", added) : L.Format("FileQueuePanel_bb68476df2", added);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = "Adding files canceled.";
+            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = L.Get("FileQueuePanel_312bad7d4c");
         }
         catch (Exception ex)
         {
             AppLogger.LogStatic($"File queue import failed: {ex}");
-            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = "Could not add all files. See the log.";
+            if (!_disposing && !IsDisposed && _showImportStatus) _importStatus.Text = L.Get("FileQueuePanel_2c8244ffbf");
         }
         finally
         {
@@ -311,7 +310,7 @@ public sealed class FileQueuePanel : UserControl
         var rowIndex = _grid.Rows.Add(KindLabel(kind), Path.GetFileName(fullPath), "×");
         _grid.Rows[rowIndex].Tag = fullPath;
         _grid.Rows[rowIndex].Cells["FileName"].ToolTipText = fullPath;
-        _grid.Rows[rowIndex].Cells["Remove"].ToolTipText = $"Remove {Path.GetFileName(fullPath)}";
+        _grid.Rows[rowIndex].Cells["Remove"].ToolTipText = L.Format("FileQueuePanel_Remove_0_4542edae",Path.GetFileName(fullPath));
     }
 
     private void OnCellContentClick(object? sender, DataGridViewCellEventArgs e)
@@ -393,10 +392,10 @@ public sealed class FileQueuePanel : UserControl
     {
         if (total == 0)
         {
-            return "No files yet";
+            return L.Get("FileQueuePanel_No_files_yet_b36d2139");
         }
 
-        var head = total == 1 ? "1 file" : $"{total} files";
+        var head = total == 1 ? L.Get("FileQueuePanel_1_file_d246c800") : L.Format("FileQueuePanel_0_files_37ea79ba",total);
 
         var parts = new List<string>();
         foreach (var kind in new[] { MediaFamily.Video, MediaFamily.Audio, MediaFamily.Image, MediaFamily.Document, MediaFamily.Other })
@@ -412,19 +411,19 @@ public sealed class FileQueuePanel : UserControl
 
     private static string KindLabel(MediaFamily kind) => kind switch
     {
-        MediaFamily.Video => "video",
-        MediaFamily.Audio => "audio",
-        MediaFamily.Image => "image",
+        MediaFamily.Video => L.Get("FileQueuePanel_video_516f7651"),
+        MediaFamily.Audio => L.Get("FileQueuePanel_audio_b5dc8787"),
+        MediaFamily.Image => L.Get("FileQueuePanel_image_ad51d0c7"),
         MediaFamily.Document => "PDF",
-        _ => "other"
+        _ => L.Get("FileQueuePanel_other_2990c880")
     };
 
     private Panel BuildHeader(out Label countLabel, out Button cancelImport)
     {
-        countLabel = FrameShiftUiFactory.CreateWrappingLabel("No files yet");
-        var add = FrameShiftUiFactory.CreateMeasuredActionButton("Add…", false);
-        var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear", false);
-        cancelImport = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel add", false);
+        countLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("FileQueuePanel_No_files_yet_b36d2139"));
+        var add = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("FileQueuePanel_Add_1dac7132"), false);
+        var clear = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("FileQueuePanel_Clear_684270d6"), false);
+        cancelImport = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("FileQueuePanel_dd591e61a8"), false);
         cancelImport.Visible = false;
         cancelImport.Click += (_, _) => CancelPathImports();
         add.Click += (_, _) => BrowseForFiles();
@@ -435,7 +434,7 @@ public sealed class FileQueuePanel : UserControl
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Add files",
+            Title = L.Get("FileQueuePanel_Add_files_bcabb786"),
             Multiselect = true,
             Filter = MediaFileFilter,
             CheckFileExists = true
@@ -453,8 +452,8 @@ public sealed class FileQueuePanel : UserControl
         {
             Dock = DockStyle.Fill,
             AllowUserToAddRows = false,
-            AccessibleName = "Files queue",
-            AccessibleDescription = "Select files with the arrow keys. Delete removes selected files from the queue.",
+            AccessibleName = L.Get("FileQueuePanel_Files_queue_97931439"),
+            AccessibleDescription = L.Get("FileQueuePanel_Select_files_with_the_arrow_keys_Del_b76661ea"),
             AllowUserToDeleteRows = false,
             AllowUserToResizeRows = false,
             AllowUserToResizeColumns = false,
@@ -495,7 +494,7 @@ public sealed class FileQueuePanel : UserControl
         grid.Columns.Add(new DataGridViewButtonColumn
         {
             Name = "Remove",
-            HeaderText = "Remove file",
+            HeaderText = L.Get("FileQueuePanel_Remove_file_c0fe806a"),
             CellTemplate = new FrameShift.Windows.Controls.FrameShiftGridButtonCell(),
             Width = 40,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None,

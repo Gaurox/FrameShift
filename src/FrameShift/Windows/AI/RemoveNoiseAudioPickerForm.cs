@@ -50,18 +50,18 @@ public sealed class RemoveNoiseAudioPickerForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 440), new Size(400, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Noise (Audio)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        FrameShiftWindowChrome.Apply(this, L.Get("RemoveNoiseAudioPickerForm_FrameShift_Remove_Noise_Audio_bc28079f"), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         var header = FrameShiftUiFactory.CreateHeader(
-            "FrameShift - Remove Noise (Audio)", $"Source: {sourceLabel}",
+            L.Get("RemoveNoiseAudioPickerForm_FrameShift_Remove_Noise_Audio_bc28079f"), L.Format("RemoveNoiseAudioPickerForm_Source_0_653ab450",sourceLabel),
             IconPaths.RemoveNoiseAiIcon, IconPaths.FrameShiftAiIcon, "AI");
         var strength = RemoveNoisePickerUi.CreateStrengthSection(value => _selectedStrength = value, out _strengthChoices);
         var channels = RemoveNoisePickerUi.CreateStereoSection(sourceIsStereo, out _stereoCheckBox);
-        _previewStatus = FrameShiftUiFactory.CreateStatusMessage("Audio will be processed at 48 kHz.");
-        _previewButton = FrameShiftUiFactory.CreateMeasuredActionButton("▶  Preview", false);
+        _previewStatus = FrameShiftUiFactory.CreateStatusMessage(L.Get("RemoveNoiseAudioPickerForm_Audio_will_be_processed_at_48_kHz_406f2a5e"));
+        _previewButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveNoiseAudioPickerForm_Preview_4639753c"), false);
         _previewButton.Enabled = _ffmpegRunner != null;
         _previewButton.Click += async (_, _) => await StartPreviewAsync().ConfigureAwait(true);
-        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
-        _denoiseButton = FrameShiftUiFactory.CreateMeasuredActionButton("Denoise", true);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveNoiseAudioPickerForm_Cancel_998b9c48"), false);
+        _denoiseButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveNoiseAudioPickerForm_Denoise_38e80a90"), true);
         _cancelButton.Click += (_, _) => RequestClose(DialogResult.Cancel);
         _denoiseButton.Click += (_, _) => RequestClose(DialogResult.OK);
         AcceptButton = _denoiseButton;
@@ -88,7 +88,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
             return name;
         }
 
-        return $"{inputPaths.Count} selected files";
+        return L.Format("RemoveNoiseAudioPickerForm_0_selected_files_dd068a4b",inputPaths.Count);
     }
 
     private bool CanUpdateUi => !_closingRequested && !IsDisposed && !Disposing;
@@ -119,7 +119,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
         _soundPlayer?.Stop();
 
         _previewButton.Enabled = false;
-        _previewButton.Text    = "Processing...";
+        _previewButton.Text    = L.Get("RemoveNoiseAudioPickerForm_Processing_44c765f2");
 
         TryDeletePreviewTemp(_previewTempExtract);
         TryDeletePreviewTemp(_previewTempClean);
@@ -153,7 +153,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
             var aiProgress = new Progress<(int percent, string status)>(p =>
             {
                 if (!ct.IsCancellationRequested && CanUpdateUi)
-                    _previewButton.Text = $"Processing {p.percent}%";
+                    _previewButton.Text = L.Format("RemoveNoiseAudioPickerForm_Processing_0_7f7b7bab",p.percent);
             });
 
             _previewTempClean = await _previewEngine
@@ -171,13 +171,13 @@ public sealed class RemoveNoiseAudioPickerForm : Form
         catch (Exception ex)
         {
             if (!ct.IsCancellationRequested && CanUpdateUi)
-                _previewStatus.Text = $"Preview failed: {ex.Message}";
+                _previewStatus.Text = L.Format("RemoveNoiseAudioPickerForm_Preview_failed_0_44cd1b41",ex.Message);
         }
         finally
         {
             if (!ct.IsCancellationRequested && CanUpdateUi)
             {
-                _previewButton.Text    = "▶  Preview";
+                _previewButton.Text    = L.Get("RemoveNoiseAudioPickerForm_Preview_4639753c");
                 _previewButton.Enabled = true;
             }
         }
@@ -252,7 +252,7 @@ public sealed class RemoveNoiseAudioPickerForm : Form
     private void SetClosingUiState()
     {
         _previewButton.Enabled = false;
-        _previewButton.Text = "Closing...";
+        _previewButton.Text = L.Get("RemoveNoiseAudioPickerForm_Closing_dd28ceb7");
         _cancelButton.Enabled = false;
         _denoiseButton.Enabled = false;
         _stereoCheckBox.Enabled = false;

@@ -94,7 +94,7 @@ internal static partial class Program
 
                     if (!ownsBatchMutex)
                     {
-                        ShowCliError($"FrameShift is already running, but the new {definition.DisplayName.ToLowerInvariant()} file could not be queued.");
+                        ShowCliError(L.Format("ProgramBatch_FrameShift_is_already_running_but_th_8c4193f6",definition.DisplayName.ToLowerInvariant()));
                         return 1;
                     }
 
@@ -177,7 +177,7 @@ internal static partial class Program
         if (actionId.Equals("upscale-video", StringComparison.OrdinalIgnoreCase))
         {
             return EnsureUpscaleVideoOptions(inputPaths, effectiveOptions, logger)
-                && EnsureUpscaleModelReady(logger, effectiveOptions, "Upscale Video", videoMode: true, inputPaths: inputPaths);
+                && EnsureUpscaleModelReady(logger, effectiveOptions, L.Get("ProgramBatch_Upscale_Video_a5fd36b8"), videoMode: true, inputPaths: inputPaths);
         }
 
         if (actionId.Equals("create-subtitles-audio", StringComparison.OrdinalIgnoreCase))
@@ -297,7 +297,7 @@ internal static partial class Program
         catch (Exception ex)
         {
             logger.Log(ex.ToString());
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError("An unexpected error occurred.")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError(L.Get("ProgramBatch_An_unexpected_error_occurred_afdcf6d2"))));
             return 1;
         }
     }
@@ -364,7 +364,7 @@ internal static partial class Program
             catch (Exception ex)
             {
                 logger.Log(ex.ToString());
-                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError("An unexpected error occurred.")));
+                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError(L.Get("ProgramBatch_An_unexpected_error_occurred_afdcf6d2"))));
                 exitCode = 1;
             }
             finally
@@ -449,7 +449,7 @@ internal static partial class Program
             catch (Exception ex)
             {
                 logger.Log(ex.ToString());
-                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError("An unexpected error occurred.")));
+                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.UnhandledError(L.Get("ProgramBatch_An_unexpected_error_occurred_afdcf6d2"))));
                 exitCode = 1;
             }
             finally

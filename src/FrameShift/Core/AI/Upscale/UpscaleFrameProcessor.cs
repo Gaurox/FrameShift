@@ -166,7 +166,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
             var target = ResolveFinalSize(sourceWidth, sourceHeight, request, _definition.ScaleFactor);
             if (target.Width != nativeOutput.Width || target.Height != nativeOutput.Height)
             {
-                progress?.Report(new UpscaleProgress(93, "Resizing to target..."));
+                progress?.Report(new UpscaleProgress(93, L.Get("UpscaleFrameProcessor_Resizing_to_target_19f4c134")));
                 cancellationToken.ThrowIfCancellationRequested();
                 nativeOutput.Mutate(ctx => ctx.Resize(new ResizeOptions
                 {
@@ -200,14 +200,14 @@ internal sealed class UpscaleFrameProcessor : IDisposable
     {
         if (width <= 0 || height <= 0 || (long)width * height > MaxInputPixels)
             throw new InvalidOperationException(
-                $"Image too large to upscale: {width}x{height}. Limit is {MaxInputPixels:N0} source pixels.");
+                L.Format("UpscaleFrameProcessor_Image_too_large_to_upscale_0_x_1_Lim_5ddf0969",width,height,MaxInputPixels));
     }
 
     internal static void ValidateOutputSize(int width, int height, UpscaleRequest request, int scale)
     {
         ValidateSourceSize(width, height);
         if (scale < 1 || !double.IsFinite(request.Factor))
-            throw new InvalidOperationException("Invalid upscale factor.");
+            throw new InvalidOperationException(L.Get("UpscaleFrameProcessor_07bbb0bd38"));
         var nativeWidth = (long)width * scale;
         var nativeHeight = (long)height * scale;
         if (nativeWidth > int.MaxValue || nativeHeight > int.MaxValue ||
@@ -216,7 +216,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
                 $"Upscale output too large: native {nativeWidth}x{nativeHeight}. Limit is {MaxOutputPixels:N0} pixels. Use a smaller source.");
         var target = ResolveFinalSize(width, height, request, scale);
         if ((long)target.Width * target.Height > MaxOutputPixels)
-            throw new InvalidOperationException("Upscale target exceeds the output pixel limit.");
+            throw new InvalidOperationException(L.Get("UpscaleFrameProcessor_98ec4ea0f9"));
     }
 
     // ONNX models process RGB only. Resize coverage independently at the final output
@@ -321,7 +321,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
                 int percent = 10 + (int)(80L * done / Math.Max(1, tiles.Count));
                 progress?.Report(new UpscaleProgress(
                     percent,
-                    tiles.Count > 1 ? $"Upscaling tile {done}/{tiles.Count}..." : "Upscaling..."));
+                    tiles.Count > 1 ? L.Format("UpscaleFrameProcessor_Upscaling_tile_0_1_4be54f77",done,tiles.Count) : L.Get("UpscaleFrameProcessor_Upscaling_85e80807")));
             }
         }
         catch
@@ -392,7 +392,7 @@ internal sealed class UpscaleFrameProcessor : IDisposable
         {
             if (_sessionReady && _sessionForcedCpu == forceCpu) return;
             DisposeSession();
-            progress?.Report(new UpscaleProgress(3, "Loading ONNX model..."));
+            progress?.Report(new UpscaleProgress(3, L.Get("UpscaleFrameProcessor_Loading_ONNX_model_559af544")));
             var modelPath = ModelLocator.GetModelPath(_definition);
             AppLogger.LogStatic($"UpscaleFrameProcessor: loading session. model={modelPath}, forceCpu={forceCpu}");
             (_session, _providerName) = _createSession(modelPath, forceCpu);

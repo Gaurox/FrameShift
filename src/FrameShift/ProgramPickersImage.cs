@@ -18,7 +18,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Convert to Icon"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersImage_Convert_to_Icon_04080829")));
             return false;
         }
 
@@ -79,7 +79,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Convert to Icon")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersImage_Convert_to_Icon_04080829"))));
             return false;
         }
     }
@@ -88,7 +88,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Crop Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersImage_Crop_Video_db93b9b1")));
             return false;
         }
 
@@ -137,7 +137,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Crop Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersImage_Crop_Video_db93b9b1"))));
             return false;
         }
     }
@@ -146,7 +146,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Crop Image"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersImage_Crop_Image_9aca1944")));
             return false;
         }
 
@@ -185,7 +185,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Crop Image")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersImage_Crop_Image_9aca1944"))));
             return false;
         }
     }
@@ -194,7 +194,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Rotate / Flip Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersImage_Rotate_Flip_Video_d0a33e8a")));
             return false;
         }
 
@@ -253,7 +253,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Rotate / Flip Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersImage_Rotate_Flip_Video_d0a33e8a"))));
             return false;
         }
     }
@@ -262,7 +262,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Rotate / Flip Image"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersImage_Rotate_Flip_Image_227e42ea")));
             return false;
         }
 
@@ -304,7 +304,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Rotate / Flip Image")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersImage_Rotate_Flip_Image_227e42ea"))));
             return false;
         }
     }

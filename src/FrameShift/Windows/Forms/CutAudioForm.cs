@@ -80,7 +80,7 @@ public sealed class CutAudioForm : Form
         SuspendLayout();
 
         FrameShiftWindowPolicy.Initialize(this, new Size(960, 560), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Cut Audio");
+        FrameShiftWindowChrome.Apply(this, L.Get("CutAudioForm_FrameShift_Cut_Audio_4ade20b1"));
         ControlHelper.SetDoubleBuffered(this);
         _wavePanel = FrameShiftUiFactory.CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
         _wavePanel.Dock = DockStyle.Fill;
@@ -91,35 +91,35 @@ public sealed class CutAudioForm : Form
         _wavePanel.MouseUp += WavePanelOnMouseUp;
         _wavePanel.Resize += (_, _) => _wavePanel.Invalidate();
         _wavePanel.DpiChangedAfterParent += (_, _) => _wavePanel.Invalidate();
-        _wavePanel.AccessibleName = "Audio selection waveform";
+        _wavePanel.AccessibleName = L.Get("CutAudioForm_Audio_selection_waveform_e4d4895d");
         _textStart = new TextBox { Name = "startTime" };
         _textEnd = new TextBox { Name = "endTime" };
         _textStart.Leave += (_, _) => ApplyBoundaryFromText("start");
         _textEnd.Leave += (_, _) => ApplyBoundaryFromText("end");
         _labelSelection = FrameShiftUiFactory.CreateWrappingLabel("");
         _labelTimeline = FrameShiftUiFactory.CreateWrappingLabel("");
-        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel("Preparing waveform...");
-        _buttonPlay = FrameShiftUiFactory.CreateMeasuredActionButton("Play selection", false);
+        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CutAudioForm_Preparing_waveform_0122b0fb"));
+        _buttonPlay = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Play_selection_113527f5"), false);
         _buttonPlay.Click += async (_, _) => await StartOperationAsync(PlaySelectionAsync);
-        _buttonStop = FrameShiftUiFactory.CreateMeasuredActionButton("Stop", false);
+        _buttonStop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Stop_ec7502ce"), false);
         _buttonStop.Click += (_, _) => StopPreviewPlayer();
-        _buttonRemove = FrameShiftUiFactory.CreateMeasuredActionButton("Remove selection", false);
+        _buttonRemove = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Remove_selection_c8209587"), false);
         _buttonRemove.Click += async (_, _) => await StartOperationAsync(RemoveSelectionAsync);
-        _buttonSilence = FrameShiftUiFactory.CreateMeasuredActionButton("Silence selection", false);
+        _buttonSilence = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Silence_selection_d066be92"), false);
         _buttonSilence.Click += async (_, _) => await StartOperationAsync(SilenceSelectionAsync);
         var boundaries = FrameShiftUiFactory.CreateChoiceRow(
-            FrameShiftUiFactory.CreateFieldRow("Start", _textStart, logicalEditorWidth: 152),
-            FrameShiftUiFactory.CreateFieldRow("End", _textEnd, logicalEditorWidth: 152));
-        var selection = FrameShiftUiFactory.CreateSection("Selection", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CutAudioForm_Start_19a9997b"), _textStart, logicalEditorWidth: 152),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CutAudioForm_End_a1c0e75a"), _textEnd, logicalEditorWidth: 152));
+        var selection = FrameShiftUiFactory.CreateSection(L.Get("CutAudioForm_Selection_dfd52658"), FrameShiftUiFactory.CreateVerticalStack(
             boundaries, FrameShiftUiFactory.CreateChoiceRow(_buttonPlay, _buttonStop, _buttonRemove, _buttonSilence),
             _labelSelection, _labelTimeline, _statusLabel,
-            FrameShiftUiFactory.CreateWrappingLabel("Drag the cursors or type exact times. Output stays next to the source with unique naming.")));
-        _buttonCut = FrameShiftUiFactory.CreateMeasuredActionButton("Cut", true);
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("CutAudioForm_Drag_the_cursors_or_type_exact_times_0829f7f3"))));
+        _buttonCut = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Cut_7cd075ea"), true);
         _buttonCut.Click += (_, _) => ConfirmCut();
-        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutAudioForm_Cancel_998b9c48"), false);
         _buttonCancel.Click += (_, _) => RequestClose(DialogResult.Cancel);
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Cut Audio",
-            $"Source: {Path.GetFileName(_inputPath)}    Duration: {CutAudioSettings.FormatDisplayTime(_currentDurationSeconds)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CutAudioForm_FrameShift_Cut_Audio_4ade20b1"),
+            L.Format("CutAudioForm_Source_0_Duration_1_0e6f3d77",Path.GetFileName(_inputPath),CutAudioSettings.FormatDisplayTime(_currentDurationSeconds)),
             IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "A");
         Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _wavePanel, selection,
             FrameShiftDialogLayout.CreateActions(_buttonCancel, _buttonCut)));
@@ -128,7 +128,7 @@ public sealed class CutAudioForm : Form
         FormClosing += CutAudioFormOnFormClosing;
         FormClosed += (_, _) => _lifetime.Dispose();
         Shown += async (_, _) => await StartWorkspaceAsync();
-        SetBusyState(true, "Preparing audio workspace...");
+        SetBusyState(true, L.Get("CutAudioForm_Preparing_audio_workspace_f5f8f607"));
         ResumeLayout(true);
     }
 
@@ -185,7 +185,7 @@ public sealed class CutAudioForm : Form
 
         _closingRequested = true;
         _requestedDialogResult ??= DialogResult == DialogResult.None ? DialogResult.Cancel : DialogResult;
-        SetBusyState(true, "Closing: stopping audio processing...");
+        SetBusyState(true, L.Get("CutAudioForm_Closing_stopping_audio_processing_28cb412b"));
         StopPreviewPlayer();
         _closingTask = CompleteCloseAsync();
     }
@@ -249,7 +249,7 @@ public sealed class CutAudioForm : Form
         string? workingFilePath = null;
         try
         {
-            SetBusyState(true, "Preparing editable audio workspace...");
+            SetBusyState(true, L.Get("CutAudioForm_Preparing_editable_audio_workspace_f4d03709"));
             workingFilePath = await _editingService.CreateEditableWorkingCopyAsync(
                 _ffmpegPath,
                 _inputPath,
@@ -274,7 +274,7 @@ public sealed class CutAudioForm : Form
             SetSelectionToFullRange();
             _workspaceReady = true;
             RefreshSelectionUi(true);
-            _statusLabel.Text = "Waveform ready. Select the area to keep, preview, remove, or silence.";
+            _statusLabel.Text = L.Get("CutAudioForm_Waveform_ready_Select_the_area_to_ke_454b8b2d");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
@@ -287,7 +287,7 @@ public sealed class CutAudioForm : Form
         {
             if (CanUpdateUi)
             {
-                _statusLabel.Text = "Audio preparation failed. You can close this window.";
+                _statusLabel.Text = L.Get("CutAudioForm_Audio_preparation_failed_You_can_clo_f07e2439");
                 ShowActionError(ex.Message);
             }
         }
@@ -296,8 +296,8 @@ public sealed class CutAudioForm : Form
             if (CanUpdateUi)
             {
                 SetBusyState(false, _workspaceReady
-                    ? "Waveform ready. Select the area to keep, preview, remove, or silence."
-                    : "Audio preparation failed. You can close this window.");
+                    ? L.Get("CutAudioForm_Waveform_ready_Select_the_area_to_ke_454b8b2d")
+                    : L.Get("CutAudioForm_Audio_preparation_failed_You_can_clo_f07e2439"));
             }
         }
     }
@@ -314,7 +314,7 @@ public sealed class CutAudioForm : Form
         {
             ApplyBoundaryFromText("start");
             ApplyBoundaryFromText("end");
-            SetBusyState(true, "Preparing preview...");
+            SetBusyState(true, L.Get("CutAudioForm_Preparing_preview_d9d3ad0f"));
 
             previewPath = await _editingService.CreatePreviewAsync(
                 _ffmpegPath,
@@ -337,7 +337,7 @@ public sealed class CutAudioForm : Form
             _previewPlayer = new SoundPlayer(_previewPath);
             _previewPlayer.LoadAsync();
             _previewPlayer.Play();
-            _statusLabel.Text = "Playing selection preview...";
+            _statusLabel.Text = L.Get("CutAudioForm_Playing_selection_preview_4689c91a");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
@@ -359,7 +359,7 @@ public sealed class CutAudioForm : Form
         {
             if (CanUpdateUi)
             {
-                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+                SetBusyState(false, L.Get("CutAudioForm_Waveform_ready_Select_the_area_to_ke_454b8b2d"));
             }
         }
     }
@@ -380,15 +380,15 @@ public sealed class CutAudioForm : Form
             var removeDuration = _endSeconds - _startSeconds;
             if (removeDuration <= 0.05d)
             {
-                throw new InvalidOperationException("Selection is too short to remove.");
+                throw new InvalidOperationException(L.Get("CutAudioForm_Selection_is_too_short_to_remove_5fb77928"));
             }
 
             if ((_currentDurationSeconds - removeDuration) <= 0.05d)
             {
-                throw new InvalidOperationException("Remove selection cannot delete the entire audio.");
+                throw new InvalidOperationException(L.Get("CutAudioForm_Remove_selection_cannot_delete_the_e_b9ac26dc"));
             }
 
-            SetBusyState(true, "Removing selection...");
+            SetBusyState(true, L.Get("CutAudioForm_Removing_selection_e5969738"));
             StopPreviewPlayer();
 
             var oldWorkingFile = _workingFilePath;
@@ -426,7 +426,7 @@ public sealed class CutAudioForm : Form
             ConversionActionHelper.DeleteIfExists(oldWorkingFile);
             SetSelectionToFullRange();
             RefreshSelectionUi(true);
-            _statusLabel.Text = "Selection removed.";
+            _statusLabel.Text = L.Get("CutAudioForm_Selection_removed_5bca9fac");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
@@ -448,7 +448,7 @@ public sealed class CutAudioForm : Form
         {
             if (CanUpdateUi)
             {
-                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+                SetBusyState(false, L.Get("CutAudioForm_Waveform_ready_Select_the_area_to_ke_454b8b2d"));
             }
         }
     }
@@ -469,10 +469,10 @@ public sealed class CutAudioForm : Form
             var silenceDuration = _endSeconds - _startSeconds;
             if (silenceDuration <= 0.05d)
             {
-                throw new InvalidOperationException("Selection is too short to silence.");
+                throw new InvalidOperationException(L.Get("CutAudioForm_Selection_is_too_short_to_silence_7eeb80ca"));
             }
 
-            SetBusyState(true, "Silencing selection...");
+            SetBusyState(true, L.Get("CutAudioForm_Silencing_selection_eeb4b9fb"));
             StopPreviewPlayer();
 
             var oldWorkingFile = _workingFilePath;
@@ -507,7 +507,7 @@ public sealed class CutAudioForm : Form
 
             ConversionActionHelper.DeleteIfExists(oldWorkingFile);
             RefreshSelectionUi(true);
-            _statusLabel.Text = "Selection silenced.";
+            _statusLabel.Text = L.Get("CutAudioForm_Selection_silenced_8219477f");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || _closingRequested)
         {
@@ -529,7 +529,7 @@ public sealed class CutAudioForm : Form
         {
             if (CanUpdateUi)
             {
-                SetBusyState(false, "Waveform ready. Select the area to keep, preview, remove, or silence.");
+                SetBusyState(false, L.Get("CutAudioForm_Waveform_ready_Select_the_area_to_ke_454b8b2d"));
             }
         }
     }
@@ -549,7 +549,7 @@ public sealed class CutAudioForm : Form
             var duration = _endSeconds - _startSeconds;
             if (duration <= 0.05d)
             {
-                throw new InvalidOperationException("Selection is too short.");
+                throw new InvalidOperationException(L.Get("CutAudioForm_Selection_is_too_short_0f11c9ae"));
             }
 
             StopPreviewPlayer();
@@ -588,7 +588,7 @@ public sealed class CutAudioForm : Form
             {
                 if (!CutAudioSettings.TryParseTimeText(_textStart.Text, out var newStart))
                 {
-                    throw new InvalidOperationException("Start time must use seconds, MM:SS, or HH:MM:SS.");
+                    throw new InvalidOperationException(L.Get("CutAudioForm_Start_time_must_use_seconds_MM_SS_or_510a482c"));
                 }
 
                 if (newStart < 0)
@@ -598,7 +598,7 @@ public sealed class CutAudioForm : Form
 
                 if (newStart >= _endSeconds)
                 {
-                    throw new InvalidOperationException("Start must be before end.");
+                    throw new InvalidOperationException(L.Get("CutAudioForm_Start_must_be_before_end_bec77945"));
                 }
 
                 if (newStart > _currentDurationSeconds)
@@ -612,7 +612,7 @@ public sealed class CutAudioForm : Form
             {
                 if (!CutAudioSettings.TryParseTimeText(_textEnd.Text, out var newEnd))
                 {
-                    throw new InvalidOperationException("End time must use seconds, MM:SS, or HH:MM:SS.");
+                    throw new InvalidOperationException(L.Get("CutAudioForm_End_time_must_use_seconds_MM_SS_or_H_95d32357"));
                 }
 
                 if (newEnd > _currentDurationSeconds)
@@ -622,7 +622,7 @@ public sealed class CutAudioForm : Form
 
                 if (newEnd <= _startSeconds)
                 {
-                    throw new InvalidOperationException("End must be after start.");
+                    throw new InvalidOperationException(L.Get("CutAudioForm_End_must_be_after_start_eaba6e41"));
                 }
 
                 _endSeconds = newEnd;
@@ -666,12 +666,12 @@ public sealed class CutAudioForm : Form
             selectionDuration = 0;
         }
 
-        _labelSelection.Text = "Selection: " + CutAudioSettings.FormatDisplayTime(selectionDuration);
+        _labelSelection.Text = L.Get("CutAudioForm_Selection_562a3798") + CutAudioSettings.FormatDisplayTime(selectionDuration);
 
-        var timelineText = "Current audio: " + CutAudioSettings.FormatDisplayTime(_currentDurationSeconds);
+        var timelineText = L.Get("CutAudioForm_Current_audio_15bcaf80") + CutAudioSettings.FormatDisplayTime(_currentDurationSeconds);
         if (_removeCount > 0)
         {
-            timelineText += $"    Removed: {_removeCount} ({CutAudioSettings.FormatDisplayTime(_totalRemovedSeconds)})";
+            timelineText += L.Format("CutAudioForm_Removed_0_1_b5efb7d6",_removeCount,CutAudioSettings.FormatDisplayTime(_totalRemovedSeconds));
         }
 
         _labelTimeline.Text = timelineText;

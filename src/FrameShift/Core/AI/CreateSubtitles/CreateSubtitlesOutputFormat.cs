@@ -52,16 +52,16 @@ internal static class CreateSubtitlesOutputFormats
 
     public static string GetDisplayName(this CreateSubtitlesOutputFormat format) => format switch
     {
-        CreateSubtitlesOutputFormat.StandardSrt => "Standard SRT",
-        CreateSubtitlesOutputFormat.AdvancedAss => "Advanced ASS Subtitle",
-        _ => "FrameShift Customization Project"
+        CreateSubtitlesOutputFormat.StandardSrt => L.Get("CreateSubtitlesOutputFormat_Standard_SRT_076c290a"),
+        CreateSubtitlesOutputFormat.AdvancedAss => L.Get("CreateSubtitlesOutputFormat_Advanced_ASS_Subtitle_2ed5f762"),
+        _ => L.Get("CreateSubtitlesOutputFormat_FrameShift_Customization_Project_d045e460")
     };
 
     public static string GetDescription(this CreateSubtitlesOutputFormat format) => format switch
     {
-        CreateSubtitlesOutputFormat.StandardSrt => "Maximum compatibility. Text and timing by subtitle block, without custom styling.",
-        CreateSubtitlesOutputFormat.AdvancedAss => "Creates a finished subtitle file with the selected style and dynamic effect already applied.",
-        _ => "Saves all word timings so you can later customize font, size, colors, position and effects when adding subtitles to a video."
+        CreateSubtitlesOutputFormat.StandardSrt => L.Get("CreateSubtitlesOutputFormat_Maximum_compatibility_Text_and_timin_bc15f80c"),
+        CreateSubtitlesOutputFormat.AdvancedAss => L.Get("CreateSubtitlesOutputFormat_Creates_a_finished_subtitle_file_wit_a5d99393"),
+        _ => L.Get("CreateSubtitlesOutputFormat_Saves_all_word_timings_so_you_can_la_d9f0a83f")
     };
 
     public static string GetOutputExtension(this CreateSubtitlesOutputFormat format) => format switch
@@ -73,9 +73,9 @@ internal static class CreateSubtitlesOutputFormats
 
     public static string GetBuildMessage(this CreateSubtitlesOutputFormat format) => format switch
     {
-        CreateSubtitlesOutputFormat.StandardSrt => "Building SRT subtitles...",
-        CreateSubtitlesOutputFormat.AdvancedAss => "Building ASS subtitles...",
-        _ => "Building subtitle project..."
+        CreateSubtitlesOutputFormat.StandardSrt => L.Get("CreateSubtitlesOutputFormat_Building_SRT_subtitles_104bcbe4"),
+        CreateSubtitlesOutputFormat.AdvancedAss => L.Get("CreateSubtitlesOutputFormat_Building_ASS_subtitles_93cc54eb"),
+        _ => L.Get("CreateSubtitlesOutputFormat_Building_subtitle_project_db86efa7")
     };
 
     public static string FormatProject(

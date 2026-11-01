@@ -24,8 +24,8 @@ public sealed class ReverseAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "reverse-audio",
-        "Reverse Audio",
-        "Creates a copy of the input audio with reversed playback.");
+        L.Get("ReverseAudioAction_Reverse_Audio_b794c300"),
+        L.Get("ReverseAudioAction_Creates_a_copy_of_the_input_audio_wi_a4db5926"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -68,7 +68,7 @@ public sealed class ReverseAudioAction : IFrameShiftAction
         var plan = GetEncodingPlan(outputExtension);
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing audio reverse on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("ReverseAudioAction_Preparing_audio_reverse_on_CPU_a5844285"));
 
         try
         {
@@ -86,14 +86,14 @@ public sealed class ReverseAudioAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ReverseAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during audio reverse.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ReverseAudioAction_FFmpeg_failed_during_audio_reverse_f2536b1a"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -103,7 +103,7 @@ public sealed class ReverseAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ReverseAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -148,7 +148,7 @@ public sealed class ReverseAudioAction : IFrameShiftAction
             ".flac" => new AudioEncodingPlan("Audio", "flac", ["-compression_level", "5"]),
             ".m4a" => new AudioEncodingPlan("Audio", "aac", ["-b:a", "256k"]),
             ".ogg" => new AudioEncodingPlan("Audio", "libvorbis", ["-q:a", "6"]),
-            _ => throw new NotSupportedException($"Unsupported audio source '{sourceExtension}'.")
+            _ => throw new NotSupportedException(L.Format("ReverseAudioAction_Unsupported_audio_source_0_bbac1c55",sourceExtension))
         };
     }
 

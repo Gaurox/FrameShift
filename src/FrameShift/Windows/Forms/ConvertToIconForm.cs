@@ -38,14 +38,14 @@ public sealed class ConvertToIconForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(900, 600), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Convert to Icon");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Convert to Icon", $"Source: {Path.GetFileName(sourcePath)}",
+        FrameShiftWindowChrome.Apply(this, L.Get("ConvertToIconForm_FrameShift_Convert_to_Icon_bb5d3a93"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("ConvertToIconForm_FrameShift_Convert_to_Icon_bb5d3a93"), L.Format("ConvertToIconForm_Source_0_653ab450",Path.GetFileName(sourcePath)),
             IconPaths.ContextMenuIco("convert-icon-image-icon.ico"), IconPaths.AppIcon, "ICO");
-        _radioFit = new RadioButton { Text = "Fit", Checked = true, AutoSize = true };
-        _radioFill = new RadioButton { Text = "Fill", AutoSize = true };
-        _radioTransparent = new RadioButton { Text = "Transparent", Checked = true, AutoSize = true };
-        _radioWhite = new RadioButton { Text = "White", AutoSize = true };
-        _radioBlack = new RadioButton { Text = "Black", AutoSize = true };
+        _radioFit = new RadioButton { Text = L.Get("ConvertToIconForm_Fit_2df06cb4"), Checked = true, AutoSize = true };
+        _radioFill = new RadioButton { Text = L.Get("ConvertToIconForm_Fill_e2c06466"), AutoSize = true };
+        _radioTransparent = new RadioButton { Text = L.Get("ConvertToIconForm_Transparent_4e4e3b5a"), Checked = true, AutoSize = true };
+        _radioWhite = new RadioButton { Text = L.Get("ConvertToIconForm_White_09faee28"), AutoSize = true };
+        _radioBlack = new RadioButton { Text = L.Get("ConvertToIconForm_Black_5ecf2a7f"), AutoSize = true };
         var sizes = FrameShiftUiFactory.CreateVerticalStack();
         foreach (var size in ConvertToIconSettings.GetSupportedSizes())
         {
@@ -56,15 +56,15 @@ public sealed class ConvertToIconForm : Form
             sizes.Controls.Add(check, 0, sizes.RowCount++);
             check.Dock = DockStyle.Top;
         }
-        var all = FrameShiftUiFactory.CreateMeasuredActionButton("Select all", false, 80);
-        var clear = FrameShiftUiFactory.CreateMeasuredActionButton("Clear all", false, 80);
+        var all = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ConvertToIconForm_Select_all_c7104795"), false, 80);
+        var clear = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ConvertToIconForm_Clear_all_8577f00c"), false, 80);
         all.Click += (_, _) => SetAllSizes(true);
         clear.Click += (_, _) => SetAllSizes(false);
-        var sizesSection = FrameShiftUiFactory.CreateSection("Sizes",
+        var sizesSection = FrameShiftUiFactory.CreateSection(L.Get("ConvertToIconForm_Sizes_3dcb542b"),
             FrameShiftUiFactory.CreateVerticalStack(sizes, FrameShiftUiFactory.CreateChoiceRow(all, clear)));
         var settings = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Fit mode", FrameShiftUiFactory.CreateVerticalStack(_radioFit, _radioFill)),
-            FrameShiftUiFactory.CreateSection("Background", FrameShiftUiFactory.CreateVerticalStack(_radioTransparent, _radioWhite, _radioBlack)));
+            FrameShiftUiFactory.CreateSection(L.Get("ConvertToIconForm_Fit_mode_d9cd4fe9"), FrameShiftUiFactory.CreateVerticalStack(_radioFit, _radioFill)),
+            FrameShiftUiFactory.CreateSection(L.Get("ConvertToIconForm_Background_fb4c9264"), FrameShiftUiFactory.CreateVerticalStack(_radioTransparent, _radioWhite, _radioBlack)));
         var tiles = FrameShiftUiFactory.CreateChoiceRow();
         foreach (var size in ConvertToIconSettings.GetSupportedSizes())
         {
@@ -74,17 +74,17 @@ public sealed class ConvertToIconForm : Form
         }
         foreach (var radio in new[] { _radioFit, _radioFill, _radioTransparent, _radioWhite, _radioBlack })
             radio.CheckedChanged += (_, _) => { if (radio.Checked) UpdatePreviewTiles(); };
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ConvertToIconForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var convert = FrameShiftUiFactory.CreateMeasuredActionButton("Convert", true);
+        var convert = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ConvertToIconForm_Convert_6ac1c7f5"), true);
         convert.Click += (_, _) => ConfirmSelection();
         AcceptButton = convert;
         CancelButton = cancel;
         var content = new IconContentLayout(sizesSection, settings,
-            FrameShiftUiFactory.CreateSection("Preview — click a size to include or skip it", tiles));
+            FrameShiftUiFactory.CreateSection(L.Get("ConvertToIconForm_Preview_click_a_size_to_include_or_s_73a71140"), tiles));
         var layout = FrameShiftDialogLayout.Create(header, content,
             FrameShiftDialogLayout.CreateActions(cancel, convert),
-            FrameShiftUiFactory.CreateStatusMessage("The ICO file is created next to the original image."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("ConvertToIconForm_The_ICO_file_is_created_next_to_the__ce6a0261")));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
         UpdatePreviewTiles();
@@ -122,7 +122,7 @@ public sealed class ConvertToIconForm : Form
     private PreviewTile CreatePreviewTile(int size, int index)
     {
         var picture = new PictureBox { SizeMode = PictureBoxSizeMode.Zoom, Anchor = AnchorStyles.None,
-            AccessibleName = $"Preview {size} pixels", TabStop = false };
+            AccessibleName = L.Format("ConvertToIconForm_Preview_0_pixels_de79efac",size), TabStop = false };
         var sizeLabel = FrameShiftUiFactory.CreateWrappingLabel($"{size} × {size}");
         sizeLabel.TextAlign = ContentAlignment.MiddleCenter;
         var tile = FrameShiftUiFactory.CreateVerticalStack(picture, sizeLabel);

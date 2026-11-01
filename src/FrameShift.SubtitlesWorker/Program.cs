@@ -15,6 +15,7 @@ internal static class Program
 
     private static async Task<int> Main(string[] args)
     {
+        L.Initialize(Environment.GetEnvironmentVariable("FRAMESHIFT_UI_LANGUAGE"));
         if (!TryParseRequestPath(args, out var requestPath))
         {
             await Console.Error.WriteLineAsync("Missing required argument: --request <path>").ConfigureAwait(false);
@@ -37,10 +38,10 @@ internal static class Program
                 return 0;
             }
 
-            EmitProgress(2, "Loading Whisper language detector...");
+            EmitProgress(2, L.Get("Program_Loading_Whisper_language_detector_07a4bcd4"));
             response.DetectedLanguage = DetectLanguage(request, wave);
 
-            EmitProgress(18, "Loading Whisper recognizer (DirectML)...");
+            EmitProgress(18, L.Get("Program_Loading_Whisper_recognizer_DirectML_5d01f943"));
             var (recognizer, providerUsed) = CreateRecognizer(request);
             response.ProviderUsed = providerUsed;
 
@@ -50,7 +51,7 @@ internal static class Program
             {
                 using (recognizer)
                 {
-                    EmitProgress(20, $"Whisper recognizer ready ({(providerUsed == "directml" ? "DirectML" : "CPU")}).");
+                    EmitProgress(20, L.Format("Program_Whisper_recognizer_ready_0_a43c8890",(providerUsed == "directml" ? "DirectML" : "CPU")));
                     (words, tokens) = TranscribeAllWindows(request, recognizer, wave);
                 }
             }
@@ -59,9 +60,9 @@ internal static class Program
             {
                 // DirectML inference failed after successful init — restart from scratch on CPU
                 Console.Error.WriteLine($"[SubtitlesWorker] DirectML inference failed, retrying with CPU: {dmlEx.Message}");
-                EmitProgress(18, "Retrying with Whisper recognizer (CPU)...");
+                EmitProgress(18, L.Get("Program_Retrying_with_Whisper_recognizer_CPU_668cc38b"));
                 using var cpuRecognizer = BuildRecognizer(request, "cpu");
-                EmitProgress(20, "Whisper recognizer ready (CPU).");
+                EmitProgress(20, L.Get("Program_Whisper_recognizer_ready_CPU_a448f98e"));
                 response.ProviderUsed = "cpu";
                 (words, tokens) = TranscribeAllWindows(request, cpuRecognizer, wave);
             }
@@ -79,7 +80,7 @@ internal static class Program
                 response.Success = true;
             }
 
-            EmitProgress(100, "Whisper transcription finished.");
+            EmitProgress(100, L.Get("Program_Whisper_transcription_finished_5936953d"));
             await SaveResponseAsync(request.ResponsePath, response).ConfigureAwait(false);
             return 0;
         }
@@ -120,7 +121,7 @@ internal static class Program
         using var stream = lid.CreateStream();
         var detectionWindow = wave.Read(0, (int)Math.Min(wave.SampleCount, WaveWindowReader.SampleRate * 20), () => IsCancellationRequested(request.CancelSignalPath));
         stream.AcceptWaveform(WaveWindowReader.SampleRate, detectionWindow);
-        EmitProgress(10, "Detecting language...");
+        EmitProgress(10, L.Get("Program_Detecting_language_7dfe2221"));
         var result = lid.Compute(stream);
         return result.Lang ?? string.Empty;
     }
@@ -186,7 +187,7 @@ internal static class Program
             var window = windows[index];
             EmitProgress(
                 20 + (int)Math.Round((index / (double)Math.Max(1, windows.Count)) * 72d, MidpointRounding.AwayFromZero),
-                $"Transcribing window {index + 1}/{windows.Count}...");
+                L.Format("Program_Transcribing_window_0_1_b5dcf260",index + 1,windows.Count));
 
             var buffer = wave.Read(window.StartSample, window.LengthSamples,
                 () => IsCancellationRequested(request.CancelSignalPath));
@@ -209,7 +210,7 @@ internal static class Program
             WordMerger.Merge(mergedWords, localWords);
         }
 
-        EmitProgress(96, "Finalizing merged timestamps...");
+        EmitProgress(96, L.Get("Program_Finalizing_merged_timestamps_47bc304d"));
         return (
             mergedWords
                 .Select(word => new CreateSubtitlesWorkerWord

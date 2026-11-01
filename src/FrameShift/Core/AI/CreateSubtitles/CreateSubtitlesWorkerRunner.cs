@@ -45,6 +45,7 @@ internal sealed class CreateSubtitlesWorkerRunner
         };
         startInfo.ArgumentList.Add("--request");
         startInfo.ArgumentList.Add(request.ResponsePath + ".request.json");
+        startInfo.Environment["FRAMESHIFT_UI_LANGUAGE"] = L.NormalizeLanguage(System.Globalization.CultureInfo.CurrentUICulture.Name);
 
         using var process = new Process { StartInfo = startInfo };
         var stderr = new StringBuilder();
@@ -110,7 +111,7 @@ internal sealed class CreateSubtitlesWorkerRunner
 
         if (hangKill)
         {
-            throw new TimeoutException("The subtitle worker exceeded the maximum allowed duration and was terminated.");
+            throw new TimeoutException(L.Get("CreateSubtitlesWorkerRunner_The_subtitle_worker_exceeded_the_max_67081d41"));
         }
 
         var responsePath = request.ResponsePath;
@@ -119,8 +120,8 @@ internal sealed class CreateSubtitlesWorkerRunner
             var stderrText = stderr.ToString().Trim();
             _logger.Log($"CreateSubtitlesWorkerRunner: no response file. exitCode={process.ExitCode}, stderr={stderrText}");
             var errorMessage = string.IsNullOrEmpty(stderrText)
-                ? $"Whisper worker crashed (exit code {process.ExitCode}). The model files may be missing or corrupted."
-                : $"Whisper worker exited with code {process.ExitCode}: {stderrText}";
+                ? L.Format("CreateSubtitlesWorkerRunner_Whisper_worker_crashed_exit_code_0_T_fed35c0c",process.ExitCode)
+                : L.Format("CreateSubtitlesWorkerRunner_Whisper_worker_exited_with_code_0_1_825de989",process.ExitCode,stderrText);
             throw new InvalidOperationException(errorMessage);
         }
 
@@ -135,12 +136,12 @@ internal sealed class CreateSubtitlesWorkerRunner
         catch (JsonException jsonEx)
         {
             _logger.Log($"CreateSubtitlesWorkerRunner: response JSON parse failed: {jsonEx.Message}");
-            throw new InvalidOperationException($"Whisper worker returned an unreadable response (exit code {process.ExitCode}).", jsonEx);
+            throw new InvalidOperationException(L.Format("CreateSubtitlesWorkerRunner_Whisper_worker_returned_an_unreadabl_0a3f4283",process.ExitCode), jsonEx);
         }
 
         if (response is null)
         {
-            throw new InvalidOperationException("Subtitle worker returned an empty response.");
+            throw new InvalidOperationException(L.Get("CreateSubtitlesWorkerRunner_Subtitle_worker_returned_an_empty_re_5271aa9b"));
         }
 
         if (!response.Success && !response.Canceled && process.ExitCode != 0 && string.IsNullOrWhiteSpace(response.ErrorMessage))
@@ -170,7 +171,7 @@ internal sealed class CreateSubtitlesWorkerRunner
             }
         }
 
-        throw new FileNotFoundException("Create Subtitles worker was not found.", candidates[0]);
+        throw new FileNotFoundException(L.Get("CreateSubtitlesWorkerRunner_Create_Subtitles_worker_was_not_foun_be8c5fbb"), candidates[0]);
     }
 
     private static void TryHandleProgressLine(string line, Action<int, string>? onProgress)

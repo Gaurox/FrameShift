@@ -9,7 +9,7 @@ namespace FrameShift.Core.AI.Ocr;
 internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
 {
     public static bool Supports(string extension) => extension.ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".webp" or ".bmp" or ".pdf";
-    public ActionDescriptor Descriptor { get; } = new("extract-text", "Extract Text", "Extracts text locally from images and PDFs using PP-OCRv6.");
+    public ActionDescriptor Descriptor { get; } = new("extract-text", L.Get("ExtractTextAction_Extract_Text_9b5993ad"), L.Get("ExtractTextAction_Extracts_text_locally_from_images_an_2bc6bc73"));
 
     private OcrEngine? _engine;
     private string? _engineKey;
@@ -18,9 +18,9 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken token)
     {
         if (!File.Exists(request.InputPath))
-            return new(false, "The input file does not exist.");
+            return new(false, L.Get("ExtractTextAction_The_input_file_does_not_exist_c1ce5398"));
         if (!Supports(Path.GetExtension(request.InputPath)))
-            return new(false, "Supported inputs: PNG, JPG, JPEG, WebP, BMP and PDF.");
+            return new(false, L.Get("ExtractTextAction_Supported_inputs_PNG_JPG_JPEG_WebP_B_04e02354"));
         using var item = new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, item.Token);
         using var monitorStop = new CancellationTokenSource();
@@ -31,12 +31,12 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
         }
         catch (OperationCanceledException)
         {
-            return new(false, "Canceled.", null, true, token.IsCancellationRequested ? CancellationScope.All : CancellationScope.CurrentItem);
+            return new(false, L.Get("ExtractTextAction_Canceled_437433cc"), null, true, token.IsCancellationRequested ? CancellationScope.All : CancellationScope.CurrentItem);
         }
         catch (Exception ex)
         {
             request.Logger.Log($"ExtractText: failed. {ex}");
-            return new(false, OnnxProviderHelper.GetCleanUserMessage(ex, "Extract Text"));
+            return new(false, OnnxProviderHelper.GetCleanUserMessage(ex, L.Get("ExtractTextAction_Extract_Text_9b5993ad")));
         }
         finally
         {
@@ -85,7 +85,7 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
                 JsonSerializer.Serialize(json, page, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         }
 
-        void Report(int percent, string message) => request.ProgressReporter?.ReportProgress(Math.Clamp(percent, 0, 100) * 10, request.InputPath, "Extract Text", message);
+        void Report(int percent, string message) => request.ProgressReporter?.ReportProgress(Math.Clamp(percent, 0, 100) * 10, request.InputPath, L.Get("ExtractTextAction_Extract_Text_9b5993ad"), message);
         if (pdf)
         {
             using var document = new PdfOcrDocument(request.InputPath, token);
@@ -93,22 +93,22 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
             for (var i = 0; i < pages.Length; i++)
             {
                 token.ThrowIfCancellationRequested();
-                Report(i * 95 / pages.Length, $"Reading page {pages[i]} of {document.PageCount}");
+                Report(i * 95 / pages.Length, L.Format("ExtractTextAction_Reading_page_0_of_1_ae304852",pages[i],document.PageCount));
                 var native = document.ReadText(pages[i], out var hasImages, token);
                 var lines = settings.OcrOnly ? new List<OcrLine>() : native.Lines.ToList();
                 if (settings.OcrOnly || native.Lines.Count == 0 || hasImages)
                 {
-                    Report(i * 95 / pages.Length, $"Rendering page {pages[i]} of {document.PageCount}");
+                    Report(i * 95 / pages.Length, L.Format("ExtractTextAction_Rendering_page_0_of_1_631c7936",pages[i],document.PageCount));
                     using var image = document.Render(pages[i], settings.Dpi, token, actualDpi =>
                     {
                         reducedPages++;
-                        var message = $"Page {pages[i]}: OCR rendering reduced from {settings.Dpi} to {actualDpi} DPI to limit memory use.";
+                        var message = L.Format("ExtractTextAction_Page_0_OCR_rendering_reduced_from_1__a867bd40",pages[i],settings.Dpi,actualDpi);
                         request.Logger.Log($"ExtractText: {message}");
                         Report(i * 95 / pages.Length, message);
                     });
                     var engine = GetEngine(settings);
                     usedOcr = true;
-                    var recognized = engine.Recognize(image, settings.Rotation, (percent, message) => Report((i * 95 + percent * 95 / 100) / pages.Length, $"Page {pages[i]}: {message}"), token);
+                    var recognized = engine.Recognize(image, settings.Rotation, (percent, message) => Report((i * 95 + percent * 95 / 100) / pages.Length, L.Format("ExtractTextAction_Page_0_1_45b5d2a8",pages[i],message)), token);
                     var mapped = recognized.Select(l => l with { Polygon = l.Polygon.Select(p => new OcrPoint(p.X * native.Width / image.Width, p.Y * native.Height / image.Height)).ToArray() });
                     lines.AddRange(mapped.Where(line => settings.OcrOnly || !native.Lines.Any(existing => OcrGeometry.Overlaps(existing, line))));
                 }
@@ -124,7 +124,7 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
 
             if (settings.Format == "pdf")
             {
-                Report(96, "Writing searchable PDF...");
+                Report(96, L.Get("ExtractTextAction_Writing_searchable_PDF_17c71eca"));
                 document.Save(output.WorkingPath, token);
             }
         }
@@ -141,7 +141,7 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
                 using var document = new PdfOcrDocument(null, token);
                 document.AddImagePage(image);
                 document.AddText(result, token);
-                Report(96, "Writing searchable PDF...");
+                Report(96, L.Get("ExtractTextAction_Writing_searchable_PDF_17c71eca"));
                 document.Save(output.WorkingPath, token);
             }
         }
@@ -161,10 +161,10 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
         token.ThrowIfCancellationRequested();
         var published = output.Publish(token);
         request.Logger.Log($"ExtractText: saved '{published}', model={settings.Model}, format={settings.Format}, lines={lineCount}, lowConfidence={lowConfidence}, reducedQualityPages={reducedPages}.");
-        Report(100, $"Saved: {Path.GetFileName(published)}");
-        var message = lineCount == 0 ? "File created. No text was detected." : lowConfidence > 0 ? "Text extracted. Some low-confidence text may need review." : "Text extracted.";
+        Report(100, L.Format("ExtractTextAction_Saved_0_0f84879b",Path.GetFileName(published)));
+        var message = lineCount == 0 ? L.Get("ExtractTextAction_File_created_No_text_was_detected_f83406eb") : lowConfidence > 0 ? L.Get("ExtractTextAction_Text_extracted_Some_low_confidence_t_8c6c66e2") : L.Get("ExtractTextAction_Text_extracted_0500ed97");
         if (reducedPages > 0)
-            message += $" OCR rendering quality was reduced for {reducedPages} oversized PDF page(s). Review small text.";
+            message += L.Format("ExtractTextAction_OCR_rendering_quality_was_reduced_fo_0115216f",reducedPages);
         return new(true, message, published);
     }
 
@@ -176,7 +176,7 @@ internal sealed class ExtractTextAction : IFrameShiftAction, IDisposable
         var model = OcrModelCatalog.Get(settings.Model);
         var directory = _modelsRoot is null ? model.DirectoryPath : Path.Combine(_modelsRoot, model.Folder);
         if (!OcrModelCatalog.IsReady(model, directory))
-            throw new InvalidDataException("The OCR model is missing or damaged. Use Extract Text from FrameShift to download or repair it.");
+            throw new InvalidDataException(L.Get("ExtractTextAction_The_OCR_model_is_missing_or_damaged__f5cab831"));
         _engine?.Dispose();
         _engine = null;
         _engineKey = null;

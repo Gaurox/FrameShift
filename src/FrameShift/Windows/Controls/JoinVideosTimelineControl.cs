@@ -35,7 +35,7 @@ internal sealed class JoinVideosTimelineControl : Control
         Cursor = Cursors.Default;
         TabStop = true;
         AccessibleRole = AccessibleRole.List;
-        AccessibleName = "Video clips timeline";
+        AccessibleName = L.Get("JoinVideosTimelineControl_Video_clips_timeline_d30a74ea");
         ControlHelper.SetDoubleBuffered(this);
         SetStyle(ControlStyles.Selectable | ControlStyles.ResizeRedraw | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint, true);
         UpdateAccessibleDescription();
@@ -86,9 +86,9 @@ internal sealed class JoinVideosTimelineControl : Control
     private void UpdateAccessibleDescription()
     {
         var selection = _selectedIndex >= 0 && _selectedIndex < _items.Count
-            ? $"Clip {_selectedIndex + 1} of {_items.Count}: {_items[_selectedIndex].SourcePath}. {_items[_selectedIndex].LoadError}"
-            : $"{_items.Count} clips. No clip selected.";
-        AccessibleDescription = $"{selection} Left/Right, Home/End: select. Ctrl+Left/Right: move. Delete: remove selected clip.";
+            ? L.Format("JoinVideosTimelineControl_Clip_0_of_1_2_3_fddbf0ad",_selectedIndex + 1,_items.Count,_items[_selectedIndex].SourcePath,_items[_selectedIndex].LoadError)
+            : L.Format("JoinVideosTimelineControl_0_clips_No_clip_selected_4d1a9c0c",_items.Count);
+        AccessibleDescription = L.Format("JoinVideosTimelineControl_0_Left_Right_Home_End_select_Ctrl_Le_8b509584",selection);
     }
 
     protected override bool IsInputKey(Keys keyData)
@@ -200,7 +200,7 @@ internal sealed class JoinVideosTimelineControl : Control
         {
             TextRenderer.DrawText(
                 e.Graphics,
-                "Add at least two videos to build the timeline.",
+                L.Get("JoinVideosTimelineControl_Add_at_least_two_videos_to_build_the_62d317fa"),
                 Font,
                 ClientRectangle,
                 FrameShiftTheme.TextMuted,
@@ -448,7 +448,7 @@ internal sealed class JoinVideosTimelineControl : Control
 
         var details = item.IsLoaded
             ? item.LoadError ?? FormatDuration(item.DurationSeconds)
-            : "Inspecting...";
+            : L.Get("JoinVideosTimelineControl_Inspecting_ef61fa48");
         var detailBounds = new Rectangle(bounds.X + Pixels(TilePadding), nameBounds.Bottom + Pixels(2), bounds.Width - Pixels(TilePadding * 2), Math.Max(Pixels(18), Font.Height));
         TextRenderer.DrawText(
             graphics,
@@ -470,7 +470,7 @@ internal sealed class JoinVideosTimelineControl : Control
             graphics.FillRectangle(placeholder, bounds);
             TextRenderer.DrawText(
                 graphics,
-                "No preview",
+                L.Get("JoinVideosTimelineControl_No_preview_486b5ef4"),
                 Font,
                 bounds,
                 FrameShiftTheme.TextMuted,
@@ -545,7 +545,7 @@ internal sealed class JoinVideosTimelineControl : Control
         var item = _items[index];
         var details = item.IsLoaded
             ? item.LoadError ?? FormatDuration(item.DurationSeconds)
-            : "Inspecting...";
+            : L.Get("JoinVideosTimelineControl_Inspecting_ef61fa48");
         var text = $"{Path.GetFileName(item.SourcePath)}\r\n{details}";
         var hint = BuildCompatibilityHint(item, index);
         if (hint is not null)
@@ -571,13 +571,13 @@ internal sealed class JoinVideosTimelineControl : Control
 
         if (!item.Probe.HasAudio && anchor.Probe.HasAudio)
         {
-            return "No audio on this clip.";
+            return L.Get("JoinVideosTimelineControl_No_audio_on_this_clip_5b3f61ea");
         }
 
         if (item.Probe.DisplayVideoWidth != anchor.Probe.DisplayVideoWidth ||
             item.Probe.DisplayVideoHeight != anchor.Probe.DisplayVideoHeight)
         {
-            return "Different resolution than the first clip.";
+            return L.Get("JoinVideosTimelineControl_Different_resolution_than_the_first__ec1a0a96");
         }
 
         return null;

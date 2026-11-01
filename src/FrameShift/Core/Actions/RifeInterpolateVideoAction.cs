@@ -31,8 +31,8 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "interpolate-video-rife",
-        "Interpolate Video (RIFE)",
-        "Interpolates video frames with the RIFE AI model.");
+        L.Get("RifeInterpolateVideoAction_Interpolate_Video_RIFE_ff20b6fe"),
+        L.Get("RifeInterpolateVideoAction_Interpolates_video_frames_with_the_R_f97264ac"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -74,7 +74,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
         {
             return new ActionExecutionResult(
                 false,
-                $"AI model not found or invalid. Run FrameShift.exe --action {Descriptor.Id} from Explorer to verify and download it first.");
+                L.Format("RifeInterpolateVideoAction_AI_model_not_found_or_invalid_Run_Fr_fe859d18",Descriptor.Id));
         }
 
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
@@ -143,16 +143,16 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             {
                 try
                 {
-                    request.ProgressReporter?.ReportProgress(100, request.InputPath, Descriptor.DisplayName, "Starting rawvideo RIFE pipeline...");
-                    request.ProgressReporter?.ReportState("processing", "Starting rawvideo RIFE pipeline...");
+                    request.ProgressReporter?.ReportProgress(100, request.InputPath, Descriptor.DisplayName, L.Get("RifeInterpolateVideoAction_Starting_rawvideo_RIFE_pipeline_9702d9c7"));
+                    request.ProgressReporter?.ReportState("processing", L.Get("RifeInterpolateVideoAction_Starting_rawvideo_RIFE_pipeline_9702d9c7"));
 
                     var rawProgress = new Progress<(int Processed, int Total)>(p =>
                     {
                         var fraction = Math.Clamp(p.Processed / (double)Math.Max(1, p.Total), 0d, 1d);
                         var permille = 100 + (int)Math.Round(fraction * 900d);
                         request.ProgressReporter?.ReportProgress(permille, request.InputPath, Descriptor.DisplayName,
-                            $"Interpolating frames... {p.Processed}/{p.Total}");
-                        request.ProgressReporter?.ReportState("processing", $"Interpolating frames... {p.Processed}/{p.Total}");
+                            L.Format("RifeInterpolateVideoAction_Interpolating_frames_0_1_c8009673",p.Processed,p.Total));
+                        request.ProgressReporter?.ReportState("processing", L.Format("RifeInterpolateVideoAction_Interpolating_frames_0_1_c8009673",p.Processed,p.Total));
                     });
 
                     var rawPipeline = new RifeRawVideoPipeline(_ffmpegRunner, request.Logger);
@@ -180,7 +180,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
                 {
                     ConversionActionHelper.DeleteIfExists(outputPath);
                     request.Logger.Log($"Rawvideo pipeline failed in auto mode. Falling back to BMP pipeline. {ex.Message}");
-                    request.ProgressReporter?.ReportState("processing", "Rawvideo pipeline unavailable. Falling back to BMP...");
+                    request.ProgressReporter?.ReportState("processing", L.Get("RifeInterpolateVideoAction_Rawvideo_pipeline_unavailable_Fallin_dd208cb3"));
                 }
             }
 
@@ -220,8 +220,8 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             Directory.CreateDirectory(extractedFramesDirectory);
             Directory.CreateDirectory(interpolationWorkingDirectory);
 
-            request.ProgressReporter?.ReportProgress(20, request.InputPath, Descriptor.DisplayName, "Extracting source frames...");
-            request.ProgressReporter?.ReportState("processing", "Extracting source frames...");
+            request.ProgressReporter?.ReportProgress(20, request.InputPath, Descriptor.DisplayName, L.Get("RifeInterpolateVideoAction_Extracting_source_frames_87f89abc"));
+            request.ProgressReporter?.ReportState("processing", L.Get("RifeInterpolateVideoAction_Extracting_source_frames_87f89abc"));
 
             var extractArguments = BuildExtractArguments(request.InputPath, Path.Combine(extractedFramesDirectory, TempFramePattern));
             var extractionStopwatch = Stopwatch.StartNew();
@@ -240,7 +240,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
 
             if (extractionResult.Canceled)
             {
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("RifeInterpolateVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, extractionResult.CancellationScope);
             }
 
@@ -254,8 +254,8 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage);
             }
 
-            request.ProgressReporter?.ReportProgress(120, request.InputPath, Descriptor.DisplayName, "Loading AI model...");
-            request.ProgressReporter?.ReportState("processing", "Loading AI model...");
+            request.ProgressReporter?.ReportProgress(120, request.InputPath, Descriptor.DisplayName, L.Get("RifeInterpolateVideoAction_Loading_AI_model_02e72081"));
+            request.ProgressReporter?.ReportState("processing", L.Get("RifeInterpolateVideoAction_Loading_AI_model_02e72081"));
             metrics.SetExtractedFrames(extractedFramesDirectory);
 
             int encodedFrameCount;
@@ -310,8 +310,8 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
                 ? BuildEncodePlan(sourceExtension, false)
                 : null;
 
-            request.ProgressReporter?.ReportProgress(900, request.InputPath, Descriptor.DisplayName, $"Encoding output on {encodePlan.ModeLabel}...");
-            request.ProgressReporter?.ReportState("processing", $"Encoding output on {encodePlan.ModeLabel}...");
+            request.ProgressReporter?.ReportProgress(900, request.InputPath, Descriptor.DisplayName, L.Format("RifeInterpolateVideoAction_Encoding_output_on_0_b7ca56a6",encodePlan.ModeLabel));
+            request.ProgressReporter?.ReportState("processing", L.Format("RifeInterpolateVideoAction_Encoding_output_on_0_b7ca56a6",encodePlan.ModeLabel));
 
             var encodeArguments = BuildEncodeArguments(
                 finalFramesDirectory,
@@ -340,7 +340,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
                 request.Logger.Log("RIFE encode path failed on GPU. Retrying with CPU fallback.");
-                request.ProgressReporter?.ReportState("processing", "GPU unavailable. Retrying encode on CPU...");
+                request.ProgressReporter?.ReportState("processing", L.Get("RifeInterpolateVideoAction_GPU_unavailable_Retrying_encode_on_C_9e1025c4"));
 
                 var fallbackArguments = BuildEncodeArguments(
                     finalFramesDirectory,
@@ -369,14 +369,14 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
             if (encodeResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("RifeInterpolateVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, encodeResult.CancellationScope);
             }
 
             if (encodeResult.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(encodeResult.StandardError, "FFmpeg failed while encoding the RIFE output video.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(encodeResult.StandardError, L.Get("RifeInterpolateVideoAction_FFmpeg_failed_while_encoding_the_RIF_464a9c81"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage);
             }
@@ -391,7 +391,7 @@ public sealed class RifeInterpolateVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("RifeInterpolateVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

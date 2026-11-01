@@ -12,12 +12,12 @@ public static class VideoConversionPlanner
         var target = targetId.ToUpperInvariant();
         return profileId.ToLowerInvariant() switch
         {
-            "remux" => $"Preparing remux to {target}...",
-            "montage" => $"Preparing montage conversion to {target}...",
-            "youtube" => $"Preparing web conversion to {target}...",
-            "streaming" => $"Preparing streaming conversion to {target}...",
-            "tv" => $"Preparing TV-compatible conversion to {target}...",
-            _ => $"Preparing universal conversion to {target}..."
+            "remux" => L.Format("VideoConversionPlanner_Preparing_remux_to_0_bacf3014",target),
+            "montage" => L.Format("VideoConversionPlanner_Preparing_montage_conversion_to_0_a2ce4e52",target),
+            "youtube" => L.Format("VideoConversionPlanner_Preparing_web_conversion_to_0_c6937378",target),
+            "streaming" => L.Format("VideoConversionPlanner_Preparing_streaming_conversion_to_0_1965bf1c",target),
+            "tv" => L.Format("VideoConversionPlanner_Preparing_TV_compatible_conversion_t_2104baa8",target),
+            _ => L.Format("VideoConversionPlanner_Preparing_universal_conversion_to_0_8e094eba",target)
         };
     }
 
@@ -69,14 +69,14 @@ public static class VideoConversionPlanner
         {
             if (!string.IsNullOrWhiteSpace(videoCodec) && videoCodec is not ("vp8" or "vp9" or "av1"))
             {
-                return $"Remux to WEBM is not possible: video codec '{videoCodec}' is not WEBM-compatible.";
+                return L.Format("VideoConversionPlanner_Remux_to_WEBM_is_not_possible_video__036635d3",videoCodec);
             }
 
             foreach (var codec in audioCodecs)
             {
                 if (codec is not ("opus" or "vorbis"))
                 {
-                    return $"Remux to WEBM is not possible: audio codec '{codec}' is not WEBM-compatible.";
+                    return L.Format("VideoConversionPlanner_Remux_to_WEBM_is_not_possible_audio__38161e46",codec);
                 }
             }
 
@@ -84,7 +84,7 @@ public static class VideoConversionPlanner
             {
                 if (codec is not "webvtt")
                 {
-                    return $"Remux to WEBM is not possible: subtitle codec '{codec}' is not WEBM-compatible.";
+                    return L.Format("VideoConversionPlanner_Remux_to_WEBM_is_not_possible_subtit_92aad9e8",codec);
                 }
             }
         }
@@ -93,7 +93,7 @@ public static class VideoConversionPlanner
         {
             if (!string.IsNullOrWhiteSpace(videoCodec) && videoCodec is not ("h264" or "hevc" or "av1" or "mpeg4"))
             {
-                return $"Remux to {targetId.ToUpperInvariant()} is not possible: video codec '{videoCodec}' is not compatible.";
+                return L.Format("VideoConversionPlanner_Remux_to_0_is_not_possible_video_cod_bd199b11",targetId.ToUpperInvariant(),videoCodec);
             }
         }
 
@@ -136,7 +136,7 @@ public static class VideoConversionPlanner
 
             if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase) && !IsTextSubtitle(stream.CodecName)))
             {
-                warningList.Add("Some subtitles are not compatible with this output format and will be removed.");
+                warningList.Add(L.Get("VideoConversionPlanner_Some_subtitles_are_not_compatible_wi_db624e10"));
             }
         }
         else if (targetId is "webm")
@@ -159,17 +159,17 @@ public static class VideoConversionPlanner
 
             if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase) && !IsTextSubtitle(stream.CodecName)))
             {
-                warningList.Add("Some subtitles are not compatible with WEBM and will be removed.");
+                warningList.Add(L.Get("VideoConversionPlanner_Some_subtitles_are_not_compatible_wi_9fd1fdfc"));
             }
         }
         else if (targetId is "avi" && probe.SubtitleCodecs.Count > 0)
         {
-            warningList.Add("Subtitles cannot be kept in AVI output and will be removed.");
+            warningList.Add(L.Get("VideoConversionPlanner_Subtitles_cannot_be_kept_in_AVI_outp_cf84577d"));
         }
 
         if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "data", StringComparison.OrdinalIgnoreCase) || string.Equals(stream.CodecType, "attachment", StringComparison.OrdinalIgnoreCase)))
         {
-            warningList.Add("Extra data streams or attachments will be removed.");
+            warningList.Add(L.Get("VideoConversionPlanner_Extra_data_streams_or_attachments_wi_2f6bb184"));
         }
 
         var globalArgs = targetId is "mp4" or "m4v" or "mov"
@@ -179,7 +179,7 @@ public static class VideoConversionPlanner
         return new VideoConversionPlan(
             targetId,
             "remux",
-            "Copy codecs",
+            L.Get("VideoConversionPlanner_Copy_codecs_96a529da"),
             "copy",
             Array.Empty<string>(),
             "copy",
@@ -204,7 +204,7 @@ public static class VideoConversionPlanner
             "mov" => BuildMovPlan(profileId, nvencAvailable),
             "webm" => BuildWebmPlan(profileId),
             "m4v" => BuildM4VPlan(profileId, nvencAvailable),
-            _ => throw new InvalidOperationException("Unsupported target format.")
+            _ => throw new InvalidOperationException(L.Get("VideoConversionPlanner_Unsupported_target_format_75eb855c"))
         };
     }
 
@@ -339,7 +339,7 @@ public static class VideoConversionPlanner
 
             if (nonTextSubtitles.Length > 0)
             {
-                warnings.Add("Some subtitles are not compatible with this output format and will be removed.");
+                warnings.Add(L.Get("VideoConversionPlanner_Some_subtitles_are_not_compatible_wi_db624e10"));
             }
         }
         else if (targetId is "webm")
@@ -357,17 +357,17 @@ public static class VideoConversionPlanner
 
             if (nonTextSubtitles.Length > 0)
             {
-                warnings.Add("Some subtitles are not compatible with WEBM and will be removed.");
+                warnings.Add(L.Get("VideoConversionPlanner_Some_subtitles_are_not_compatible_wi_9fd1fdfc"));
             }
         }
         else if (targetId is "avi" && probe.HasSubtitles)
         {
-            warnings.Add("Subtitles cannot be kept in AVI output and will be removed.");
+            warnings.Add(L.Get("VideoConversionPlanner_Subtitles_cannot_be_kept_in_AVI_outp_cf84577d"));
         }
 
         if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "data", StringComparison.OrdinalIgnoreCase) || string.Equals(stream.CodecType, "attachment", StringComparison.OrdinalIgnoreCase)))
         {
-            warnings.Add("Extra data streams or attachments will be removed.");
+            warnings.Add(L.Get("VideoConversionPlanner_Extra_data_streams_or_attachments_wi_2f6bb184"));
         }
 
         return (mapArgs, subtitleArgs, warnings);

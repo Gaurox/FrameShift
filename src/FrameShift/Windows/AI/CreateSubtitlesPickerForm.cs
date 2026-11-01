@@ -29,7 +29,7 @@ internal sealed class CreateSubtitlesPickerForm : Form
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(680, 640), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, $"FrameShift - {actionTitle}", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", $"Source: {sourceLabel}",
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {actionTitle}", L.Format("CreateSubtitlesPickerForm_Source_0_653ab450",sourceLabel),
             IconPaths.CreateSubtitlesAiIcon, IconPaths.FrameShiftAiIcon, "AI");
         var modelControls = new List<Control>();
         foreach (var model in CreateSubtitlesModelCatalog.GetAll())
@@ -63,17 +63,17 @@ internal sealed class CreateSubtitlesPickerForm : Form
             radio.CheckedChanged += (_, _) => { if (radio.Checked) _selectedAssPreset = preset; };
             presetControls.Add(radio);
         }
-        _assPresetSection = FrameShiftUiFactory.CreateSection("ASS style", CreateRadioList(presetControls));
+        _assPresetSection = FrameShiftUiFactory.CreateSection(L.Get("CreateSubtitlesPickerForm_ASS_style_8174bc8b"), CreateRadioList(presetControls));
         _assPresetSection.Name = "assPresets";
         var content = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Transcription model", CreateRadioList(modelControls)),
-            FrameShiftUiFactory.CreateSection("Output format", CreateRadioList(outputControls)), _assPresetSection);
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+            FrameShiftUiFactory.CreateSection(L.Get("CreateSubtitlesPickerForm_Transcription_model_1d890349"), CreateRadioList(modelControls)),
+            FrameShiftUiFactory.CreateSection(L.Get("CreateSubtitlesPickerForm_Output_format_472de6c1"), CreateRadioList(outputControls)), _assPresetSection);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CreateSubtitlesPickerForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var create = FrameShiftUiFactory.CreateMeasuredActionButton("Create File", true);
+        var create = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CreateSubtitlesPickerForm_Create_File_1f45a747"), true);
         create.DialogResult = DialogResult.OK;
         _layout = FrameShiftDialogLayout.Create(header, content, FrameShiftDialogLayout.CreateActions(cancel, create),
-            FrameShiftUiFactory.CreateStatusMessage("Transcription runs locally. Creates a new subtitle file next to the source."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("CreateSubtitlesPickerForm_Transcription_runs_locally_Creates_a_ec3c9137")));
         Controls.Add(_layout);
         Load += (_, _) =>
         {
@@ -144,7 +144,7 @@ internal sealed class CreateSubtitlesPickerForm : Form
             return Path.GetFileName(inputPaths[0]);
         }
 
-        return $"{inputPaths.Count} selected files";
+        return L.Format("CreateSubtitlesPickerForm_0_selected_files_dd068a4b",inputPaths.Count);
     }
 
     private static string BuildRowDescription(CreateSubtitlesModelDefinition model)
@@ -152,10 +152,10 @@ internal sealed class CreateSubtitlesPickerForm : Form
         var size = FormatDownloadSize(model.ExpectedTotalSizeBytes);
         return model.Id switch
         {
-            "whisper-base" => $"{size} · CPU only · Good for testing and short clips",
-            "whisper-small" => $"{size} · CPU only · Best balance of speed and accuracy",
-            "whisper-turbo" => $"{size} · CPU only · Highest accuracy — allow extra processing time on CPU",
-            _ => $"{size} · CPU only"
+            "whisper-base" => L.Format("CreateSubtitlesPickerForm_0_CPU_only_Good_for_testing_and_shor_d56b29b7",size),
+            "whisper-small" => L.Format("CreateSubtitlesPickerForm_0_CPU_only_Best_balance_of_speed_and_06f22c6b",size),
+            "whisper-turbo" => L.Format("CreateSubtitlesPickerForm_0_CPU_only_Highest_accuracy_allow_ex_c3656bca",size),
+            _ => L.Format("CreateSubtitlesPickerForm_0_CPU_only_d20a228e",size)
         };
     }
 

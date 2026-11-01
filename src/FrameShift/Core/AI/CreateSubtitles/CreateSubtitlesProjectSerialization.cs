@@ -52,23 +52,23 @@ internal static class CreateSubtitlesProjectSerializer
     {
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw new InvalidOperationException("Subtitle project JSON is empty.");
+            throw new InvalidOperationException(L.Get("CreateSubtitlesProjectSerialization_Subtitle_project_JSON_is_empty_b0419d77"));
         }
 
         var payload = JsonSerializer.Deserialize<SubtitleProjectFilePayload>(json, s_jsonOptions);
         if (payload is null)
         {
-            throw new InvalidOperationException("Subtitle project JSON is unreadable.");
+            throw new InvalidOperationException(L.Get("CreateSubtitlesProjectSerialization_Subtitle_project_JSON_is_unreadable_05015f87"));
         }
 
         if (!string.Equals(payload.Format, FormatId, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException($"Unsupported subtitle project format '{payload.Format ?? "<null>"}'.");
+            throw new InvalidOperationException(L.Format("CreateSubtitlesProjectSerialization_Unsupported_subtitle_project_format__ae409eef",payload.Format ?? "<null>"));
         }
 
         if (payload.Version != CurrentVersion)
         {
-            throw new InvalidOperationException($"Unsupported subtitle project version '{payload.Version}'.");
+            throw new InvalidOperationException(L.Format("CreateSubtitlesProjectSerialization_Unsupported_subtitle_project_version_9dd7818e",payload.Version));
         }
 
         var segments = payload.Segments.Select(segment => new SubtitleSegment(

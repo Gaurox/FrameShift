@@ -24,8 +24,8 @@ public sealed class ConvertAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "convert-audio",
-        "Convert Audio",
-        "Converts an audio file to another container or codec profile.");
+        L.Get("ConvertAudioAction_Convert_Audio_1ee9e970"),
+        L.Get("ConvertAudioAction_Converts_an_audio_file_to_another_co_4deb9dae"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -77,7 +77,7 @@ public sealed class ConvertAudioAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", $"Preparing {profile.DisplayName.ToLowerInvariant()} conversion to {target.DisplayName.ToLowerInvariant()} on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Format("ConvertAudioAction_Preparing_0_conversion_to_1_on_CPU_6188eb3a",profile.DisplayName.ToLowerInvariant(),target.DisplayName.ToLowerInvariant()));
 
         try
         {
@@ -95,7 +95,7 @@ public sealed class ConvertAudioAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ConvertAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -112,7 +112,7 @@ public sealed class ConvertAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ConvertAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

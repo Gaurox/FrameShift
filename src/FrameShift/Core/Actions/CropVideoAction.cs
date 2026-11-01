@@ -26,8 +26,8 @@ public sealed class CropVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "crop-video",
-        "Crop Video",
-        "Crops a video using a fixed rectangle selected in the crop window.");
+        L.Get("CropVideoAction_Crop_Video_db93b9b1"),
+        L.Get("CropVideoAction_Crops_a_video_using_a_fixed_rectangl_3d746807"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -85,7 +85,7 @@ public sealed class CropVideoAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", $"Preparing video crop on {plan.ModeLabel}...");
+        request.ProgressReporter?.ReportState("processing", L.Format("CropVideoAction_Preparing_video_crop_on_0_f698428b",plan.ModeLabel));
 
         try
         {
@@ -104,7 +104,7 @@ public sealed class CropVideoAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CropVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -121,7 +121,7 @@ public sealed class CropVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CropVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

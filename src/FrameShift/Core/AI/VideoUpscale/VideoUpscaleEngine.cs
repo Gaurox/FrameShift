@@ -35,7 +35,7 @@ internal sealed class VideoUpscaleEngine : IDisposable
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
             if (frames.Length == 0)
-                throw new InvalidOperationException("No extracted video frames were found to upscale.");
+                throw new InvalidOperationException(L.Get("VideoUpscaleEngine_No_extracted_video_frames_were_found_ce96fc19"));
 
             Directory.CreateDirectory(outputFramesDirectory);
             int processed = 0;

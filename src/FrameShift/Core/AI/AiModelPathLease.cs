@@ -16,13 +16,13 @@ internal sealed class AiModelPathLease : IDisposable
     public static string Normalize(string path)
     {
         if (!Path.IsPathFullyQualified(path) || path.StartsWith(@"\\?\") || path.StartsWith(@"\\.\"))
-            throw new InvalidOperationException("Choose a regular, fully qualified AI models path.");
+            throw new InvalidOperationException(L.Get("AiModelPathLease_4fc58d8096"));
         if (path.Replace('/', '\\').Split('\\').Any(part => part.EndsWith(' ') || (part.EndsWith('.') && part is not "." and not "..")))
-            throw new InvalidOperationException("AI model paths cannot contain ambiguous names.");
+            throw new InvalidOperationException(L.Get("AiModelPathLease_d6b574a726"));
         var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
         var relative = full[(Path.GetPathRoot(full)?.Length ?? 0)..];
         if (relative.Split(Path.DirectorySeparatorChar).Any(part => part.Contains(':') || part.EndsWith('.') || part.EndsWith(' ')))
-            throw new InvalidOperationException("AI model paths cannot contain streams or ambiguous names.");
+            throw new InvalidOperationException(L.Get("AiModelPathLease_2fa07925cb"));
         return full;
     }
 
@@ -73,7 +73,7 @@ internal sealed class AiModelPathLease : IDisposable
         {
             var attributes = File.GetAttributes(path);
             if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Directory)) != 0)
-                throw new InvalidOperationException("The AI model file is a filesystem link or a directory.");
+                throw new InvalidOperationException(L.Get("AiModelPathLease_40b6938ea9"));
         }
         catch (FileNotFoundException) { }
         catch (DirectoryNotFoundException) { }
@@ -87,7 +87,7 @@ internal sealed class AiModelPathLease : IDisposable
         {
             var error = Marshal.GetLastWin32Error();
             handle.Dispose();
-            throw new IOException($"Cannot safely open AI model path '{path}': {new Win32Exception(error).Message}", unchecked((int)(0x80070000u | (uint)error)));
+            throw new IOException(L.Format("AiModelPathLease_8a298ccbe9", path, new Win32Exception(error).Message), unchecked((int)(0x80070000u | (uint)error)));
         }
         return handle;
     }
@@ -103,7 +103,7 @@ internal sealed class AiModelPathLease : IDisposable
         if (!GetFileInformationByHandleEx(handle, 9, out var info, 8))
             throw new IOException("Cannot inspect AI model path.", new Win32Exception(Marshal.GetLastWin32Error()));
         if ((info.Attributes & FileAttributes.ReparsePoint) != 0 || info.Attributes.HasFlag(FileAttributes.Directory) != directory)
-            throw new InvalidOperationException("The AI models path contains a filesystem link. Choose a regular directory in Settings.");
+            throw new InvalidOperationException(L.Get("AiModelPathLease_018fe827fa"));
     }
 
     // Rename the open, verified temporary itself; it never needs to be closed and reopened

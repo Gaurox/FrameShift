@@ -56,10 +56,10 @@ internal sealed class AudioSeparationEngine : IDisposable
         ValidateInput(inputPath);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new AudioSeparationProgress(1, 0, 0, "Loading audio..."));
+        progress.Report(new AudioSeparationProgress(1, 0, 0, L.Get("AudioSeparationEngine_Loading_audio_edd11db2")));
         using var reader = new AudioChunkReader(inputPath, cancellationToken);
 
-        progress.Report(new AudioSeparationProgress(5, 0, 0, "Loading model..."));
+        progress.Report(new AudioSeparationProgress(5, 0, 0, L.Get("AudioSeparationEngine_Loading_model_78fa2536")));
         EnsureSession(preferGpu, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -94,7 +94,7 @@ internal sealed class AudioSeparationEngine : IDisposable
                 var percent = isLastChunk
                     ? 99
                     : 10 + Math.Min(89, completedChunks * 89 / displayChunkTotal);
-                var status = $"Processing chunk {completedChunks}/{displayChunkTotal} ({Provider})";
+                var status = L.Format("AudioSeparationEngine_Processing_chunk_0_1_2_c81e6a27",completedChunks,displayChunkTotal,Provider);
                 progress.Report(new AudioSeparationProgress(percent, completedChunks, displayChunkTotal, status));
 
                 if (isLastChunk)
@@ -105,7 +105,7 @@ internal sealed class AudioSeparationEngine : IDisposable
             }
 
             writers.MarkCompleted(cancellationToken);
-            OutputOperation.NotifySaved(() => progress.Report(new AudioSeparationProgress(100, chunkTotal, chunkTotal, "Done.")));
+            OutputOperation.NotifySaved(() => progress.Report(new AudioSeparationProgress(100, chunkTotal, chunkTotal, L.Get("AudioSeparationEngine_Done_7aa25384"))));
         }
         catch
         {
@@ -173,7 +173,7 @@ internal sealed class AudioSeparationEngine : IDisposable
             }
             else
             {
-                throw new FileNotFoundException("No audio separation model is available.");
+                throw new FileNotFoundException(L.Get("AudioSeparationEngine_No_audio_separation_model_is_availab_43e4d2e5"));
             }
 
             ConfigureMetadata();
@@ -191,7 +191,7 @@ internal sealed class AudioSeparationEngine : IDisposable
     private void ConfigureMetadata()
     {
         if (_session is null)
-            throw new InvalidOperationException("ONNX session not initialized.");
+            throw new InvalidOperationException(L.Get("AudioSeparationEngine_ONNX_session_not_initialized_749f81db"));
 
         var inputNames = _session.InputMetadata.Keys.ToList();
         _mixInputName = inputNames.FirstOrDefault(k => k.Contains("mix", StringComparison.OrdinalIgnoreCase))
@@ -389,7 +389,7 @@ internal sealed class AudioSeparationEngine : IDisposable
     private static void ValidateInput(string inputPath)
     {
         if (!File.Exists(inputPath))
-            throw new FileNotFoundException("Input audio not found.", inputPath);
+            throw new FileNotFoundException(L.Get("AudioSeparationEngine_Input_audio_not_found_1bd4616b"), inputPath);
     }
 
     internal sealed class OutputWriters : IDisposable
@@ -459,7 +459,7 @@ internal sealed class AudioSeparationEngine : IDisposable
             catch (Exception ex) when (published.Count > 0)
             {
                 // Keep earlier commits and report their paths instead of attempting rollback.
-                throw new IOException($"Some audio stems were saved: {string.Join(", ", published)}. Remaining outputs failed: {ex.Message}", ex);
+                throw new IOException(L.Format("AudioSeparationEngine_Some_audio_stems_were_saved_0_Remain_1a3dac47",string.Join(", ", published),ex.Message), ex);
             }
             _completed = true;
             OutputOperation.NotifySaved(() => AppLogger.LogStatic($"Audio stems saved: {string.Join(", ", published)}"));

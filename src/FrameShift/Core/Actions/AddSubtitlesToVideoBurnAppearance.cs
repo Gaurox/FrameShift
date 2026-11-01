@@ -53,9 +53,9 @@ internal static class AddSubtitlesToVideoVerticalAlignments
 
     public static string GetDisplayName(this AddSubtitlesToVideoVerticalAlignment alignment) => alignment switch
     {
-        AddSubtitlesToVideoVerticalAlignment.Middle => "Middle",
-        AddSubtitlesToVideoVerticalAlignment.Top => "Top",
-        _ => "Bottom"
+        AddSubtitlesToVideoVerticalAlignment.Middle => L.Get("AddSubtitlesToVideoBurnAppearance_Middle_b68313bf"),
+        AddSubtitlesToVideoVerticalAlignment.Top => L.Get("AddSubtitlesToVideoBurnAppearance_Top_7aeed45b"),
+        _ => L.Get("AddSubtitlesToVideoBurnAppearance_Bottom_d38390e3")
     };
 
     public static int ToAssAlignmentCode(this AddSubtitlesToVideoVerticalAlignment alignment) => alignment switch

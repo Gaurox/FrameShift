@@ -102,14 +102,14 @@ public static class ActionScopeResolver
     {
         if (matching < entry.MinimumInputCount)
         {
-            return (false, $"Select at least {entry.MinimumInputCount} files for this action.");
+            return (false, L.Format("ActionScopeResolver_Select_at_least_0_files_for_this_act_11d6a0b3",entry.MinimumInputCount));
         }
 
         // Single-file editors accept exactly one compatible file (D2). Batch and Combine
         // run on the whole matching subset.
         if (entry.Arity == ActionArity.Single && matching > 1)
         {
-            return (false, "Select a single file for this action.");
+            return (false, L.Get("ActionScopeResolver_Select_a_single_file_for_this_action_8b09e079"));
         }
 
         return (true, null);

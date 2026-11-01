@@ -30,8 +30,8 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "join-videos",
-        "Join Videos",
-        "Joins video clips in the selected order without transitions or editing tools.");
+        L.Get("JoinVideosAction_Join_Videos_6d91bdb0"),
+        L.Get("JoinVideosAction_Joins_video_clips_in_the_selected_or_cb656a57"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -62,7 +62,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
         try
         {
             request.Logger.Log($"Running '{Descriptor.Id}' on {settings.InputPaths.Count} clips, anchored at '{Path.GetFileName(anchorPath)}'.");
-            request.ProgressReporter?.ReportState("preparing", "Inspecting clips...");
+            request.ProgressReporter?.ReportState("preparing", L.Get("JoinVideosAction_Inspecting_clips_c4b05395"));
 
             var ffprobePath = _toolLocator.ResolveFfprobePath();
             var probes = new List<JoinVideoProbeResult>(settings.InputPaths.Count);
@@ -133,7 +133,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 }
 
                 request.Logger.Log("Join Videos: direct concat failed; falling back to SDR normalization.");
-                request.ProgressReporter?.ReportState("processing", "Direct join was not accepted; normalizing clips...");
+                request.ProgressReporter?.ReportState("processing", L.Get("JoinVideosAction_Direct_join_was_not_accepted_normali_097fbb03"));
 
                 output?.Dispose();
                 output = OutputOperation.ForFile(CreateOutputPath(anchorPath, ".mp4"));
@@ -384,7 +384,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
     {
         var manifestPath = Path.Combine(temporaryDirectory, "join.ffconcat");
         File.WriteAllText(manifestPath, BuildConcatManifest(inputPaths), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        request.ProgressReporter?.ReportState("processing", "Joining compatible clips without re-encoding...");
+        request.ProgressReporter?.ReportState("processing", L.Get("JoinVideosAction_Joining_compatible_clips_without_re__0a94fb13"));
 
         return await _ffmpegRunner.RunAsync(
             ffmpegPath,
@@ -395,7 +395,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
             inputPaths[0],
             Descriptor.DisplayName,
             "Copy",
-            "Concat stream copy",
+            L.Get("JoinVideosAction_Concat_stream_copy_68a8fe4a"),
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -414,8 +414,8 @@ public sealed class JoinVideosAction : IFrameShiftAction
         var canUseNvenc = await _ffmpegRunner.IsEncoderAvailableAsync(ffmpegPath, "h264_nvenc", cancellationToken).ConfigureAwait(false);
 
         request.ProgressReporter?.ReportState("processing", canUseNvenc
-            ? "Normalizing clips to SDR H.264/AAC MP4..."
-            : "Normalizing clips to SDR H.264/AAC MP4 on CPU...");
+            ? L.Get("JoinVideosAction_Normalizing_clips_to_SDR_H_264_AAC_M_a481fc46")
+            : L.Get("JoinVideosAction_Normalizing_clips_to_SDR_H_264_AAC_M_3d5b933a"));
         var result = await RunNormalizationAsync(canUseNvenc).ConfigureAwait(false);
         if (result.Canceled || result.ExitCode == 0 || !canUseNvenc)
         {
@@ -424,7 +424,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
         ConversionActionHelper.DeleteIfExists(outputPath);
         request.Logger.Log("Join Videos: NVENC normalization failed; retrying with libx264.");
-        request.ProgressReporter?.ReportState("processing", "GPU encoding was unavailable; retrying on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("JoinVideosAction_GPU_encoding_was_unavailable_retryin_8ac764d9"));
         return await RunNormalizationAsync(useNvenc: false).ConfigureAwait(false);
 
         Task<FfmpegRunResult> RunNormalizationAsync(bool useNvenc)
@@ -437,7 +437,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 inputPaths[0],
                 Descriptor.DisplayName,
                 useNvenc ? "GPU" : "CPU",
-                "SDR H.264/AAC normalization",
+                L.Get("JoinVideosAction_SDR_H_264_AAC_normalization_726d1293"),
                 cancellationToken);
     }
 
@@ -461,8 +461,8 @@ public sealed class JoinVideosAction : IFrameShiftAction
             ConversionActionHelper.DeleteIfExists(outputPath);
         }
 
-        request.ProgressReporter?.ReportState("canceled", "Canceled.");
-        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled("Join Videos"), null, true, scope);
+        request.ProgressReporter?.ReportState("canceled", L.Get("JoinVideosAction_Canceled_437433cc"));
+        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(L.Get("JoinVideosAction_Join_Videos_6d91bdb0")), null, true, scope);
     }
 
     private static ActionExecutionResult Failed(string standardError, ActionRequest request)

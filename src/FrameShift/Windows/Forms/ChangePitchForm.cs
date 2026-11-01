@@ -48,13 +48,13 @@ public sealed class ChangePitchForm : Form
     {
         _inputPath = inputPath;
         _runPreview = runPreview ?? ((arguments, duration, token) => ffmpegRunner.RunAsync(
-            ffmpegPath, arguments, duration, null, inputPath, "Change Pitch", "Audio", token));
-        var title = "Change Pitch";
+            ffmpegPath, arguments, duration, null, inputPath, L.Get("ChangePitchForm_Change_Pitch_9a8443c3"), "Audio", token));
+        var title = L.Get("ChangePitchForm_Change_Pitch_9a8443c3");
         var iconPath = IconPaths.ContextMenuIco("change-pitch-audio-icon.ico");
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 600), new Size(380, 300));
         FrameShiftWindowChrome.Apply(this, $"FrameShift - {title}");
-        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", $"Source: {Path.GetFileName(inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader($"FrameShift - {title}", L.Format("ChangePitchForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             iconPath, IconPaths.AppIcon, "♪");
         _infoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
         _trackBar = new TrackBar { Name = "pitchSlider", Minimum = -12, Maximum = 12, Value = 0,
@@ -66,7 +66,7 @@ public sealed class ChangePitchForm : Form
         _textPercent.Leave += (_, _) => ApplyPercentFromText();
         _textSemitones.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplySemitonesFromText(); } };
         _textPercent.KeyDown += (_, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplyPercentFromText(); } };
-        _checkKeepDuration = new CheckBox { Name = "keepDuration", Text = "Keep original duration", AutoSize = true, Checked = true };
+        _checkKeepDuration = new CheckBox { Name = "keepDuration", Text = L.Get("ChangePitchForm_Keep_original_duration_ed997306"), AutoSize = true, Checked = true };
         _checkKeepDuration.CheckedChanged += (_, _) => RefreshInfoLabel();
         var negative = FrameShiftUiFactory.CreateChoiceRow();
         var positive = FrameShiftUiFactory.CreateChoiceRow();
@@ -77,22 +77,22 @@ public sealed class ChangePitchForm : Form
             (semitones < 0 ? negative : positive).Controls.Add(button);
         }
         var content = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateSection("Pitch", FrameShiftUiFactory.CreateVerticalStack(
-                _trackBar, FrameShiftUiFactory.CreateFieldRow("&Semitones", _textSemitones, null, 120),
-                FrameShiftUiFactory.CreateFieldRow("&Pitch", _textPercent, "%", 120),
-                FrameShiftUiFactory.CreateWrappingLabel("Slider: −12 to +12 semitones. Manual input: −24 to +24."))),
-            FrameShiftUiFactory.CreateSection("Presets", FrameShiftUiFactory.CreateVerticalStack(negative, positive)),
-            FrameShiftUiFactory.CreateSection("Options", FrameShiftUiFactory.CreateChoiceRow(_checkKeepDuration)));
-        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview 5s", false);
+            FrameShiftUiFactory.CreateSection(L.Get("ChangePitchForm_Pitch_1d37f054"), FrameShiftUiFactory.CreateVerticalStack(
+                _trackBar, FrameShiftUiFactory.CreateFieldRow(L.Get("ChangePitchForm_Semitones_b193f61e"), _textSemitones, null, 120),
+                FrameShiftUiFactory.CreateFieldRow(L.Get("ChangePitchForm_Pitch_ca41a3ff"), _textPercent, "%", 120),
+                FrameShiftUiFactory.CreateWrappingLabel(L.Get("ChangePitchForm_Slider_12_to_12_semitones_Manual_inp_de81df65")))),
+            FrameShiftUiFactory.CreateSection(L.Get("ChangePitchForm_Presets_66948156"), FrameShiftUiFactory.CreateVerticalStack(negative, positive)),
+            FrameShiftUiFactory.CreateSection(L.Get("ChangePitchForm_Options_59a2f992"), FrameShiftUiFactory.CreateChoiceRow(_checkKeepDuration)));
+        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangePitchForm_Preview_5s_dbda04dc"), false);
         _buttonPreview.Name = "previewButton";
         _buttonPreview.Click += async (_, _) => await PreviewAsync();
-        var previewSection = FrameShiftUiFactory.CreateSection("Preview", FrameShiftUiFactory.CreateVerticalStack(
+        var previewSection = FrameShiftUiFactory.CreateSection(L.Get("ChangePitchForm_Preview_68dd3b5d"), FrameShiftUiFactory.CreateVerticalStack(
             _buttonPreview, _infoLabel));
         content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         content.Controls.Add(previewSection, 0, content.RowCount++);
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangePitchForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var apply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        var apply = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ChangePitchForm_Apply_3d57c12e"), true);
         apply.DialogResult = DialogResult.OK;
         AcceptButton = apply;
         CancelButton = cancel;
@@ -188,10 +188,10 @@ public sealed class ChangePitchForm : Form
         var factor = Math.Pow(2.0, _semitones / 12.0);
         var pct = factor * 100d;
         var modeText = _checkKeepDuration.Checked
-            ? "pitch only, duration preserved"
-            : "pitch + tempo change";
+            ? L.Get("ChangePitchForm_pitch_only_duration_preserved_2a7f471a")
+            : L.Get("ChangePitchForm_pitch_tempo_change_f692bdfc");
         var sign = _semitones >= 0 ? "+" : string.Empty;
-        _infoLabel.Text = $"Output: {sign}{_semitones:0.##} semitones ({pct:0.##}%) — {modeText}. Output saved next to source.";
+        _infoLabel.Text = L.Format("ChangePitchForm_Output_0_1_0_semitones_2_0_3_Output__40a6bede",sign,_semitones,pct,modeText);
     }
 
     private void StopPreviewForClose()

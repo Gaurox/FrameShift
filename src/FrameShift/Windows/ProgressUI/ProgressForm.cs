@@ -54,8 +54,8 @@ public sealed partial class ProgressForm : Form, IProgressReporter
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(1000, 920), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Progress");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Progress", "No file selected",
+        FrameShiftWindowChrome.Apply(this, L.Get("ProgressForm_FrameShift_Progress_569c281e"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("ProgressForm_FrameShift_Progress_569c281e"), L.Get("ProgressForm_No_file_selected_55388134"),
             IconPaths.AppIcon, IconPaths.AppIcon, "▶");
         _currentActionLabel = header.TitleLabel;
         _currentFileLabel = header.SubtitleLabel;
@@ -65,7 +65,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None,
             Dock = DockStyle.Fill, Margin = Padding.Empty,
             BackColor = FrameShiftTheme.Surface, ForeColor = BodyColor,
-            Text = "Waiting...", AccessibleName = "Full task or selected file details"
+            Text = L.Get("ProgressForm_Waiting_84214567"), AccessibleName = L.Get("ProgressForm_Full_task_or_selected_file_details_d4e2b07f")
         };
         _statusLabel.Name = "progressStatus";
         _progressBar = new ProgressBar
@@ -92,7 +92,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         metrics.Controls.Add(_percentLabel, 1, 0);
         _stateLabel.Anchor = AnchorStyles.Left;
         _stateLabel.Dock = DockStyle.None;
-        var taskSection = FrameShiftUiFactory.CreateSection("Activity",
+        var taskSection = FrameShiftUiFactory.CreateSection(L.Get("ProgressForm_Activity_e34230a6"),
             FrameShiftUiFactory.CreateVerticalStack(metrics, _progressBar, _etaLabel));
         taskSection.BackColor = FrameShiftTheme.AccentSoft;
         Font? summaryFont = null;
@@ -140,7 +140,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         body.Controls.Add(workspace, 0, 1);
         body.Controls.Add(_donationPanel, 0, 2);
         var viewport = FrameShiftDialogLayout.CreateScrollBody(body);
-        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel all", false);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ProgressForm_Cancel_all_8f1c469f"), false);
         _cancelButton.ForeColor = DangerColor;
         _cancelButton.Click += (_, _) =>
         {
@@ -255,7 +255,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         _closeRequested = true;
         MarkCurrentProcessingItemsAsCanceling();
         MarkQueuedItemsAsCanceled();
-        UpdateStatus("Cancellation requested.");
+        UpdateStatus(L.Get("ProgressForm_Cancellation_requested_f3c55afb"));
         _cancelButton.Enabled = false;
         CancelRequested?.Invoke(this, EventArgs.Empty);
         AppLogger.LogStatic("ProgressForm: RequestCancel exited.");
@@ -283,7 +283,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             _progressBar.Style = ProgressBarStyle.Continuous;
             _allowUserClose = true;
             _cancelButton.Enabled = true;
-            _cancelButton.Text = "Close";
+            _cancelButton.Text = L.Get("ProgressForm_Close_6cf4a777");
             AcceptButton = _cancelButton;
             _cancelButton.ForeColor = TitleColor;
             if (!string.IsNullOrWhiteSpace(message))
@@ -374,9 +374,9 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             var currentItemIsCanceling = !string.IsNullOrWhiteSpace(currentFile) && IsQueueItemCancellationRequested(currentFile);
             _etaLabel.Text = currentItemIsCanceling ? string.Empty : etaText ?? string.Empty;
 
-            var liveMessage = currentItemIsCanceling ? "Canceling current file..."
+            var liveMessage = currentItemIsCanceling ? L.Get("ProgressForm_Canceling_current_file_f8d72e93")
                 : !string.IsNullOrWhiteSpace(message) ? message
-                : string.Equals(_liveFile, currentFile, StringComparison.OrdinalIgnoreCase) ? _liveMessage : "Processing...";
+                : string.Equals(_liveFile, currentFile, StringComparison.OrdinalIgnoreCase) ? _liveMessage : L.Get("ProgressForm_Processing_44c765f2");
             ShowLiveMessage(currentItemIsCanceling ? "canceling" : "processing", liveMessage, currentFile);
 
             if (!string.IsNullOrWhiteSpace(currentFile) && !currentItemIsCanceling)
@@ -410,7 +410,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             {
                 ResetProgressDisplay();
                 if (string.IsNullOrEmpty(_liveFile) || string.Equals(_liveFile, currentFile, StringComparison.OrdinalIgnoreCase))
-                    ShowLiveMessage(state, message ?? "Processing failed.", currentFile);
+                    ShowLiveMessage(state, message ?? L.Get("ProgressForm_Processing_failed_eaa397b0"), currentFile);
             }
         });
     }
@@ -478,10 +478,10 @@ public sealed partial class ProgressForm : Form, IProgressReporter
 
     private Panel CreateDonationPanel()
     {
-        var label = FrameShiftUiFactory.CreateWrappingLabel("FrameShift is free. Support development ❤️");
-        var donate = FrameShiftUiFactory.CreateMeasuredActionButton("Donate", false, 92);
+        var label = FrameShiftUiFactory.CreateWrappingLabel(L.Get("ProgressForm_FrameShift_is_free_Support_developme_c4207a7d"));
+        var donate = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ProgressForm_Donate_9ff762be"), false, 92);
         donate.Click += (_, _) => OpenDonationLink();
-        var dismiss = FrameShiftUiFactory.CreateMeasuredActionButton("Close banner", false);
+        var dismiss = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ProgressForm_Close_banner_77b50729"), false);
         dismiss.Name = "dismissDonation";
         dismiss.Click += (_, _) => DismissDonationBanner();
         return FrameShiftUiFactory.CreateChoiceRow(label, donate, dismiss);
@@ -499,7 +499,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             ReadOnly = true,
             RowHeadersVisible = false,
             ColumnHeadersVisible = true,
-            AccessibleName = "Task files queue",
+            AccessibleName = L.Get("ProgressForm_Task_files_queue_4f147da8"),
             ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
             SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
@@ -528,13 +528,13 @@ public sealed partial class ProgressForm : Form, IProgressReporter
 
         grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "FileName", HeaderText = "File",
+            Name = "FileName", HeaderText = L.Get("ProgressForm_File_9588151a"),
             AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
             FillWeight = 45
         });
         grid.Columns.Add(new DataGridViewTextBoxColumn
         {
-            Name = "State", HeaderText = "Status",
+            Name = "State", HeaderText = L.Get("ProgressForm_Status_b8f1474d"),
             Width = 120,
             AutoSizeMode = DataGridViewAutoSizeColumnMode.None
         });
@@ -569,7 +569,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         var row = _queueGrid.Rows[rowIndex];
         row.Tag = queueItemId;
         row.Cells[0].ToolTipText = item;
-        row.Cells[3].ToolTipText = $"Remove or cancel {Path.GetFileName(item)}";
+        row.Cells[3].ToolTipText = L.Format("ProgressForm_Remove_or_cancel_0_e399d867",Path.GetFileName(item));
         _queueRows[queueItemId] = row;
         _queueItemPaths[queueItemId] = item;
         if (!_queueItemIdsByPath.TryGetValue(item, out var queueItemIds))
@@ -653,7 +653,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             }
         }
 
-        UpdateQueueItemInternal(TryGetQueueItemPath(queueItemId) ?? string.Empty, "canceling", "Canceling current file...");
+        UpdateQueueItemInternal(TryGetQueueItemPath(queueItemId) ?? string.Empty, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"));
     }
 
     private void QueueGridOnCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
@@ -664,8 +664,8 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             var state = Convert.ToString(e.Value) ?? string.Empty;
             e.Value = state.ToLowerInvariant() switch
             {
-                "queued" => "Waiting", "processing" => "Processing", "done" or "completed" => "Completed",
-                "failed" => "Failed", "canceling" => "Canceling…", "canceled" => "Canceled", _ => state
+                "queued" => L.Get("ProgressForm_Waiting_e1413137"), "processing" => L.Get("ProgressForm_Processing_f3aff0b5"), "done" or "completed" => L.Get("ProgressForm_Completed_6ff49bc9"),
+                "failed" => L.Get("ProgressForm_Failed_948e2ae0"), "canceling" => L.Get("ProgressForm_Canceling_1e79297f"), "canceled" => L.Get("ProgressForm_Canceled_82b27371"), _ => state
             };
             e.FormattingApplied = true;
             if (e.CellStyle is not null)
@@ -757,7 +757,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
                 var inputPath = TryGetQueueItemPath(queueItemId);
                 if (!string.IsNullOrWhiteSpace(inputPath))
                 {
-                    UpdateQueueItemInternal(inputPath, "canceling", "Canceling current file...");
+                    UpdateQueueItemInternal(inputPath, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"));
                 }
             }
         });

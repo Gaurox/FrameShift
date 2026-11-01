@@ -63,12 +63,12 @@ public sealed partial class CutVideoForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(1120, 760), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Cut video");
+        FrameShiftWindowChrome.Apply(this, L.Get("CutVideoForm_FrameShift_Cut_video_654b1c4b"));
         ControlHelper.SetDoubleBuffered(this);
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), Margin = Padding.Empty };
         _previewBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, TabStop = false };
         _previewPanel.Controls.Add(_previewBox);
-        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel("Preview: waiting for first frame...");
+        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CutVideoForm_Preview_waiting_for_first_frame_b7c6d15a"));
         _labelSelection = FrameShiftUiFactory.CreateWrappingLabel("");
         _textStart = new TextBox { Name = "startFrame" };
         _textEnd = new TextBox { Name = "endFrame" };
@@ -92,8 +92,8 @@ public sealed partial class CutVideoForm : Form
         _buttonEndNext.Click += (_, _) => StepFrameBoundary("end", 1);
         _selectionPanel = FrameShiftUiFactory.CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
         _selectionPanel.Name = "frameRange";
-        _selectionPanel.AccessibleName = "Frame range";
-        _selectionPanel.AccessibleDescription = "Drag a handle, or edit the frame and time fields above.";
+        _selectionPanel.AccessibleName = L.Get("CutVideoForm_Frame_range_8c4e44f6");
+        _selectionPanel.AccessibleDescription = L.Get("CutVideoForm_Drag_a_handle_or_edit_the_frame_and__2a5f25bf");
         _selectionPanel.Dock = DockStyle.Top;
         _selectionPanel.Height = 80;
         _selectionPanel.HandleCreated += (_, _) => _selectionPanel.Height = FrameShiftUiMetrics.ToPixels(_selectionPanel, 80);
@@ -107,17 +107,17 @@ public sealed partial class CutVideoForm : Form
         _selectionPanel.MouseDown += SelectionPanelOnMouseDown;
         _selectionPanel.MouseMove += SelectionPanelOnMouseMove;
         _selectionPanel.MouseUp += SelectionPanelOnMouseUp;
-        var options = FrameShiftUiFactory.CreateSection("Selection", FrameShiftUiFactory.CreateVerticalStack(
+        var options = FrameShiftUiFactory.CreateSection(L.Get("CutVideoForm_Selection_dfd52658"), FrameShiftUiFactory.CreateVerticalStack(
             CreateBoundaryRows(
-                CreateBoundaryGroup("Start", _textStart, _buttonStartPrev, _buttonStartNext, _textStartTime),
-                CreateBoundaryGroup("End", _textEnd, _buttonEndPrev, _buttonEndNext, _textEndTime)),
+                CreateBoundaryGroup(L.Get("CutVideoForm_Start_19a9997b"), _textStart, _buttonStartPrev, _buttonStartNext, _textStartTime),
+                CreateBoundaryGroup(L.Get("CutVideoForm_End_a1c0e75a"), _textEnd, _buttonEndPrev, _buttonEndNext, _textEndTime)),
             _selectionPanel, _labelSelection, _labelPreviewState));
-        var buttonOk = FrameShiftUiFactory.CreateMeasuredActionButton("OK", true);
+        var buttonOk = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutVideoForm_OK_3215dae8"), true);
         buttonOk.Click += (_, _) => ConfirmCut();
-        var buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutVideoForm_Cancel_998b9c48"), false);
         buttonCancel.DialogResult = DialogResult.Cancel;
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Cut video",
-            $"Source: {Path.GetFileName(_inputPath)}    FPS: {_fps:0.###}    Frames: {_totalFrames}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CutVideoForm_FrameShift_Cut_video_654b1c4b"),
+            L.Format("CutVideoForm_Source_0_FPS_1_0_Frames_2_5338f9af",Path.GetFileName(_inputPath),_fps,_totalFrames),
             IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "✂");
         Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options,
             FrameShiftDialogLayout.CreateActions(buttonCancel, buttonOk)));
@@ -178,11 +178,11 @@ public sealed partial class CutVideoForm : Form
         frameEditor.Controls.Add(frame, 0, 0);
         frameEditor.Controls.Add(previous, 1, 0);
         frameEditor.Controls.Add(next, 2, 0);
-        previous.AccessibleName = $"Previous {title.ToLowerInvariant()} frame";
-        next.AccessibleName = $"Next {title.ToLowerInvariant()} frame";
+        previous.AccessibleName = L.Format("CutVideoForm_Previous_0_frame_e6710963",title.ToLowerInvariant());
+        next.AccessibleName = L.Format("CutVideoForm_Next_0_frame_6234baab",title.ToLowerInvariant());
         return FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow($"{title} frame", frameEditor),
-            FrameShiftUiFactory.CreateFieldRow($"{title} time", time));
+            FrameShiftUiFactory.CreateFieldRow(L.Format("CutVideoForm_0_frame_729889bd",title), frameEditor),
+            FrameShiftUiFactory.CreateFieldRow(L.Format("CutVideoForm_0_time_8fe4affc",title), time));
     }
 
     private static Button CreateInlineStepButton(string text)
@@ -225,7 +225,7 @@ public sealed partial class CutVideoForm : Form
         var startTimeSeconds = (_selection.StartFrame - 1) / _fps;
         var endTimeSeconds = _selection.EndFrame / _fps;
         var selectedFrames = _selection.EndFrame - _selection.StartFrame + 1;
-        _labelSelection.Text = $"Selection: frame {_selection.StartFrame} to {_selection.EndFrame}  |  {CutVideoMath.FormatPreciseTime(startTimeSeconds)} -> {CutVideoMath.FormatPreciseTime(endTimeSeconds)}  |  {selectedFrames} frames";
+        _labelSelection.Text = L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4",_selection.StartFrame,_selection.EndFrame,CutVideoMath.FormatPreciseTime(startTimeSeconds),CutVideoMath.FormatPreciseTime(endTimeSeconds),selectedFrames);
         _selectionPanel.Invalidate();
 
         if (refreshPreview)
@@ -249,7 +249,7 @@ public sealed partial class CutVideoForm : Form
             var rawValue = string.Equals(target, "start", StringComparison.Ordinal) ? _textStart.Text : _textEnd.Text;
             if (!int.TryParse(rawValue.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var frameValue))
             {
-                throw new InvalidOperationException($"{Capitalize(target)} frame must be an integer.");
+                throw new InvalidOperationException(L.Format("CutVideoForm_0_frame_must_be_an_integer_15224a16",Capitalize(target)));
             }
 
             frameValue = Math.Clamp(frameValue, 1, _totalFrames);
@@ -647,7 +647,7 @@ public sealed partial class CutVideoForm : Form
             return string.Empty;
         }
 
-        return char.ToUpperInvariant(target[0]) + target[1..];
+        return target switch { "start" => L.Get("CutVideo_Start"), "end" => L.Get("CutVideo_End"), _ => char.ToUpperInvariant(target[0]) + target[1..] };
     }
 
     private sealed class SelectionState

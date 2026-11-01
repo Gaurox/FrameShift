@@ -80,13 +80,13 @@ public sealed class CreateGifForm : Form
         SuspendLayout();
 
         FrameShiftWindowPolicy.Initialize(this, new Size(1040, 740), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Create GIF");
+        FrameShiftWindowChrome.Apply(this, L.Get("CreateGifForm_FrameShift_Create_GIF_09eabf2f"));
         ControlHelper.SetDoubleBuffered(this);
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32) };
-        _previewPanel.AccessibleName = "GIF frame preview";
+        _previewPanel.AccessibleName = L.Get("CreateGifForm_GIF_frame_preview_91a0d27f");
         _previewBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom };
         _previewPanel.Controls.Add(_previewBox);
-        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel("Preview: waiting for first frame...");
+        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CreateGifForm_Preview_waiting_for_first_frame_b7c6d15a"));
         _labelSelectionSummary = FrameShiftUiFactory.CreateWrappingLabel("");
         _labelPreviewStatus = FrameShiftUiFactory.CreateWrappingLabel("");
         _selectionPanel = FrameShiftUiFactory.CreateFramedPanel(FrameShiftTheme.Surface, FrameShiftTheme.PrimaryBlue, 8);
@@ -95,7 +95,7 @@ public sealed class CreateGifForm : Form
         void RangeMetrics() { _selectionPanel.Height = FrameShiftUiMetrics.ToPixels(_selectionPanel, 74); _selectionPanel.Invalidate(); }
         _selectionPanel.HandleCreated += (_, _) => RangeMetrics();
         _selectionPanel.DpiChangedAfterParent += (_, _) => RangeMetrics();
-        _selectionPanel.AccessibleName = "GIF time range";
+        _selectionPanel.AccessibleName = L.Get("CreateGifForm_GIF_time_range_1a292cda");
         ControlHelper.SetDoubleBuffered(_selectionPanel);
         _selectionPanel.Paint += SelectionPanelOnPaint;
         _selectionPanel.MouseDown += SelectionPanelOnMouseDown;
@@ -112,29 +112,29 @@ public sealed class CreateGifForm : Form
         _comboResolution.SelectedIndexChanged += (_, _) => StopGifPreview(true);
         _comboFps.SelectedIndexChanged += (_, _) => { StopGifPreview(true); RefreshSelectionUi(true); };
         _comboQuality.SelectedIndexChanged += (_, _) => StopGifPreview(true);
-        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Preview GIF", false);
+        _buttonPreview = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CreateGifForm_Preview_GIF_8afdb61b"), false);
         _buttonPreview.Click += async (_, _) => await TogglePreviewAsync();
         var fields = FrameShiftUiFactory.CreateChoiceRow(
             FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateFieldRow("Start frame", _textStartFrame, logicalEditorWidth: 120),
-                FrameShiftUiFactory.CreateFieldRow("Start time", _textStart, logicalEditorWidth: 120)),
+                FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_Start_frame_1b31bb8e"), _textStartFrame, logicalEditorWidth: 120),
+                FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_Start_time_64a9cc09"), _textStart, logicalEditorWidth: 120)),
             FrameShiftUiFactory.CreateVerticalStack(
-                FrameShiftUiFactory.CreateFieldRow("End frame", _textEndFrame, logicalEditorWidth: 120),
-                FrameShiftUiFactory.CreateFieldRow("End time", _textEnd, logicalEditorWidth: 120)),
-            FrameShiftUiFactory.CreateFieldRow("Duration", _textDuration, logicalEditorWidth: 120));
+                FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_End_frame_63babb54"), _textEndFrame, logicalEditorWidth: 120),
+                FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_End_time_b6d5646e"), _textEnd, logicalEditorWidth: 120)),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_Duration_90e29fac"), _textDuration, logicalEditorWidth: 120));
         var presets = FrameShiftUiFactory.CreateChoiceRow(
-            FrameShiftUiFactory.CreateFieldRow("Resolution", _comboResolution, logicalEditorWidth: 160),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_Resolution_12261dcd"), _comboResolution, logicalEditorWidth: 160),
             FrameShiftUiFactory.CreateFieldRow("FPS", _comboFps, logicalEditorWidth: 96),
-            FrameShiftUiFactory.CreateFieldRow("Quality", _comboQuality, logicalEditorWidth: 160));
-        var options = FrameShiftUiFactory.CreateSection("GIF settings", FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("CreateGifForm_Quality_1030e62c"), _comboQuality, logicalEditorWidth: 160));
+        var options = FrameShiftUiFactory.CreateSection(L.Get("CreateGifForm_GIF_settings_4c69b74a"), FrameShiftUiFactory.CreateVerticalStack(
             _selectionPanel, fields, presets, _labelSelectionSummary,
             FrameShiftUiFactory.CreateChoiceRow(_buttonPreview), _labelPreviewStatus, _labelPreviewState));
-        var ok = FrameShiftUiFactory.CreateMeasuredActionButton("Create GIF", true);
+        var ok = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CreateGifForm_Create_GIF_ba901e10"), true);
         ok.Click += (_, _) => ConfirmSelection();
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CreateGifForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Create GIF",
-            $"Source: {Path.GetFileName(inputPath)}    Video: {probe.VideoWidth} × {probe.VideoHeight}    Duration: {CutAudioSettings.FormatDisplayTime(_probe.Duration.Value.TotalSeconds)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("CreateGifForm_FrameShift_Create_GIF_09eabf2f"),
+            L.Format("CreateGifForm_Source_0_Video_1_2_Duration_3_2ffe1d17",Path.GetFileName(inputPath),probe.VideoWidth,probe.VideoHeight,CutAudioSettings.FormatDisplayTime(_probe.Duration.Value.TotalSeconds)),
             IconPaths.ContextMenuIco("create-gif-video-icon.ico"), IconPaths.AppIcon, "GIF");
         Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options,
             FrameShiftDialogLayout.CreateActions(cancel, ok)));
@@ -192,10 +192,10 @@ public sealed class CreateGifForm : Form
             _currentPreviewBitmap = bitmap;
             _previewBox.Image = bitmap;
             bitmap = null;
-            _labelPreviewState.Text = $"Previewing {Capitalize(_uiState.ActiveBoundary)} boundary: {CutAudioSettings.FormatDisplayTime(safeTime)}";
+            _labelPreviewState.Text = L.Format("CreateGifForm_Previewing_0_boundary_1_ec347aae",Capitalize(_uiState.ActiveBoundary),CutAudioSettings.FormatDisplayTime(safeTime));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (!_closing && !IsDisposed) _labelPreviewState.Text = $"Preview unavailable: {ex.Message}"; }
+        catch (Exception ex) { if (!_closing && !IsDisposed) _labelPreviewState.Text = L.Format("CreateGifForm_Preview_unavailable_0_e54ee09c",ex.Message); }
         finally { bitmap?.Dispose(); }
     });
 
@@ -259,7 +259,7 @@ public sealed class CreateGifForm : Form
     {
         _busy = true;
         _buttonPreview.Enabled = false;
-        _labelPreviewStatus.Text = "Rendering GIF preview...";
+        _labelPreviewStatus.Text = L.Get("CreateGifForm_Rendering_GIF_preview_135fbc4e");
         var previewPath = Path.Combine(Path.GetTempPath(), $"frameshift_create_gif_preview_{Guid.NewGuid():N}.gif");
         var transferred = false;
         try
@@ -277,11 +277,11 @@ public sealed class CreateGifForm : Form
             SetGifPreviewImage(previewPath);
             transferred = true;
             _uiState.GifPreviewRunning = true;
-            _buttonPreview.Text = "Stop preview";
-            _labelPreviewStatus.Text = $"Looping GIF preview, {duration:0.#}s at {settings.Fps} fps";
+            _buttonPreview.Text = L.Get("CreateGifForm_Stop_preview_10bcbb84");
+            _labelPreviewStatus.Text = L.Format("CreateGifForm_Looping_GIF_preview_0_0_s_at_1_fps_ec748a48",duration,settings.Fps);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception ex) { if (!_closing && !IsDisposed) _labelPreviewStatus.Text = $"Preview unavailable: {ex.Message}"; }
+        catch (Exception ex) { if (!_closing && !IsDisposed) _labelPreviewStatus.Text = L.Format("CreateGifForm_Preview_unavailable_0_e54ee09c",ex.Message); }
         finally
         {
             if (!transferred) ConversionActionHelper.DeleteIfExists(previewPath);
@@ -309,7 +309,7 @@ public sealed class CreateGifForm : Form
     {
         _previewLifetime.Cancel();
         _uiState.GifPreviewRunning = false;
-        _buttonPreview.Text = "Preview GIF";
+        _buttonPreview.Text = L.Get("CreateGifForm_Preview_GIF_8afdb61b");
         _labelPreviewStatus.Text = string.Empty;
         DisposeGifPreview();
 
@@ -403,7 +403,7 @@ public sealed class CreateGifForm : Form
         _textStart.Text = CutAudioSettings.FormatDisplayTime(startSeconds);
         _textEnd.Text = CutAudioSettings.FormatDisplayTime(endSeconds);
         _textDuration.Text = CutAudioSettings.FormatDisplayTime(durationSeconds);
-        _labelSelectionSummary.Text = $"Selection: frame {startFrame} -> {endFrame}  |  {CutAudioSettings.FormatDisplayTime(startSeconds)} -> {CutAudioSettings.FormatDisplayTime(endSeconds)}  |  Duration: {CutAudioSettings.FormatDisplayTime(durationSeconds)}";
+        _labelSelectionSummary.Text = L.Format("CreateGifForm_Selection_frame_0_1_2_3_Duration_4_2ad7da7d",startFrame,endFrame,CutAudioSettings.FormatDisplayTime(startSeconds),CutAudioSettings.FormatDisplayTime(endSeconds),CutAudioSettings.FormatDisplayTime(durationSeconds));
         _selectionPanel.Invalidate();
 
         if (refreshPreview)

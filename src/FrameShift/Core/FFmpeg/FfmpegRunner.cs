@@ -543,7 +543,7 @@ public sealed class FfmpegRunner
             {
                 AppLogger.LogStatic($"FfmpegRunner: queue cancellation monitor detected current-item cancel. pid={TryGetProcessId(process)}, currentFile={currentFile}.");
                 progressState.MarkFinalizing();
-                progressReporter.ReportQueueItem(currentFile, "canceling", "Canceling current file...");
+                progressReporter.ReportQueueItem(currentFile, "canceling", L.Get("FfmpegRunner_Canceling_current_file_01c1e2c2"));
                 itemCancellationSource.Cancel();
                 return;
             }
@@ -715,9 +715,9 @@ public sealed class FfmpegRunner
     {
         var baseMessage = snapshot.Phase switch
         {
-            FfmpegProgressPhase.Preparing => $"Preparing on {NormalizeExecutionMode(executionMode)}...",
-            FfmpegProgressPhase.Finalizing => $"Finalizing on {NormalizeExecutionMode(executionMode)}...",
-            _ => $"Processing on {NormalizeExecutionMode(executionMode)}: {Math.Floor(snapshot.DisplayedPermille / 10d):0}%"
+            FfmpegProgressPhase.Preparing => L.Format("FfmpegRunner_Preparing_on_0_3c84bf3c",NormalizeExecutionMode(executionMode)),
+            FfmpegProgressPhase.Finalizing => L.Format("FfmpegRunner_Finalizing_on_0_60694a7a",NormalizeExecutionMode(executionMode)),
+            _ => L.Format("FfmpegRunner_Processing_on_0_1_0_9cd43c2c",NormalizeExecutionMode(executionMode),Math.Floor(snapshot.DisplayedPermille / 10d))
         };
         return baseMessage;
     }
@@ -756,7 +756,7 @@ public sealed class FfmpegRunner
             return null;
         }
 
-        return $"Estimated remaining: {FormatDuration(snapshot.RemainingSeconds.Value)}";
+        return L.Format("FfmpegRunner_Estimated_remaining_0_52200c88",FormatDuration(snapshot.RemainingSeconds.Value));
     }
 
     private static string FormatDuration(double seconds)

@@ -85,13 +85,13 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         SuspendLayout();
 
         FrameShiftWindowPolicy.Initialize(this, new Size(1240, 820), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Burn Subtitles Into Video", IconPaths.AddSubtitlesVideoAiIcon, IconPaths.AppIcon);
+        FrameShiftWindowChrome.Apply(this, L.Get("AddSubtitlesToVideoBurnEditorForm_FrameShift_Burn_Subtitles_Into_Video_963601d2"), IconPaths.AddSubtitlesVideoAiIcon, IconPaths.AppIcon);
         ControlHelper.SetDoubleBuffered(this);
         _previewPanel = FrameShiftCropEditorUi.CreatePreviewPanel();
         _previewPanel.Paint += PreviewPanelOnPaint;
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewImageBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom };
-        _previewImageBox.AccessibleName = "Subtitles video preview";
+        _previewImageBox.AccessibleName = L.Get("AddSubtitlesToVideoBurnEditorForm_Subtitles_video_preview_3a57ab61");
         _previewImageBox.TabStop = false;
         _previewPanel.Controls.Add(_previewImageBox);
         _sourceKindLabel = FrameShiftUiFactory.CreateWrappingLabel("");
@@ -100,7 +100,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         _previewInfoLabel = FrameShiftUiFactory.CreateWrappingLabel("");
         _timelineBar = new SeekTrackBar { Minimum = 0, Maximum = 1000, TickFrequency = 100, SmallChange = 5, LargeChange = 50 };
         _timelineBar.ValueChanged += (_, _) => OnTimelineChanged();
-        _animatedPreviewButton = FrameShiftUiFactory.CreateMeasuredActionButton("Preview Motion", false);
+        _animatedPreviewButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("AddSubtitlesToVideoBurnEditorForm_Preview_Motion_71be51d3"), false);
         _animatedPreviewButton.Click += async (_, _) => await ToggleAnimatedPreviewAsync();
         var temporal = FrameShiftUiFactory.CreateVerticalStack(_timelineBar, _currentTimeLabel,
             FrameShiftUiFactory.CreateChoiceRow(_animatedPreviewButton), _previewStatusLabel, _previewInfoLabel);
@@ -111,10 +111,10 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         workspace.Controls.Add(_previewPanel, 0, 0);
         workspace.Controls.Add(temporal, 0, 1);
         _subtitlePathTextBox = new TextBox { ReadOnly = true };
-        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse...", false);
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("AddSubtitlesToVideoBurnEditorForm_Browse_28211d48"), false);
         browse.Click += (_, _) => BrowseSubtitleFile();
-        var source = FrameShiftUiFactory.CreateSection("Subtitle source", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("File", _subtitlePathTextBox),
+        var source = FrameShiftUiFactory.CreateSection(L.Get("AddSubtitlesToVideoBurnEditorForm_Subtitle_source_820711d5"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_File_9588151a"), _subtitlePathTextBox),
             FrameShiftUiFactory.CreateChoiceRow(browse), _sourceKindLabel));
         _presetCombo = CreateComboBox();
         PopulatePresetCombo(_presetCombo);
@@ -130,37 +130,37 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             combo.SelectedIndexChanged += (_, _) => OnAppearanceControlChanged();
         foreach (var number in new[] { _fontSizeUpDown, _marginVerticalUpDown, _outlineUpDown, _shadowUpDown })
             number.ValueChanged += (_, _) => OnAppearanceControlChanged();
-        _styleDisabledLabel = FrameShiftUiFactory.CreateWrappingLabel("External ASS: the existing file style is preserved.");
-        var style = FrameShiftUiFactory.CreateSection("Style", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("Preset", _presetCombo),
-            FrameShiftUiFactory.CreateFieldRow("Font", _fontCombo),
-            FrameShiftUiFactory.CreateFieldRow("Size", _fontSizeUpDown, logicalEditorWidth: 128),
-            FrameShiftUiFactory.CreateFieldRow("Position", _positionCombo),
-            FrameShiftUiFactory.CreateFieldRow("Vertical margin", _marginVerticalUpDown, logicalEditorWidth: 128), _styleDisabledLabel));
+        _styleDisabledLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("AddSubtitlesToVideoBurnEditorForm_External_ASS_the_existing_file_style_99a07154"));
+        var style = FrameShiftUiFactory.CreateSection(L.Get("AddSubtitlesToVideoBurnEditorForm_Style_d2b183b7"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Preset_25ab893c"), _presetCombo),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Font_b77d0e29"), _fontCombo),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Size_0e196b48"), _fontSizeUpDown, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Position_ea7dfd5d"), _positionCombo),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Vertical_margin_fa1d3277"), _marginVerticalUpDown, logicalEditorWidth: 128), _styleDisabledLabel));
         _primaryColorButton = CreateColorButton();
-        _primaryColorButton.Click += (_, _) => PickColor(_primaryColorButton, "Text Color");
+        _primaryColorButton.Click += (_, _) => PickColor(_primaryColorButton, L.Get("AddSubtitlesToVideoBurnEditorForm_Text_Color_a2d455a8"));
         _highlightColorButton = CreateColorButton();
-        _highlightColorButton.Click += (_, _) => PickColor(_highlightColorButton, "Highlight Color");
+        _highlightColorButton.Click += (_, _) => PickColor(_highlightColorButton, L.Get("AddSubtitlesToVideoBurnEditorForm_Highlight_Color_49ff8acb"));
         _outlineColorButton = CreateColorButton();
-        _outlineColorButton.Click += (_, _) => PickColor(_outlineColorButton, "Outline Color");
+        _outlineColorButton.Click += (_, _) => PickColor(_outlineColorButton, L.Get("AddSubtitlesToVideoBurnEditorForm_Outline_Color_f097354a"));
         _shadowColorButton = CreateColorButton();
-        _shadowColorButton.Click += (_, _) => PickColor(_shadowColorButton, "Shadow Color");
-        var colors = FrameShiftUiFactory.CreateSection("Colors & effects", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("Text", _primaryColorButton),
-            FrameShiftUiFactory.CreateFieldRow("Highlight", _highlightColorButton),
-            FrameShiftUiFactory.CreateFieldRow("Outline color", _outlineColorButton),
-            FrameShiftUiFactory.CreateFieldRow("Shadow color", _shadowColorButton),
-            FrameShiftUiFactory.CreateFieldRow("Outline", _outlineUpDown, logicalEditorWidth: 128),
-            FrameShiftUiFactory.CreateFieldRow("Shadow", _shadowUpDown, logicalEditorWidth: 128)));
+        _shadowColorButton.Click += (_, _) => PickColor(_shadowColorButton, L.Get("AddSubtitlesToVideoBurnEditorForm_Shadow_Color_deb1d12e"));
+        var colors = FrameShiftUiFactory.CreateSection(L.Get("AddSubtitlesToVideoBurnEditorForm_Colors_effects_ca57d573"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Text_b9b20f15"), _primaryColorButton),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Highlight_03d9a520"), _highlightColorButton),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Outline_color_493fdff2"), _outlineColorButton),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Shadow_color_2347d706"), _shadowColorButton),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Outline_bb43fc5f"), _outlineUpDown, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("AddSubtitlesToVideoBurnEditorForm_Shadow_c444117d"), _shadowUpDown, logicalEditorWidth: 128)));
         _compatibilityWarningLabel = FrameShiftUiFactory.CreateWrappingLabel("");
         _compatibilityWarningLabel.ForeColor = Color.FromArgb(168, 72, 32);
         _compatibilityWarningLabel.Visible = false;
-        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("AddSubtitlesToVideoBurnEditorForm_Cancel_998b9c48"), false);
         cancelButton.DialogResult = DialogResult.Cancel;
-        var applyButton = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        var applyButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("AddSubtitlesToVideoBurnEditorForm_Apply_3d57c12e"), true);
         applyButton.DialogResult = DialogResult.OK;
         applyButton.Click += (_, _) => { if (!ValidateCurrentSelection()) DialogResult = DialogResult.None; };
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Burn Subtitles Into Video", $"Source: {Path.GetFileName(inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("AddSubtitlesToVideoBurnEditorForm_FrameShift_Burn_Subtitles_Into_Video_963601d2"), L.Format("AddSubtitlesToVideoBurnEditorForm_Source_0_653ab450",Path.GetFileName(inputPath)),
             IconPaths.AddSubtitlesVideoAiIcon, IconPaths.FrameShiftAiIcon, "S");
         Controls.Add(FrameShiftEditorShellUi.Create(header, workspace, FrameShiftDialogLayout.CreateActions(cancelButton, applyButton),
             FrameShiftUiFactory.CreateVerticalStack(source, style, colors, _compatibilityWarningLabel), logicalRailWidth: 400));
@@ -190,8 +190,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
         LoadAppearanceIntoControls();
         UpdateSourceKindState();
-        _currentTimeLabel.Text = $"Time: {FormatTime(_pendingPreviewSeconds)}";
-        _previewInfoLabel.Text = $"Display: {_probe.GetDisplayGeometrySummary()}";
+        _currentTimeLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Time_0_e0ccbce1",FormatTime(_pendingPreviewSeconds));
+        _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Display_0_207db77a",_probe.GetDisplayGeometrySummary());
 
         Shown += async (_, _) =>
         {
@@ -258,10 +258,10 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             _marginVerticalUpDown.Value = ClampDecimal(_appearance.MarginVertical, _marginVerticalUpDown.Minimum, _marginVerticalUpDown.Maximum);
             _outlineUpDown.Value = ClampDecimal((decimal)_appearance.OutlineThickness, _outlineUpDown.Minimum, _outlineUpDown.Maximum);
             _shadowUpDown.Value = ClampDecimal((decimal)_appearance.ShadowDepth, _shadowUpDown.Minimum, _shadowUpDown.Maximum);
-            UpdateColorButton(_primaryColorButton, _appearance.PrimaryColor, "Text Color");
-            UpdateColorButton(_highlightColorButton, _appearance.HighlightColor, "Highlight Color");
-            UpdateColorButton(_outlineColorButton, _appearance.OutlineColor, "Outline Color");
-            UpdateColorButton(_shadowColorButton, _appearance.ShadowColor, "Shadow Color");
+            UpdateColorButton(_primaryColorButton, _appearance.PrimaryColor, L.Get("AddSubtitlesToVideoBurnEditorForm_Text_Color_a2d455a8"));
+            UpdateColorButton(_highlightColorButton, _appearance.HighlightColor, L.Get("AddSubtitlesToVideoBurnEditorForm_Highlight_Color_49ff8acb"));
+            UpdateColorButton(_outlineColorButton, _appearance.OutlineColor, L.Get("AddSubtitlesToVideoBurnEditorForm_Outline_Color_f097354a"));
+            UpdateColorButton(_shadowColorButton, _appearance.ShadowColor, L.Get("AddSubtitlesToVideoBurnEditorForm_Shadow_Color_deb1d12e"));
             _subtitlePathTextBox.Text = _subtitlePath;
         }
         finally
@@ -276,9 +276,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         _styleEditingEnabled = _sourceKind != AddSubtitlesToVideoSubtitleSourceKind.Ass;
         _sourceKindLabel.Text = _sourceKind switch
         {
-            AddSubtitlesToVideoSubtitleSourceKind.Ass => "Source type: ASS subtitle file (style passthrough)",
-            AddSubtitlesToVideoSubtitleSourceKind.FrameShiftProject => "Source type: FrameShift subtitle project",
-            _ => "Source type: SRT subtitle file"
+            AddSubtitlesToVideoSubtitleSourceKind.Ass => L.Get("AddSubtitlesToVideoBurnEditorForm_Source_type_ASS_subtitle_file_style__a7117dc8"),
+            AddSubtitlesToVideoSubtitleSourceKind.FrameShiftProject => L.Get("AddSubtitlesToVideoBurnEditorForm_Source_type_FrameShift_subtitle_proj_c82fdbed"),
+            _ => L.Get("AddSubtitlesToVideoBurnEditorForm_Source_type_SRT_subtitle_file_f1be3582")
         };
 
         foreach (var control in _styleControls)
@@ -288,9 +288,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
         _styleDisabledLabel.Visible = !_styleEditingEnabled;
         _previewStatusLabel.Text = _styleEditingEnabled
-            ? "Ready to render preview."
-            : "Preview uses the external ASS style without modification.";
-        _previewInfoLabel.Text = $"Display: {_probe.GetDisplayGeometrySummary()}";
+            ? L.Get("AddSubtitlesToVideoBurnEditorForm_Ready_to_render_preview_5b867106")
+            : L.Get("AddSubtitlesToVideoBurnEditorForm_Preview_uses_the_external_ASS_style__0d0ba303");
+        _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Display_0_207db77a",_probe.GetDisplayGeometrySummary());
         UpdateCompatibilityWarnings();
     }
 
@@ -306,7 +306,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             _pendingPreviewSeconds = durationSeconds * (_timelineBar.Value / 1000d);
         }
 
-        _currentTimeLabel.Text = $"Time: {FormatTime(_pendingPreviewSeconds)}";
+        _currentTimeLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Time_0_e0ccbce1",FormatTime(_pendingPreviewSeconds));
         SchedulePreviewRender();
     }
 
@@ -335,7 +335,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         StopAnimatedPreview(restoreFrame: false);
         _previewDebounceTimer.Stop();
         _previewDebounceTimer.Start();
-        _previewStatusLabel.Text = "Rendering preview...";
+        _previewStatusLabel.Text = L.Get("AddSubtitlesToVideoBurnEditorForm_Rendering_preview_c20ee915");
         _previewImageBox.Refresh();
         _previewPanel.Invalidate();
     }
@@ -374,9 +374,9 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             _previewBitmap = newBitmap;
             _previewImageBox.Image = _previewBitmap;
             _previewStatusLabel.Text = preparedInput.SourceKind == AddSubtitlesToVideoSubtitleSourceKind.Ass
-                ? "Preview rendered from the external ASS style."
-                : $"Preview rendered with {_appearance.AssPreset.GetDisplayName()}.";
-            _previewInfoLabel.Text = $"Frame at {FormatTime(seconds)}";
+                ? L.Get("AddSubtitlesToVideoBurnEditorForm_Preview_rendered_from_the_external_A_0ab0a204")
+                : L.Format("AddSubtitlesToVideoBurnEditorForm_Preview_rendered_with_0_ac02704d",_appearance.AssPreset.GetDisplayName());
+            _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Frame_at_0_b4e03165",FormatTime(seconds));
             _previewPanel.Invalidate();
         }
         catch (OperationCanceledException)
@@ -391,7 +391,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
             _previewStatusLabel.Text = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.PreviewGenerationFailed());
             DisposePreviewBitmap();
-            _previewInfoLabel.Text = $"Display: {_probe.GetDisplayGeometrySummary()}";
+            _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Display_0_207db77a",_probe.GetDisplayGeometrySummary());
             _previewPanel.Invalidate();
         }
         finally
@@ -407,8 +407,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Select subtitle file",
-            Filter = "Subtitle files (*.srt;*.ass;*.frameshift-subtitles.json)|*.srt;*.ass;*.frameshift-subtitles.json|All files (*.*)|*.*",
+            Title = L.Get("AddSubtitlesToVideoBurnEditorForm_Select_subtitle_file_12034b67"),
+            Filter = L.Get("AddSubtitlesToVideoBurnEditorForm_Subtitle_files_srt_ass_frameshift_su_208c0351"),
             CheckFileExists = true,
             Multiselect = false
         };
@@ -521,8 +521,8 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         AddSubtitlesToVideoPreparedSubtitleInput? preparedInput = null;
         try
         {
-            _previewStatusLabel.Text = "Rendering animated burn preview...";
-            _previewInfoLabel.Text = $"Center: {FormatTime(_pendingPreviewSeconds)}";
+            _previewStatusLabel.Text = L.Get("AddSubtitlesToVideoBurnEditorForm_Rendering_animated_burn_preview_e0dc8605");
+            _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Center_0_6f32da7b",FormatTime(_pendingPreviewSeconds));
             _previewPanel.Invalidate();
 
             preparedInput = await AddSubtitlesToVideoSubtitleSourceLoader
@@ -589,10 +589,10 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
             ApplyAnimatedPreview(gifPath, clipPath);
             transferred = true;
             _animatedPreviewActive = true;
-            _animatedPreviewButton.Text = "Stop Motion";
+            _animatedPreviewButton.Text = L.Get("AddSubtitlesToVideoBurnEditorForm_Stop_Motion_8800b2d0");
             _previewStatusLabel.Text = preparedInput.SourceKind == AddSubtitlesToVideoSubtitleSourceKind.Ass
-                ? "Animated preview uses the external ASS style."
-                : $"Animated preview loop ready with {_appearance.AssPreset.GetDisplayName()}.";
+                ? L.Get("AddSubtitlesToVideoBurnEditorForm_Animated_preview_uses_the_external_A_5054e879")
+                : L.Format("AddSubtitlesToVideoBurnEditorForm_Animated_preview_loop_ready_with_0_374093c5",_appearance.AssPreset.GetDisplayName());
             _previewInfoLabel.Text = $"{FormatTime(clipWindow.StartSeconds)} -> {FormatTime(clipWindow.StartSeconds + clipWindow.DurationSeconds)}";
         }
         catch (OperationCanceledException)
@@ -602,7 +602,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         {
             if (_closing || IsDisposed || token.IsCancellationRequested) return;
             _previewStatusLabel.Text = ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.BurnSubtitlesToVideoFailed());
-            _previewInfoLabel.Text = $"Display: {_probe.GetDisplayGeometrySummary()}";
+            _previewInfoLabel.Text = L.Format("AddSubtitlesToVideoBurnEditorForm_Display_0_207db77a",_probe.GetDisplayGeometrySummary());
             DisposeAnimatedPreviewMedia();
             _previewPanel.Invalidate();
         }
@@ -626,7 +626,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
     {
         _previewLifetime.Cancel();
         _animatedPreviewActive = false;
-        _animatedPreviewButton.Text = "Preview Motion";
+        _animatedPreviewButton.Text = L.Get("AddSubtitlesToVideoBurnEditorForm_Preview_Motion_71be51d3");
         DisposeAnimatedPreviewMedia();
 
         if (!restoreFrame || _closing || IsDisposed)
@@ -692,12 +692,12 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         var warnings = new List<string>();
         if (_probe.IsHdrLikely)
         {
-            warnings.Add("HDR source detected: libass burn-in re-encodes the video and may change colorimetry.");
+            warnings.Add(L.Get("AddSubtitlesToVideoBurnEditorForm_HDR_source_detected_libass_burn_in_r_f1f68925"));
         }
 
         if (_styleEditingEnabled && !string.IsNullOrWhiteSpace(_appearance.FontName) && !IsFontInstalled(_appearance.FontName))
         {
-            warnings.Add("Selected font is not installed on this PC. libass will substitute a fallback font.");
+            warnings.Add(L.Get("AddSubtitlesToVideoBurnEditorForm_Selected_font_is_not_installed_on_th_e12ea7a0"));
         }
 
         _compatibilityWarningLabel.Text = string.Join("  ", warnings);
@@ -738,7 +738,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
         }
 
         var message = string.IsNullOrWhiteSpace(_previewStatusLabel.Text)
-            ? "Preview unavailable."
+            ? L.Get("AddSubtitlesToVideoBurnEditorForm_Preview_unavailable_667b1159")
             : _previewStatusLabel.Text;
         TextRenderer.DrawText(
             e.Graphics,
@@ -801,7 +801,7 @@ internal sealed class AddSubtitlesToVideoBurnEditorForm : Form
 
     private Button CreateColorButton()
     {
-        var button = FrameShiftUiFactory.CreateMeasuredActionButton("Choose...", false);
+        var button = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("AddSubtitlesToVideoBurnEditorForm_Choose_cd873176"), false);
         button.Dock = DockStyle.Fill;
         button.Margin = Padding.Empty;
         return button;

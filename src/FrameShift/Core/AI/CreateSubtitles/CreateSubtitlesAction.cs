@@ -42,12 +42,12 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
         {
             CreateSubtitlesSourceKind.Audio => new ActionDescriptor(
                 "create-subtitles-audio",
-                "Create Subtitle File",
-                "Creates a local subtitle file from an audio file with Whisper ONNX."),
+                L.Get("CreateSubtitlesAction_Create_Subtitle_File_f84bd02e"),
+                L.Get("CreateSubtitlesAction_Creates_a_local_subtitle_file_from_a_7e7dfd6c")),
             _ => new ActionDescriptor(
                 "create-subtitles-video",
-                "Create Subtitle File",
-                "Extracts audio from a video, then creates a local subtitle file with Whisper ONNX.")
+                L.Get("CreateSubtitlesAction_Create_Subtitle_File_f84bd02e"),
+                L.Get("CreateSubtitlesAction_Extracts_audio_from_a_video_then_cre_ac6272bd"))
         };
     }
 
@@ -89,7 +89,7 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
         {
             return new ActionExecutionResult(
                 false,
-                "Whisper model is not ready. Run FrameShift from Explorer to verify and download the subtitles model first.");
+                L.Get("CreateSubtitlesAction_Whisper_model_is_not_ready_Run_Frame_a1abc3a8"));
         }
 
         var outputFormat = ResolveOutputFormat(request.Options, request.Logger);
@@ -122,12 +122,12 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             var effectiveAudioInput = request.InputPath;
             if (_sourceKind == CreateSubtitlesSourceKind.Video)
             {
-                request.ProgressReporter?.ReportState("processing", "Extracting audio track...");
+                request.ProgressReporter?.ReportState("processing", L.Get("CreateSubtitlesAction_Extracting_audio_track_0c1c972d"));
                 var extractionResult = await _ffmpegRunner.RunAsync(
                     ffmpegPath,
                     BuildVideoExtractionArguments(request.InputPath, extractedAudioPath),
                     probe.Duration,
-                    new MappedProgressReporter(request.ProgressReporter, 20, 180, "Extracting audio track..."),
+                    new MappedProgressReporter(request.ProgressReporter, 20, 180, L.Get("CreateSubtitlesAction_Extracting_audio_track_0c1c972d")),
                     request.InputPath,
                     Descriptor.DisplayName,
                     "CPU",
@@ -142,18 +142,18 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
                 {
                     return new ActionExecutionResult(
                         false,
-                        ConversionActionHelper.GetFriendlyFfmpegError(extractionResult.StandardError, "FFmpeg failed while extracting the audio track."));
+                        ConversionActionHelper.GetFriendlyFfmpegError(extractionResult.StandardError, L.Get("CreateSubtitlesAction_FFmpeg_failed_while_extracting_the_a_c486927e")));
                 }
 
                 effectiveAudioInput = extractedAudioPath;
             }
 
-            request.ProgressReporter?.ReportState("processing", "Preparing Whisper audio...");
+            request.ProgressReporter?.ReportState("processing", L.Get("CreateSubtitlesAction_Preparing_Whisper_audio_06afe816"));
             var normalizationResult = await _ffmpegRunner.RunAsync(
                 ffmpegPath,
                 BuildNormalizeArguments(effectiveAudioInput, normalizedAudioPath),
                 probe.Duration,
-                new MappedProgressReporter(request.ProgressReporter, _sourceKind == CreateSubtitlesSourceKind.Video ? 180 : 20, 360, "Preparing Whisper audio..."),
+                new MappedProgressReporter(request.ProgressReporter, _sourceKind == CreateSubtitlesSourceKind.Video ? 180 : 20, 360, L.Get("CreateSubtitlesAction_Preparing_Whisper_audio_06afe816")),
                 request.InputPath,
                 Descriptor.DisplayName,
                 "CPU",
@@ -168,10 +168,10 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             {
                 return new ActionExecutionResult(
                     false,
-                    ConversionActionHelper.GetFriendlyFfmpegError(normalizationResult.StandardError, "FFmpeg failed while preparing the Whisper audio input."));
+                    ConversionActionHelper.GetFriendlyFfmpegError(normalizationResult.StandardError, L.Get("CreateSubtitlesAction_FFmpeg_failed_while_preparing_the_Wh_1db3a348")));
             }
 
-            request.ProgressReporter?.ReportState("processing", $"Transcribing with {model.DisplayName}...");
+            request.ProgressReporter?.ReportState("processing", L.Format("CreateSubtitlesAction_Transcribing_with_0_0866769e",model.DisplayName));
             var workerRunner = new CreateSubtitlesWorkerRunner(request.Logger);
             var workerModelFiles = PrepareWorkerModelFiles(model, workerModelRoot);
             var workerResponse = await workerRunner.RunAsync(
@@ -207,7 +207,7 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
 
             if (!workerResponse.Success)
             {
-                return new ActionExecutionResult(false, workerResponse.ErrorMessage ?? "Whisper transcription failed.");
+                return new ActionExecutionResult(false, workerResponse.ErrorMessage ?? L.Get("CreateSubtitlesAction_Whisper_transcription_failed_8e395717"));
             }
 
             request.Logger.Log($"CreateSubtitlesAction: worker completed. ProviderUsed={workerResponse.ProviderUsed ?? "unknown"}. DetectedLanguage={workerResponse.DetectedLanguage ?? "auto"}.");
@@ -221,7 +221,7 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             var rawProject = CreateSubtitlesProjectBuilder.Build(workerResponse.Words, totalDuration);
             if (rawProject.Segments.Count == 0)
             {
-                return new ActionExecutionResult(false, "No speech could be recognized in this media.");
+                return new ActionExecutionResult(false, L.Get("CreateSubtitlesAction_No_speech_could_be_recognized_in_thi_a94f31e6"));
             }
 
             var displayTimingAnalysis = CreateSubtitlesAssDiagnosticWriter
@@ -430,7 +430,7 @@ internal sealed class CreateSubtitlesAction : IFrameShiftAction
             : itemCancellationSource.IsCancellationRequested
                 ? CancellationScope.CurrentItem
                 : requestedScope;
-        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled("Create Subtitles"), null, true, scope);
+        return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(L.Get("CreateSubtitlesAction_Create_Subtitles_a2d77e96")), null, true, scope);
     }
 
     private static void TryDeleteFile(string path)

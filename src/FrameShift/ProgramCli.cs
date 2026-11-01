@@ -37,7 +37,7 @@ internal static partial class Program
                 var key = token[2..].ToLowerInvariant();
                 if (!Core.AI.Ocr.OcrSettings.OptionNames.Contains(key) || index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
                 {
-                    error = $"Invalid OCR option: {token}. Supply a supported option and its value.";
+                    error = L.Format("ProgramCli_Invalid_OCR_option_0_Supply_a_suppor_e19ac4c8",token);
                     return false;
                 }
                 options[key] = args[++index];
@@ -47,7 +47,7 @@ internal static partial class Program
             {
                 if (index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
                 {
-                    error = "The --frame-mode option requires one of: all, first, last, keyframes.";
+                    error = L.Get("ProgramCli_The_frame_mode_option_requires_one_o_ce8b252f");
                     return false;
                 }
 
@@ -59,7 +59,7 @@ internal static partial class Program
             {
                 if (index + 1 >= args.Length || !JoinVideosSettings.TryParseMode(args[index + 1], out _))
                 {
-                    error = "The --join-mode option requires one of: auto, copy, normalize.";
+                    error = L.Get("ProgramCli_The_join_mode_option_requires_one_of_3f60afd7");
                     return false;
                 }
 

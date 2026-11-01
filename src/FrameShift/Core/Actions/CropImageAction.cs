@@ -22,8 +22,8 @@ public sealed class CropImageAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "crop-image",
-        "Crop Image",
-        "Crops an image using a fixed rectangle selected in the crop window.");
+        L.Get("CropImageAction_Crop_Image_9aca1944"),
+        L.Get("CropImageAction_Crops_an_image_using_a_fixed_rectang_27897d08"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -55,7 +55,7 @@ public sealed class CropImageAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing image crop on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("CropImageAction_Preparing_image_crop_on_CPU_a001e015"));
 
         try
         {
@@ -73,7 +73,7 @@ public sealed class CropImageAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CropImageAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -90,7 +90,7 @@ public sealed class CropImageAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CropImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

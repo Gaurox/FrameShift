@@ -15,7 +15,7 @@ internal static class ModelDownloader
 {
     public const string CpuModelDisplayName = "HTDemucs V1 CPU";
     public const string GpuModelDisplayName = "HTDemucs V2 GPU (split)";
-    public const string ModelLicense = "MIT License — Free for commercial and non-commercial use";
+    public static string ModelLicense => L.Get("ModelDownloader_MIT_License_Free_for_commercial_and__594b40f6");
 
     public const long CpuExpectedSizeBytes = 289L * 1024L * 1024L;
     public const long GpuExpectedSizeBytes = 161L * 1024L * 1024L;

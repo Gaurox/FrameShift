@@ -108,7 +108,7 @@ internal sealed record AddSubtitlesToVideoSettings(
 
     public static string GetSupportedSubtitleFormatsText(AddSubtitlesToVideoMode mode) => mode switch
     {
-        AddSubtitlesToVideoMode.BurnIntoVideo => $".srt, .ass and {CreateSubtitlesProjectSerializer.FileExtension}",
+        AddSubtitlesToVideoMode.BurnIntoVideo => L.Format("AddSubtitlesToVideoSettings_srt_ass_and_0_1c04440a",CreateSubtitlesProjectSerializer.FileExtension),
         _ => ".srt"
     };
 }

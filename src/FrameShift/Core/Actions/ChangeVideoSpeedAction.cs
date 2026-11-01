@@ -27,8 +27,8 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "change-video-speed",
-        "Change Video Speed",
-        "Changes the playback speed of a video file.");
+        L.Get("ChangeVideoSpeedAction_Change_Video_Speed_2f7bf506"),
+        L.Get("ChangeVideoSpeedAction_Changes_the_playback_speed_of_a_vide_73b9bfe8"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -87,7 +87,7 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"SpeedFactor: {settings.SpeedFactor:0.######}, keepPitch={settings.KeepPitch}, hasAudio={hasAudio}, sampleRate={sampleRate}");
-        request.ProgressReporter?.ReportState("processing", "Changing video speed...");
+        request.ProgressReporter?.ReportState("processing", L.Get("ChangeVideoSpeedAction_Changing_video_speed_e2917417"));
 
         try
         {
@@ -105,14 +105,14 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ChangeVideoSpeedAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during video speed change.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ChangeVideoSpeedAction_FFmpeg_failed_during_video_speed_cha_c82d4c7d"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -122,7 +122,7 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ChangeVideoSpeedAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

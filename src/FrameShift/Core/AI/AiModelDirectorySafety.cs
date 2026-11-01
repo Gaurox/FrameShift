@@ -80,7 +80,7 @@ internal static class AiModelDirectorySafety
             try
             {
                 if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0)
-                    throw new InvalidOperationException("The AI models path contains a filesystem link.");
+                    throw new InvalidOperationException(L.Get("AiModelDirectorySafety_f898d9a460"));
             }
             catch (FileNotFoundException) { }
             catch (DirectoryNotFoundException) { }

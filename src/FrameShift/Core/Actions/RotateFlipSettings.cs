@@ -61,7 +61,7 @@ public sealed class RotateFlipSettings
     {
         if (IsIdentity)
         {
-            return "No transforms applied";
+            return L.Get("RotateFlipSettings_No_transforms_applied_3bb92122");
         }
 
         var parts = new List<string>();
@@ -70,21 +70,21 @@ public sealed class RotateFlipSettings
         {
             parts.Add(Angle switch
             {
-                RotateAngle.Cw90 => "Rotation: 90° CW",
-                RotateAngle.Cw180 => "Rotation: 180°",
-                RotateAngle.Cw270 => "Rotation: 270° CW",
+                RotateAngle.Cw90 => L.Get("RotateFlipSettings_Rotation_90_CW_7b4ed137"),
+                RotateAngle.Cw180 => L.Get("RotateFlipSettings_Rotation_180_1ecdae12"),
+                RotateAngle.Cw270 => L.Get("RotateFlipSettings_Rotation_270_CW_d62f6ba5"),
                 _ => string.Empty
             });
         }
 
         if (FlipHorizontal)
         {
-            parts.Add("Flip H");
+            parts.Add(L.Get("RotateFlipSettings_Flip_H_3f09f8bb"));
         }
 
         if (FlipVertical)
         {
-            parts.Add("Flip V");
+            parts.Add(L.Get("RotateFlipSettings_Flip_V_f0f3557b"));
         }
 
         return string.Join("  —  ", parts);

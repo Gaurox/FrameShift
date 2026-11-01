@@ -30,9 +30,9 @@ public sealed class RifeInterpolateVideoPickerForm : Form
         _selectedMultiplier = _selectedModel.SupportedMultipliers[0];
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 520), new Size(400, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Interpolate Video (RIFE)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Interpolate Video (RIFE)",
-            $"Source: {Path.GetFileName(inputPath)} — {sourceFps.ToString("0.###", CultureInfo.InvariantCulture)} fps",
+        FrameShiftWindowChrome.Apply(this, L.Get("RifeInterpolateVideoPickerForm_FrameShift_Interpolate_Video_RIFE_b31ddc2a"), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("RifeInterpolateVideoPickerForm_FrameShift_Interpolate_Video_RIFE_b31ddc2a"),
+            L.Format("RifeInterpolateVideoPickerForm_Source_0_1_fps_4ac163bc",Path.GetFileName(inputPath),sourceFps.ToString("0.###", CultureInfo.InvariantCulture)),
             IconPaths.InterpolateAiIcon, IconPaths.FrameShiftAiIcon, "AI");
         _sourceFpsTextBox = new TextBox { Name = "sourceFps", ReadOnly = true, Text = sourceFps.ToString("0.###", CultureInfo.InvariantCulture) };
         _outputFpsTextBox = new TextBox { Name = "outputFps", ReadOnly = true };
@@ -43,8 +43,8 @@ public sealed class RifeInterpolateVideoPickerForm : Form
         _speedSelector = Selector("playback", "Label");
         _speedSelector.Items.AddRange(SpeedModeOption.All);
         _speedSelector.SelectedItem = _selectedSpeedMode;
-        _keepPitchCheckBox = new CheckBox { Name = "keepPitch", Text = "Keep original pitch", AutoSize = true, Checked = true };
-        _removeAudioCheckBox = new CheckBox { Name = "removeAudio", Text = "Remove audio in slow motion", AutoSize = true };
+        _keepPitchCheckBox = new CheckBox { Name = "keepPitch", Text = L.Get("RifeInterpolateVideoPickerForm_Keep_original_pitch_cc942898"), AutoSize = true, Checked = true };
+        _removeAudioCheckBox = new CheckBox { Name = "removeAudio", Text = L.Get("RifeInterpolateVideoPickerForm_Remove_audio_in_slow_motion_c901886b"), AutoSize = true };
         _infoLabel = FrameShiftUiFactory.CreateStatusMessage("");
         _modelSelector.SelectedIndexChanged += (_, _) =>
         {
@@ -72,17 +72,17 @@ public sealed class RifeInterpolateVideoPickerForm : Form
         };
         _keepPitchCheckBox.CheckedChanged += (_, _) => RefreshCalculatedValues();
         _removeAudioCheckBox.CheckedChanged += (_, _) => RefreshCalculatedValues();
-        var settings = FrameShiftUiFactory.CreateSection("Interpolation", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("&Model", _modelSelector),
-            FrameShiftUiFactory.CreateFieldRow("Source FPS", _sourceFpsTextBox, logicalEditorWidth: 128),
-            FrameShiftUiFactory.CreateFieldRow("&Target multiplier", _targetSelector, logicalEditorWidth: 128),
-            FrameShiftUiFactory.CreateFieldRow("&Playback", _speedSelector, logicalEditorWidth: 240),
-            FrameShiftUiFactory.CreateFieldRow("Output FPS", _outputFpsTextBox, logicalEditorWidth: 128)));
-        var audio = FrameShiftUiFactory.CreateSection("Audio", FrameShiftUiFactory.CreateVerticalStack(
+        var settings = FrameShiftUiFactory.CreateSection(L.Get("RifeInterpolateVideoPickerForm_Interpolation_ff88c81d"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RifeInterpolateVideoPickerForm_Model_a53a5cc6"), _modelSelector),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RifeInterpolateVideoPickerForm_Source_FPS_662c5c77"), _sourceFpsTextBox, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RifeInterpolateVideoPickerForm_Target_multiplier_7b606242"), _targetSelector, logicalEditorWidth: 128),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RifeInterpolateVideoPickerForm_Playback_55249c0b"), _speedSelector, logicalEditorWidth: 240),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RifeInterpolateVideoPickerForm_Output_FPS_7df5c998"), _outputFpsTextBox, logicalEditorWidth: 128)));
+        var audio = FrameShiftUiFactory.CreateSection(L.Get("RifeInterpolateVideoPickerForm_Audio_2fd1cbe8"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_keepPitchCheckBox), FrameShiftUiFactory.CreateChoiceRow(_removeAudioCheckBox)));
-        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RifeInterpolateVideoPickerForm_Cancel_998b9c48"), false);
         cancel.DialogResult = DialogResult.Cancel;
-        var start = FrameShiftUiFactory.CreateMeasuredActionButton("Start", true);
+        var start = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RifeInterpolateVideoPickerForm_Start_7d734349"), true);
         start.Click += OnStartClicked;
         AcceptButton = start;
         CancelButton = cancel;
@@ -121,12 +121,12 @@ public sealed class RifeInterpolateVideoPickerForm : Form
         if (!isSlowMotion) _keepPitchCheckBox.Checked = true;
         _outputFpsTextBox.Text = targetFps.ToString("0.###", CultureInfo.InvariantCulture);
         _infoLabel.Text = !isSlowMotion
-            ? "Audio is copied in Normal Speed mode."
+            ? L.Get("RifeInterpolateVideoPickerForm_Audio_is_copied_in_Normal_Speed_mode_5ab3feee")
             : _removeAudioCheckBox.Checked
-                ? "Audio is removed in Slow Motion mode."
+                ? L.Get("RifeInterpolateVideoPickerForm_Audio_is_removed_in_Slow_Motion_mode_fb0bfed1")
                 : _keepPitchCheckBox.Checked
-                    ? "Audio is slowed down and original pitch is preserved."
-                    : "Audio is slowed down and pitch is lowered.";
+                    ? L.Get("RifeInterpolateVideoPickerForm_Audio_is_slowed_down_and_original_pi_b5f77d97")
+                    : L.Get("RifeInterpolateVideoPickerForm_Audio_is_slowed_down_and_pitch_is_lo_03d20ac1");
     }
 
     private void OnStartClicked(object? sender, EventArgs e)
@@ -142,7 +142,7 @@ public sealed class RifeInterpolateVideoPickerForm : Form
 
     private sealed record SpeedModeOption(string Label, int PlaybackDivisor)
     {
-        public static readonly SpeedModeOption Normal = new("Normal Speed", 1);
-        public static readonly SpeedModeOption[] All = [Normal, new("Slow Motion x2", 2), new("Slow Motion x4", 4)];
+        public static readonly SpeedModeOption Normal = new(L.Get("RifeInterpolateVideoPickerForm_Normal_Speed_2dfb3d6e"), 1);
+        public static readonly SpeedModeOption[] All = [Normal, new(L.Get("RifeInterpolateVideoPickerForm_Slow_Motion_x2_5f8960d6"), 2), new(L.Get("RifeInterpolateVideoPickerForm_Slow_Motion_x4_2814515e"), 4)];
     }
 }

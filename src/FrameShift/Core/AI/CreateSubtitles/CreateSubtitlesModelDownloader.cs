@@ -68,7 +68,7 @@ internal static class CreateSubtitlesModelDownloader
             downloadedBytesBeforeCurrent += artifact.ExpectedSizeBytes;
         }
 
-        progress.Report(new AiModelDownloadProgress(100, $"{model.DisplayName} is ready."));
+        progress.Report(new AiModelDownloadProgress(100, L.Format("CreateSubtitlesModelDownloader_0_is_ready_1e0621ac",model.DisplayName)));
     }
 
 }

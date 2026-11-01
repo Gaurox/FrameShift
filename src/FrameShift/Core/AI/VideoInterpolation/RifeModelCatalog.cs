@@ -15,7 +15,7 @@ internal static class RifeModelCatalog
             "https://huggingface.co/Gaurox/frameshift-models/resolve/main/rife/rife_v425_lite.onnx",
             "FD9AD9E7AD52790E526423BD6BE0D93F6D7929441869BC6B448E828A2D820BB8",
             22_643_457L,
-            "MIT License — Free for commercial and non-commercial use",
+            L.Get("RifeModelCatalog_MIT_License_Free_for_commercial_and__594b40f6"),
             [2, 4]),
         new(
             "rife-v426-x2",
@@ -24,7 +24,7 @@ internal static class RifeModelCatalog
             "https://huggingface.co/Gaurox/frameshift-models/resolve/main/rife/rife_v426_x2.onnx",
             "51DDE376C8BD71BAAB7FFAB7E436188B5493F8E5E0308B6B05B0F3C700AE2737",
             22_808_987L,
-            "MIT License — Free for commercial and non-commercial use",
+            L.Get("RifeModelCatalog_MIT_License_Free_for_commercial_and__594b40f6"),
             [2, 4])
     ];
 

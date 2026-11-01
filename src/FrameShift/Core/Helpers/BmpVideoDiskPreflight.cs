@@ -29,7 +29,7 @@ internal static class BmpVideoDiskPreflight
         double estimated = Math.Ceiling(duration.TotalSeconds * frameRate);
         if (duration <= TimeSpan.Zero || frameRate <= 0 || double.IsNaN(estimated) || double.IsInfinity(estimated) || estimated > long.MaxValue)
         {
-            failureMessage = "FrameShift could not determine the video frame count for the BMP disk space preflight.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_FrameShift_could_not_determine_the_v_982194b8");
             return false;
         }
 
@@ -37,7 +37,7 @@ internal static class BmpVideoDiskPreflight
         if (frameCount > 0)
             return true;
 
-        failureMessage = "FrameShift could not determine the video frame count for the BMP disk space preflight.";
+        failureMessage = L.Get("BmpVideoDiskPreflight_FrameShift_could_not_determine_the_v_982194b8");
         return false;
     }
 
@@ -54,7 +54,7 @@ internal static class BmpVideoDiskPreflight
         failureMessage = string.Empty;
         if (!AreValidDimensions(sourceFrameCount, width, height) || targetMultiplier < 2 || (targetMultiplier & (targetMultiplier - 1)) != 0)
         {
-            failureMessage = "FrameShift could not estimate the RIFE BMP disk space requirement.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_FrameShift_could_not_estimate_the_RI_f3688104");
             return false;
         }
 
@@ -78,7 +78,7 @@ internal static class BmpVideoDiskPreflight
         }
         catch (OverflowException)
         {
-            failureMessage = "The RIFE BMP disk space estimate is too large for this video.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_The_RIFE_BMP_disk_space_estimate_is__678e6882");
             return false;
         }
     }
@@ -97,7 +97,7 @@ internal static class BmpVideoDiskPreflight
         failureMessage = string.Empty;
         if (!AreValidDimensions(sourceFrameCount, sourceWidth, sourceHeight) || targetWidth <= 0 || targetHeight <= 0)
         {
-            failureMessage = "FrameShift could not estimate the Upscale Video BMP disk space requirement.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_FrameShift_could_not_estimate_the_Up_8fdcaa66");
             return false;
         }
 
@@ -120,7 +120,7 @@ internal static class BmpVideoDiskPreflight
         }
         catch (OverflowException)
         {
-            failureMessage = "The Upscale Video BMP disk space estimate is too large for this video.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_The_Upscale_Video_BMP_disk_space_est_fd9e5922");
             return false;
         }
     }
@@ -144,20 +144,20 @@ internal static class BmpVideoDiskPreflight
             if (availableTemporaryBytes >= required)
                 return true;
 
-            failureMessage = $"Insufficient free space on {tempRoot}. This BMP pipeline needs about {FormatBytes(required)} free, " +
-                             $"including temporary frames and the final output.";
+            failureMessage = L.Format("BmpVideoDiskPreflight_Insufficient_free_space_on_0_This_BM_c484e84a",tempRoot,FormatBytes(required)) +
+                             L.Format("BmpVideoDiskPreflight_including_temporary_frames_and_the_f_ba0d34e7");
             return false;
         }
 
         if (availableTemporaryBytes < requirement.RequiredTemporaryBytes)
         {
-            failureMessage = $"Insufficient free space on {tempRoot}. Temporary BMP frames need about {FormatBytes(requirement.RequiredTemporaryBytes)} free.";
+            failureMessage = L.Format("BmpVideoDiskPreflight_Insufficient_free_space_on_0_Tempora_3d76d77a",tempRoot,FormatBytes(requirement.RequiredTemporaryBytes));
             return false;
         }
 
         if (availableOutputBytes < requirement.RequiredOutputBytes)
         {
-            failureMessage = $"Insufficient free space on {outputRoot}. The final video needs about {FormatBytes(requirement.RequiredOutputBytes)} free.";
+            failureMessage = L.Format("BmpVideoDiskPreflight_Insufficient_free_space_on_0_The_fin_1db62f92",outputRoot,FormatBytes(requirement.RequiredOutputBytes));
             return false;
         }
 
@@ -175,7 +175,7 @@ internal static class BmpVideoDiskPreflight
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            failureMessage = "FrameShift could not verify the available disk space for the BMP frame pipeline.";
+            failureMessage = L.Get("BmpVideoDiskPreflight_FrameShift_could_not_verify_the_avai_c97bc83b");
             return false;
         }
     }

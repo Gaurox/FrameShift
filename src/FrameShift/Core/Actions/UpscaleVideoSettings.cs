@@ -67,7 +67,7 @@ public sealed record UpscaleVideoSettings(
         bool hasHeight = options?.TryGetValue(ActionOptionKeys.UpscaleTargetHeight, out heightText) == true;
         if (hasWidth != hasHeight)
         {
-            errorMessage = "Both upscale target width and height are required.";
+            errorMessage = L.Get("UpscaleVideoSettings_Both_upscale_target_width_and_height_5b27a411");
             return false;
         }
 
@@ -76,7 +76,7 @@ public sealed record UpscaleVideoSettings(
             if (!int.TryParse(widthText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var width) || width <= 0 ||
                 !int.TryParse(heightText, NumberStyles.Integer, CultureInfo.InvariantCulture, out var height) || height <= 0)
             {
-                errorMessage = "Upscale target dimensions must be positive integers.";
+                errorMessage = L.Get("UpscaleVideoSettings_Upscale_target_dimensions_must_be_po_85032621");
                 return false;
             }
 
@@ -89,7 +89,7 @@ public sealed record UpscaleVideoSettings(
             (!int.TryParse(scaleText, NumberStyles.Integer, CultureInfo.InvariantCulture, out scale) ||
              scale is not 2 and not 3 and not 4))
         {
-            errorMessage = "Upscale scale must be x2, x3, or x4.";
+            errorMessage = L.Get("UpscaleVideoSettings_Upscale_scale_must_be_x2_x3_or_x4_afe75b2a");
             return false;
         }
 

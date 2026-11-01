@@ -1,3 +1,4 @@
+﻿#define InstallerSpace " "
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
@@ -35,66 +36,68 @@ UninstallDisplayIcon={app}\Assets\Icons\app\app.ico
 ShowComponentSizes=no
 DisableDirPage=no
 CloseApplications=yes
+ShowLanguageDialog=yes
 LicenseFile={#AppPayloadDir}\licenses\LICENSE
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"
 
 [Types]
-Name: "complete"; Description: "First test installation"
-Name: "custom"; Description: "Custom installation"; Flags: iscustom
+Name: "complete"; Description: "{cm:Text_1fe0d37d15}"
+Name: "custom"; Description: "{cm:Text_00500efca7}"; Flags: iscustom
 
 [Components]
-Name: "core"; Description: "FrameShift application"; Types: complete custom; Flags: fixed
+Name: "core"; Description: "{cm:Text_aeac198900}"; Types: complete custom; Flags: fixed
 Name: "ai"; Description: "FrameShift AI"; Types: complete custom
-Name: "ai\remove_background"; Description: "Remove background"; Types: complete custom
-Name: "ai\remove_background\fast"; Description: "Fast"; Types: complete custom
-Name: "ai\remove_background\high_resolution"; Description: "High Resolution (Matting) - CPU only"; Types: custom
-Name: "ai\remove_background\high_resolution_general"; Description: "High Resolution (General) - CPU only"; Types: custom
-Name: "ai\remove_background\bria_balanced"; Description: "BRIA Remove Background (Balanced) - manual model, not included"; Types: custom
-Name: "ai\remove_background\bria_high_quality"; Description: "BRIA Remove Background (High Quality) - manual model, not included"; Types: custom
-Name: "ai\remove_noise"; Description: "Remove noise"; Types: complete custom
-Name: "ai\remove_noise_video"; Description: "Remove noise (video)"; Types: complete custom
-Name: "ai\separate_audio"; Description: "Audio separation"; Types: complete custom
-Name: "ai\interpolate_video_rife"; Description: "Interpolate video (RIFE)"; Types: complete custom
-Name: "ai\remove_object"; Description: "Remove object"; Types: complete custom
-Name: "ai\upscale_image"; Description: "Upscale image (4x)"; Types: complete custom
-Name: "ai\upscale_video"; Description: "Upscale video (2x / 3x / 4x)"; Types: complete custom
-Name: "ai\create_subtitles_audio"; Description: "Create subtitle file (audio)"; Types: complete custom
-Name: "ai\create_subtitles_video"; Description: "Create subtitle file (video)"; Types: complete custom
-Name: "ai\extract_text"; Description: "Extract text (images and PDF)"; Types: complete custom
-Name: "video"; Description: "Video actions"; Types: complete custom
-Name: "video\convert_video"; Description: "Convert video"; Types: complete custom
-Name: "video\remove_audio"; Description: "Remove audio"; Types: complete custom
-Name: "video\extract_frames"; Description: "Extract all and specific frames"; Types: complete custom
-Name: "video\create_gif"; Description: "Create GIF"; Types: complete custom
-Name: "video\add_subtitles_video"; Description: "Add subtitles to video"; Types: complete custom
-Name: "video\join_videos"; Description: "Join videos"; Types: complete custom
-Name: "video\extract_audio"; Description: "Extract audio"; Types: complete custom
-Name: "video\cut_video"; Description: "Cut video"; Types: complete custom
-Name: "video\crop_video"; Description: "Crop video"; Types: complete custom
-Name: "video\rotate_flip_video"; Description: "Rotate / Flip video"; Types: complete custom
-Name: "video\resize_video"; Description: "Resize video"; Types: complete custom
-Name: "video\compress_video"; Description: "Compress video"; Types: complete custom
-Name: "video\interpolate_video"; Description: "Interpolate video"; Types: complete custom
-Name: "audio"; Description: "Audio actions"; Types: complete custom
-Name: "audio\cut_audio"; Description: "Cut audio"; Types: complete custom
-Name: "audio\convert_audio"; Description: "Convert audio"; Types: complete custom
-Name: "audio\reverse_audio"; Description: "Reverse audio"; Types: complete custom
-Name: "audio\compress_audio"; Description: "Compress audio"; Types: complete custom
-Name: "audio\change_pitch"; Description: "Change pitch"; Types: complete custom
-Name: "audio\change_audio_speed"; Description: "Change audio speed"; Types: complete custom
-Name: "video\change_video_speed"; Description: "Change video speed"; Types: complete custom
-Name: "image"; Description: "Image actions"; Types: complete custom
-Name: "image\image_to_pdf"; Description: "Image to PDF"; Types: complete custom
-Name: "image\convert_image"; Description: "Convert image"; Types: complete custom
-Name: "image\compress_image"; Description: "Compress image"; Types: complete custom
-Name: "image\convert_icon"; Description: "Convert to icon"; Types: complete custom
-Name: "image\crop_image"; Description: "Crop image"; Types: complete custom
-Name: "image\resize_image"; Description: "Resize image"; Types: complete custom
-Name: "image\rotate_flip_image"; Description: "Rotate / Flip image"; Types: complete custom
-Name: "tools"; Description: "Outils"; Types: complete custom
-Name: "tools\media_info"; Description: "Media Info"; Types: complete custom
+Name: "ai\remove_background"; Description: "{cm:Text_0e8f9035c9}"; Types: complete custom
+Name: "ai\remove_background\fast"; Description: "{cm:Text_6217537829}"; Types: complete custom
+Name: "ai\remove_background\high_resolution"; Description: "{cm:Text_5470dd0c9a}"; Types: custom
+Name: "ai\remove_background\high_resolution_general"; Description: "{cm:Text_bc2498e36c}"; Types: custom
+Name: "ai\remove_background\bria_balanced"; Description: "{cm:Text_4608c5ee1e}"; Types: custom
+Name: "ai\remove_background\bria_high_quality"; Description: "{cm:Text_69e1fb5aac}"; Types: custom
+Name: "ai\remove_noise"; Description: "{cm:Text_9bc1f7c1e3}"; Types: complete custom
+Name: "ai\remove_noise_video"; Description: "{cm:Text_125fce9bb3}"; Types: complete custom
+Name: "ai\separate_audio"; Description: "{cm:Text_3d51c42051}"; Types: complete custom
+Name: "ai\interpolate_video_rife"; Description: "{cm:Text_683021e507}"; Types: complete custom
+Name: "ai\remove_object"; Description: "{cm:Text_30fe992bda}"; Types: complete custom
+Name: "ai\upscale_image"; Description: "{cm:Text_f05887f634}"; Types: complete custom
+Name: "ai\upscale_video"; Description: "{cm:Text_4a13677024}"; Types: complete custom
+Name: "ai\create_subtitles_audio"; Description: "{cm:Text_35af0bd25c}"; Types: complete custom
+Name: "ai\create_subtitles_video"; Description: "{cm:Text_13f68875ed}"; Types: complete custom
+Name: "ai\extract_text"; Description: "{cm:Text_e34e5a91aa}"; Types: complete custom
+Name: "video"; Description: "{cm:Text_1446a2327c}"; Types: complete custom
+Name: "video\convert_video"; Description: "{cm:Text_0b156b9372}"; Types: complete custom
+Name: "video\remove_audio"; Description: "{cm:Text_9376f309e8}"; Types: complete custom
+Name: "video\extract_frames"; Description: "{cm:Text_d337414dc5}"; Types: complete custom
+Name: "video\create_gif"; Description: "{cm:Text_0cc6a31c0b}"; Types: complete custom
+Name: "video\add_subtitles_video"; Description: "{cm:Text_6bfb10b252}"; Types: complete custom
+Name: "video\join_videos"; Description: "{cm:Text_3ec0956fdc}"; Types: complete custom
+Name: "video\extract_audio"; Description: "{cm:Text_4beb0703b6}"; Types: complete custom
+Name: "video\cut_video"; Description: "{cm:Text_dd001b9053}"; Types: complete custom
+Name: "video\crop_video"; Description: "{cm:Text_c11a926c82}"; Types: complete custom
+Name: "video\rotate_flip_video"; Description: "{cm:Text_ca6a2bc920}"; Types: complete custom
+Name: "video\resize_video"; Description: "{cm:Text_1fd793ab6c}"; Types: complete custom
+Name: "video\compress_video"; Description: "{cm:Text_5f2aa68583}"; Types: complete custom
+Name: "video\interpolate_video"; Description: "{cm:Text_0db17fe2ac}"; Types: complete custom
+Name: "audio"; Description: "{cm:Text_5edf60f0a6}"; Types: complete custom
+Name: "audio\cut_audio"; Description: "{cm:Text_5f5dd9b194}"; Types: complete custom
+Name: "audio\convert_audio"; Description: "{cm:Text_700c7653c2}"; Types: complete custom
+Name: "audio\reverse_audio"; Description: "{cm:Text_5671164ebd}"; Types: complete custom
+Name: "audio\compress_audio"; Description: "{cm:Text_2aeb7305fb}"; Types: complete custom
+Name: "audio\change_pitch"; Description: "{cm:Text_40b1b7f1f2}"; Types: complete custom
+Name: "audio\change_audio_speed"; Description: "{cm:Text_fa5e8be522}"; Types: complete custom
+Name: "video\change_video_speed"; Description: "{cm:Text_ccb39ab460}"; Types: complete custom
+Name: "image"; Description: "{cm:Text_d2028a7d74}"; Types: complete custom
+Name: "image\image_to_pdf"; Description: "{cm:Text_5b772970d6}"; Types: complete custom
+Name: "image\convert_image"; Description: "{cm:Text_0c5e85a9ef}"; Types: complete custom
+Name: "image\compress_image"; Description: "{cm:Text_aefcefd57e}"; Types: complete custom
+Name: "image\convert_icon"; Description: "{cm:Text_5122ef45cd}"; Types: complete custom
+Name: "image\crop_image"; Description: "{cm:Text_dbf83a261e}"; Types: complete custom
+Name: "image\resize_image"; Description: "{cm:Text_491e690264}"; Types: complete custom
+Name: "image\rotate_flip_image"; Description: "{cm:Text_d32c9fc51b}"; Types: complete custom
+Name: "tools"; Description: "{cm:Text_dcb23c7eb5}"; Types: complete custom
+Name: "tools\media_info"; Description: "{cm:Text_0fc6e5a501}"; Types: complete custom
 
 [Files]
 Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,Workers\CreateSubtitlesWorker\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
@@ -104,6 +107,287 @@ Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpe
 
 [Icons]
 Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\Icons\app\app.ico"; Components: core
+
+[UninstallDelete]
+Type: files; Name: "{app}\language.txt"
+
+[CustomMessages]
+english.AppLanguage=en
+chinesesimp.AppLanguage=zh-CN
+english.Text_1fe0d37d15=Complete installation
+chinesesimp.Text_1fe0d37d15=完整安装
+english.Text_00500efca7=Custom installation
+chinesesimp.Text_00500efca7=自定义安装
+english.Text_aeac198900=FrameShift application
+chinesesimp.Text_aeac198900=FrameShift 应用程序
+english.Text_0e8f9035c9=Remove background
+chinesesimp.Text_0e8f9035c9=移除背景
+english.Text_6217537829=Fast
+chinesesimp.Text_6217537829=快速
+english.Text_5470dd0c9a=High Resolution (Matting) - CPU only
+chinesesimp.Text_5470dd0c9a=高分辨率抠图（仅 CPU）
+english.Text_bc2498e36c=High Resolution (General) - CPU only
+chinesesimp.Text_bc2498e36c=高分辨率通用（仅 CPU）
+english.Text_4608c5ee1e=BRIA Remove Background (Balanced) - manual model, not included
+chinesesimp.Text_4608c5ee1e=BRIA 移除背景（均衡）— 需手动准备模型，安装包不含模型
+english.Text_69e1fb5aac=BRIA Remove Background (High Quality) - manual model, not included
+chinesesimp.Text_69e1fb5aac=BRIA 移除背景（高质量）— 需手动准备模型，安装包不含模型
+english.Text_9bc1f7c1e3=Remove noise
+chinesesimp.Text_9bc1f7c1e3=降噪
+english.Text_125fce9bb3=Remove noise (video)
+chinesesimp.Text_125fce9bb3=视频降噪
+english.Text_3d51c42051=Audio separation
+chinesesimp.Text_3d51c42051=音轨分离
+english.Text_683021e507=Interpolate video (RIFE)
+chinesesimp.Text_683021e507=视频插帧（RIFE）
+english.Text_30fe992bda=Remove object
+chinesesimp.Text_30fe992bda=移除物体
+english.Text_f05887f634=Upscale image (4x)
+chinesesimp.Text_f05887f634=图像超分辨率（4 倍）
+english.Text_4a13677024=Upscale video (2x / 3x / 4x)
+chinesesimp.Text_4a13677024=视频超分辨率（2／3／4 倍）
+english.Text_35af0bd25c=Create subtitle file (audio)
+chinesesimp.Text_35af0bd25c=生成字幕文件（音频）
+english.Text_13f68875ed=Create subtitle file (video)
+chinesesimp.Text_13f68875ed=生成字幕文件（视频）
+english.Text_e34e5a91aa=Extract text (images and PDF)
+chinesesimp.Text_e34e5a91aa=提取文字（图像和 PDF）
+english.Text_1446a2327c=Video actions
+chinesesimp.Text_1446a2327c=视频工具
+english.Text_0b156b9372=Convert video
+chinesesimp.Text_0b156b9372=转换视频
+english.Text_9376f309e8=Remove audio
+chinesesimp.Text_9376f309e8=移除音频
+english.Text_d337414dc5=Extract all and specific frames
+chinesesimp.Text_d337414dc5=提取全部帧或指定帧
+english.Text_0cc6a31c0b=Create GIF
+chinesesimp.Text_0cc6a31c0b=制作 GIF
+english.Text_6bfb10b252=Add subtitles to video
+chinesesimp.Text_6bfb10b252=为视频添加字幕
+english.Text_3ec0956fdc=Join videos
+chinesesimp.Text_3ec0956fdc=合并视频
+english.Text_4beb0703b6=Extract audio
+chinesesimp.Text_4beb0703b6=提取音频
+english.Text_dd001b9053=Cut video
+chinesesimp.Text_dd001b9053=截取视频
+english.Text_c11a926c82=Crop video
+chinesesimp.Text_c11a926c82=裁剪视频
+english.Text_ca6a2bc920=Rotate / Flip video
+chinesesimp.Text_ca6a2bc920=旋转／翻转视频
+english.Text_1fd793ab6c=Resize video
+chinesesimp.Text_1fd793ab6c=调整视频尺寸
+english.Text_5f2aa68583=Compress video
+chinesesimp.Text_5f2aa68583=压缩视频
+english.Text_0db17fe2ac=Interpolate video
+chinesesimp.Text_0db17fe2ac=视频插帧
+english.Text_5edf60f0a6=Audio actions
+chinesesimp.Text_5edf60f0a6=音频工具
+english.Text_5f5dd9b194=Cut audio
+chinesesimp.Text_5f5dd9b194=截取音频
+english.Text_700c7653c2=Convert audio
+chinesesimp.Text_700c7653c2=转换音频
+english.Text_5671164ebd=Reverse audio
+chinesesimp.Text_5671164ebd=倒放音频
+english.Text_2aeb7305fb=Compress audio
+chinesesimp.Text_2aeb7305fb=压缩音频
+english.Text_40b1b7f1f2=Change pitch
+chinesesimp.Text_40b1b7f1f2=调整音高
+english.Text_fa5e8be522=Change audio speed
+chinesesimp.Text_fa5e8be522=调整音频速度
+english.Text_ccb39ab460=Change video speed
+chinesesimp.Text_ccb39ab460=调整视频速度
+english.Text_d2028a7d74=Image actions
+chinesesimp.Text_d2028a7d74=图像工具
+english.Text_5b772970d6=Image to PDF
+chinesesimp.Text_5b772970d6=图像转 PDF
+english.Text_0c5e85a9ef=Convert image
+chinesesimp.Text_0c5e85a9ef=转换图像
+english.Text_aefcefd57e=Compress image
+chinesesimp.Text_aefcefd57e=压缩图像
+english.Text_5122ef45cd=Convert to icon
+chinesesimp.Text_5122ef45cd=转换为图标
+english.Text_dbf83a261e=Crop image
+chinesesimp.Text_dbf83a261e=裁剪图像
+english.Text_491e690264=Resize image
+chinesesimp.Text_491e690264=调整图像尺寸
+english.Text_d32c9fc51b=Rotate / Flip image
+chinesesimp.Text_d32c9fc51b=旋转／翻转图像
+english.Text_dcb23c7eb5=Tools
+chinesesimp.Text_dcb23c7eb5=工具
+english.Text_0fc6e5a501=Media Info
+chinesesimp.Text_0fc6e5a501=媒体信息
+english.Text_11921b10b5=A previous per-user FrameShift installation was detected.
+chinesesimp.Text_11921b10b5=检测到之前为当前用户安装的 FrameShift。
+english.Text_d0f481737f=You can remove that copy from Windows Settings. This setup will install FrameShift for this machine.
+chinesesimp.Text_d0f481737f=你可以在 Windows 设置中卸载该副本。本安装程序将为此计算机安装 FrameShift。
+english.Text_71d35a9d28=Existing installation detected
+chinesesimp.Text_71d35a9d28=检测到已有安装
+english.Text_95c37994f6=Continue to update the installed copy.
+chinesesimp.Text_95c37994f6=继续以更新已安装的版本。
+english.Text_a297e247fc=FrameShift version{#InstallerSpace}
+chinesesimp.Text_a297e247fc=已安装 FrameShift 版本：
+english.Text_3be487c2e1= is already installed.
+chinesesimp.Text_3be487c2e1=。
+english.Text_8184978e09=This setup can update it to version {#MyAppVersion}.
+chinesesimp.Text_8184978e09=本安装程序可将其更新到 {#MyAppVersion}。
+english.Text_ff9523a8db=Continue to reinstall the current version.
+chinesesimp.Text_ff9523a8db=继续以重新安装当前版本。
+english.Text_4c20602531=FrameShift version {#MyAppVersion} is already installed.
+chinesesimp.Text_4c20602531=已安装 FrameShift {#MyAppVersion}。
+english.Text_22d892abf9=You can reinstall this version over the current installation.
+chinesesimp.Text_22d892abf9=你可以覆盖当前安装以重新安装此版本。
+english.Text_f89e950309=Continue to install this version over the current copy.
+chinesesimp.Text_f89e950309=继续以覆盖安装此版本。
+english.Text_af410f27ab=A newer FrameShift version (
+chinesesimp.Text_af410f27ab=已安装较新版本的 FrameShift（
+english.Text_a258558d77=) is already installed.
+chinesesimp.Text_a258558d77=）。
+english.Text_33579ebc2a=You can still install version {#MyAppVersion} over the current installation.
+chinesesimp.Text_33579ebc2a=你仍可用 {#MyAppVersion} 覆盖当前安装。
+english.Text_5cec5c225a=To uninstall FrameShift, use Windows Settings.
+chinesesimp.Text_5cec5c225a=如需卸载 FrameShift，请使用 Windows 设置。
+english.Text_8d55fd53b9=A previous per-user copy was also detected; you can remove it from Windows Settings.
+chinesesimp.Text_8d55fd53b9=还检测到之前为当前用户安装的副本，可在 Windows 设置中卸载。
+english.Text_c74676dfc9=Extract all frames
+chinesesimp.Text_c74676dfc9=提取全部帧
+english.Text_722f989b80=Extract specific frames
+chinesesimp.Text_722f989b80=提取指定帧
+english.Text_20fa2acd9d=First frame
+chinesesimp.Text_20fa2acd9d=第一帧
+english.Text_4f0ad82e44=Last frame
+chinesesimp.Text_4f0ad82e44=最后一帧
+english.Text_60651e8404=Keyframes
+chinesesimp.Text_60651e8404=关键帧
+english.Text_a4500def3d=Join videos
+chinesesimp.Text_a4500def3d=合并视频
+english.Text_fdc1b44321=Convert video
+chinesesimp.Text_fdc1b44321=转换视频
+english.Text_74a16ad6ec=Convert audio
+chinesesimp.Text_74a16ad6ec=转换音频
+english.Text_addd98ba08=Cut audio
+chinesesimp.Text_addd98ba08=截取音频
+english.Text_efbba1bee0=Remove audio
+chinesesimp.Text_efbba1bee0=移除音频
+english.Text_19cfb4c9f5=Reverse audio
+chinesesimp.Text_19cfb4c9f5=倒放音频
+english.Text_953a2b6b84=Compress audio
+chinesesimp.Text_953a2b6b84=压缩音频
+english.Text_af1200ab6f=Change pitch
+chinesesimp.Text_af1200ab6f=调整音高
+english.Text_4a1ea75a7e=Change audio speed
+chinesesimp.Text_4a1ea75a7e=调整音频速度
+english.Text_2658d5539f=Change video speed
+chinesesimp.Text_2658d5539f=调整视频速度
+english.Text_2979daede3=Create GIF
+chinesesimp.Text_2979daede3=制作 GIF
+english.Text_9fa0d868a4=Add subtitles to video
+chinesesimp.Text_9fa0d868a4=为视频添加字幕
+english.Text_7bc1090835=Extract audio
+chinesesimp.Text_7bc1090835=提取音频
+english.Text_3665a1b4dc=Cut video
+chinesesimp.Text_3665a1b4dc=截取视频
+english.Text_0e7b0b8ea7=Crop video
+chinesesimp.Text_0e7b0b8ea7=裁剪视频
+english.Text_b2fb3f9dfd=Resize video
+chinesesimp.Text_b2fb3f9dfd=调整视频尺寸
+english.Text_224d74689f=Compress video
+chinesesimp.Text_224d74689f=压缩视频
+english.Text_db0eacf22e=Interpolate video
+chinesesimp.Text_db0eacf22e=视频插帧
+english.Text_bc9e6c1ecf=Compress image
+chinesesimp.Text_bc9e6c1ecf=压缩图像
+english.Text_a190952588=Crop image
+chinesesimp.Text_a190952588=裁剪图像
+english.Text_f75fa94e8d=Resize image
+chinesesimp.Text_f75fa94e8d=调整图像尺寸
+english.Text_bb417e6969=Convert image
+chinesesimp.Text_bb417e6969=转换图像
+english.Text_f3956e810e=Convert to icon
+chinesesimp.Text_f3956e810e=转换为图标
+english.Text_d24530fc4c=Image to PDF
+chinesesimp.Text_d24530fc4c=图像转 PDF
+english.Text_357a79509d=Rotate / Flip image
+chinesesimp.Text_357a79509d=旋转／翻转图像
+english.Text_b5349fc7f1=Rotate / Flip video
+chinesesimp.Text_b5349fc7f1=旋转／翻转视频
+english.Text_ad9f476d26=Media Info
+chinesesimp.Text_ad9f476d26=媒体信息
+english.Text_875ae019f4=Remove Background (Fast)
+chinesesimp.Text_875ae019f4=移除背景（快速）
+english.Text_61ad2d8a39=Remove Background (High Resolution Matting)
+chinesesimp.Text_61ad2d8a39=移除背景（高分辨率抠图）
+english.Text_0676d08465=Remove Background (High Resolution General)
+chinesesimp.Text_0676d08465=移除背景（高分辨率通用）
+english.Text_1b8476bae4=Remove Background (BRIA Balanced)
+chinesesimp.Text_1b8476bae4=移除背景（BRIA 均衡）
+english.Text_d7650ed9b4=Remove Background (BRIA High Quality)
+chinesesimp.Text_d7650ed9b4=移除背景（BRIA 高质量）
+english.Text_8a97d93d9b=Remove noise
+chinesesimp.Text_8a97d93d9b=降噪
+english.Text_a7dc9f181f=Remove noise (video)
+chinesesimp.Text_a7dc9f181f=视频降噪
+english.Text_a057287dbb=Audio separation
+chinesesimp.Text_a057287dbb=音轨分离
+english.Text_a11d766b34=Interpolate video (RIFE)
+chinesesimp.Text_a11d766b34=视频插帧（RIFE）
+english.Text_fd8c11b3f1=Remove object
+chinesesimp.Text_fd8c11b3f1=移除物体
+english.Text_578e57daed=Upscale Image 4x
+chinesesimp.Text_578e57daed=图像超分辨率（4 倍）
+english.Text_7092368127=Upscale Video 4x
+chinesesimp.Text_7092368127=视频超分辨率（4 倍）
+english.Text_c8478663aa=Create Subtitle File
+chinesesimp.Text_c8478663aa=生成字幕文件
+english.Text_456f83e647=Extract text...
+chinesesimp.Text_456f83e647=提取文字…
+english.Text_77bc786105=Select AI models folder
+chinesesimp.Text_77bc786105=选择 AI 模型文件夹
+english.Text_93123aa558=AI models folder
+chinesesimp.Text_93123aa558=AI 模型文件夹
+english.Text_22dda8f08d=Choose where FrameShift AI will store downloaded AI models.
+chinesesimp.Text_22dda8f08d=选择 FrameShift AI 保存已下载模型的位置。
+english.Text_8567135b14=AI models are downloaded on first use and are never included in the installer.
+chinesesimp.Text_8567135b14=AI 模型会在首次使用时下载，安装包中不包含模型。
+english.Text_deb424754d=Runtime components such as the subtitle worker are bundled with FrameShift.
+chinesesimp.Text_deb424754d=字幕工作进程等运行组件随 FrameShift 一起提供。
+english.Text_845f910b66=AI models folder:
+chinesesimp.Text_845f910b66=AI 模型文件夹：
+english.Text_0b90c6ef40=Browse...
+chinesesimp.Text_0b90c6ef40=浏览…
+english.Text_ce198b381c=FrameShift does NOT distribute, bundle, mirror or download the BRIA RMBG-2.0 model.
+chinesesimp.Text_ce198b381c=FrameShift 不分发、捆绑、镜像或下载 BRIA RMBG-2.0 模型。
+english.Text_49b0fad14c=This folder is a placeholder for a model file you must obtain yourself.
+chinesesimp.Text_49b0fad14c=此文件夹用于存放需要你自行获取的模型文件。
+english.Text_269476c0e6=How to install:
+chinesesimp.Text_269476c0e6=安装方法：
+english.Text_4208d0511e=  1. Open the official BRIA page:
+chinesesimp.Text_4208d0511e=  1. 打开 BRIA 官方页面：
+english.Text_e482e00f44=  2. Review BRIA's documentation and licensing.
+chinesesimp.Text_e482e00f44=  2. 阅读 BRIA 的文档和许可条款。
+english.Text_c6e5d8f605=  3. Download the ONNX model and place it in THIS folder.
+chinesesimp.Text_c6e5d8f605=  3. 下载 ONNX 模型并放入此文件夹。
+english.Text_0911e80cb8=Expected file:{#InstallerSpace}
+chinesesimp.Text_0911e80cb8=所需文件：
+english.Text_c6a26d8074=Approximate size:{#InstallerSpace}
+chinesesimp.Text_c6a26d8074=大约大小：
+english.Text_652e21e125=Target folder:{#InstallerSpace}
+chinesesimp.Text_652e21e125=目标文件夹：
+english.Text_391e4e86ea=FrameShift verifies the file against the official BRIA checksum. If it does not
+chinesesimp.Text_391e4e86ea=FrameShift 会使用 BRIA 官方校验和验证文件。如果校验不匹配，
+english.Text_028133a1bf=match, FrameShift will point you back to the official BRIA page.
+chinesesimp.Text_028133a1bf=FrameShift 会提示你返回 BRIA 官方页面。
+english.Text_834ff95b7e=Choose how to continue with the detected FrameShift installation.
+chinesesimp.Text_834ff95b7e=选择如何处理检测到的 FrameShift 安装。
+english.Text_74b47686d0=Choose a dedicated AI models folder. Drive roots, user-profile roots, Windows, Program Files, the FrameShift install folder and their parents are not allowed.
+chinesesimp.Text_74b47686d0=请选择专用 AI 模型文件夹。不能使用磁盘根目录、用户主目录、Windows、Program Files、FrameShift 安装目录及其父目录。
+english.Text_219946869b=Do you also want to remove downloaded AI models created by FrameShift?
+chinesesimp.Text_219946869b=是否同时移除 FrameShift 下载的 AI 模型？
+english.Text_6628d02a16=FrameShift will delete only marked model folders that it created. The selected models root and any other files will be kept.
+chinesesimp.Text_6628d02a16=FrameShift 仅删除自身创建并标记的模型文件夹。模型根目录与其他文件会保留。
+english.Text_adcadd0004=Location:{#InstallerSpace}
+chinesesimp.Text_adcadd0004=位置：
+english.Text_1aa09e20ca=Do you also want to delete diagnostic logs?
+chinesesimp.Text_1aa09e20ca=是否同时删除诊断日志？
 
 [Code]
 procedure SHChangeNotify(wEventId: LongInt; uFlags: Cardinal; dwItem1: Integer; dwItem2: Integer); external 'SHChangeNotify@shell32.dll stdcall';
@@ -235,45 +519,45 @@ begin
     if HasLegacyUserInstall then
     begin
       ExistingInstallStatusLabel.Caption :=
-        'A previous per-user FrameShift installation was detected.' + #13#10#13#10 +
-        'You can remove that copy from Windows Settings. This setup will install FrameShift for this machine.';
+        CustomMessage('Text_11921b10b5') + #13#10#13#10 +
+        CustomMessage('Text_d0f481737f');
     end;
     exit;
   end;
 
   if InstalledVersionState = ExistingInstallStateOlder then
   begin
-    ExistingInstallPage.Caption := 'Existing installation detected';
+    ExistingInstallPage.Caption := CustomMessage('Text_71d35a9d28');
     ExistingInstallPage.Description :=
-      'Continue to update the installed copy.';
+      CustomMessage('Text_95c37994f6');
     ExistingInstallStatusLabel.Caption :=
-      'FrameShift version ' + InstalledVersion + ' is already installed.' + #13#10#13#10 +
-      'This setup can update it to version {#MyAppVersion}.';
+      CustomMessage('Text_a297e247fc') + InstalledVersion + CustomMessage('Text_3be487c2e1') + #13#10#13#10 +
+      CustomMessage('Text_8184978e09');
   end
   else if InstalledVersionState = ExistingInstallStateSame then
   begin
-    ExistingInstallPage.Caption := 'Existing installation detected';
+    ExistingInstallPage.Caption := CustomMessage('Text_71d35a9d28');
     ExistingInstallPage.Description :=
-      'Continue to reinstall the current version.';
+      CustomMessage('Text_ff9523a8db');
     ExistingInstallStatusLabel.Caption :=
-      'FrameShift version {#MyAppVersion} is already installed.' + #13#10#13#10 +
-      'You can reinstall this version over the current installation.';
+      CustomMessage('Text_4c20602531') + #13#10#13#10 +
+      CustomMessage('Text_22d892abf9');
   end
   else
   begin
-    ExistingInstallPage.Caption := 'Existing installation detected';
+    ExistingInstallPage.Caption := CustomMessage('Text_71d35a9d28');
     ExistingInstallPage.Description :=
-      'Continue to install this version over the current copy.';
+      CustomMessage('Text_f89e950309');
     ExistingInstallStatusLabel.Caption :=
-      'A newer FrameShift version (' + InstalledVersion + ') is already installed.' + #13#10#13#10 +
-      'You can still install version {#MyAppVersion} over the current installation.';
+      CustomMessage('Text_af410f27ab') + InstalledVersion + CustomMessage('Text_a258558d77') + #13#10#13#10 +
+      CustomMessage('Text_33579ebc2a');
   end;
 
   ExistingInstallStatusLabel.Caption := ExistingInstallStatusLabel.Caption + #13#10#13#10 +
-    'To uninstall FrameShift, use Windows Settings.';
+    CustomMessage('Text_5cec5c225a');
   if HasLegacyUserInstall then
     ExistingInstallStatusLabel.Caption := ExistingInstallStatusLabel.Caption + #13#10 +
-      'A previous per-user copy was also detected; you can remove it from Windows Settings.';
+      CustomMessage('Text_8d55fd53b9');
 end;
 
 procedure CleanupContextMenuKeysForHive(const Hive: Integer; const Extensions: string);
@@ -615,7 +899,7 @@ begin
 
   DirectKeyPath := BaseKeyPath + 'extract_all_frames';
   RegDeleteKeyIncludingSubkeys(Hive, DirectKeyPath);
-  RegWriteStringValue(Hive, DirectKeyPath, 'MUIVerb', 'Extract all frames');
+  RegWriteStringValue(Hive, DirectKeyPath, 'MUIVerb', CustomMessage('Text_c74676dfc9'));
   if IconPath <> '' then
   begin
     RegWriteStringValue(Hive, DirectKeyPath, 'Icon', IconPath);
@@ -627,7 +911,7 @@ begin
 
   SpecificKeyPath := BaseKeyPath + 'extract_specific_frames';
   RegDeleteKeyIncludingSubkeys(Hive, SpecificKeyPath);
-  RegWriteStringValue(Hive, SpecificKeyPath, 'MUIVerb', 'Extract specific frames');
+  RegWriteStringValue(Hive, SpecificKeyPath, 'MUIVerb', CustomMessage('Text_722f989b80'));
   RegWriteStringValue(
     Hive,
     SpecificKeyPath,
@@ -638,9 +922,9 @@ begin
     RegWriteStringValue(Hive, SpecificKeyPath, 'Icon', IconPath);
   end;
 
-  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'first_frame', 'First frame', 'first', IconPath);
-  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'last_frame', 'Last frame', 'last', IconPath);
-  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'keyframes', 'Keyframes', 'keyframes', IconPath);
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'first_frame', CustomMessage('Text_20fa2acd9d'), 'first', IconPath);
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'last_frame', CustomMessage('Text_4f0ad82e44'), 'last', IconPath);
+  ConfigureSpecificExtractFrameMenuForHive(Hive, SpecificKeyPath, 'keyframes', CustomMessage('Text_60651e8404'), 'keyframes', IconPath);
 end;
 
 procedure ApplyExtractFramesMenuList(const Extensions: string);
@@ -688,7 +972,7 @@ procedure ConfigureJoinVideosMenuForHive(const Hive: Integer; const Ext: string)
 var
   KeyPath: string;
 begin
-  ConfigureActionMenuForHive(Hive, Ext, 'join_videos', 'Join videos', 'join-videos', '');
+  ConfigureActionMenuForHive(Hive, Ext, 'join_videos', CustomMessage('Text_a4500def3d'), 'join-videos', '');
   KeyPath := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\FrameShift\shell\join_videos';
   // Player lets Explorer pass larger multi-selections. FrameShift still treats the
   // received order as provisional and exposes an explicit timeline order UI.
@@ -725,7 +1009,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'convert_video',
-      'Convert video',
+      CustomMessage('Text_fdc1b44321'),
       'convert-video',
       '');
   end;
@@ -735,7 +1019,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'convert_audio',
-      'Convert audio',
+      CustomMessage('Text_74a16ad6ec'),
       'convert-audio',
       '');
   end;
@@ -745,7 +1029,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'cut_audio',
-      'Cut audio',
+      CustomMessage('Text_addd98ba08'),
       'cut-audio',
       '');
   end;
@@ -755,7 +1039,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'remove_audio',
-      'Remove audio',
+      CustomMessage('Text_efbba1bee0'),
       'remove-audio',
       '');
   end;
@@ -765,7 +1049,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'reverse_audio',
-      'Reverse audio',
+      CustomMessage('Text_19cfb4c9f5'),
       'reverse-audio',
       '');
   end;
@@ -775,7 +1059,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'compress_audio',
-      'Compress audio',
+      CustomMessage('Text_953a2b6b84'),
       'compress-audio',
       '');
   end;
@@ -785,7 +1069,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'change_pitch',
-      'Change pitch',
+      CustomMessage('Text_af1200ab6f'),
       'change-pitch',
       '');
   end;
@@ -795,7 +1079,7 @@ begin
     ApplyActionMenuList(
       AudioExtensions,
       'change_audio_speed',
-      'Change audio speed',
+      CustomMessage('Text_4a1ea75a7e'),
       'change-audio-speed',
       '');
   end;
@@ -805,7 +1089,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'change_video_speed',
-      'Change video speed',
+      CustomMessage('Text_2658d5539f'),
       'change-video-speed',
       '');
   end;
@@ -820,7 +1104,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'create_gif',
-      'Create GIF',
+      CustomMessage('Text_2979daede3'),
       'create-gif',
       '');
   end;
@@ -830,7 +1114,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'add_subtitles_video',
-      'Add subtitles to video',
+      CustomMessage('Text_9fa0d868a4'),
       'add-subtitles-video',
       '');
   end;
@@ -845,7 +1129,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'extract_audio',
-      'Extract audio',
+      CustomMessage('Text_7bc1090835'),
       'extract-audio',
       '');
   end;
@@ -855,7 +1139,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'cut_video',
-      'Cut video',
+      CustomMessage('Text_3665a1b4dc'),
       'cut-video',
       '');
   end;
@@ -865,7 +1149,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'crop_video',
-      'Crop video',
+      CustomMessage('Text_0e7b0b8ea7'),
       'crop-video',
       '');
   end;
@@ -875,7 +1159,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'resize_video',
-      'Resize video',
+      CustomMessage('Text_b2fb3f9dfd'),
       'resize-video',
       '');
   end;
@@ -885,7 +1169,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'compress_video',
-      'Compress video',
+      CustomMessage('Text_224d74689f'),
       'compress-video',
       '');
   end;
@@ -895,7 +1179,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'interpolate_video',
-      'Interpolate video',
+      CustomMessage('Text_db0eacf22e'),
       'interpolate-video',
       '');
   end;
@@ -905,7 +1189,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'compress_image',
-      'Compress image',
+      CustomMessage('Text_bc9e6c1ecf'),
       'compress-image',
       '');
   end;
@@ -915,7 +1199,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'crop_image',
-      'Crop image',
+      CustomMessage('Text_a190952588'),
       'crop-image',
       '');
   end;
@@ -925,7 +1209,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'resize_image',
-      'Resize image',
+      CustomMessage('Text_f75fa94e8d'),
       'resize-image',
       '');
   end;
@@ -935,7 +1219,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'convert_image',
-      'Convert image',
+      CustomMessage('Text_bb417e6969'),
       'convert-image',
       '');
   end;
@@ -945,7 +1229,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'convert_icon',
-      'Convert to icon',
+      CustomMessage('Text_f3956e810e'),
       'convert-to-icon',
       '');
   end;
@@ -955,7 +1239,7 @@ begin
     ApplyActionMenuList(
       PdfImageExtensions,
       'image_to_pdf',
-      'Image to PDF',
+      CustomMessage('Text_d24530fc4c'),
       'image-to-pdf',
       '');
   end;
@@ -965,7 +1249,7 @@ begin
     ApplyActionMenuList(
       ImageExtensions,
       'rotate_flip_image',
-      'Rotate / Flip image',
+      CustomMessage('Text_357a79509d'),
       'rotate-flip-image',
       '');
   end;
@@ -975,7 +1259,7 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'rotate_flip_video',
-      'Rotate / Flip video',
+      CustomMessage('Text_b5349fc7f1'),
       'rotate-flip-video',
       '');
   end;
@@ -985,19 +1269,19 @@ begin
     ApplyActionMenuList(
       VideoExtensions,
       'media_info',
-      'Media Info',
+      CustomMessage('Text_ad9f476d26'),
       'media-info',
       '');
     ApplyActionMenuList(
       AudioExtensions,
       'media_info',
-      'Media Info',
+      CustomMessage('Text_ad9f476d26'),
       'media-info',
       '');
     ApplyActionMenuList(
       ImageExtensions,
       'media_info',
-      'Media Info',
+      CustomMessage('Text_ad9f476d26'),
       'media-info',
       '');
   end;
@@ -1010,7 +1294,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_background_fast',
-      'Remove Background (Fast)',
+      CustomMessage('Text_875ae019f4'),
       'remove-background',
       ' --rmbg-model fast');
   end;
@@ -1020,7 +1304,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_background_high_resolution',
-      'Remove Background (High Resolution Matting)',
+      CustomMessage('Text_61ad2d8a39'),
       'remove-background',
       ' --rmbg-model high-resolution');
   end;
@@ -1030,7 +1314,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_background_high_resolution_general',
-      'Remove Background (High Resolution General)',
+      CustomMessage('Text_0676d08465'),
       'remove-background',
       ' --rmbg-model high-resolution-general');
   end;
@@ -1040,7 +1324,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_background_bria_balanced',
-      'Remove Background (BRIA Balanced)',
+      CustomMessage('Text_1b8476bae4'),
       'remove-background',
       ' --rmbg-model bria-balanced');
   end;
@@ -1050,7 +1334,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_background_bria_high_quality',
-      'Remove Background (BRIA High Quality)',
+      CustomMessage('Text_d7650ed9b4'),
       'remove-background',
       ' --rmbg-model bria-high-quality');
   end;
@@ -1060,7 +1344,7 @@ begin
     ApplyAIActionMenuList(
       AudioExtensions,
       'remove_noise',
-      'Remove noise',
+      CustomMessage('Text_8a97d93d9b'),
       'remove-noise',
       '');
   end;
@@ -1070,7 +1354,7 @@ begin
     ApplyAIActionMenuList(
       VideoExtensions,
       'remove_noise_video',
-      'Remove noise (video)',
+      CustomMessage('Text_a7dc9f181f'),
       'remove-noise-video',
       '');
   end;
@@ -1080,7 +1364,7 @@ begin
     ApplyAIActionMenuList(
       AudioExtensions,
       'separate_audio',
-      'Audio separation',
+      CustomMessage('Text_a057287dbb'),
       'separate-audio',
       '');
   end;
@@ -1090,7 +1374,7 @@ begin
     ApplyAIActionMenuList(
       VideoExtensions,
       'interpolate_video_rife',
-      'Interpolate video (RIFE)',
+      CustomMessage('Text_a11d766b34'),
       'interpolate-video-rife',
       '');
   end;
@@ -1100,7 +1384,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'remove_object',
-      'Remove object',
+      CustomMessage('Text_fd8c11b3f1'),
       'remove-object',
       '');
   end;
@@ -1110,7 +1394,7 @@ begin
     ApplyAIActionMenuList(
       ImageExtensions,
       'upscale_image',
-      'Upscale Image 4x',
+      CustomMessage('Text_578e57daed'),
       'upscale-image',
       '');
   end;
@@ -1120,7 +1404,7 @@ begin
     ApplyAIActionMenuList(
       VideoExtensions,
       'upscale_video',
-      'Upscale Video 4x',
+      CustomMessage('Text_7092368127'),
       'upscale-video',
       '');
   end;
@@ -1130,7 +1414,7 @@ begin
     ApplyAIActionMenuList(
       AudioExtensions,
       'create_subtitles_audio',
-      'Create Subtitle File',
+      CustomMessage('Text_c8478663aa'),
       'create-subtitles-audio',
       '');
   end;
@@ -1140,12 +1424,12 @@ begin
     ApplyAIActionMenuList(
       VideoExtensions,
       'create_subtitles_video',
-      'Create Subtitle File',
+      CustomMessage('Text_c8478663aa'),
       'create-subtitles-video',
       '');
   end;
   if WizardIsComponentSelected('ai\extract_text') then
-    ApplyAIActionMenuList(ImageExtensions + ',.pdf', 'extract_text', 'Extract text...', 'extract-text', '');
+    ApplyAIActionMenuList(ImageExtensions + ',.pdf', 'extract_text', CustomMessage('Text_456f83e647'), 'extract-text', '');
 end;
 
 function GetDefaultModelsDir(): string;
@@ -1302,7 +1586,7 @@ begin
   Dir := AiModelsDirEdit.Text;
   if Dir = '' then
     Dir := GetSuggestedModelsDir();
-  if BrowseForFolder('Select AI models folder', Dir, False) then
+  if BrowseForFolder(CustomMessage('Text_77bc786105'), Dir, False) then
     AiModelsDirEdit.Text := Dir;
 end;
 
@@ -1313,8 +1597,8 @@ var
 begin
   AiModelsPage := CreateCustomPage(
     wpSelectComponents,
-    'AI models folder',
-    'Choose where FrameShift AI will store downloaded AI models.');
+    CustomMessage('Text_93123aa558'),
+    CustomMessage('Text_22dda8f08d'));
 
   DescLabel := TNewStaticText.Create(AiModelsPage);
   DescLabel.Parent := AiModelsPage.Surface;
@@ -1325,8 +1609,8 @@ begin
   DescLabel.AutoSize := False;
   DescLabel.WordWrap := True;
   DescLabel.Caption :=
-    'AI models are downloaded on first use and are never included in the installer.' + #13#10 +
-    'Runtime components such as the subtitle worker are bundled with FrameShift.';
+    CustomMessage('Text_8567135b14') + #13#10 +
+    CustomMessage('Text_deb424754d');
 
   DirLabel := TNewStaticText.Create(AiModelsPage);
   DirLabel.Parent := AiModelsPage.Surface;
@@ -1335,7 +1619,7 @@ begin
   DirLabel.Width := AiModelsPage.SurfaceWidth;
   DirLabel.Height := ScaleY(16);
   DirLabel.AutoSize := False;
-  DirLabel.Caption := 'AI models folder:';
+  DirLabel.Caption := CustomMessage('Text_845f910b66');
 
   AiModelsDirEdit := TEdit.Create(AiModelsPage);
   AiModelsDirEdit.Parent := AiModelsPage.Surface;
@@ -1351,7 +1635,7 @@ begin
   AiModelsDirBrowseButton.Top := AiModelsDirEdit.Top - ScaleY(1);
   AiModelsDirBrowseButton.Width := ScaleX(78);
   AiModelsDirBrowseButton.Height := ScaleY(24);
-  AiModelsDirBrowseButton.Caption := 'Browse...';
+  AiModelsDirBrowseButton.Caption := CustomMessage('Text_0b90c6ef40');
   AiModelsDirBrowseButton.OnClick := @AiModelsBrowseClick;
 end;
 
@@ -1433,19 +1717,19 @@ begin
   Readme :=
     ModelDisplayName + #13#10 +
     '====================================' + #13#10#13#10 +
-    'FrameShift does NOT distribute, bundle, mirror or download the BRIA RMBG-2.0 model.' + #13#10 +
-    'This folder is a placeholder for a model file you must obtain yourself.' + #13#10#13#10 +
-    'How to install:' + #13#10 +
-    '  1. Open the official BRIA page:' + #13#10 +
+    CustomMessage('Text_ce198b381c') + #13#10 +
+    CustomMessage('Text_49b0fad14c') + #13#10#13#10 +
+    CustomMessage('Text_269476c0e6') + #13#10 +
+    CustomMessage('Text_4208d0511e') + #13#10 +
     '       https://huggingface.co/briaai/RMBG-2.0/tree/main' + #13#10 +
-    '  2. Review BRIA''s documentation and licensing.' + #13#10 +
-    '  3. Download the ONNX model and place it in THIS folder.' + #13#10#13#10 +
-    'Expected file:   ' + FileName + #13#10 +
-    'Approximate size: ' + ApproxSize + #13#10 +
-    'Target folder:    ' + Dir + #13#10#13#10 +
-    'FrameShift verifies the file against the official BRIA checksum. If it does not' + #13#10 +
-    'match, FrameShift will point you back to the official BRIA page.' + #13#10;
-  SaveStringToFile(Dir + '\README.txt', Readme, False);
+    CustomMessage('Text_e482e00f44') + #13#10 +
+    CustomMessage('Text_c6e5d8f605') + #13#10#13#10 +
+    CustomMessage('Text_0911e80cb8') + FileName + #13#10 +
+    CustomMessage('Text_c6a26d8074') + ApproxSize + #13#10 +
+    CustomMessage('Text_652e21e125') + Dir + #13#10#13#10 +
+    CustomMessage('Text_391e4e86ea') + #13#10 +
+    CustomMessage('Text_028133a1bf') + #13#10;
+  SaveStringToFile(Dir + '\README.txt', Utf8Encode(Readme), False);
 
   License :=
     'BRIA RMBG-2.0 - License notice' + #13#10 +
@@ -1469,7 +1753,7 @@ begin
     CreateBriaModelAssets(
       ModelsDir,
       'BriaBalanced',
-      'Remove Background (BRIA Balanced)',
+      CustomMessage('Text_1b8476bae4'),
       'model_fp16.onnx',
       '~500 MB');
 
@@ -1477,7 +1761,7 @@ begin
     CreateBriaModelAssets(
       ModelsDir,
       'BriaHighQuality',
-      'Remove Background (BRIA High Quality)',
+      CustomMessage('Text_d7650ed9b4'),
       'model.onnx',
       '~1 GB');
 end;
@@ -1499,8 +1783,8 @@ begin
   ExistingInstallPage :=
     CreateCustomPage(
       wpWelcome,
-      'Existing installation detected',
-      'Choose how to continue with the detected FrameShift installation.');
+      CustomMessage('Text_71d35a9d28'),
+      CustomMessage('Text_834ff95b7e'));
 
   ExistingInstallStatusLabel := TNewStaticText.Create(ExistingInstallPage);
   ExistingInstallStatusLabel.Parent := ExistingInstallPage.Surface;
@@ -1535,7 +1819,7 @@ begin
        not IsModelsDirOutsideSelectedAppDir(SafeModelsDir) then
     begin
       MsgBox(
-        'Choose a dedicated AI models folder. Drive roots, user-profile roots, Windows, Program Files, the FrameShift install folder and their parents are not allowed.',
+        CustomMessage('Text_74b47686d0'),
         mbError,
         MB_OK);
       Result := False;
@@ -1551,6 +1835,8 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
+    if not SaveStringToFile(ExpandConstant('{app}\language.txt'), CustomMessage('AppLanguage'), False) then
+      RaiseException('Could not save the FrameShift installation language.');
     InstallSelectedMenus;
     SHChangeNotify($08000000, $0000, 0, 0);
     if AiModelsPage <> nil then
@@ -1991,9 +2277,9 @@ begin
     if DirExists(ModelsDir) and HasOwnedModelDirectories(ModelsDir) then
     begin
       if MsgBox(
-        'Do you also want to remove downloaded AI models created by FrameShift?' + #13#10#13#10 +
-        'FrameShift will delete only marked model folders that it created. The selected models root and any other files will be kept.' + #13#10#13#10 +
-        'Location: ' + ModelsDir,
+        CustomMessage('Text_219946869b') + #13#10#13#10 +
+        CustomMessage('Text_6628d02a16') + #13#10#13#10 +
+        CustomMessage('Text_adcadd0004') + ModelsDir,
         mbConfirmation,
         MB_YESNO) = IDYES then
       begin
@@ -2005,8 +2291,8 @@ begin
     if DirExists(LogsDir) then
     begin
       if MsgBox(
-        'Do you also want to delete diagnostic logs?' + #13#10#13#10 +
-        'Location: ' + LogsDir,
+        CustomMessage('Text_1aa09e20ca') + #13#10#13#10 +
+        CustomMessage('Text_adcadd0004') + LogsDir,
         mbConfirmation,
         MB_YESNO) = IDYES then
       begin

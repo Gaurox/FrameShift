@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.22.0
+
+Unpublished preparation: English/simplified Chinese application and installer, plus
+the six general correction lots. **Find Loop is reserved for 1.23.** See the
+[draft notes](RELEASE_NOTES_1.22.0.md), [qualification](RELEASE_QUALIFICATION_1.22.0.md)
+and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
+
+- English and Chinese display resources, language preference applied on next launch,
+  translated installer/Explorer menus and corrected narrow action-list layout.
+- Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,
+  cancellable folder imports and successful upscale tile reuse.
+- Protected model paths and bounded/coordinated downloads, safe installer cleanup,
+  restricted local pipes and bounded FFmpeg/FFprobe captures.
+
 ## 1.21.1
 
 Published on 7 October 2026 after owner authorization. GitHub tag: `1.21.1`. The public installer download matches the tested build's SHA-256. This patch fixes noise-removal setup and modal closure/cancellation. The owner reports that Remove Noise appears corrected; the other installed checks remain open. See the [release notes](RELEASE_NOTES_1.21.1.md) and [qualification report](RELEASE_QUALIFICATION_1.21.1.md).

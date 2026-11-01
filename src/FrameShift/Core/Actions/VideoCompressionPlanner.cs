@@ -12,15 +12,15 @@ public static class VideoCompressionPlanner
     {
         if (useTargetSize)
         {
-            return "Preparing target size compression...";
+            return L.Get("VideoCompressionPlanner_Preparing_target_size_compression_3afdfc58");
         }
 
         return profileId.ToLowerInvariant() switch
         {
-            "high" => "Preparing high quality compression...",
-            "balanced" => "Preparing balanced compression...",
-            "small" => "Preparing small file compression...",
-            _ => "Preparing video compression..."
+            "high" => L.Get("VideoCompressionPlanner_Preparing_high_quality_compression_a9625016"),
+            "balanced" => L.Get("VideoCompressionPlanner_Preparing_balanced_compression_6fcd88c4"),
+            "small" => L.Get("VideoCompressionPlanner_Preparing_small_file_compression_d17629ec"),
+            _ => L.Get("VideoCompressionPlanner_Preparing_video_compression_7fb8950b")
         };
     }
 
@@ -76,7 +76,7 @@ public static class VideoCompressionPlanner
 
         if (sourceExtension == ".avi")
         {
-            warnings.Add("Subtitles cannot be kept in AVI output and will be removed.");
+            warnings.Add(L.Get("VideoCompressionPlanner_Subtitles_cannot_be_kept_in_AVI_outp_cf84577d"));
         }
         else if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "subtitle", StringComparison.OrdinalIgnoreCase) && !IsTextSubtitle(stream.CodecName)))
         {
@@ -85,7 +85,7 @@ public static class VideoCompressionPlanner
 
         if (probe.Streams.Any(stream => string.Equals(stream.CodecType, "data", StringComparison.OrdinalIgnoreCase) || string.Equals(stream.CodecType, "attachment", StringComparison.OrdinalIgnoreCase)))
         {
-            warnings.Add("Extra data streams or attachments will be removed.");
+            warnings.Add(L.Get("VideoCompressionPlanner_Extra_data_streams_or_attachments_wi_2f6bb184"));
         }
 
         var (videoCodec, videoArgs, audioCodec, audioArgs, globalArgs) = target is null
@@ -95,7 +95,7 @@ public static class VideoCompressionPlanner
         return new VideoCompressionPlan(
             profile.Id,
             profile.DisplayName,
-            target is null ? "CPU" : "Target size",
+            target is null ? "CPU" : L.Get("VideoCompressionPlanner_Target_size_3dc7fec6"),
             sourceExtension,
             target is not null,
             target?.TargetBytes,
@@ -146,7 +146,7 @@ public static class VideoCompressionPlanner
                 hasAudio ? "aac" : null,
                 hasAudio ? ["-b:a", $"{profile.AudioBitrateKbps}k"] : Array.Empty<string>(),
                 ["-movflags", "+faststart"]),
-            _ => throw new InvalidOperationException("Unsupported file format.")
+            _ => throw new InvalidOperationException(L.Get("VideoCompressionPlanner_Unsupported_file_format_603f6259"))
         };
     }
 
@@ -207,7 +207,7 @@ public static class VideoCompressionPlanner
                 hasAudio ? audioCodec : null,
                 hasAudio ? audioArgs : Array.Empty<string>(),
                 ["-movflags", "+faststart"]),
-            _ => throw new InvalidOperationException("Unsupported file format.")
+            _ => throw new InvalidOperationException(L.Get("VideoCompressionPlanner_Unsupported_file_format_603f6259"))
         };
     }
 
@@ -315,8 +315,8 @@ public static class VideoCompressionPlanner
     {
         return sourceExtension switch
         {
-            ".webm" => "Some subtitles are not compatible with WEBM and will be removed.",
-            _ => "Some subtitles are not compatible with this output format and will be removed."
+            ".webm" => L.Get("VideoCompressionPlanner_Some_subtitles_are_not_compatible_wi_9fd1fdfc"),
+            _ => L.Get("VideoCompressionPlanner_Some_subtitles_are_not_compatible_wi_db624e10")
         };
     }
 

@@ -58,29 +58,29 @@ public sealed class BriaModelNoticeForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(680, 460), new Size(400, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift AI - Remove Background (BRIA)", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Remove Background (BRIA)",
-            "Manual model installation required", IconPaths.RemoveBackgroundAiIcon, IconPaths.FrameShiftAiIcon, "AI");
+        FrameShiftWindowChrome.Apply(this, L.Get("BriaModelNoticeForm_FrameShift_AI_Remove_Background_BRIA_c3d1fdfe"), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("BriaModelNoticeForm_FrameShift_Remove_Background_BRIA_6b3c8039"),
+            L.Get("BriaModelNoticeForm_Manual_model_installation_required_5d2859f9"), IconPaths.RemoveBackgroundAiIcon, IconPaths.FrameShiftAiIcon, "AI");
         _messageLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        var instructions = FrameShiftUiFactory.CreateSection("Model installation", FrameShiftUiFactory.CreateVerticalStack(
+        var instructions = FrameShiftUiFactory.CreateSection(L.Get("BriaModelNoticeForm_Model_installation_8b4f84a9"), FrameShiftUiFactory.CreateVerticalStack(
             _messageLabel,
-            FrameShiftUiFactory.CreateStatusMessage($"Expected file: {expectedFileName} (approx. {approxSizeText})\r\nTarget folder: {modelFolder}")));
+            FrameShiftUiFactory.CreateStatusMessage(L.Format("BriaModelNoticeForm_Expected_file_0_approx_1_Target_fold_7abadf24",expectedFileName,approxSizeText,modelFolder))));
         _statusLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        _openPageButton = FrameShiftUiFactory.CreateMeasuredActionButton("Open BRIA page", false);
+        _openPageButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("BriaModelNoticeForm_Open_BRIA_page_b2343cc8"), false);
         _openPageButton.Click += OnOpenPageClick;
-        _openFolderButton = FrameShiftUiFactory.CreateMeasuredActionButton("Open folder", false);
+        _openFolderButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("BriaModelNoticeForm_Open_folder_20cc8e52"), false);
         _openFolderButton.Click += OnOpenFolderClick;
         var links = FrameShiftUiFactory.CreateChoiceRow(_openPageButton, _openFolderButton);
-        _recheckButton = FrameShiftUiFactory.CreateMeasuredActionButton("Re-check", true);
+        _recheckButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("BriaModelNoticeForm_Re_check_1717551f"), true);
         _recheckButton.Click += OnRecheckClick;
-        _useAnywayButton = FrameShiftUiFactory.CreateMeasuredActionButton("Use anyway", false);
+        _useAnywayButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("BriaModelNoticeForm_Use_anyway_41651793"), false);
         _useAnywayButton.Click += (_, _) =>
         {
             Proceed = true;
             DialogResult = DialogResult.OK;
             Close();
         };
-        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("BriaModelNoticeForm_Cancel_998b9c48"), false);
         _cancelButton.DialogResult = DialogResult.Cancel;
         CancelButton = _cancelButton;
         AcceptButton = _recheckButton;
@@ -99,13 +99,13 @@ public sealed class BriaModelNoticeForm : Form
         _status = status;
 
         _messageLabel.Text = status == BriaModelStatus.Mismatch
-            ? "The installed file does not match the expected BRIA RMBG-2.0 model. This usually " +
-              "means the wrong file, the wrong variant, an older version, or a corrupted download. " +
-              "Replace it from BRIA's official Hugging Face page, then click Re-check — or use the " +
-              "current file anyway at your own risk."
-            : "The BRIA RMBG-2.0 model is not installed. FrameShift does not distribute this model. " +
-              "Download it manually from BRIA's official Hugging Face page, review BRIA's " +
-              "documentation and licensing, place the file in the folder below, then click Re-check.";
+            ? L.Get("BriaModelNoticeForm_The_installed_file_does_not_match_th_02d9b1d8") +
+              L.Get("BriaModelNoticeForm_means_the_wrong_file_the_wrong_varia_6ddb6cc2") +
+              L.Get("BriaModelNoticeForm_Replace_it_from_BRIA_s_official_Hugg_00e5d3db") +
+              L.Get("BriaModelNoticeForm_current_file_anyway_at_your_own_risk_b0e8c763")
+            : L.Get("BriaModelNoticeForm_The_BRIA_RMBG_2_0_model_is_not_insta_770eb681") +
+              L.Get("BriaModelNoticeForm_Download_it_manually_from_BRIA_s_off_526fdd5a") +
+              L.Get("BriaModelNoticeForm_documentation_and_licensing_place_th_0c434a89");
 
         // The shared action bar measures its controls; remove an unavailable action
         // rather than reserving an empty button slot or wrapped row for it.
@@ -128,7 +128,7 @@ public sealed class BriaModelNoticeForm : Form
         {
             AppLogger.LogStatic($"BriaModelNoticeForm: re-check failed. {ex.Message}");
             _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
-            _statusLabel.Text = "Could not verify the model file. Please try again.";
+            _statusLabel.Text = L.Get("BriaModelNoticeForm_Could_not_verify_the_model_file_Plea_babcac83");
             return;
         }
 
@@ -143,8 +143,8 @@ public sealed class BriaModelNoticeForm : Form
         ApplyStatus(result);
         _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
         _statusLabel.Text = result == BriaModelStatus.Mismatch
-            ? "A file was found, but it does not match the expected BRIA model."
-            : "The model is still not present in the folder above. Place the file, then re-check.";
+            ? L.Get("BriaModelNoticeForm_A_file_was_found_but_it_does_not_mat_1238fd3f")
+            : L.Get("BriaModelNoticeForm_The_model_is_still_not_present_in_th_0a3c5b69");
     }
 
     private void OnOpenPageClick(object? sender, EventArgs e)
@@ -158,7 +158,7 @@ public sealed class BriaModelNoticeForm : Form
             AppLogger.LogStatic($"BriaModelNoticeForm: failed to open BRIA page. {ex.Message}");
             MessageBox.Show(
                 this,
-                "Could not open the browser. Please visit:\r\n" + _infoPageUrl,
+                L.Get("BriaModelNoticeForm_Could_not_open_the_browser_Please_vi_efb24b4e") + _infoPageUrl,
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
@@ -177,7 +177,7 @@ public sealed class BriaModelNoticeForm : Form
             AppLogger.LogStatic($"BriaModelNoticeForm: failed to open model folder. {ex.Message}");
             MessageBox.Show(
                 this,
-                "Could not open the folder:\r\n" + _modelFolder,
+                L.Get("BriaModelNoticeForm_Could_not_open_the_folder_20ccd421") + _modelFolder,
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);

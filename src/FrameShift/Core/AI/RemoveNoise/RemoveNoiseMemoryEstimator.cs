@@ -40,7 +40,7 @@ internal static class RemoveNoiseMemoryEstimator
 
         if (duration <= TimeSpan.Zero)
         {
-            failureMessage = "Remove Noise could not determine a valid audio duration.";
+            failureMessage = L.Get("RemoveNoiseMemoryEstimator_Remove_Noise_could_not_determine_a_v_d1d904cf");
             return false;
         }
 
@@ -50,7 +50,7 @@ internal static class RemoveNoiseMemoryEstimator
             var frameCount = checked((sampleCount + FftSize + HopSize - 1) / HopSize);
             if (sampleCount > int.MaxValue || frameCount > int.MaxValue)
             {
-                failureMessage = "This audio is too long for the current full-sequence Remove Noise engine.";
+                failureMessage = L.Get("RemoveNoiseMemoryEstimator_This_audio_is_too_long_for_the_curre_73e3c714");
                 return false;
             }
 
@@ -81,7 +81,7 @@ internal static class RemoveNoiseMemoryEstimator
         }
         catch (OverflowException)
         {
-            failureMessage = "This audio is too long for the current full-sequence Remove Noise engine.";
+            failureMessage = L.Get("RemoveNoiseMemoryEstimator_This_audio_is_too_long_for_the_curre_73e3c714");
             return false;
         }
     }
@@ -101,8 +101,8 @@ internal static class RemoveNoiseMemoryEstimator
             return true;
 
         failureMessage =
-            $"Remove Noise needs about {FormatBytes(estimate.RequiredAvailableBytes)} of currently available RAM for this duration, " +
-            $"but only {FormatBytes(availablePhysicalMemoryBytes)} is available. Close other applications or choose a shorter file.";
+            L.Format("RemoveNoiseMemoryEstimator_Remove_Noise_needs_about_0_of_curren_bb906608",FormatBytes(estimate.RequiredAvailableBytes)) +
+            L.Format("RemoveNoiseMemoryEstimator_but_only_0_is_available_Close_other__37edf70b",FormatBytes(availablePhysicalMemoryBytes));
         return false;
     }
 
@@ -115,7 +115,7 @@ internal static class RemoveNoiseMemoryEstimator
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException or NotSupportedException)
         {
-            failureMessage = "Remove Noise could not determine the audio duration for its memory preflight.";
+            failureMessage = L.Get("RemoveNoiseMemoryEstimator_Remove_Noise_could_not_determine_the_04254245");
             return false;
         }
     }

@@ -266,20 +266,20 @@ internal sealed class ConversionBatchSession : IDisposable
     }
 
     public static BatchDefinition CreateExtractTextDefinition() => new(
-        ActionId: "extract-text", DisplayName: "Extract Text", RequiresSharedOptions: false,
+        ActionId: "extract-text", DisplayName: L.Get("ConversionBatchSession_Extract_Text_9b5993ad"), RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string,string>(), PickerTitle: null, PickerDescription: null,
-        SupportedSourceFormatsText: "PNG, JPG, JPEG, WebP, BMP and PDF",
+        SupportedSourceFormatsText: L.Get("ConversionBatchSession_PNG_JPG_JPEG_WebP_BMP_and_PDF_5fd04462"),
         MutexName: @"Local\FrameShift_ExtractTextBatch", PipeName: "FrameShift_ExtractTextBatchQueue",
         ShowProfiles: false, IsSupportedSourceExtension: Core.AI.Ocr.ExtractTextAction.Supports,
-        GetTargetsForSelection: _ => [], GetProfiles: () => [], KeepWindowOpenOnFailure: true, PrimaryButtonText: "Extract Text");
+        GetTargetsForSelection: _ => [], GetProfiles: () => [], KeepWindowOpenOnFailure: true, PrimaryButtonText: L.Get("ConversionBatchSession_Extract_Text_9b5993ad"));
 
     public static BatchDefinition CreateVideoDefinition() => new(
         ActionId: "convert-video",
-        DisplayName: "Convert Video",
+        DisplayName: L.Get("ConversionBatchSession_Convert_Video_886b85ef"),
         RequiresSharedOptions: true,
         DefaultOptions: null,
-        PickerTitle: "FrameShift - Convert Video",
-        PickerDescription: "Select a target container and a profile.",
+        PickerTitle: L.Get("ConversionBatchSession_FrameShift_Convert_Video_5b59db29"),
+        PickerDescription: L.Get("ConversionBatchSession_Select_a_target_container_and_a_prof_903f8cd7"),
         SupportedSourceFormatsText: VideoConversionCatalog.GetSupportedSourceFormatsText(),
         MutexName: @"Local\FrameShift_ConvertVideoBatch",
         PipeName: "FrameShift_ConvertVideoBatchQueue",
@@ -299,11 +299,11 @@ internal sealed class ConversionBatchSession : IDisposable
 
     public static BatchDefinition CreateAudioDefinition() => new(
         ActionId: "convert-audio",
-        DisplayName: "Convert Audio",
+        DisplayName: L.Get("ConversionBatchSession_Convert_Audio_1ee9e970"),
         RequiresSharedOptions: true,
         DefaultOptions: null,
-        PickerTitle: "FrameShift - Convert Audio",
-        PickerDescription: "Select an output format and a profile.",
+        PickerTitle: L.Get("ConversionBatchSession_FrameShift_Convert_Audio_5533886d"),
+        PickerDescription: L.Get("ConversionBatchSession_Select_an_output_format_and_a_profil_508930ba"),
         SupportedSourceFormatsText: AudioConversionCatalog.GetSupportedSourceFormatsText(),
         MutexName: @"Local\FrameShift_ConvertAudioBatch",
         PipeName: "FrameShift_ConvertAudioBatchQueue",
@@ -314,11 +314,11 @@ internal sealed class ConversionBatchSession : IDisposable
 
     public static BatchDefinition CreateImageDefinition() => new(
         ActionId: "convert-image",
-        DisplayName: "Convert Image",
+        DisplayName: L.Get("ConversionBatchSession_Convert_Image_2c4e60c4"),
         RequiresSharedOptions: true,
         DefaultOptions: null,
-        PickerTitle: "FrameShift - Convert Image",
-        PickerDescription: "Select an output format and a profile.",
+        PickerTitle: L.Get("ConversionBatchSession_FrameShift_Convert_Image_8258f3d7"),
+        PickerDescription: L.Get("ConversionBatchSession_Select_an_output_format_and_a_profil_508930ba"),
         SupportedSourceFormatsText: ImageConversionCatalog.GetSupportedSourceFormatsText(),
         MutexName: @"Local\FrameShift_ConvertImageBatch",
         PipeName: "FrameShift_ConvertImageBatchQueue",
@@ -329,7 +329,7 @@ internal sealed class ConversionBatchSession : IDisposable
 
     public static BatchDefinition CreateCompressVideoDefinition() => new(
         ActionId: "compress-video",
-        DisplayName: "Compress Video",
+        DisplayName: L.Get("ConversionBatchSession_Compress_Video_5667dc11"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -342,11 +342,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Compress");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Compress_5830ffa3"));
 
     public static BatchDefinition CreateCompressAudioDefinition() => new(
         ActionId: "compress-audio",
-        DisplayName: "Compress Audio",
+        DisplayName: L.Get("ConversionBatchSession_Compress_Audio_7810ba2d"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -359,11 +359,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Compress");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Compress_5830ffa3"));
 
     public static BatchDefinition CreateCompressImageDefinition() => new(
         ActionId: "compress-image",
-        DisplayName: "Compress Image",
+        DisplayName: L.Get("ConversionBatchSession_Compress_Image_6d46ce81"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -376,11 +376,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Compress");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Compress_5830ffa3"));
 
     public static BatchDefinition CreateExtractFramesDefinition() => new(
         ActionId: "extract-frames",
-        DisplayName: "Extract Frames",
+        DisplayName: L.Get("ConversionBatchSession_Extract_Frames_f68e8649"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -392,15 +392,15 @@ internal sealed class ConversionBatchSession : IDisposable
         IsSupportedSourceExtension: VideoConversionCatalog.IsSupportedSourceExtension,
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
-        PrimaryButtonText: "Extract");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Extract_472c8d84"));
 
     public static BatchDefinition CreateExtractAudioDefinition() => new(
         ActionId: "extract-audio",
-        DisplayName: "Extract Audio",
+        DisplayName: L.Get("ConversionBatchSession_Extract_Audio_dfb515b5"),
         RequiresSharedOptions: true,
         DefaultOptions: null,
-        PickerTitle: "FrameShift - Extract Audio",
-        PickerDescription: "Choose the output audio format.",
+        PickerTitle: L.Get("ConversionBatchSession_FrameShift_Extract_Audio_3f130bf9"),
+        PickerDescription: L.Get("ConversionBatchSession_Choose_the_output_audio_format_460b31d7"),
         SupportedSourceFormatsText: VideoConversionCatalog.GetSupportedSourceFormatsText(),
         MutexName: @"Local\FrameShift_ExtractAudioBatch",
         PipeName: "FrameShift_ExtractAudioBatchQueue",
@@ -408,11 +408,11 @@ internal sealed class ConversionBatchSession : IDisposable
         IsSupportedSourceExtension: VideoConversionCatalog.IsSupportedSourceExtension,
         GetTargetsForSelection: _ => ExtractAudioCatalog.GetTargets(),
         GetProfiles: static () => [],
-        PrimaryButtonText: "Extract");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Extract_472c8d84"));
 
     public static BatchDefinition CreateRemoveBackgroundDefinition() => new(
         ActionId: "remove-background",
-        DisplayName: "Remove Background",
+        DisplayName: L.Get("ConversionBatchSession_Remove_Background_15a097fe"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -430,11 +430,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Process");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Process_4873226e"));
 
     public static BatchDefinition CreateUpscaleImageDefinition() => new(
         ActionId: "upscale-image",
-        DisplayName: "Upscale Image",
+        DisplayName: L.Get("ConversionBatchSession_Upscale_Image_a28d14ef"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -452,11 +452,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Upscale");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Upscale_17a396e6"));
 
     public static BatchDefinition CreateUpscaleVideoDefinition() => new(
         ActionId: "upscale-video",
-        DisplayName: "Upscale Video",
+        DisplayName: L.Get("ConversionBatchSession_Upscale_Video_a5fd36b8"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -475,11 +475,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Upscale");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Upscale_17a396e6"));
 
     public static BatchDefinition CreateCreateSubtitlesAudioDefinition() => new(
         ActionId: "create-subtitles-audio",
-        DisplayName: "Create Subtitle File",
+        DisplayName: L.Get("ConversionBatchSession_Create_Subtitle_File_1a0f5b50"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -492,11 +492,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Create File");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Create_File_1f45a747"));
 
     public static BatchDefinition CreateCreateSubtitlesVideoDefinition() => new(
         ActionId: "create-subtitles-video",
-        DisplayName: "Create Subtitle File",
+        DisplayName: L.Get("ConversionBatchSession_Create_Subtitle_File_1a0f5b50"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -509,11 +509,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Create File");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Create_File_1f45a747"));
 
     public static BatchDefinition CreateSeparateAudioDefinition() => new(
         ActionId: "separate-audio",
-        DisplayName: "Audio Separation",
+        DisplayName: L.Get("ConversionBatchSession_Audio_Separation_e0f92f56"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -533,11 +533,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Separate");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Separate_a17d310d"));
 
     public static BatchDefinition CreateRemoveNoiseDefinition() => new(
         ActionId: "remove-noise",
-        DisplayName: "Remove Noise",
+        DisplayName: L.Get("ConversionBatchSession_Remove_Noise_1056e64f"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -555,11 +555,11 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Denoise");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Denoise_38e80a90"));
 
     public static BatchDefinition CreateRemoveNoiseVideoDefinition() => new(
         ActionId: "remove-noise-video",
-        DisplayName: "Remove Noise (Video)",
+        DisplayName: L.Get("ConversionBatchSession_Remove_Noise_Video_80c7b2b4"),
         RequiresSharedOptions: false,
         DefaultOptions: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
         PickerTitle: null,
@@ -578,7 +578,7 @@ internal sealed class ConversionBatchSession : IDisposable
         GetTargetsForSelection: _ => [],
         GetProfiles: static () => [],
         KeepWindowOpenOnFailure: true,
-        PrimaryButtonText: "Denoise");
+        PrimaryButtonText: L.Get("ConversionBatchSession_Denoise_38e80a90"));
 
     private async Task ProcessLoopAsync(CancellationToken cancellationToken)
     {
@@ -670,7 +670,7 @@ internal sealed class ConversionBatchSession : IDisposable
             _logger.Log($"ConversionBatchSession: generic exception catch entered: {ex}");
             ExitCode = 1;
             _logger.Log(ex.ToString());
-            _progressForm?.ReportState("failed", $"Batch {_definition.DisplayName.ToLowerInvariant()} failed.");
+            _progressForm?.ReportState("failed", L.Format("ConversionBatchSession_Batch_0_failed_607787a7",_definition.DisplayName.ToLowerInvariant()));
             CloseProgressWindow();
         }
         finally
@@ -704,7 +704,7 @@ internal sealed class ConversionBatchSession : IDisposable
 
         if (_itemPreflight is not null)
         {
-            ReportQueueItem(inputPath, "processing", "Checking inputs and models...");
+            ReportQueueItem(inputPath, "processing", L.Get("ConversionBatchSession_Checking_inputs_and_models_07e7990c"));
             BatchOptionResult prepared;
             try { prepared = _itemPreflight(ToQueueItemInfo(queueItem)); }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
@@ -717,7 +717,7 @@ internal sealed class ConversionBatchSession : IDisposable
             }
             if (!prepared.Success || prepared.Options is null)
             {
-                ReportQueueItem(inputPath, "canceled", "Preparation canceled.");
+                ReportQueueItem(inputPath, "canceled", L.Get("ConversionBatchSession_Preparation_canceled_c2a07426"));
                 return;
             }
             SetItemOptions(queueItem.QueueItemId, prepared.Options);
@@ -730,7 +730,7 @@ internal sealed class ConversionBatchSession : IDisposable
             var optionResult = PromptForLateItemOptions(ToQueueItemInfo(queueItem));
             if (!optionResult.Success || optionResult.Options is null)
             {
-                ReportQueueItem(inputPath, "canceled", "Configuration canceled.");
+                ReportQueueItem(inputPath, "canceled", L.Get("ConversionBatchSession_Configuration_canceled_28a51321"));
                 return;
             }
 
@@ -744,7 +744,7 @@ internal sealed class ConversionBatchSession : IDisposable
         if (_sharedOptions is null)
         {
             ExitCode = 1;
-            ReportQueueItem(inputPath, "failed", "Missing action options.");
+            ReportQueueItem(inputPath, "failed", L.Get("ConversionBatchSession_Missing_action_options_5f5ab168"));
             return;
         }
 
@@ -752,7 +752,7 @@ internal sealed class ConversionBatchSession : IDisposable
         // over the session's shared options, so each queued item runs with its own model.
         var effectiveOptions = MergeOptions(_sharedOptions, queueItem.Options);
         var request = new ActionRequest(inputPath, _logger, _progressForm, effectiveOptions);
-        ReportQueueItem(inputPath, "processing", "Starting.");
+        ReportQueueItem(inputPath, "processing", L.Get("ConversionBatchSession_Starting_1a300c49"));
         var result = await _action.ExecuteAsync(request, cancellationToken).ConfigureAwait(false);
         _logger.Log($"ConversionBatchSession: item returned from action.ExecuteAsync. inputPath={inputPath}, success={result.Success}, canceled={result.Canceled}, scope={result.CancellationScope}, message={result.Message}");
 
@@ -888,7 +888,7 @@ internal sealed class ConversionBatchSession : IDisposable
         var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var sourceLabel = supportedPaths.Length == 1
             ? FormatSelectionLabel(Path.GetFileName(supportedPaths[0].InputPath))
-            : $"{supportedPaths.Length} selected files";
+            : L.Format("ConversionBatchSession_0_selected_files_dd068a4b",supportedPaths.Length);
 
         ConversionSelection? selection = null;
         void ShowPicker()
@@ -1269,7 +1269,7 @@ internal sealed class ConversionBatchSession : IDisposable
     {
         if (string.IsNullOrWhiteSpace(fileName))
         {
-            return "selected file";
+            return L.Get("ConversionBatchSession_selected_file_d65a205d");
         }
 
         const int maxLength = 72;
@@ -1300,7 +1300,7 @@ internal sealed class ConversionBatchSession : IDisposable
 
         _closeModeActivated = true;
         BeginClosing();
-        _progressForm?.EnableCloseMode("Completed with errors. Review the queue for details.");
+        _progressForm?.EnableCloseMode(L.Get("ConversionBatchSession_Completed_with_errors_Review_the_que_52933d1e"));
         _logger.Log("ConversionBatchSession: failure close mode enabled.");
     }
 

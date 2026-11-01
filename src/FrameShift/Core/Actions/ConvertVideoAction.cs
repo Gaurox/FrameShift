@@ -25,8 +25,8 @@ public sealed class ConvertVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "convert-video",
-        "Convert Video",
-        "Converts a video to another container and codec profile.");
+        L.Get("ConvertVideoAction_Convert_Video_886b85ef"),
+        L.Get("ConvertVideoAction_Converts_a_video_to_another_containe_19ebe781"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -89,7 +89,7 @@ public sealed class ConvertVideoAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Video pipeline: {pipelineDescription}");
-        request.ProgressReporter?.ReportState("processing", $"{VideoConversionPlanner.GetPreparingText(plan.ProfileId, plan.TargetId).TrimEnd('.')} on {plan.ModeLabel}...");
+        request.ProgressReporter?.ReportState("processing", L.Format("ConvertVideoAction_0_on_1_e0e80297",VideoConversionPlanner.GetPreparingText(plan.ProfileId, plan.TargetId).TrimEnd('.'),plan.ModeLabel));
 
         if (plan.Warnings.Count > 0)
         {
@@ -126,7 +126,7 @@ public sealed class ConvertVideoAction : IFrameShiftAction
                 request.Logger.Log("GPU conversion failed. Retrying with CPU fallback.");
                 var fallbackPipelineDescription = BuildPipelineDescription(cpuFallbackPlan, probe, false);
                 request.Logger.Log($"Video pipeline: {fallbackPipelineDescription}");
-                request.ProgressReporter?.ReportState("processing", $"GPU unavailable. Retrying on CPU... | {fallbackPipelineDescription}");
+                request.ProgressReporter?.ReportState("processing", L.Format("ConvertVideoAction_GPU_unavailable_Retrying_on_CPU_0_f18fb287",fallbackPipelineDescription));
 
                 var fallbackArguments = BuildArguments(
                     request.InputPath,
@@ -151,7 +151,7 @@ public sealed class ConvertVideoAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ConvertVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -168,7 +168,7 @@ public sealed class ConvertVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ConvertVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -285,12 +285,12 @@ public sealed class ConvertVideoAction : IFrameShiftAction
             }
             else
             {
-                stages.Add("cuda decode");
+                stages.Add(L.Get("ConvertVideoAction_cuda_decode_b5bf03e0"));
             }
         }
         else
         {
-            stages.Add("cpu decode");
+            stages.Add(L.Get("ConvertVideoAction_cpu_decode_93502ccb"));
         }
 
         stages.Add(plan.VideoCodec);

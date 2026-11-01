@@ -24,8 +24,8 @@ public sealed class ExtractAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "extract-audio",
-        "Extract Audio",
-        "Extracts the first audio track from a video.");
+        L.Get("ExtractAudioAction_Extract_Audio_dfb515b5"),
+        L.Get("ExtractAudioAction_Extracts_the_first_audio_track_from__a65ea239"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -74,7 +74,7 @@ public sealed class ExtractAudioAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Audio extraction strategy: {plan.StrategyDescription}");
-        request.ProgressReporter?.ReportState("processing", $"Preparing audio extraction to {targetId.ToUpperInvariant()} on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Format("ExtractAudioAction_Preparing_audio_extraction_to_0_on_C_e0975867",targetId.ToUpperInvariant()));
 
         try
         {
@@ -92,14 +92,14 @@ public sealed class ExtractAudioAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ExtractAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during audio extraction.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ExtractAudioAction_FFmpeg_failed_during_audio_extractio_2f1a9fd9"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -109,7 +109,7 @@ public sealed class ExtractAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ExtractAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

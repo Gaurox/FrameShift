@@ -60,7 +60,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         ValidateInput(inputPath);
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(5, "Loading image..."));
+        progress.Report(new InferenceProgress(5, L.Get("BackgroundRemovalEngine_Loading_image_829651fa")));
 
         using var original = SafeImageReader.LoadValidatedFirstFrame<Rgba32>(inputPath, (width, height) =>
         {
@@ -73,13 +73,13 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             $"BackgroundRemovalEngine: image loaded. size={original.Width}x{original.Height}");
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(15, "Resizing for inference..."));
+        progress.Report(new InferenceProgress(15, L.Get("BackgroundRemovalEngine_Resizing_for_inference_69140730")));
 
         using var resized = original.Clone(ctx =>
             ctx.Resize(_model.InputSize, _model.InputSize));
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(30, "Building input tensor..."));
+        progress.Report(new InferenceProgress(30, L.Get("BackgroundRemovalEngine_Building_input_tensor_eb860cea")));
 
         var inputs = BuildInputs(resized);
 
@@ -108,7 +108,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        progress.Report(new InferenceProgress(70, "Building alpha mask..."));
+        progress.Report(new InferenceProgress(70, L.Get("BackgroundRemovalEngine_Building_alpha_mask_a518ad65")));
 
         SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.L8> mask;
         using (results)
@@ -121,12 +121,12 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             mask.Mutate(ctx => ctx.Resize(original.Width, original.Height));
 
             cancellationToken.ThrowIfCancellationRequested();
-            progress.Report(new InferenceProgress(85, "Compositing final PNG..."));
+            progress.Report(new InferenceProgress(85, L.Get("BackgroundRemovalEngine_Compositing_final_PNG_d911a068")));
 
             using var finalImage = CompositeFinalImage(original, mask);
 
             cancellationToken.ThrowIfCancellationRequested();
-            progress.Report(new InferenceProgress(95, "Saving PNG..."));
+            progress.Report(new InferenceProgress(95, L.Get("BackgroundRemovalEngine_Saving_PNG_d1cfb92e")));
 
             using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, "_nobg", ".png"));
             outputPath = publication.WorkingPath;
@@ -146,7 +146,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
             outputPath = publication.Publish(cancellationToken);
         }
 
-        OutputOperation.NotifySaved(() => progress.Report(new InferenceProgress(100, "Done.")));
+        OutputOperation.NotifySaved(() => progress.Report(new InferenceProgress(100, L.Get("BackgroundRemovalEngine_Done_7aa25384"))));
 
         OutputOperation.NotifySaved(() => AppLogger.LogStatic($"BackgroundRemovalEngine: complete. output={outputPath}"));
 
@@ -162,7 +162,7 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
         {
             if (_sessionReady) return;
 
-            progress.Report(new InferenceProgress(2, "Loading ONNX model..."));
+            progress.Report(new InferenceProgress(2, L.Get("BackgroundRemovalEngine_Loading_ONNX_model_559af544")));
 
             var modelPath = ModelLocator.GetModelPath(_model);
             AppLogger.LogStatic($"BackgroundRemovalEngine: loading session. model={modelPath}");
@@ -372,15 +372,15 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
     {
         if (_providerName == "CPU")
         {
-            return "Running AI inference on CPU...";
+            return L.Get("BackgroundRemovalEngine_Running_AI_inference_on_CPU_ddca0560");
         }
 
         if (_providerName == "DirectML")
         {
-            return "Running AI inference on GPU...";
+            return L.Get("BackgroundRemovalEngine_Running_AI_inference_on_GPU_dfb5e728");
         }
 
-        return "Running AI inference...";
+        return L.Get("BackgroundRemovalEngine_Running_AI_inference_50feba68");
     }
 
     private static SixLabors.ImageSharp.Image<Rgba32> CompositeFinalImage(
@@ -410,11 +410,11 @@ internal sealed class BackgroundRemovalEngine : IBackgroundRemovalEngine, IDispo
     private static void ValidateInput(string inputPath)
     {
         if (!File.Exists(inputPath))
-            throw new FileNotFoundException("Input image not found.", inputPath);
+            throw new FileNotFoundException(L.Get("BackgroundRemovalEngine_Input_image_not_found_a14ff9b1"), inputPath);
 
         var ext = Path.GetExtension(inputPath).ToLowerInvariant();
         if (ext is not ".png" and not ".jpg" and not ".jpeg" and not ".webp" and not ".bmp")
-            throw new NotSupportedException($"Unsupported image format: {ext}");
+            throw new NotSupportedException(L.Format("BackgroundRemovalEngine_Unsupported_image_format_0_24f501d5",ext));
     }
 
     // Loads the ONNX session and logs all input/output metadata without running inference.

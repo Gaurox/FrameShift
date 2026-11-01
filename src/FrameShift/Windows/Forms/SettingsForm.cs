@@ -23,36 +23,55 @@ public sealed class SettingsForm : Form
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(620, 440), new Size(380, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Settings");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Settings", "Models and appearance",
+        FrameShiftWindowChrome.Apply(this, L.Get("SettingsForm_FrameShift_Settings_c3e76047"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("SettingsForm_FrameShift_Settings_c3e76047"), L.Get("SettingsForm_Models_and_appearance_c659a74d"),
             IconPaths.AppIcon, IconPaths.AppIcon, "⚙");
         _pathLabel = FrameShiftUiFactory.CreateWrappingLabel(AiModelSettings.Load().GetEffectiveModelsDirectory());
         _pathLabel.Name = "modelsDirectory";
-        var browse = FrameShiftUiFactory.CreateMeasuredActionButton("Browse…", false);
-        var reset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset to default", false);
-        var open = FrameShiftUiFactory.CreateMeasuredActionButton("Open folder", false);
+        var browse = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Browse_2a9dd9af"), false);
+        var reset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Reset_to_default_51536f93"), false);
+        var open = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Open_folder_20cc8e52"), false);
         browse.Click += (_, _) => BrowseModelsFolder();
         reset.Click += (_, _) => ResetModelsFolder();
         open.Click += (_, _) => OpenModelsFolder();
-        var models = FrameShiftUiFactory.CreateSection("AI models folder", FrameShiftUiFactory.CreateVerticalStack(
+        var models = FrameShiftUiFactory.CreateSection(L.Get("SettingsForm_AI_models_folder_9207080a"), FrameShiftUiFactory.CreateVerticalStack(
             _pathLabel,
-            FrameShiftUiFactory.CreateWrappingLabel("Models are downloaded on first use and are never bundled with the installer."),
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("SettingsForm_Models_are_downloaded_on_first_use_a_67a0b93c")),
             FrameShiftUiFactory.CreateChoiceRow(browse, reset, open)));
         _themeSelector = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Name = "themePreference" };
         _themeSelector.Items.AddRange(new object[]
         {
             FrameShiftThemePreference.System, FrameShiftThemePreference.Light, FrameShiftThemePreference.Dark
         });
+        _themeSelector.FormattingEnabled = true;
+        _themeSelector.Format += (_, e) => e.Value = e.ListItem switch
+        {
+            FrameShiftThemePreference.System => L.Get("Theme_System"),
+            FrameShiftThemePreference.Light => L.Get("Theme_Light"),
+            FrameShiftThemePreference.Dark => L.Get("Theme_Dark"),
+            _ => e.ListItem?.ToString() ?? string.Empty
+        };
         _themeSelector.SelectedItem = FrameShiftUiSettings.Load().GetThemePreference();
         _themeSelector.SelectedIndexChanged += (_, _) => SaveThemePreference();
-        _themeHint = FrameShiftUiFactory.CreateWrappingLabel("Changes apply immediately. System follows Windows now.");
-        var appearance = FrameShiftUiFactory.CreateSection("Appearance", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("Theme", _themeSelector, logicalEditorWidth: 180), _themeHint));
-        var close = FrameShiftUiFactory.CreateMeasuredActionButton("Close", true);
+        _themeHint = FrameShiftUiFactory.CreateWrappingLabel(L.Get("SettingsForm_Changes_apply_immediately_System_fol_f99a2e75"));
+        var appearance = FrameShiftUiFactory.CreateSection(L.Get("SettingsForm_Appearance_7bcd3803"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("SettingsForm_Theme_780ffaa9"), _themeSelector, logicalEditorWidth: 180), _themeHint));
+        var language = new ComboBox { Name = "languagePreference", DropDownStyle = ComboBoxStyle.DropDownList };
+        language.Items.AddRange(new object[] { "English", "简体中文" });
+        language.SelectedIndex = L.NormalizeLanguage(System.Globalization.CultureInfo.CurrentUICulture.Name) == "zh-CN" ? 1 : 0;
+        language.SelectedIndexChanged += (_, _) =>
+        {
+            var settings = FrameShiftUiSettings.Load();
+            settings.Language = language.SelectedIndex == 1 ? "zh-CN" : "en";
+            settings.Save();
+        };
+        var languageSection = FrameShiftUiFactory.CreateSection(L.Get("Settings_Language"),
+            FrameShiftUiFactory.CreateVerticalStack(language, FrameShiftUiFactory.CreateWrappingLabel(L.Get("Settings_Restart"))));
+        var close = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SettingsForm_Close_6cf4a777"), true);
         close.DialogResult = DialogResult.Cancel;
         close.Click += (_, _) => Close();
         AcceptButton = CancelButton = close;
-        var layout = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(models, appearance),
+        var layout = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(models, appearance, languageSection),
             FrameShiftDialogLayout.CreateActions(close));
         Controls.Add(layout);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, layout);
@@ -62,7 +81,7 @@ public sealed class SettingsForm : Form
     {
         using var dialog = new FolderBrowserDialog
         {
-            Description = "Select AI models folder",
+            Description = L.Get("SettingsForm_Select_AI_models_folder_3670efb2"),
             UseDescriptionForTitle = true,
             ShowNewFolderButton = true
         };
@@ -82,7 +101,7 @@ public sealed class SettingsForm : Form
         if (!AiModelDirectorySafety.TryNormalizeCustomDirectory(dialog.SelectedPath, out var modelsDirectory))
         {
             MessageBox.Show(
-                "Choose a dedicated models folder. Drive roots, user-profile roots, Windows, Program Files, the FrameShift install folder, and their parents are not allowed.",
+                L.Get("SettingsForm_Choose_a_dedicated_models_folder_Dri_8e51b3e8"),
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -116,7 +135,7 @@ public sealed class SettingsForm : Form
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Could not open folder:\n{ex.Message}",
+                L.Format("SettingsForm_Could_not_open_folder_0_e5457a1b",ex.Message),
                 "FrameShift",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning);
@@ -134,7 +153,7 @@ public sealed class SettingsForm : Form
         settings.Theme = preference.ToString();
         settings.Save();
         FrameShiftTheme.ApplyPreference(preference);
-        _themeHint.Text = "Changes apply immediately. System follows Windows now.";
+        _themeHint.Text = L.Get("SettingsForm_Changes_apply_immediately_System_fol_f99a2e75");
     }
 
 }

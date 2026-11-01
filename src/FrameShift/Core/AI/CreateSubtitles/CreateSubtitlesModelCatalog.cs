@@ -30,7 +30,7 @@ internal static class CreateSubtitlesModelCatalog
     [
         new(
             "whisper-base",
-            "Whisper Base — Fast",
+            L.Get("CreateSubtitlesModelCatalog_Whisper_Base_Fast_d6e3b5a1"),
             "whisper-base-onnx",
             License,
             [
@@ -53,7 +53,7 @@ internal static class CreateSubtitlesModelCatalog
 
         new(
             "whisper-small",
-            "Whisper Small — Recommended",
+            L.Get("CreateSubtitlesModelCatalog_Whisper_Small_Recommended_3f590246"),
             "whisper-small-onnx",
             License,
             [
@@ -76,7 +76,7 @@ internal static class CreateSubtitlesModelCatalog
 
         new(
             "whisper-turbo",
-            "Whisper Large-v3 Turbo — Quality",
+            L.Get("CreateSubtitlesModelCatalog_Whisper_Large_v3_Turbo_Quality_1b452dcb"),
             "whisper-large-v3-turbo-onnx",
             License,
             Artifacts: [

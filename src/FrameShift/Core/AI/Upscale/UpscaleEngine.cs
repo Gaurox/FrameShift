@@ -43,9 +43,9 @@ internal sealed class UpscaleEngine : IUpscaleEngine
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (!File.Exists(inputPath))
-            throw new FileNotFoundException("Input image not found.", inputPath);
+            throw new FileNotFoundException(L.Get("UpscaleEngine_Input_image_not_found_a14ff9b1"), inputPath);
 
-        progress.Report(new UpscaleProgress(5, "Loading image..."));
+        progress.Report(new UpscaleProgress(5, L.Get("UpscaleEngine_Loading_image_829651fa")));
         using var source = SafeImageReader.LoadValidatedFirstFrame<Rgba32>(inputPath,
             (width, height) => UpscaleFrameProcessor.ValidateOutputSize(width, height, request, _definition.ScaleFactor),
             cancellationToken);
@@ -67,7 +67,7 @@ internal sealed class UpscaleEngine : IUpscaleEngine
         string suffix,
         IProgress<UpscaleProgress> progress, CancellationToken cancellationToken)
     {
-        progress.Report(new UpscaleProgress(95, "Saving PNG..."));
+        progress.Report(new UpscaleProgress(95, L.Get("UpscaleEngine_Saving_PNG_d1cfb92e")));
         using var publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(inputPath, suffix, ".png"));
         var outputPath = publication.WorkingPath;
         try
@@ -81,7 +81,7 @@ internal sealed class UpscaleEngine : IUpscaleEngine
         }
 
         outputPath = publication.Publish(cancellationToken);
-        OutputOperation.NotifySaved(() => progress.Report(new UpscaleProgress(100, "Done.")));
+        OutputOperation.NotifySaved(() => progress.Report(new UpscaleProgress(100, L.Get("UpscaleEngine_Done_7aa25384"))));
         OutputOperation.NotifySaved(() => AppLogger.LogStatic($"UpscaleEngine: complete. output={outputPath}"));
         return outputPath;
     }

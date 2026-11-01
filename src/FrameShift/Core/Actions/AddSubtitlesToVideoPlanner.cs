@@ -14,8 +14,8 @@ internal sealed record AddSubtitlesToVideoPlan(
 {
     public string PreparingText =>
         UsesFallbackContainer
-            ? "Preparing MKV subtitle track..."
-            : $"Preparing {TargetContainerId.ToUpperInvariant()} subtitle track...";
+            ? L.Get("AddSubtitlesToVideoPlanner_Preparing_MKV_subtitle_track_e25c92fc")
+            : L.Format("AddSubtitlesToVideoPlanner_Preparing_0_subtitle_track_8f46c609",TargetContainerId.ToUpperInvariant());
 
     public string PipelineDescription =>
         $"{TargetContainerId.ToUpperInvariant()} + {SubtitleCodec}";
@@ -34,7 +34,7 @@ internal static class AddSubtitlesToVideoPlanner
                 "mkv",
                 "subrip",
                 UsesFallbackContainer: false,
-                "MKV can keep existing streams and add the SRT track natively.");
+                L.Get("AddSubtitlesToVideoPlanner_MKV_can_keep_existing_streams_and_ad_54e56dad"));
         }
 
         if (normalizedExtension is ".mp4" or ".mov" or ".m4v")
@@ -54,7 +54,7 @@ internal static class AddSubtitlesToVideoPlanner
                 normalizedExtension.TrimStart('.'),
                 "mov_text",
                 UsesFallbackContainer: false,
-                "The existing container can keep its streams cleanly with MOV_TEXT subtitles.");
+                L.Get("AddSubtitlesToVideoPlanner_The_existing_container_can_keep_its__8b5f6ee5"));
         }
 
         return new AddSubtitlesToVideoPlan(
@@ -62,7 +62,7 @@ internal static class AddSubtitlesToVideoPlanner
             "mkv",
             "subrip",
             UsesFallbackContainer: true,
-            $"Container '{normalizedExtension}' is not retained for selectable SRT subtitle tracks. Falling back to MKV.");
+            L.Format("AddSubtitlesToVideoPlanner_Container_0_is_not_retained_for_sele_af342ca6",normalizedExtension));
     }
 
     private static bool HasIncompatibleStreamsForMovText(MediaProbeResult probe)
@@ -81,10 +81,10 @@ internal static class AddSubtitlesToVideoPlanner
                 string.Equals(stream.CodecType, "data", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(stream.CodecType, "attachment", StringComparison.OrdinalIgnoreCase)))
         {
-            return "Source contains data streams or attachments that are not preserved cleanly in MP4/MOV. Falling back to MKV.";
+            return L.Get("AddSubtitlesToVideoPlanner_Source_contains_data_streams_or_atta_906eeb51");
         }
 
-        return "Source contains subtitle streams that are not compatible with MOV_TEXT. Falling back to MKV.";
+        return L.Get("AddSubtitlesToVideoPlanner_Source_contains_subtitle_streams_tha_ec588e02");
     }
 
     private static bool IsTextSubtitle(string? codecName)
@@ -114,11 +114,11 @@ internal sealed record AddSubtitlesToVideoBurnPlan(
     IReadOnlyList<string> SubtitleCodecArgs,
     IReadOnlyList<string> Warnings)
 {
-    public string PreparingText => $"Preparing burn-in render to {TargetContainerId.ToUpperInvariant()}...";
+    public string PreparingText => L.Format("AddSubtitlesToVideoPlanner_Preparing_burn_in_render_to_0_2fbce182",TargetContainerId.ToUpperInvariant());
 
     public string PipelineDescription =>
         CopyAudio
-            ? $"{VideoCodec} + audio copy"
+            ? L.Format("AddSubtitlesToVideoPlanner_0_audio_copy_f7199d3a",VideoCodec)
             : $"{VideoCodec} + {AudioCodec ?? "no-audio"}";
 }
 
@@ -129,7 +129,7 @@ internal static class AddSubtitlesToVideoBurnPlanner
         var normalizedExtension = NormalizeExtension(sourceExtension);
         if (!VideoConversionCatalog.IsSupportedSourceExtension(normalizedExtension))
         {
-            throw new InvalidOperationException($"Unsupported burn target container '{normalizedExtension}'.");
+            throw new InvalidOperationException(L.Format("AddSubtitlesToVideoPlanner_Unsupported_burn_target_container_0_2249e39b",normalizedExtension));
         }
 
         var targetId = normalizedExtension.TrimStart('.');
@@ -140,7 +140,7 @@ internal static class AddSubtitlesToVideoBurnPlanner
         var warnings = new List<string>(basePlan.Warnings);
         if (probe.IsHdrLikely)
         {
-            warnings.Add("HDR source detected: subtitle burn-in re-encodes the video and may alter colorimetry.");
+            warnings.Add(L.Get("AddSubtitlesToVideoPlanner_HDR_source_detected_subtitle_burn_in_8cd40b25"));
         }
 
         return new AddSubtitlesToVideoBurnPlan(

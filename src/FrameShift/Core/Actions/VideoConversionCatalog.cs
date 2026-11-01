@@ -11,22 +11,22 @@ public static class VideoConversionCatalog
 {
     private static readonly VideoTarget[] Targets =
     [
-        new("mp4", "MP4", "General-purpose container with broad compatibility."),
-        new("mkv", "MKV", "Flexible container for mixed codecs and subtitles."),
-        new("avi", "AVI", "Legacy container for older playback devices."),
-        new("mov", "MOV", "Apple-friendly container for editing workflows."),
-        new("webm", "WEBM", "Web delivery with VP9/Opus."),
-        new("m4v", "M4V", "MP4 variant for media library workflows.")
+        new("mp4", "MP4", L.Get("VideoConversionCatalog_General_purpose_container_with_broad_8b67d207")),
+        new("mkv", "MKV", L.Get("VideoConversionCatalog_Flexible_container_for_mixed_codecs__47f88cd6")),
+        new("avi", "AVI", L.Get("VideoConversionCatalog_Legacy_container_for_older_playback__2cc4d4eb")),
+        new("mov", "MOV", L.Get("VideoConversionCatalog_Apple_friendly_container_for_editing_7dbba323")),
+        new("webm", "WEBM", L.Get("VideoConversionCatalog_Web_delivery_with_VP9_Opus_a60659ba")),
+        new("m4v", "M4V", L.Get("VideoConversionCatalog_MP4_variant_for_media_library_workfl_0e71a35c"))
     ];
 
     private static readonly VideoProfile[] Profiles =
     [
-        new("universal", "Universal", "Safe default for most files."),
-        new("remux", "Remux", "Copy streams when the codecs are already compatible."),
-        new("montage", "Montage", "Higher quality for editing."),
-        new("youtube", "Web / YouTube", "Balanced quality for upload."),
-        new("streaming", "Streaming light", "Smaller files for sharing."),
-        new("tv", "TV / USB", "Safer playback on TVs and USB devices.")
+        new("universal", L.Get("VideoConversionCatalog_Universal_3ed12bb0"), L.Get("VideoConversionCatalog_Safe_default_for_most_files_c6340c67")),
+        new("remux", L.Get("VideoConversionCatalog_Remux_34c14dc3"), L.Get("VideoConversionCatalog_Copy_streams_when_the_codecs_are_alr_be402ef3")),
+        new("montage", L.Get("VideoConversionCatalog_Montage_c1a09d22"), L.Get("VideoConversionCatalog_Higher_quality_for_editing_c0f3f12d")),
+        new("youtube", L.Get("VideoConversionCatalog_Web_YouTube_c2825477"), L.Get("VideoConversionCatalog_Balanced_quality_for_upload_b2328c7d")),
+        new("streaming", L.Get("VideoConversionCatalog_Streaming_light_dafa2764"), L.Get("VideoConversionCatalog_Smaller_files_for_sharing_dee0e00e")),
+        new("tv", L.Get("VideoConversionCatalog_TV_USB_744b8d3a"), L.Get("VideoConversionCatalog_Safer_playback_on_TVs_and_USB_device_356c3387"))
     ];
 
     public static IReadOnlyList<IConversionChoice> GetTargets() => Targets;
@@ -39,7 +39,7 @@ public static class VideoConversionCatalog
         return Targets.Where(target => !IsSameTargetAsSource(normalized, target.Id)).Cast<IConversionChoice>().ToArray();
     }
 
-    public static string GetSupportedSourceFormatsText() => ".mp4, .mkv, .avi, .mov, .webm and .m4v";
+    public static string GetSupportedSourceFormatsText() => L.Get("VideoConversionCatalog_mp4_mkv_avi_mov_webm_and_m4v_6a51bea4");
 
     public static bool IsSupportedSourceExtension(string extension)
     {

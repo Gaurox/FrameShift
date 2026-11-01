@@ -11,32 +11,32 @@ internal static class RemoveNoisePickerUi
     {
         choices =
         [
-            Choice("Light", "Light reduction", RemoveNoiseAudioSettings.StrengthLight),
-            Choice("Normal", "Balanced cleanup", RemoveNoiseAudioSettings.StrengthNormal),
-            Choice("Strong", "Aggressive reduction", RemoveNoiseAudioSettings.StrengthStrong),
-            Choice("Maximum", "Maximum cleanup", RemoveNoiseAudioSettings.StrengthMaximum)
+            Choice(L.Get("RemoveNoisePickerUi_Light_7a54db24"), L.Get("RemoveNoisePickerUi_Light_reduction_3acd9198"), RemoveNoiseAudioSettings.StrengthLight),
+            Choice(L.Get("RemoveNoisePickerUi_Normal_4d907516"), L.Get("RemoveNoisePickerUi_Balanced_cleanup_e29746ec"), RemoveNoiseAudioSettings.StrengthNormal),
+            Choice(L.Get("RemoveNoisePickerUi_Strong_307c31a5"), L.Get("RemoveNoisePickerUi_Aggressive_reduction_c1a83b98"), RemoveNoiseAudioSettings.StrengthStrong),
+            Choice(L.Get("RemoveNoisePickerUi_Maximum_9216586b"), L.Get("RemoveNoisePickerUi_Maximum_cleanup_a65caa46"), RemoveNoiseAudioSettings.StrengthMaximum)
         ];
         choices[3].Checked = true;
         foreach (var choice in choices)
             choice.CheckedChanged += (_, _) => { if (choice.Checked) select((string)choice.Tag!); };
-        return FrameShiftUiFactory.CreateSection("Noise reduction strength",
+        return FrameShiftUiFactory.CreateSection(L.Get("RemoveNoisePickerUi_Noise_reduction_strength_050ee419"),
             FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateChoiceRow(choices),
                 FrameShiftUiFactory.CreateWrappingLabel(
-                    "Higher strength removes more noise. Maximum may affect natural audio characteristics.")));
+                    L.Get("RemoveNoisePickerUi_Higher_strength_removes_more_noise_M_37a09ad6"))));
     }
 
     internal static Control CreateStereoSection(bool sourceIsStereo, out CheckBox stereo)
     {
         stereo = new CheckBox
         {
-            Name = "stereo", Text = "Process stereo channels separately", AutoSize = true,
+            Name = "stereo", Text = L.Get("RemoveNoisePickerUi_Process_stereo_channels_separately_a9547271"), AutoSize = true,
             Enabled = sourceIsStereo, ForeColor = FrameShiftTheme.TextPrimary,
-            AccessibleDescription = "Processes left and right independently; takes approximately twice as long."
+            AccessibleDescription = L.Get("RemoveNoisePickerUi_Processes_left_and_right_independent_12834186")
         };
-        return FrameShiftUiFactory.CreateSection("Channels", FrameShiftUiFactory.CreateVerticalStack(
+        return FrameShiftUiFactory.CreateSection(L.Get("RemoveNoisePickerUi_Channels_4e2a20ce"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(stereo), FrameShiftUiFactory.CreateWrappingLabel(sourceIsStereo
-                ? "L and R channels are denoised independently, then merged back. Takes approximately twice as long."
-                : "Source audio is mono — stereo processing is not available.")));
+                ? L.Get("RemoveNoisePickerUi_L_and_R_channels_are_denoised_indepe_1ef8c2d0")
+                : L.Get("RemoveNoisePickerUi_Source_audio_is_mono_stereo_processi_8d1dc9b5"))));
     }
 
     private static RadioButton Choice(string title, string description, string id)

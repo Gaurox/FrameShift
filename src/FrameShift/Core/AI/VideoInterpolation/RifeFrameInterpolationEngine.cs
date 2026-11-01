@@ -68,7 +68,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
 
         if (inputFrames.Length == 0)
         {
-            throw new InvalidOperationException("FrameShift could not find extracted video frames for interpolation.");
+            throw new InvalidOperationException(L.Get("RifeFrameInterpolationEngine_FrameShift_could_not_find_extracted__b057c4f8"));
         }
 
         Directory.CreateDirectory(outputFramesDirectory);
@@ -91,7 +91,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
 
             if (inputFrames.Length == 1)
             {
-                progress?.Report(new RifeInterpolationProgress(1, 1, 1, 1, $"Running AI inference on {Provider}..."));
+                progress?.Report(new RifeInterpolationProgress(1, 1, 1, 1, L.Format("RifeFrameInterpolationEngine_Running_AI_inference_on_0_eb82c4e2",Provider)));
                 return outputIndex - 1;
             }
 
@@ -125,7 +125,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
                     1,
                     pairIndex,
                     totalPairs,
-                    $"Running AI inference on {Provider}..."));
+                    L.Format("RifeFrameInterpolationEngine_Running_AI_inference_on_0_eb82c4e2",Provider)));
                 _metrics?.IncrementPairCount();
             }
             return outputIndex - 1;
@@ -145,7 +145,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
     {
         if (targetMultiplier < 2 || (targetMultiplier & (targetMultiplier - 1)) != 0)
         {
-            throw new InvalidOperationException("RIFE interpolation currently supports powers of two only.");
+            throw new InvalidOperationException(L.Get("RifeFrameInterpolationEngine_RIFE_interpolation_currently_support_8589d183"));
         }
 
         var passCount = (int)Math.Round(Math.Log2(targetMultiplier));
@@ -174,7 +174,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
                         passCount,
                         inner.ProcessedPairs,
                         inner.TotalPairs,
-                        $"Pass {localPassIndex}/{passCount} - {inner.Status}"));
+                        L.Format("RifeFrameInterpolationEngine_Pass_0_1_2_ab4c1315",localPassIndex,passCount,inner.Status)));
                 });
 
             InterpolateAsync(
@@ -224,7 +224,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
             secondFrameBytes.Length < expectedFrameBytes ||
             outputFrameBytes.Length < expectedFrameBytes)
         {
-            throw new InvalidOperationException("Rawvideo frame buffers do not match the expected RGB24 frame size.");
+            throw new InvalidOperationException(L.Get("RifeFrameInterpolationEngine_Rawvideo_frame_buffers_do_not_match__812141cf"));
         }
 
         int paddedWidth;
@@ -306,7 +306,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
             var inputNames = _session.InputMetadata.Keys.ToArray();
             if (inputNames.Length < 2)
             {
-                throw new InvalidOperationException("The selected RIFE model does not expose the expected two image inputs.");
+                throw new InvalidOperationException(L.Get("RifeFrameInterpolationEngine_The_selected_RIFE_model_does_not_exp_d42ca5a8"));
             }
 
             _input0Name = inputNames[0];
@@ -331,7 +331,7 @@ internal sealed class RifeFrameInterpolationEngine : IDisposable
     {
         if (first.Width != second.Width || first.Height != second.Height)
         {
-            throw new InvalidOperationException("Extracted video frames do not all share the same resolution.");
+            throw new InvalidOperationException(L.Get("RifeFrameInterpolationEngine_Extracted_video_frames_do_not_all_sh_6c4e4a15"));
         }
 
         var width = first.Width;

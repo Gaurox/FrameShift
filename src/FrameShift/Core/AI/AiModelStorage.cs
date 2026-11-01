@@ -88,7 +88,7 @@ internal static class AiModelStorage
                 Path.TrimEndingDirectorySeparator(Path.GetFullPath(rootDirectory)),
                 StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("AI model directories must be children of the configured FrameShift models root.");
+            throw new InvalidOperationException(L.Get("AiModelStorage_AI_model_directories_must_be_childre_1a912692"));
         }
 
         var directoryAlreadyExisted = Directory.Exists(path);

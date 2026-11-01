@@ -31,34 +31,34 @@ public sealed class SeparateAudioPickerForm : Form
     {
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 500), new Size(400, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Audio Separation", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Audio Separation", $"Source: {sourceLabel}",
+        FrameShiftWindowChrome.Apply(this, L.Get("SeparateAudioPickerForm_FrameShift_Audio_Separation_662fde62"), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("SeparateAudioPickerForm_FrameShift_Audio_Separation_662fde62"), L.Format("SeparateAudioPickerForm_Source_0_653ab450",sourceLabel),
             IconPaths.SeparateAudioAiIcon, IconPaths.FrameShiftAiIcon, "AI");
-        _vocalsCheckBox = CreateOptionCheckBox("Vocals");
-        _drumsCheckBox = CreateOptionCheckBox("Drums");
-        _bassCheckBox = CreateOptionCheckBox("Bass");
-        _otherCheckBox = CreateOptionCheckBox("Other");
-        _instrumentalCheckBox = CreateOptionCheckBox("Instrumental (drums + bass + other)");
-        var stemsSection = FrameShiftUiFactory.CreateSection("Output stems", FrameShiftUiFactory.CreateVerticalStack(
+        _vocalsCheckBox = CreateOptionCheckBox(L.Get("SeparateAudioPickerForm_Vocals_89c9d0e6"));
+        _drumsCheckBox = CreateOptionCheckBox(L.Get("SeparateAudioPickerForm_Drums_e094a8bb"));
+        _bassCheckBox = CreateOptionCheckBox(L.Get("SeparateAudioPickerForm_Bass_7753a3fc"));
+        _otherCheckBox = CreateOptionCheckBox(L.Get("SeparateAudioPickerForm_Other_71e98789"));
+        _instrumentalCheckBox = CreateOptionCheckBox(L.Get("SeparateAudioPickerForm_Instrumental_drums_bass_other_74d208e0"));
+        var stemsSection = FrameShiftUiFactory.CreateSection(L.Get("SeparateAudioPickerForm_Output_stems_144bf241"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_vocalsCheckBox, _drumsCheckBox, _bassCheckBox, _otherCheckBox),
             FrameShiftUiFactory.CreateChoiceRow(_instrumentalCheckBox),
-            FrameShiftUiFactory.CreateWrappingLabel("The model computes the 4 base stems internally. Unchecked stems are simply not written to disk.")));
-        _autoRadioButton = CreateEngineRadioButton("Automatic");
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("SeparateAudioPickerForm_The_model_computes_the_4_base_stems__ab16ef21"))));
+        _autoRadioButton = CreateEngineRadioButton(L.Get("SeparateAudioPickerForm_Automatic_70aefbbf"));
         _gpuRadioButton = CreateEngineRadioButton("GPU (DirectML)");
-        _cpuRadioButton = CreateEngineRadioButton("CPU only");
+        _cpuRadioButton = CreateEngineRadioButton(L.Get("SeparateAudioPickerForm_CPU_only_bbfae4f2"));
         _gpuRadioButton.Enabled = dmlAvailable;
         _engineHintLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        var engineSection = FrameShiftUiFactory.CreateSection("Engine", FrameShiftUiFactory.CreateVerticalStack(
+        var engineSection = FrameShiftUiFactory.CreateSection(L.Get("SeparateAudioPickerForm_Engine_506795b9"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_autoRadioButton, _gpuRadioButton, _cpuRadioButton), _engineHintLabel));
-        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SeparateAudioPickerForm_Cancel_998b9c48"), false);
         cancelButton.DialogResult = DialogResult.Cancel;
-        _separateButton = FrameShiftUiFactory.CreateMeasuredActionButton("Separate", true);
+        _separateButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("SeparateAudioPickerForm_Separate_a17d310d"), true);
         _separateButton.DialogResult = DialogResult.OK;
         AcceptButton = _separateButton;
         CancelButton = cancelButton;
         var root = FrameShiftDialogLayout.Create(header, FrameShiftUiFactory.CreateVerticalStack(stemsSection, engineSection),
             FrameShiftDialogLayout.CreateActions(cancelButton, _separateButton),
-            FrameShiftUiFactory.CreateStatusMessage($"Duration: {durationLabel}\r\nOutput WAV files are created next to the source with unique naming."));
+            FrameShiftUiFactory.CreateStatusMessage(L.Format("SeparateAudioPickerForm_Duration_0_Output_WAV_files_are_crea_027cc919",durationLabel)));
         Controls.Add(root);
         Load += (_, _) => FrameShiftDialogLayout.FitInitialHeight(this, root);
         _vocalsCheckBox.CheckedChanged += (_, _) => RefreshValidationState();
@@ -110,7 +110,7 @@ public sealed class SeparateAudioPickerForm : Form
             return Path.GetFileName(inputPaths[0]);
         }
 
-        return $"{inputPaths.Count} selected files";
+        return L.Format("SeparateAudioPickerForm_0_selected_files_dd068a4b",inputPaths.Count);
     }
 
     public static string BuildDurationLabel(MediaProbeResult probe, int inputCount)
@@ -119,13 +119,13 @@ public sealed class SeparateAudioPickerForm : Form
         {
             var durationText = probe.Duration is not null
                 ? FrameShift.Core.Actions.CutAudioSettings.FormatDisplayTime(probe.Duration.Value.TotalSeconds)
-                : "Unknown";
-            return $"First file: {durationText}";
+                : L.Get("SeparateAudioPickerForm_Unknown_d748bba5");
+            return L.Format("SeparateAudioPickerForm_First_file_0_ae34e498",durationText);
         }
 
         return probe.Duration is not null
             ? FrameShift.Core.Actions.CutAudioSettings.FormatDisplayTime(probe.Duration.Value.TotalSeconds)
-            : "Unknown";
+            : L.Get("SeparateAudioPickerForm_Unknown_d748bba5");
     }
 
     private void ApplyInitialOptions(IReadOnlyDictionary<string, string>? initialOptions, bool dmlAvailable)
@@ -173,19 +173,19 @@ public sealed class SeparateAudioPickerForm : Form
     {
         if (_cpuRadioButton.Checked)
         {
-            _engineHintLabel.Text = "CPU uses the standard HTDemucs model and works on all supported machines.";
+            _engineHintLabel.Text = L.Get("SeparateAudioPickerForm_CPU_uses_the_standard_HTDemucs_model_dc09a2b3");
             return;
         }
 
         if (_gpuRadioButton.Checked)
         {
-            _engineHintLabel.Text = "GPU uses the split HTDemucs model through DirectML for faster inference when available.";
+            _engineHintLabel.Text = L.Get("SeparateAudioPickerForm_GPU_uses_the_split_HTDemucs_model_th_ffbd38e4");
             return;
         }
 
         _engineHintLabel.Text = dmlAvailable
-            ? "Automatic uses DirectML when available, otherwise it falls back to CPU."
-            : "Automatic uses CPU on this machine because DirectML is not currently available.";
+            ? L.Get("SeparateAudioPickerForm_Automatic_uses_DirectML_when_availab_a44b4622")
+            : L.Get("SeparateAudioPickerForm_Automatic_uses_CPU_on_this_machine_b_9017910b");
     }
 
     private string GetSelectedEngineValue()

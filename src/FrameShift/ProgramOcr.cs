@@ -44,7 +44,7 @@ internal static partial class Program
 
                 if (!owns)
                 {
-                    ShowCliError("The Extract Text queue could not accept these files. Try again after it closes.");
+                    ShowCliError(L.Get("ProgramOcr_The_Extract_Text_queue_could_not_acc_76f13840"));
                     return 1;
                 }
             }
@@ -130,7 +130,7 @@ internal static partial class Program
             return true;
         bool Download()
         {
-            using var download = new DownloadModelForm("FrameShift AI - Extract Text", $"Download {model.DisplayName} for local OCR", IconPaths.FrameShiftAiIcon, model.DisplayName, "Apache-2.0", model.SizeBytes, (progress, ct) => OcrModelDownloader.DownloadAsync(model, progress, ct));
+            using var download = new DownloadModelForm(L.Get("ProgramOcr_FrameShift_AI_Extract_Text_d681b9ce"), L.Format("ProgramOcr_Download_0_for_local_OCR_e0a80ce0",model.DisplayName), IconPaths.FrameShiftAiIcon, model.DisplayName, "Apache-2.0", model.SizeBytes, (progress, ct) => OcrModelDownloader.DownloadAsync(model, progress, ct));
             return download.ShowDialog(owner) == DialogResult.OK;
         }
 

@@ -17,7 +17,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Cut Audio"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersCut_Cut_Audio_a2cd06d1")));
             return false;
         }
 
@@ -100,7 +100,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Cut Audio")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersCut_Cut_Audio_a2cd06d1"))));
             return false;
         }
     }
@@ -109,7 +109,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Cut Video"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersCut_Cut_Video_2106db79")));
             return false;
         }
 
@@ -158,7 +158,7 @@ internal static partial class Program
             }
             catch (Exception ex)
             {
-                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Cut Video")));
+                ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersCut_Cut_Video_2106db79"))));
                 return false;
             }
         }
@@ -215,7 +215,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Cut Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersCut_Cut_Video_2106db79"))));
             return false;
         }
     }
@@ -224,7 +224,7 @@ internal static partial class Program
     {
         if (inputPaths.Count != 1)
         {
-            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired("Create GIF"));
+            ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersCut_Create_GIF_456a6ed8")));
             return false;
         }
 
@@ -292,7 +292,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Create GIF")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersCut_Create_GIF_456a6ed8"))));
             return false;
         }
     }

@@ -5,27 +5,27 @@ namespace FrameShift.Windows.AI;
 
 internal sealed class ExtractTextPickerForm : Form
 {
-    private readonly ComboBox _model = Choice("Small — Higher accuracy", "Tiny — Faster processing");
-    private readonly ComboBox _format = Choice("Plain text (.txt)", "Searchable PDF (.pdf)", "Structured data (.json)");
-    private readonly ComboBox _layout = Choice("Keep line breaks", "Group into paragraphs");
-    private readonly ComboBox _source = Choice("Automatic", "OCR only");
-    private readonly ComboBox _quality = Choice("Standard (200 DPI)", "High (300 DPI)");
-    private readonly ComboBox _rotation = Choice("As stored", "90° clockwise", "180°", "270° clockwise");
-    private readonly ComboBox _device = Choice("Automatic (GPU preferred)", "CPU");
+    private readonly ComboBox _model = Choice(L.Get("ExtractTextPickerForm_Small_Higher_accuracy_46116de3"), L.Get("ExtractTextPickerForm_Tiny_Faster_processing_0dc802fc"));
+    private readonly ComboBox _format = Choice(L.Get("ExtractTextPickerForm_Plain_text_txt_3673330d"), L.Get("ExtractTextPickerForm_Searchable_PDF_pdf_0ba4dfef"), L.Get("ExtractTextPickerForm_Structured_data_json_c331573d"));
+    private readonly ComboBox _layout = Choice(L.Get("ExtractTextPickerForm_Keep_line_breaks_b4a76425"), L.Get("ExtractTextPickerForm_Group_into_paragraphs_3ddcd441"));
+    private readonly ComboBox _source = Choice(L.Get("ExtractTextPickerForm_Automatic_70aefbbf"), L.Get("ExtractTextPickerForm_OCR_only_d174d03d"));
+    private readonly ComboBox _quality = Choice(L.Get("ExtractTextPickerForm_Standard_200_DPI_95e191aa"), L.Get("ExtractTextPickerForm_High_300_DPI_578f02f2"));
+    private readonly ComboBox _rotation = Choice(L.Get("ExtractTextPickerForm_As_stored_0f8dee9f"), L.Get("ExtractTextPickerForm_90_clockwise_2a5703ed"), "180°", L.Get("ExtractTextPickerForm_270_clockwise_e43b3296"));
+    private readonly ComboBox _device = Choice(L.Get("ExtractTextPickerForm_Automatic_GPU_preferred_462f0be4"), "CPU");
     private readonly CheckBox _selectedPages = new()
     {
-        Text = "Selected pages",
+        Text = L.Get("ExtractTextPickerForm_Selected_pages_c5c21ea3"),
         AutoSize = true
     };
     private readonly CheckBox _markers = new()
     {
-        Text = "Include page markers",
+        Text = L.Get("ExtractTextPickerForm_Include_page_markers_85020a1d"),
         Checked = true,
         AutoSize = true
     };
     private readonly TextBox _pages = new()
     {
-        PlaceholderText = "For example: 1-3,5",
+        PlaceholderText = L.Get("ExtractTextPickerForm_For_example_1_3_5_a52e0347"),
         Enabled = false
     };
     private readonly TextBox _status;
@@ -50,11 +50,11 @@ internal sealed class ExtractTextPickerForm : Form
         _inputs = inputs;
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(600, 430), new Size(380, 280));
-        const string title = "FrameShift - Extract Text";
+        var title = L.Get("ExtractTextPickerForm_FrameShift_Extract_Text_d831480c");
         FrameShiftWindowChrome.Apply(this, title, IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         var paths = inputs();
-        var source = paths.Count == 1 ? Path.GetFileName(paths[0]) : $"{paths.Count} selected files";
-        var header = FrameShiftUiFactory.CreateHeader(title, $"Source: {source}", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon, "AI");
+        var source = paths.Count == 1 ? Path.GetFileName(paths[0]) : L.Format("ExtractTextPickerForm_0_selected_files_dd068a4b",paths.Count);
+        var header = FrameShiftUiFactory.CreateHeader(title, L.Format("ExtractTextPickerForm_Source_0_653ab450",source), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon, "AI");
         _arrivals.Tick += (_, _) =>
         {
             var pending = inputs();
@@ -62,7 +62,7 @@ internal sealed class ExtractTextPickerForm : Form
             if (signature == _sourceSignature)
                 return;
             _sourceSignature = signature;
-            header.SubtitleLabel.Text = pending.Count == 1 ? $"Source: {Path.GetFileName(pending[0])}" : $"Source: {pending.Count} selected files";
+            header.SubtitleLabel.Text = pending.Count == 1 ? L.Format("ExtractTextPickerForm_Source_0_653ab450",Path.GetFileName(pending[0])) : L.Format("ExtractTextPickerForm_Source_0_selected_files_0357c442",pending.Count);
             UpdateVisibility();
         };
         _model.SelectedIndex = initial.Model == "tiny" ? 1 : 0;
@@ -76,16 +76,16 @@ internal sealed class ExtractTextPickerForm : Form
         _selectedPages.Checked = initial.Pages.Length > 0;
         _pages.Enabled = _selectedPages.Checked;
         _modelStatus = FrameShiftUiFactory.CreateWrappingLabel("");
-        var basic = FrameShiftUiFactory.CreateSection("Options", FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateFieldRow("&Model", _model), _modelStatus, FrameShiftUiFactory.CreateFieldRow("&Output", _format)));
-        _pdfSection = FrameShiftUiFactory.CreateSection("PDF pages", FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateWrappingLabel("All pages are processed unless you select a range. A range applies to each PDF."), _selectedPages, FrameShiftUiFactory.CreateFieldRow("&Pages", _pages)));
-        _layoutRow = FrameShiftUiFactory.CreateFieldRow("Text &layout", _layout);
-        _sourceRow = FrameShiftUiFactory.CreateFieldRow("PDF text &source", _source);
-        _qualityRow = FrameShiftUiFactory.CreateFieldRow("PDF rendering &quality", _quality);
-        _advanced = FrameShiftUiFactory.CreateSection("Advanced options", FrameShiftUiFactory.CreateVerticalStack(_layoutRow, _markers, _sourceRow, _qualityRow, FrameShiftUiFactory.CreateFieldRow("Recognition &rotation", _rotation), FrameShiftUiFactory.CreateFieldRow("&Processing", _device)));
+        var basic = FrameShiftUiFactory.CreateSection(L.Get("ExtractTextPickerForm_Options_59a2f992"), FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Model_a53a5cc6"), _model), _modelStatus, FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Output_3cc71f65"), _format)));
+        _pdfSection = FrameShiftUiFactory.CreateSection(L.Get("ExtractTextPickerForm_PDF_pages_05a9e8ba"), FrameShiftUiFactory.CreateVerticalStack(FrameShiftUiFactory.CreateWrappingLabel(L.Get("ExtractTextPickerForm_All_pages_are_processed_unless_you_s_da3f9ad0")), _selectedPages, FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Pages_fac29fc4"), _pages)));
+        _layoutRow = FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Text_layout_c08483b4"), _layout);
+        _sourceRow = FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_PDF_text_source_689fd625"), _source);
+        _qualityRow = FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_PDF_rendering_quality_4c583a02"), _quality);
+        _advanced = FrameShiftUiFactory.CreateSection(L.Get("ExtractTextPickerForm_Advanced_options_38dfce8b"), FrameShiftUiFactory.CreateVerticalStack(_layoutRow, _markers, _sourceRow, _qualityRow, FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Recognition_rotation_05d62dd4"), _rotation), FrameShiftUiFactory.CreateFieldRow(L.Get("ExtractTextPickerForm_Processing_8bb154ac"), _device)));
         _advanced.Visible = false;
         var expand = new CheckBox
         {
-            Text = "Advanced options",
+            Text = L.Get("ExtractTextPickerForm_Advanced_options_38dfce8b"),
             AutoSize = true
         };
         expand.CheckedChanged += (_, _) =>
@@ -93,11 +93,11 @@ internal sealed class ExtractTextPickerForm : Form
             _advanced.Visible = expand.Checked;
             Fit();
         };
-        _status = FrameShiftUiFactory.CreateStatusMessage("Processed locally. Saves a new file next to each source.");
-        _cancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _status = FrameShiftUiFactory.CreateStatusMessage(L.Get("ExtractTextPickerForm_Processed_locally_Saves_a_new_file_n_bc86867d"));
+        _cancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ExtractTextPickerForm_Cancel_998b9c48"), false);
         _cancel.DialogResult = DialogResult.Cancel;
-        _extract = FrameShiftUiFactory.CreateMeasuredActionButton("Extract Text", true);
-        _extract.AccessibleName = "Extract Text";
+        _extract = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ExtractTextPickerForm_Extract_Text_9b5993ad"), true);
+        _extract.AccessibleName = L.Get("ExtractTextPickerForm_Extract_Text_9b5993ad");
         _extract.Click += (_, _) =>
         {
             if (_preparation is null || _preparation.IsCompleted)
@@ -152,7 +152,7 @@ internal sealed class ExtractTextPickerForm : Form
     private void UpdateModelStatus()
     {
         var model = OcrModelCatalog.Get(_model.SelectedIndex == 1 ? "tiny" : "small");
-        _modelStatus.Text = OcrModelCatalog.IsPresent(model) ? "Downloaded — integrity is checked before processing." : FormattableString.Invariant($"Download required for OCR: approximately {model.SizeBytes / 1_000_000d:0.0} MB · Apache-2.0");
+        _modelStatus.Text = OcrModelCatalog.IsPresent(model) ? L.Get("ExtractTextPickerForm_Downloaded_integrity_is_checked_befo_0c65a202") : L.Format("ExtractTextPickerForm_Download_required_for_OCR_approximat_64d6c675",model.SizeBytes / 1_000_000d);
     }
 
     private void Fit()
@@ -173,7 +173,7 @@ internal sealed class ExtractTextPickerForm : Form
             var settings = new OcrSettings(_model.SelectedIndex == 1 ? "tiny" : "small", _format.SelectedIndex == 1 ? "pdf" : _format.SelectedIndex == 2 ? "json" : "txt", _selectedPages.Checked ? _pages.Text.Trim() : "", _layout.SelectedIndex == 1, _markers.Checked, _source.SelectedIndex == 1, _quality.SelectedIndex == 1 ? 300 : 200, _rotation.SelectedIndex * 90, _device.SelectedIndex == 1);
             settings = OcrSettings.Parse(settings.ToOptions());
             var paths = _inputs().ToArray();
-            _status.Text = "Checking inputs, PDF pages and model files...";
+            _status.Text = L.Get("ExtractTextPickerForm_Checking_inputs_PDF_pages_and_model__461a9c68");
             var model = OcrModelCatalog.Get(settings.Model);
             var ready = await Task.Run(() => OcrModelCatalog.IsReady(model, token: _stop.Token), _stop.Token);
             if (!ready)
@@ -181,10 +181,10 @@ internal sealed class ExtractTextPickerForm : Form
             _stop.Token.ThrowIfCancellationRequested();
             if (!ready)
             {
-                using var download = new DownloadModelForm("FrameShift AI - Extract Text", $"Download {model.DisplayName} for local OCR", IconPaths.FrameShiftAiIcon, model.DisplayName, "Apache-2.0", model.SizeBytes, (progress, ct) => OcrModelDownloader.DownloadAsync(model, progress, ct));
+                using var download = new DownloadModelForm(L.Get("ExtractTextPickerForm_FrameShift_AI_Extract_Text_d681b9ce"), L.Format("ExtractTextPickerForm_Download_0_for_local_OCR_e0a80ce0",model.DisplayName), IconPaths.FrameShiftAiIcon, model.DisplayName, "Apache-2.0", model.SizeBytes, (progress, ct) => OcrModelDownloader.DownloadAsync(model, progress, ct));
                 if (download.ShowDialog(this) != DialogResult.OK)
                 {
-                    _status.Text = "Download canceled. Choose a downloaded model or try again.";
+                    _status.Text = L.Get("ExtractTextPickerForm_Download_canceled_Choose_a_downloade_07ecb48f");
                     return;
                 }
             }
@@ -205,7 +205,7 @@ internal sealed class ExtractTextPickerForm : Form
         }
         catch (OperationCanceledException)
         {
-            _status.Text = "Canceled.";
+            _status.Text = L.Get("ExtractTextPickerForm_Canceled_437433cc");
         }
         catch (Exception ex)
         {
@@ -231,7 +231,7 @@ internal sealed class ExtractTextPickerForm : Form
             _closingRequested = true;
             _stop.Cancel();
             _cancel.Enabled = false;
-            _status.Text = "Canceling...";
+            _status.Text = L.Get("ExtractTextPickerForm_Canceling_88e58e14");
             await _preparation;
             BeginInvoke((Action)(() =>
             {
@@ -266,7 +266,7 @@ internal static class OcrPreparation
                 if (!ExtractTextAction.Supports(Path.GetExtension(path)))
                     continue;
                 if (!File.Exists(path))
-                    throw new FileNotFoundException($"Input not found: {Path.GetFileName(path)}");
+                    throw new FileNotFoundException(L.Format("ExtractTextPickerForm_Input_not_found_0_83fdd16c",Path.GetFileName(path)));
                 if (!Path.GetExtension(path).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     needed = true;

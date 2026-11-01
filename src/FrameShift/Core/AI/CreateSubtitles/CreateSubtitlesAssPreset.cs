@@ -48,16 +48,16 @@ internal static class CreateSubtitlesAssPresets
 
     public static string GetDisplayName(this CreateSubtitlesAssPreset preset) => preset switch
     {
-        CreateSubtitlesAssPreset.Classic => "Classic",
-        CreateSubtitlesAssPreset.WordHighlight => "Word Highlight",
-        _ => "Progressive Reveal"
+        CreateSubtitlesAssPreset.Classic => L.Get("CreateSubtitlesAssPreset_Classic_c572f120"),
+        CreateSubtitlesAssPreset.WordHighlight => L.Get("CreateSubtitlesAssPreset_Word_Highlight_d3f9e56e"),
+        _ => L.Get("CreateSubtitlesAssPreset_Progressive_Reveal_4004e769")
     };
 
     public static string GetDescription(this CreateSubtitlesAssPreset preset) => preset switch
     {
-        CreateSubtitlesAssPreset.Classic => "Full sentence, current ASS rendering.",
-        CreateSubtitlesAssPreset.WordHighlight => "Full sentence stays visible while the current word is highlighted.",
-        _ => "Words appear progressively as the segment advances."
+        CreateSubtitlesAssPreset.Classic => L.Get("CreateSubtitlesAssPreset_Full_sentence_current_ASS_rendering_6b55673b"),
+        CreateSubtitlesAssPreset.WordHighlight => L.Get("CreateSubtitlesAssPreset_Full_sentence_stays_visible_while_th_3bfa55cf"),
+        _ => L.Get("CreateSubtitlesAssPreset_Words_appear_progressively_as_the_se_3933eb3e")
     };
 
     public static IReadOnlyList<CreateSubtitlesAssPreset> GetAll() =>

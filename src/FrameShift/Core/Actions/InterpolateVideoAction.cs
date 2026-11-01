@@ -25,8 +25,8 @@ public sealed class InterpolateVideoAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "interpolate-video",
-        "Interpolate Video",
-        "Interpolates video frames to a higher (or different) frame rate.");
+        L.Get("InterpolateVideoAction_Interpolate_Video_d654f3b0"),
+        L.Get("InterpolateVideoAction_Interpolates_video_frames_to_a_highe_c260eb1e"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -89,7 +89,7 @@ public sealed class InterpolateVideoAction : IFrameShiftAction
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"TargetFps: {settings.TargetFps.ToString("0.###", CultureInfo.InvariantCulture)}");
         request.Logger.Log($"Interpolation pipeline: {pipelineDescription}");
-        request.ProgressReporter?.ReportState("processing", $"Preparing interpolation on {plan.ModeLabel}...");
+        request.ProgressReporter?.ReportState("processing", L.Format("InterpolateVideoAction_Preparing_interpolation_on_0_b4530a9f",plan.ModeLabel));
 
         try
         {
@@ -112,7 +112,7 @@ public sealed class InterpolateVideoAction : IFrameShiftAction
                 var fallbackPipelineDescription = InterpolateVideoPlanner.BuildPipelineDescription(cpuFallbackPlan, settings.TargetFps);
                 request.Logger.Log("GPU interpolation encode path failed. Retrying with CPU fallback.");
                 request.Logger.Log($"Interpolation pipeline: {fallbackPipelineDescription}");
-                request.ProgressReporter?.ReportState("processing", $"GPU unavailable. Retrying on CPU... | {fallbackPipelineDescription}");
+                request.ProgressReporter?.ReportState("processing", L.Format("InterpolateVideoAction_GPU_unavailable_Retrying_on_CPU_0_f18fb287",fallbackPipelineDescription));
 
                 var fallbackArguments = InterpolateVideoPlanner.BuildArguments(request.InputPath, outputPath, settings, cpuFallbackPlan);
                 result = await _ffmpegRunner.RunAsync(
@@ -131,14 +131,14 @@ public sealed class InterpolateVideoAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("InterpolateVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during interpolation.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("InterpolateVideoAction_FFmpeg_failed_during_interpolation_e8786555"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -148,7 +148,7 @@ public sealed class InterpolateVideoAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("InterpolateVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

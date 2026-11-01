@@ -33,22 +33,22 @@ public sealed class DownloadModelForm : Form
         _downloadAction = downloadAction;
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(640, 380), new Size(400, 300));
-        FrameShiftWindowChrome.Apply(this, "FrameShift AI - Download model", IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
+        FrameShiftWindowChrome.Apply(this, L.Get("DownloadModelForm_FrameShift_AI_Download_model_544306c6"), IconPaths.FrameShiftAiIcon, IconPaths.AppIcon);
         var header = FrameShiftUiFactory.CreateHeader(featureTitle, featureSubtitle,
             preferredIconPath, IconPaths.FrameShiftAiIcon, "AI");
-        var info = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateVerticalStack(
+        var info = FrameShiftUiFactory.CreateSection(L.Get("DownloadModelForm_Model_44c0cd42"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateWrappingLabel($"{modelDisplayName} — {modelSizeBytes / (1024L * 1024L)} MB"),
-            FrameShiftUiFactory.CreateWrappingLabel($"License: {modelLicense}")));
-        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel($"Ready to download — approximately {modelSizeBytes / (1024L * 1024L)} MB");
+            FrameShiftUiFactory.CreateWrappingLabel(L.Format("DownloadModelForm_License_0_69c31a72",modelLicense))));
+        _statusLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Format("DownloadModelForm_Ready_to_download_approximately_0_MB_983d444f",modelSizeBytes / (1024L * 1024L)));
         _progressBar = new ProgressBar { Name = "downloadProgress", Dock = DockStyle.Top, Maximum = 100, Style = ProgressBarStyle.Continuous };
         _progressTextLabel = FrameShiftUiFactory.CreateWrappingLabel("");
-        var activity = FrameShiftUiFactory.CreateSection("Download",
+        var activity = FrameShiftUiFactory.CreateSection(L.Get("DownloadModelForm_Download_8a47066b"),
             FrameShiftUiFactory.CreateVerticalStack(_statusLabel, _progressBar, _progressTextLabel));
         _errorDetails = new TextBox
         {
             Name = "errorDetails", Multiline = true, ReadOnly = true, WordWrap = true, ScrollBars = ScrollBars.Vertical,
             BorderStyle = BorderStyle.None, BackColor = FrameShiftTheme.Surface, ForeColor = FrameShiftTheme.TextPrimary,
-            AccessibleName = "Download error details", Dock = DockStyle.Top
+            AccessibleName = L.Get("DownloadModelForm_Download_error_details_1711a3a7"), Dock = DockStyle.Top
         };
         void Metrics()
         {
@@ -60,10 +60,10 @@ public sealed class DownloadModelForm : Form
         _errorDetails.FontChanged += (_, _) => Metrics();
         _errorDetails.DpiChangedAfterParent += (_, _) => Metrics();
         Metrics();
-        _errorSection = FrameShiftUiFactory.CreateSection("Error details — select text to copy", _errorDetails);
+        _errorSection = FrameShiftUiFactory.CreateSection(L.Get("DownloadModelForm_Error_details_select_text_to_copy_1cf05292"), _errorDetails);
         _errorSection.Visible = false;
-        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
-        _downloadButton = FrameShiftUiFactory.CreateMeasuredActionButton("Download", true);
+        _cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("DownloadModelForm_Cancel_998b9c48"), false);
+        _downloadButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("DownloadModelForm_Download_8a47066b"), true);
         _downloadButton.Click += async (_, _) => await StartDownloadAsync();
         _cancelButton.Click += OnCancelClick;
         AcceptButton = _downloadButton;
@@ -83,11 +83,11 @@ public sealed class DownloadModelForm : Form
         _downloadInProgress = true;
         _downloadButton.Enabled = false;
         _cancelButton.Enabled = true;
-        _cancelButton.Text = "Cancel";
+        _cancelButton.Text = L.Get("DownloadModelForm_Cancel_998b9c48");
         _errorSection.Visible = false;
         _errorDetails.Clear();
         _progressBar.Value = 0;
-        _statusLabel.Text = "Starting download…";
+        _statusLabel.Text = L.Get("DownloadModelForm_Starting_download_9f7e4026");
         _cancellationSource = new CancellationTokenSource();
         _downloadTask = RunDownloadAsync(_cancellationSource);
         return _downloadTask;
@@ -107,7 +107,7 @@ public sealed class DownloadModelForm : Form
             source.Token.ThrowIfCancellationRequested();
             if (IsDisposed || Disposing || _closingRequested) return;
             _progressBar.Value = 100;
-            _statusLabel.Text = "Download complete.";
+            _statusLabel.Text = L.Get("DownloadModelForm_Download_complete_af00af67");
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -117,8 +117,8 @@ public sealed class DownloadModelForm : Form
             {
                 _progressBar.Value = 0;
                 _progressTextLabel.Text = "";
-                _statusLabel.Text = "Download cancelled.";
-                _cancelButton.Text = "Close";
+                _statusLabel.Text = L.Get("DownloadModelForm_Download_cancelled_c5822247");
+                _cancelButton.Text = L.Get("DownloadModelForm_Close_6cf4a777");
             }
         }
         catch (Exception ex)
@@ -126,14 +126,14 @@ public sealed class DownloadModelForm : Form
             AppLogger.LogStatic("DownloadModelForm: download failed. " + ex);
             if (!IsDisposed && !Disposing && !_closingRequested)
             {
-                _statusLabel.Text = ex is InvalidDataException ? "Model verification failed."
-                    : ex is HttpRequestException ? "Network error — check your connection and try again."
-                    : "Download failed — see details below.";
+                _statusLabel.Text = ex is InvalidDataException ? L.Get("DownloadModelForm_Model_verification_failed_2a1d3dd2")
+                    : ex is HttpRequestException ? L.Get("DownloadModelForm_Network_error_check_your_connection__fd3cc3e0")
+                    : L.Get("DownloadModelForm_Download_failed_see_details_below_32582fa5");
                 _errorDetails.Text = ex.ToString();
                 _errorDetails.SelectionStart = 0;
                 _errorDetails.SelectionLength = 0;
                 _errorSection.Visible = true;
-                _cancelButton.Text = "Close";
+                _cancelButton.Text = L.Get("DownloadModelForm_Close_6cf4a777");
                 if (WindowState == FormWindowState.Normal) FrameShiftDialogLayout.FitInitialHeight(this, _root);
             }
         }
@@ -170,7 +170,7 @@ public sealed class DownloadModelForm : Form
     private void RequestCancellation()
     {
         _cancelButton.Enabled = false;
-        _statusLabel.Text = _closingRequested ? "Closing — waiting for download cleanup…" : "Cancelling…";
+        _statusLabel.Text = _closingRequested ? L.Get("DownloadModelForm_Closing_waiting_for_download_cleanup_3e1c660b") : L.Get("DownloadModelForm_Cancelling_c0f56bd8");
         _cancellationSource?.Cancel();
     }
 
@@ -188,7 +188,7 @@ public sealed class DownloadModelForm : Form
     {
         _progressBar.Value = Math.Clamp(progress.Percent, 0, 100);
         _progressTextLabel.Text = progress.Status;
-        if (progress.Percent > 0) _statusLabel.Text = $"Downloading… {progress.Percent}%";
+        if (progress.Percent > 0) _statusLabel.Text = L.Format("DownloadModelForm_Downloading_0_e186644a",progress.Percent);
     }
 
     protected override void Dispose(bool disposing)

@@ -67,7 +67,7 @@ internal sealed class JoinVideosForm : Form
         FrameShiftWindowPolicy.Initialize(this, new Size(960, 450), new Size(480, 340));
         AllowDrop = true;
         KeyPreview = true;
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Join Videos");
+        FrameShiftWindowChrome.Apply(this, L.Get("JoinVideosForm_FrameShift_Join_Videos_cc58b7c2"));
         var toolbar = CreateTimelineToolbar(out _addButton, out _removeButton, out _clearAllButton);
         _timelineViewport.AutoScroll = true;
         _timelineViewport.Controls.Add(_timeline);
@@ -83,14 +83,14 @@ internal sealed class JoinVideosForm : Form
         _statusLabel.Resize += (_, _) => { };
         var status = FrameShiftUiFactory.CreateVerticalStack(_statusLabel);
         status.Resize += (_, _) => _statusLabel.MaximumSize = new Size(Math.Max(1, status.Width), 0);
-        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
-        _joinButton = FrameShiftUiFactory.CreateMeasuredActionButton("Join videos", true);
+        var cancelButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("JoinVideosForm_Cancel_998b9c48"), false);
+        _joinButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("JoinVideosForm_Join_videos_ad3db798"), true);
         _joinButton.Enabled = false;
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Join Videos",
-            "Arrange clips on one track. Explorer may not preserve file selection order.",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("JoinVideosForm_FrameShift_Join_Videos_cc58b7c2"),
+            L.Get("JoinVideosForm_Arrange_clips_on_one_track_Explorer__91c6acb9"),
             IconPaths.ContextMenuIco("join-videos-video-icon.ico"), IconPaths.AppIcon, "J");
         Controls.Add(FrameShiftEditorShellUi.Create(header,
-            FrameShiftUiFactory.CreateSection("Timeline", timelineLayout, fill: true),
+            FrameShiftUiFactory.CreateSection(L.Get("JoinVideosForm_Timeline_ad17802f"), timelineLayout, fill: true),
             FrameShiftDialogLayout.CreateActions(cancelButton, _joinButton), status: status));
         AcceptButton = _joinButton;
         CancelButton = cancelButton;
@@ -221,14 +221,14 @@ internal sealed class JoinVideosForm : Form
     private Control CreateTimelineToolbar(out Button addButton, out Button removeButton, out Button clearAllButton)
     {
         _orderComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-        _orderComboBox.Items.AddRange(["As received", "Natural file name", "Date created (oldest first)", "Date modified (oldest first)", "Custom"]);
+        _orderComboBox.Items.AddRange([L.Get("JoinVideosForm_As_received_3a832ae2"), L.Get("JoinVideosForm_Natural_file_name_0a970090"), L.Get("JoinVideosForm_Date_created_oldest_first_76416dea"), L.Get("JoinVideosForm_Date_modified_oldest_first_3bbc8767"), L.Get("JoinVideosForm_Custom_0ef2221c")]);
         _orderComboBox.SelectedIndex = ResolveSortOrderIndex(LoadUiSettings().JoinVideosSortOrder);
-        addButton = FrameShiftUiFactory.CreateMeasuredActionButton("Add videos...", false);
-        removeButton = FrameShiftUiFactory.CreateMeasuredActionButton("Remove", false);
-        clearAllButton = FrameShiftUiFactory.CreateMeasuredActionButton("Clear all", false);
+        addButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("JoinVideosForm_Add_videos_5e8099da"), false);
+        removeButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("JoinVideosForm_Remove_78190c60"), false);
+        clearAllButton = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("JoinVideosForm_Clear_all_8577f00c"), false);
         addButton.Click += (_, _) => AddVideosFromDialog();
         return FrameShiftUiFactory.CreateChoiceRow(
-            FrameShiftUiFactory.CreateFieldRow("Initial order", _orderComboBox, logicalEditorWidth: 210),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("JoinVideosForm_Initial_order_01053abe"), _orderComboBox, logicalEditorWidth: 210),
             addButton, removeButton, clearAllButton);
     }
     private void AddPaths(IEnumerable<string> paths, int insertionIndex = -1)
@@ -246,12 +246,12 @@ internal sealed class JoinVideosForm : Form
             if (!File.Exists(path))
             {
                 item.IsLoaded = true;
-                item.LoadError = "File not found.";
+                item.LoadError = L.Get("JoinVideosForm_File_not_found_667faa8d");
             }
             else if (!SupportedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
                 item.IsLoaded = true;
-                item.LoadError = "Unsupported video format.";
+                item.LoadError = L.Get("JoinVideosForm_Unsupported_video_format_989b0a78");
             }
 
             newItems.Add(item);
@@ -303,7 +303,7 @@ internal sealed class JoinVideosForm : Form
                         .ConfigureAwait(true);
                     item.Probe = result.Probe;
                     item.LoadError = result.Probe is null
-                        ? result.Error ?? "Could not inspect this video."
+                        ? result.Error ?? L.Get("JoinVideosForm_Could_not_inspect_this_video_639e85a4")
                         : null;
 
                     if (result.Probe is not null)
@@ -339,7 +339,7 @@ internal sealed class JoinVideosForm : Form
                 }
                 catch
                 {
-                    item.LoadError = "Could not inspect this video.";
+                    item.LoadError = L.Get("JoinVideosForm_Could_not_inspect_this_video_639e85a4");
                 }
                 finally
                 {
@@ -373,9 +373,9 @@ internal sealed class JoinVideosForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Filter = "Video files|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v|All files|*.*",
+            Filter = L.Get("JoinVideosForm_Video_files_mp4_mkv_avi_mov_webm_m4v_472c03b6"),
             Multiselect = true,
-            Title = "Add videos to Join Videos"
+            Title = L.Get("JoinVideosForm_Add_videos_to_Join_Videos_23323aa1")
         };
 
         return dialog.ShowDialog(owner) == DialogResult.OK ? dialog.FileNames : null;
@@ -579,7 +579,7 @@ internal sealed class JoinVideosForm : Form
         if (invalid is not null)
         {
             _statusLabel.ForeColor = FrameShiftTheme.ErrorText;
-            _statusLabel.Text = $"Remove or replace invalid clip: {Path.GetFileName(invalid.SourcePath)}";
+            _statusLabel.Text = L.Format("JoinVideosForm_Remove_or_replace_invalid_clip_0_7761be9b",Path.GetFileName(invalid.SourcePath));
             _joinButton.Enabled = false;
             return;
         }
@@ -587,7 +587,7 @@ internal sealed class JoinVideosForm : Form
         if (_items.Count < 2)
         {
             _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
-            _statusLabel.Text = "Add at least two videos. The same file may be added more than once.";
+            _statusLabel.Text = L.Get("JoinVideosForm_Add_at_least_two_videos_The_same_fil_e6f2ba90");
             _joinButton.Enabled = false;
             return;
         }
@@ -595,14 +595,14 @@ internal sealed class JoinVideosForm : Form
         if (pending)
         {
             _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
-            _statusLabel.Text = "Inspecting clips and generating previews...";
+            _statusLabel.Text = L.Get("JoinVideosForm_Inspecting_clips_and_generating_prev_c78bd280");
             _joinButton.Enabled = false;
             return;
         }
 
         var duration = TimeSpan.FromSeconds(totalDuration);
         _statusLabel.ForeColor = FrameShiftTheme.TextSecondary;
-        _statusLabel.Text = $"{_items.Count} clips · {duration:h\\:mm\\:ss} total · Automatic mode uses direct concat only when stream signatures match; otherwise SDR H.264/AAC MP4.";
+        _statusLabel.Text = L.Format("JoinVideosForm_0_clips_1_h_mm_ss_total_Automatic_mo_84449291",_items.Count,duration);
         _joinButton.Enabled = true;
     }
 

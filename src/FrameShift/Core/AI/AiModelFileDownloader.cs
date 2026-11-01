@@ -35,7 +35,7 @@ internal static class AiModelFileDownloader
         if (await IsVerifiedAsync(destinationPath, expectedSha256, maximumBytes, cancellationToken).ConfigureAwait(false))
         {
             var existingSize = new FileInfo(destinationPath).Length;
-            progress.Report(new(100, "Model already present and verified.") { BytesReceived = existingSize, TotalBytes = existingSize });
+            progress.Report(new(100, L.Get("AiModelFileDownloader_40bfe3ff12")) { BytesReceived = existingSize, TotalBytes = existingSize });
             return;
         }
 
@@ -51,7 +51,7 @@ internal static class AiModelFileDownloader
         try
         {
             AppLogger.LogStatic($"{logPrefix}: starting bounded download. destination={destinationPath}, maximumBytes={maximumBytes}");
-            progress.Report(new(0, "Connecting..."));
+            progress.Report(new(0, L.Get("AiModelFileDownloader_Connecting_9db0c61f")));
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.UserAgent.ParseAdd("FrameShift/1.0 (model-downloader)");
             using var networkTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -60,7 +60,7 @@ internal static class AiModelFileDownloader
             response.EnsureSuccessStatusCode();
             var length = response.Content.Headers.ContentLength;
             if (length > maximumBytes)
-                throw new InvalidDataException("The model download exceeds its permitted size.");
+                throw new InvalidDataException(L.Get("AiModelFileDownloader_a0af013e3c"));
 
             await using var source = await response.Content.ReadAsStreamAsync(networkTimeout.Token).ConfigureAwait(false);
             networkTimeout.CancelAfter(Timeout.InfiniteTimeSpan);
@@ -74,7 +74,7 @@ internal static class AiModelFileDownloader
                 networkTimeout.CancelAfter(Timeout.InfiniteTimeSpan);
                 if (count == 0) break;
                 if (count > maximumBytes - received)
-                    throw new InvalidDataException("The model download exceeds its permitted size.");
+                    throw new InvalidDataException(L.Get("AiModelFileDownloader_a0af013e3c"));
                 cancellationToken.ThrowIfCancellationRequested();
                 if (received + count >= nextSpaceCheck)
                 {
@@ -89,10 +89,10 @@ internal static class AiModelFileDownloader
             }
 
             if (length.HasValue && received != length.Value)
-                throw new InvalidDataException("The model download ended before its declared size.");
-            progress.Report(new(99, "Verifying integrity...") { BytesReceived = received, TotalBytes = length });
+                throw new InvalidDataException(L.Get("AiModelFileDownloader_0d5a56c52b"));
+            progress.Report(new(99, L.Get("AiModelFileDownloader_Verifying_integrity_9906a66d")) { BytesReceived = received, TotalBytes = length });
             if (!Convert.ToHexString(hash.GetHashAndReset()).Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("Downloaded model is corrupted (SHA256 mismatch). Please try again.");
+                throw new InvalidDataException(L.Get("AiModelFileDownloader_9ff115ea91"));
             await output.FlushAsync(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             AiModelPathLease.ValidateFile(destinationPath);
@@ -108,13 +108,13 @@ internal static class AiModelFileDownloader
                 }
             }
             published = true;
-            progress.Report(new(100, "Download complete.") { BytesReceived = received, TotalBytes = length });
+            progress.Report(new(100, L.Get("AiModelFileDownloader_Download_complete_af00af67")) { BytesReceived = received, TotalBytes = length });
             AppLogger.LogStatic($"{logPrefix}: complete. bytesReceived={received}");
         }
         catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
             AppLogger.LogStatic($"{logPrefix}: download timed out after network inactivity.");
-            throw new TimeoutException("The model server stopped responding. Please try again.", ex);
+            throw new TimeoutException(L.Get("AiModelFileDownloader_896e66785f"), ex);
         }
         catch (Exception ex)
         {
@@ -149,7 +149,7 @@ internal static class AiModelFileDownloader
             }
             catch (IOException ex) when ((ex.HResult & 0xffff) is 32 or 33)
             {
-                progress.Report(new(0, "Waiting for another model download..."));
+                progress.Report(new(0, L.Get("AiModelFileDownloader_5d3d677ed2")));
                 await Task.Delay(100, token).ConfigureAwait(false);
             }
         }
@@ -186,13 +186,13 @@ internal static class AiModelFileDownloader
     private static void EnsureSpace(string directory, long bytes, Func<string, long> availableSpace)
     {
         if (availableSpace(directory) < bytes + DiskReserveBytes)
-            throw new IOException("Not enough free disk space to download the AI model safely.");
+            throw new IOException(L.Get("AiModelFileDownloader_263c162228"));
     }
 
     private static long GetAvailableSpace(string directory)
     {
         if (!GetDiskFreeSpaceExW(AiModelPathLease.GetNativePath(directory), out var available, out _, out _))
-            throw new IOException("Cannot check free space for the AI models directory.");
+            throw new IOException(L.Get("AiModelFileDownloader_6251938ea7"));
         return (long)Math.Min(available, (ulong)long.MaxValue);
     }
 

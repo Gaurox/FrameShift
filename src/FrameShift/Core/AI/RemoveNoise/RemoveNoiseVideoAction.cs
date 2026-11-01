@@ -35,8 +35,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
 
     public ActionDescriptor Descriptor { get; } = new(
         "remove-noise-video",
-        "Remove Noise (Video)",
-        "Removes background noise from a video's audio track via DeepFilterNet3. Video stream is copied without re-encoding.");
+        L.Get("RemoveNoiseVideoAction_Remove_Noise_Video_80c7b2b4"),
+        L.Get("RemoveNoiseVideoAction_Removes_background_noise_from_a_vide_64da2496"));
 
     public Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -55,7 +55,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
         if (!DeepFilterNetModelLocator.AllModelsExist())
             return Task.FromResult(new ActionExecutionResult(
                 false,
-                "AI model not found. Run FrameShift.exe --action remove-noise-video from Explorer to download it first."));
+                L.Get("RemoveNoiseVideoAction_AI_model_not_found_Run_FrameShift_ex_828f644b")));
 
         return ExecuteCoreAsync(request, cancellationToken);
     }
@@ -93,7 +93,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
 
         if (probe.Duration is null)
         {
-            const string durationFailure = "Remove Noise could not determine the audio duration for its memory preflight.";
+            var durationFailure = L.Get("RemoveNoiseVideoAction_Remove_Noise_could_not_determine_the_04254245");
             request.ProgressReporter?.ReportState("failed", durationFailure);
             request.Logger.Log($"RemoveNoiseVideoAction: memory preflight refused '{request.InputPath}'. {durationFailure}");
             return new ActionExecutionResult(false, durationFailure);
@@ -134,8 +134,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             {
                 // ── Mono path ────────────────────────────────────────────────
                 // Phase 1 — extract audio to temp WAV (0→50 permille)
-                request.ProgressReporter?.ReportProgress(10, request.InputPath, Descriptor.DisplayName, "Extracting audio...");
-                request.ProgressReporter?.ReportState("processing", "Extracting audio...");
+                request.ProgressReporter?.ReportProgress(10, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Extracting_audio_20e1816b"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Extracting_audio_20e1816b"));
 
                 var extractArgs = new[]
                 {
@@ -151,20 +151,20 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
 
                 if (extractResult.Canceled)
                 {
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseVideoAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
                 }
 
                 if (extractResult.ExitCode != 0)
                 {
-                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractResult.StandardError, "Audio extraction failed.");
+                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractResult.StandardError, L.Get("RemoveNoiseVideoAction_Audio_extraction_failed_dc50523e"));
                     request.ProgressReporter?.ReportState("failed", err);
                     return new ActionExecutionResult(false, err);
                 }
 
                 // Phase 2 — AI denoising (50→900 permille)
-                request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, "Loading AI model...");
-                request.ProgressReporter?.ReportState("processing", "Loading AI model...");
+                request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Loading_AI_model_02e72081"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Loading_AI_model_02e72081"));
 
                 _engine ??= new RemoveNoiseEngine();
                 var aiProgress = new Progress<(int percent, string status)>(p =>
@@ -183,8 +183,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             {
                 // ── Stereo path ───────────────────────────────────────────────
                 // Phase 1 — extract L and R channels in one pass (0→50 permille)
-                request.ProgressReporter?.ReportProgress(10, request.InputPath, Descriptor.DisplayName, "Extracting stereo channels...");
-                request.ProgressReporter?.ReportState("processing", "Extracting stereo channels...");
+                request.ProgressReporter?.ReportProgress(10, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Extracting_stereo_channels_ba4ec890"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Extracting_stereo_channels_ba4ec890"));
 
                 var extractStereoArgs = new[]
                 {
@@ -201,20 +201,20 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
 
                 if (extractStereoResult.Canceled)
                 {
-                    request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                    request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseVideoAction_Canceled_437433cc"));
                     return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
                 }
 
                 if (extractStereoResult.ExitCode != 0)
                 {
-                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractStereoResult.StandardError, "Stereo channel extraction failed.");
+                    var err = ConversionActionHelper.GetFriendlyFfmpegError(extractStereoResult.StandardError, L.Get("RemoveNoiseVideoAction_Stereo_channel_extraction_failed_b3c0802c"));
                     request.ProgressReporter?.ReportState("failed", err);
                     return new ActionExecutionResult(false, err);
                 }
 
                 // Phase 2a — AI denoising L (50→520 permille)
-                request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, "Denoising L channel...");
-                request.ProgressReporter?.ReportState("processing", "Denoising L channel...");
+                request.ProgressReporter?.ReportProgress(50, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Denoising_L_channel_cda34913"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Denoising_L_channel_cda34913"));
 
                 _engine ??= new RemoveNoiseEngine();
                 var aiProgressL = new Progress<(int percent, string status)>(p =>
@@ -228,8 +228,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
                     .ConfigureAwait(false);
 
                 // Phase 2b — AI denoising R (520→900 permille)
-                request.ProgressReporter?.ReportProgress(520, request.InputPath, Descriptor.DisplayName, "Denoising R channel...");
-                request.ProgressReporter?.ReportState("processing", "Denoising R channel...");
+                request.ProgressReporter?.ReportProgress(520, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Denoising_R_channel_1b539daf"));
+                request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Denoising_R_channel_1b539daf"));
 
                 var aiProgressR = new Progress<(int percent, string status)>(p =>
                 {
@@ -245,8 +245,8 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             }
 
             // Phase 3 — remux video + clean audio (900→1000 permille)
-            request.ProgressReporter?.ReportProgress(900, request.InputPath, Descriptor.DisplayName, "Remuxing...");
-            request.ProgressReporter?.ReportState("processing", "Remuxing...");
+            request.ProgressReporter?.ReportProgress(900, request.InputPath, Descriptor.DisplayName, L.Get("RemoveNoiseVideoAction_Remuxing_e754b126"));
+            request.ProgressReporter?.ReportState("processing", L.Get("RemoveNoiseVideoAction_Remuxing_e754b126"));
 
             publication = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_clean"));
                 outputPath = publication.WorkingPath;
@@ -262,14 +262,14 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
             if (remuxResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
             }
 
             if (remuxResult.ExitCode != 0)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var err = ConversionActionHelper.GetFriendlyFfmpegError(remuxResult.StandardError, "Remux failed.");
+                var err = ConversionActionHelper.GetFriendlyFfmpegError(remuxResult.StandardError, L.Get("RemoveNoiseVideoAction_Remux_failed_0f42f3ca"));
                 request.ProgressReporter?.ReportState("failed", err);
                 return new ActionExecutionResult(false, err);
             }
@@ -282,7 +282,7 @@ internal sealed class RemoveNoiseVideoAction : IFrameShiftAction, IDisposable
         {
             TryDeleteTemp(outputPath);
             var scope = GetCancellationScope(cancellationToken, itemCancellationSource.IsCancellationRequested);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("RemoveNoiseVideoAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, scope);
         }
         catch (Exception ex)

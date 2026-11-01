@@ -36,7 +36,7 @@ internal sealed class AudioChunkReader : IDisposable
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!File.Exists(inputPath))
-            throw new FileNotFoundException("Audio input not found.", inputPath);
+            throw new FileNotFoundException(L.Get("AudioChunkReader_Audio_input_not_found_be09e366"), inputPath);
 
         var reader = new AudioFileReader(inputPath);
         try
@@ -74,13 +74,13 @@ internal sealed class AudioChunkReader : IDisposable
         if (lengthSamplesPerChannel != OverlapAddRing.ChunkLen)
             throw new ArgumentOutOfRangeException(
                 nameof(lengthSamplesPerChannel),
-                $"Separate Audio requires {OverlapAddRing.ChunkLen} samples per channel per chunk.");
+                L.Format("AudioChunkReader_Separate_Audio_requires_0_samples_pe_c92bcf92",OverlapAddRing.ChunkLen));
 
         if (_completed)
-            throw new InvalidOperationException("The audio stream has already reached its final chunk.");
+            throw new InvalidOperationException(L.Get("AudioChunkReader_The_audio_stream_has_already_reached_028d12d5"));
 
         if (startSamplePerChannel != _nextStartSamplePerChannel)
-            throw new InvalidOperationException("Audio chunks must be read sequentially using the Demucs hop size.");
+            throw new InvalidOperationException(L.Get("AudioChunkReader_Audio_chunks_must_be_read_sequential_71d866e6"));
 
         var framesInWindow = 0;
         if (_hasReadFirstChunk)
@@ -138,7 +138,7 @@ internal sealed class AudioChunkReader : IDisposable
                 break;
 
             if (read % TargetChannels != 0)
-                throw new InvalidDataException("The normalized audio provider returned an incomplete stereo frame.");
+                throw new InvalidDataException(L.Get("AudioChunkReader_The_normalized_audio_provider_return_ff968267"));
 
             Array.Copy(_readBuffer, 0, _window, framesInWindow * TargetChannels, read);
             framesInWindow += read / TargetChannels;
@@ -157,7 +157,7 @@ internal sealed class AudioChunkReader : IDisposable
             return false;
 
         if (read != TargetChannels)
-            throw new InvalidDataException("The normalized audio provider returned an incomplete stereo frame.");
+            throw new InvalidDataException(L.Get("AudioChunkReader_The_normalized_audio_provider_return_ff968267"));
 
         return true;
     }

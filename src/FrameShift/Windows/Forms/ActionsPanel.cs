@@ -45,6 +45,7 @@ public sealed class ActionsPanel : UserControl
             BackColor = FrameShiftTheme.Surface,
             Padding = new Padding(12, 10, 12, 10)
         };
+        root.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
@@ -52,9 +53,9 @@ public sealed class ActionsPanel : UserControl
         _searchBox = new TextBox
         {
             Dock = DockStyle.Fill,
-            PlaceholderText = "Search actions",
-            AccessibleName = "Search actions",
-            AccessibleDescription = "Filter action names. Tab continues to media filters and available actions.",
+            PlaceholderText = L.Get("ActionsPanel_Search_actions_3a159475"),
+            AccessibleName = L.Get("ActionsPanel_Search_actions_3a159475"),
+            AccessibleDescription = L.Get("ActionsPanel_Filter_action_names_Tab_continues_to_f78ebaad"),
             TabIndex = 0,
             BorderStyle = BorderStyle.FixedSingle,
             BackColor = FrameShiftTheme.Surface,
@@ -163,7 +164,7 @@ public sealed class ActionsPanel : UserControl
             return;
         }
 
-        _chipsPanel.Controls.Add(CreateChip("All", null, _familyFilter is null));
+        _chipsPanel.Controls.Add(CreateChip(L.Get("ActionsPanel_All_eae0ae1b"), null, _familyFilter is null));
 
         foreach (var family in FamilyOrder)
         {
@@ -246,7 +247,7 @@ public sealed class ActionsPanel : UserControl
         button.Enabled = availability.IsEnabled;
         button.Tag = availability.Entry;
         button.AccessibleDescription = availability.IsEnabled
-            ? $"Applies to {availability.MatchingFileCount} matching file(s)."
+            ? L.Format("ActionsPanel_Applies_to_0_matching_file_s_8d7d8885",availability.MatchingFileCount)
             : availability.DisabledReason;
         if (!availability.IsEnabled && !string.IsNullOrWhiteSpace(availability.DisabledReason))
         {
@@ -271,7 +272,7 @@ public sealed class ActionsPanel : UserControl
     {
         var chip = FrameShiftUiFactory.CreateMeasuredActionButton(text, active, 84);
         chip.Tag = family;
-        chip.AccessibleDescription = active ? "Selected filter" : "Filter actions by media type";
+        chip.AccessibleDescription = active ? L.Get("ActionsPanel_Selected_filter_17aa22ba") : L.Get("ActionsPanel_Filter_actions_by_media_type_2835718b");
         chip.Click += (_, _) =>
         {
             _familyFilter = family;
@@ -288,6 +289,7 @@ public sealed class ActionsPanel : UserControl
         try
         {
             var gap = FrameShiftUiMetrics.ToPixels(this, FrameShiftUiMetrics.LineGap);
+            _content.Padding = new Padding(0, 0, SystemInformation.VerticalScrollBarWidth, 0);
             var width = Math.Max(1, _content.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - gap);
             foreach (Control control in _content.Controls)
             {
@@ -314,19 +316,19 @@ public sealed class ActionsPanel : UserControl
     }
     private static string CategoryLabel(ActionCategory category) => category switch
     {
-        ActionCategory.Video => "Video",
-        ActionCategory.Audio => "Audio",
-        ActionCategory.Image => "Image",
-        _ => "General"
+        ActionCategory.Video => L.Get("ActionsPanel_Video_dc664e59"),
+        ActionCategory.Audio => L.Get("ActionsPanel_Audio_2fd1cbe8"),
+        ActionCategory.Image => L.Get("ActionsPanel_Image_c24ad07a"),
+        _ => L.Get("ActionsPanel_General_94d95d2c")
     };
 
     private static string FamilyLabel(MediaFamily family) => family switch
     {
-        MediaFamily.Video => "Video",
-        MediaFamily.Audio => "Audio",
-        MediaFamily.Image => "Image",
+        MediaFamily.Video => L.Get("ActionsPanel_Video_dc664e59"),
+        MediaFamily.Audio => L.Get("ActionsPanel_Audio_2fd1cbe8"),
+        MediaFamily.Image => L.Get("ActionsPanel_Image_c24ad07a"),
         MediaFamily.Document => "PDF",
-        _ => "Other"
+        _ => L.Get("ActionsPanel_Other_71e98789")
     };
 }
 

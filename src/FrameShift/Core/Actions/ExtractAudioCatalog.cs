@@ -18,11 +18,11 @@ public static class ExtractAudioCatalog
 {
     private static readonly ExtractAudioTarget[] Targets =
     [
-        new("mp3", "MP3", "Extract the first audio track to MP3."),
-        new("wav", "WAV", "Extract the first audio track to WAV."),
-        new("flac", "FLAC", "Extract the first audio track to FLAC."),
-        new("m4a", "M4A", "Extract the first audio track to M4A."),
-        new("ogg", "OGG", "Extract the first audio track to OGG.")
+        new("mp3", "MP3", L.Get("ExtractAudioCatalog_Extract_the_first_audio_track_to_MP3_232aff8d")),
+        new("wav", "WAV", L.Get("ExtractAudioCatalog_Extract_the_first_audio_track_to_WAV_17c30a46")),
+        new("flac", "FLAC", L.Get("ExtractAudioCatalog_Extract_the_first_audio_track_to_FLA_c46bc4b1")),
+        new("m4a", "M4A", L.Get("ExtractAudioCatalog_Extract_the_first_audio_track_to_M4A_96704f35")),
+        new("ogg", "OGG", L.Get("ExtractAudioCatalog_Extract_the_first_audio_track_to_OGG_fc43f142"))
     ];
 
     public static IReadOnlyList<IConversionChoice> GetTargets() => Targets;
@@ -77,7 +77,7 @@ public static class ExtractAudioCatalog
             "ogg" => sourceCodec is "vorbis" or "opus"
                 ? new ExtractAudioPlan("ogg", ".ogg", "copy", [], true, $"copy {sourceCodec} stream")
                 : new ExtractAudioPlan("ogg", ".ogg", "libvorbis", ["-q:a", "6"], false, "encode vorbis q6"),
-            _ => throw new NotSupportedException($"Unsupported extraction target '{targetId}'.")
+            _ => throw new NotSupportedException(L.Format("ExtractAudioCatalog_Unsupported_extraction_target_0_c3917520",targetId))
         };
     }
 

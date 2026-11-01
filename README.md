@@ -1,5 +1,13 @@
 # FrameShift
 
+[简体中文说明](README.zh-CN.md)
+
+The published version remains **1.21.1**. The **unpublished 1.22.0 preparation** adds
+English/simplified Chinese and general reliability fixes; Find Loop is reserved for
+1.23. See the [draft notes](docs/RELEASE_NOTES_1.22.0.md) and
+[branch separation](docs/RELEASE_PLAN_1.22_1.23.md). Chinese wording and narrow-window
+corrections are adapted from [zhazhayu01's contribution](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da).
+
 <p align="center">
   <strong>Free, open-source FFmpeg GUI for Windows — local media utility with Explorer right-click integration and local AI.</strong>
 </p>

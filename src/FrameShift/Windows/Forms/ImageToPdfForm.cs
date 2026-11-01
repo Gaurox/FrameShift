@@ -115,7 +115,7 @@ public sealed class ImageToPdfForm : Form
     {
         if (inputPaths is null || inputPaths.Count == 0)
         {
-            throw new ArgumentException("At least one input image is required.", nameof(inputPaths));
+            throw new ArgumentException(L.Get("ImageToPdfForm_At_least_one_input_image_is_required_4c6cac79"), nameof(inputPaths));
         }
 
         _ffmpegPath = ffmpegPath;
@@ -124,13 +124,13 @@ public sealed class ImageToPdfForm : Form
 
         SuspendLayout();
         FrameShiftWindowPolicy.Initialize(this, new Size(1280, 940), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Image to PDF");
+        FrameShiftWindowChrome.Apply(this, L.Get("ImageToPdfForm_FrameShift_Image_to_PDF_556e650a"));
         KeyPreview = true;
         _initialPaths = inputPaths.ToArray();
         _toolTip = new ToolTip { ShowAlways = true, InitialDelay = 150, ReshowDelay = 100, AutoPopDelay = 6000 };
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = FrameShiftTheme.AccentSoft, TabStop = true, AutoScroll = true, AllowDrop = true };
-        _previewPanel.AccessibleName = "PDF page canvas";
-        _previewPanel.AccessibleDescription = "Page composition and selected image. Page dimensions and image commands are available in the options panel.";
+        _previewPanel.AccessibleName = L.Get("ImageToPdfForm_PDF_page_canvas_55f55a46");
+        _previewPanel.AccessibleDescription = L.Get("ImageToPdfForm_Page_composition_and_selected_image__50c2ec7b");
         ControlHelper.SetDoubleBuffered(_previewPanel);
         _previewPanel.Paint += PreviewPanelOnPaint;
         _previewPanel.MouseDown += PreviewPanelOnMouseDown;
@@ -144,72 +144,72 @@ public sealed class ImageToPdfForm : Form
         _previewPanel.DpiChangedAfterParent += (_, _) => { UpdatePreviewCanvasLayout(); _previewPanel.Invalidate(); };
         _previewPanel.MouseEnter += (_, _) => { if (!_previewPanel.ContainsFocus) _previewPanel.Focus(); };
         _previewPanel.MouseLeave += (_, _) => { if (_interactionMode == ImageInteractionMode.None) _previewPanel.Cursor = Cursors.Default; };
-        _buttonAddImage = CreateToolbarButton("Add image");
-        _buttonDeleteImage = CreateToolbarButton("Remove selected");
-        _buttonFitPage = CreateToolbarButton("Fit page");
-        _buttonCenter = CreateToolbarButton("Center");
-        _buttonCrop = CreateToolbarButton("Crop");
-        _buttonPrint = FrameShiftUiFactory.CreateMeasuredActionButton("Print", false);
-        _buttonExport = FrameShiftUiFactory.CreateMeasuredActionButton("Export", true);
-        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Close", false);
-        _buttonMoveBackward = CreateToolbarButton("Back 1");
-        _buttonMoveForward = CreateToolbarButton("Front 1");
-        _buttonSendToBack = CreateToolbarButton("To back");
-        _buttonBringToFront = CreateToolbarButton("To front");
-        _buttonClearSelection = CreateToolbarButton("Clear");
-        _buttonZoomFit = CreateToolbarButton("Fit view");
-        _buttonZoomIn = CreateToolbarButton("Zoom +");
-        _buttonZoomOut = CreateToolbarButton("Zoom -");
-        ConfigureTileButton(_buttonAddImage, "add-image-icon.ico", "Add images to the page.");
-        ConfigureTileButton(_buttonDeleteImage, "remove-icon.ico", "Remove selected images.");
-        ConfigureTileButton(_buttonClearSelection, "clear-icon.ico", "Remove all images.");
-        ConfigureTileButton(_buttonSendToBack, "send-to-back-icon.ico", "Send image to back.");
-        ConfigureTileButton(_buttonMoveBackward, "send-backward-icon.ico", "Move one layer backward.");
-        ConfigureTileButton(_buttonMoveForward, "bring-forward-icon.ico", "Move one layer forward.");
-        ConfigureTileButton(_buttonBringToFront, "bring-to-front-icon.ico", "Bring image to front.");
-        ConfigureTileButton(_buttonFitPage, "fit-to-page-icon.ico", "Fit the active image inside the page.");
-        ConfigureTileButton(_buttonCenter, "center-icon.ico", "Center the active image.");
-        ConfigureTileButton(_buttonCrop, "crop-icon.ico", "Toggle crop mode.");
-        ConfigureTileButton(_buttonZoomFit, "fit-view-icon.ico", "Fit preview to the window.");
-        ConfigureTileButton(_buttonZoomOut, "zoom-out-icon.ico", "Zoom out.");
-        ConfigureTileButton(_buttonZoomIn, "zoom-in-icon.ico", "Zoom in.");
-        _selectionLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading images...");
-        var library = FrameShiftUiFactory.CreateSection("Library", FrameShiftUiFactory.CreateVerticalStack(_selectionLabel,
+        _buttonAddImage = CreateToolbarButton(L.Get("ImageToPdfForm_Add_image_fad82103"));
+        _buttonDeleteImage = CreateToolbarButton(L.Get("ImageToPdfForm_Remove_selected_1cfc03ec"));
+        _buttonFitPage = CreateToolbarButton(L.Get("ImageToPdfForm_Fit_page_c7ee1eec"));
+        _buttonCenter = CreateToolbarButton(L.Get("ImageToPdfForm_Center_ddce29c1"));
+        _buttonCrop = CreateToolbarButton(L.Get("ImageToPdfForm_Crop_dfd0eac8"));
+        _buttonPrint = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ImageToPdfForm_Print_f1f664a3"), false);
+        _buttonExport = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ImageToPdfForm_Export_fe47a613"), true);
+        _buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("ImageToPdfForm_Close_6cf4a777"), false);
+        _buttonMoveBackward = CreateToolbarButton(L.Get("ImageToPdfForm_Back_1_cb1ed28b"));
+        _buttonMoveForward = CreateToolbarButton(L.Get("ImageToPdfForm_Front_1_0bd83a3f"));
+        _buttonSendToBack = CreateToolbarButton(L.Get("ImageToPdfForm_To_back_8193abf0"));
+        _buttonBringToFront = CreateToolbarButton(L.Get("ImageToPdfForm_To_front_cfaab505"));
+        _buttonClearSelection = CreateToolbarButton(L.Get("ImageToPdfForm_Clear_684270d6"));
+        _buttonZoomFit = CreateToolbarButton(L.Get("ImageToPdfForm_Fit_view_8631b93e"));
+        _buttonZoomIn = CreateToolbarButton(L.Get("ImageToPdfForm_Zoom_f7626291"));
+        _buttonZoomOut = CreateToolbarButton(L.Get("ImageToPdfForm_Zoom_1c3ee209"));
+        ConfigureTileButton(_buttonAddImage, "add-image-icon.ico", L.Get("ImageToPdfForm_Add_images_to_the_page_bdb46041"));
+        ConfigureTileButton(_buttonDeleteImage, "remove-icon.ico", L.Get("ImageToPdfForm_Remove_selected_images_61b8b58f"));
+        ConfigureTileButton(_buttonClearSelection, "clear-icon.ico", L.Get("ImageToPdfForm_Remove_all_images_979c3193"));
+        ConfigureTileButton(_buttonSendToBack, "send-to-back-icon.ico", L.Get("ImageToPdfForm_Send_image_to_back_ce90f513"));
+        ConfigureTileButton(_buttonMoveBackward, "send-backward-icon.ico", L.Get("ImageToPdfForm_Move_one_layer_backward_55edd7c6"));
+        ConfigureTileButton(_buttonMoveForward, "bring-forward-icon.ico", L.Get("ImageToPdfForm_Move_one_layer_forward_ea33a213"));
+        ConfigureTileButton(_buttonBringToFront, "bring-to-front-icon.ico", L.Get("ImageToPdfForm_Bring_image_to_front_376b5bfb"));
+        ConfigureTileButton(_buttonFitPage, "fit-to-page-icon.ico", L.Get("ImageToPdfForm_Fit_the_active_image_inside_the_page_0c57c06b"));
+        ConfigureTileButton(_buttonCenter, "center-icon.ico", L.Get("ImageToPdfForm_Center_the_active_image_f4db9524"));
+        ConfigureTileButton(_buttonCrop, "crop-icon.ico", L.Get("ImageToPdfForm_Toggle_crop_mode_f3747111"));
+        ConfigureTileButton(_buttonZoomFit, "fit-view-icon.ico", L.Get("ImageToPdfForm_Fit_preview_to_the_window_9f5fc6b1"));
+        ConfigureTileButton(_buttonZoomOut, "zoom-out-icon.ico", L.Get("ImageToPdfForm_Zoom_out_df6b0857"));
+        ConfigureTileButton(_buttonZoomIn, "zoom-in-icon.ico", L.Get("ImageToPdfForm_Zoom_in_01293a73"));
+        _selectionLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("ImageToPdfForm_Loading_images_13343bd7"));
+        var library = FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_Library_74f66f1f"), FrameShiftUiFactory.CreateVerticalStack(_selectionLabel,
             FrameShiftUiFactory.CreateChoiceRow(_buttonAddImage, _buttonDeleteImage, _buttonClearSelection)));
-        var order = FrameShiftUiFactory.CreateSection("Order", FrameShiftUiFactory.CreateChoiceRow(
+        var order = FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_Order_10aec49f"), FrameShiftUiFactory.CreateChoiceRow(
             _buttonSendToBack, _buttonMoveBackward, _buttonMoveForward, _buttonBringToFront));
         _heightUpDown = CreatePercentageNumericUpDown();
         _heightUpDown.Visible = false;
-        _lockRatioCheckBox = new CheckBox { AutoSize = true, Text = "Ratio", Checked = true };
-        _snapImagesCheckBox = new CheckBox { AutoSize = true, Text = "Snap", Checked = true };
-        _rulersCheckBox = new CheckBox { AutoSize = true, Text = "Rulers", Checked = true };
-        _inchesCheckBox = new CheckBox { AutoSize = true, Text = "Inches", Enabled = false, TabStop = false };
+        _lockRatioCheckBox = new CheckBox { AutoSize = true, Text = L.Get("ImageToPdfForm_Ratio_04dac9c3"), Checked = true };
+        _snapImagesCheckBox = new CheckBox { AutoSize = true, Text = L.Get("ImageToPdfForm_Snap_aaa0c86c"), Checked = true };
+        _rulersCheckBox = new CheckBox { AutoSize = true, Text = L.Get("ImageToPdfForm_Rulers_2556694c"), Checked = true };
+        _inchesCheckBox = new CheckBox { AutoSize = true, Text = L.Get("ImageToPdfForm_Inches_2c2b99c3"), Enabled = false, TabStop = false };
         _heightUpDown.Leave += (_, _) => ApplyResizeFromFields(true);
         _heightUpDown.KeyDown += ResizeFieldOnKeyDown;
         _snapImagesCheckBox.CheckedChanged += (_, _) => { ClearSnapGuides(); _previewPanel.Invalidate(); };
         _rulersCheckBox.CheckedChanged += (_, _) => _previewPanel.Invalidate();
-        var active = FrameShiftUiFactory.CreateSection("Active image", FrameShiftUiFactory.CreateVerticalStack(
+        var active = FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_Active_image_891d228e"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_buttonFitPage, _buttonCenter, _buttonCrop),
             FrameShiftUiFactory.CreateChoiceRow(_lockRatioCheckBox, _snapImagesCheckBox, _rulersCheckBox, _inchesCheckBox)));
         _pageFormatComboBox = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         _customPageWidthUpDown = CreateCentimeterNumericUpDown();
         _customPageHeightUpDown = CreateCentimeterNumericUpDown();
         _pageFormatComboBox.Items.AddRange([
-            new PageFormatOption("A4 portrait", "A4Portrait"), new PageFormatOption("A4 landscape", "A4Landscape"),
-            new PageFormatOption("A3 portrait", "A3Portrait"), new PageFormatOption("A3 landscape", "A3Landscape"), new PageFormatOption("Custom", "Custom")]);
+            new PageFormatOption(L.Get("ImageToPdfForm_A4_portrait_b5947ece"), "A4Portrait"), new PageFormatOption(L.Get("ImageToPdfForm_A4_landscape_9fad5ca0"), "A4Landscape"),
+            new PageFormatOption(L.Get("ImageToPdfForm_A3_portrait_9d9e0eda"), "A3Portrait"), new PageFormatOption(L.Get("ImageToPdfForm_A3_landscape_7fb5e7b8"), "A3Landscape"), new PageFormatOption(L.Get("ImageToPdfForm_Custom_0ef2221c"), "Custom")]);
         _pageFormatComboBox.DisplayMember = nameof(PageFormatOption.Display);
         _pageFormatComboBox.ValueMember = nameof(PageFormatOption.Value);
         _pageFormatComboBox.SelectedIndexChanged += (_, _) => ApplyPageFormatSelection();
         _customPageWidthUpDown.ValueChanged += (_, _) => ApplyCustomPageSizeFromFields();
         _customPageHeightUpDown.ValueChanged += (_, _) => ApplyCustomPageSizeFromFields();
-        var page = FrameShiftUiFactory.CreateSection("Page", CreatePageFields());
-        var view = FrameShiftUiFactory.CreateSection("View", FrameShiftUiFactory.CreateChoiceRow(_buttonZoomFit, _buttonZoomOut, _buttonZoomIn));
-        _loadStatus = FrameShiftUiFactory.CreateStatusMessage("Loading images...");
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Image to PDF",
-            inputPaths.Count == 1 ? $"Source: {Path.GetFileName(inputPaths[0])}" : $"{inputPaths.Count} images selected",
+        var page = FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_Page_32a8169e"), CreatePageFields());
+        var view = FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_View_b34e721c"), FrameShiftUiFactory.CreateChoiceRow(_buttonZoomFit, _buttonZoomOut, _buttonZoomIn));
+        _loadStatus = FrameShiftUiFactory.CreateStatusMessage(L.Get("ImageToPdfForm_Loading_images_13343bd7"));
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("ImageToPdfForm_FrameShift_Image_to_PDF_556e650a"),
+            inputPaths.Count == 1 ? L.Format("ImageToPdfForm_Source_0_653ab450",Path.GetFileName(inputPaths[0])) : L.Format("ImageToPdfForm_0_images_selected_ac7f451f",inputPaths.Count),
             IconPaths.ImageToPdfIco("image-to-pdf-image-icon.ico"), IconPaths.AppIcon, "PDF");
         var root = FrameShiftEditorShellUi.Create(header,
-            FrameShiftUiFactory.CreateSection("Preview", _previewPanel, fill: true),
+            FrameShiftUiFactory.CreateSection(L.Get("ImageToPdfForm_Preview_68dd3b5d"), _previewPanel, fill: true),
             FrameShiftDialogLayout.CreateActions(_buttonCancel, _buttonPrint, _buttonExport),
             FrameShiftUiFactory.CreateVerticalStack(library, order, active, page, view), _loadStatus, logicalRailWidth: 410);
         _editorBody = root.GetControlFromPosition(0, 1)!;
@@ -275,7 +275,7 @@ public sealed class ImageToPdfForm : Form
                 try
                 {
                     token.ThrowIfCancellationRequested();
-                    _loadStatus.Text = $"Loading: {Path.GetFileName(path)}";
+                    _loadStatus.Text = L.Format("ImageToPdfForm_Loading_0_5fe2e316",Path.GetFileName(path));
                     if (!_bitmapCache.TryGetValue(path, out var cached))
                     {
                         if (_bitmapCache.Contains(path))
@@ -307,7 +307,7 @@ public sealed class ImageToPdfForm : Form
             UpdateSelectionState(_items.Count - 1);
             if (initial) FitPreviewToView();
             _loadStatus.Text = errors.Count > 0 ? string.Join(Environment.NewLine, errors)
-                : "Select an image to move, resize, rotate or crop it. Export creates a PDF next to the source.";
+                : L.Get("ImageToPdfForm_Select_an_image_to_move_resize_rotat_ed41a721");
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
         finally
@@ -435,10 +435,10 @@ public sealed class ImageToPdfForm : Form
     {
         using var dialog = new OpenFileDialog
         {
-            Title = "Add image",
+            Title = L.Get("ImageToPdfForm_Add_image_fad82103"),
             Multiselect = true,
             CheckFileExists = true,
-            Filter = "Supported images (*.png;*.jpg;*.jpeg;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.webp;*.bmp|PNG (*.png)|*.png|JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|WebP (*.webp)|*.webp|Bitmap (*.bmp)|*.bmp"
+            Filter = L.Get("ImageToPdfForm_Supported_images_png_jpg_jpeg_webp_b_34e04e62")
         };
 
         if (_items.Count > 0)
@@ -980,7 +980,7 @@ public sealed class ImageToPdfForm : Form
             .Sum(index => (long)_items[index].Bitmap.Width * _items[index].Bitmap.Height * 4);
         if (clipboardBytes > ImageToPdfBitmapCache.DefaultBudgetBytes)
         {
-            _loadStatus.Text = "The selection exceeds the 512 MiB clipboard image budget. Copy fewer images at once.";
+            _loadStatus.Text = L.Get("ImageToPdfForm_653baf05f3");
             return;
         }
 
@@ -1115,7 +1115,7 @@ public sealed class ImageToPdfForm : Form
             image.Height > MaximumImageDimension ||
             (long)image.Width * image.Height > MaximumImagePixels)
         {
-            ShowError(MediaActionMessages.ImageTooLarge("Clipboard image", image.Width, image.Height));
+            ShowError(MediaActionMessages.ImageTooLarge(L.Get("ImageToPdfForm_Clipboard_image_f3de24c5"), image.Width, image.Height));
             return;
         }
 
@@ -1130,7 +1130,7 @@ public sealed class ImageToPdfForm : Form
         {
             if (File.Exists(sourcePath))
                 File.Delete(sourcePath);
-            ShowError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.ImageLoadFailed("Clipboard image")));
+            ShowError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.ImageLoadFailed(L.Get("ImageToPdfForm_Clipboard_image_f3de24c5"))));
             return;
         }
 
@@ -1140,7 +1140,7 @@ public sealed class ImageToPdfForm : Form
             cachedBitmap.Dispose();
             if (File.Exists(sourcePath))
                 File.Delete(sourcePath);
-            ShowError(errorMessage ?? MediaActionMessages.ImageLoadFailed("Clipboard image"));
+            ShowError(errorMessage ?? MediaActionMessages.ImageLoadFailed(L.Get("ImageToPdfForm_Clipboard_image_f3de24c5")));
             return;
         }
 
@@ -1443,8 +1443,8 @@ public sealed class ImageToPdfForm : Form
 
         var confirmation = MessageBox.Show(
             this,
-            "Remove all images from the current page?",
-            "Clear all",
+            L.Get("ImageToPdfForm_Remove_all_images_from_the_current_p_e214d65c"),
+            L.Get("ImageToPdfForm_Clear_all_8577f00c"),
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Warning,
             MessageBoxDefaultButton.Button2);
@@ -2523,9 +2523,9 @@ public sealed class ImageToPdfForm : Form
 
         _selectionLabel.Text = hasSelection
             ? (selectionCount == 1
-                ? $"Active image: {index + 1}/{_items.Count}"
-                : $"Active images: {selectionCount} selected")
-            : "Active image: none";
+                ? L.Format("ImageToPdfForm_Active_image_0_1_c3817561",index + 1,_items.Count)
+                : L.Format("ImageToPdfForm_Active_images_0_selected_a14b3025",selectionCount))
+            : L.Get("ImageToPdfForm_Active_image_none_9a69f261");
 
         if (!hasSingleSelection)
         {
@@ -2778,7 +2778,7 @@ public sealed class ImageToPdfForm : Form
         {
             using var printDocument = new PrintDocument
             {
-                DocumentName = "FrameShift - Image to PDF"
+                DocumentName = L.Get("ImageToPdfForm_FrameShift_Image_to_PDF_556e650a")
             };
             printDocument.PrintPage += PrintDocumentOnPrintPage;
 
@@ -4142,7 +4142,7 @@ public sealed class ImageToPdfForm : Form
         return new RectangleF(x, y, width, height);
     }
 
-    private Button CreateToolbarButton(string text) => new FrameShiftToolTile(text, "Remove selected");
+    private Button CreateToolbarButton(string text) => new FrameShiftToolTile(text, L.Get("ImageToPdfForm_Remove_selected_1cfc03ec"));
 
     private TableLayoutPanel CreatePageFields()
     {
@@ -4155,9 +4155,9 @@ public sealed class ImageToPdfForm : Form
         fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         var inputs = new (string Caption, Control Editor)[]
         {
-            ("Format", _pageFormatComboBox),
-            ("Width cm", _customPageWidthUpDown),
-            ("Height cm", _customPageHeightUpDown)
+            (L.Get("ImageToPdfForm_Format_bbaaeb1a"), _pageFormatComboBox),
+            (L.Get("ImageToPdfForm_Width_cm_21a59ef7"), _customPageWidthUpDown),
+            (L.Get("ImageToPdfForm_Height_cm_59e99b64"), _customPageHeightUpDown)
         };
         for (var row = 0; row < inputs.Length; row++)
         {

@@ -38,7 +38,7 @@ public sealed record CreateGifSettings(
     {
         return
         [
-            new CreateGifPresetItem("original", "Original width"),
+            new CreateGifPresetItem("original", L.Get("CreateGifSettings_Original_width_e32d4119")),
             new CreateGifPresetItem("1280", "1280 px"),
             new CreateGifPresetItem("960", "960 px"),
             new CreateGifPresetItem("720", "720 px"),
@@ -64,9 +64,9 @@ public sealed record CreateGifSettings(
     {
         return
         [
-            new CreateGifPresetItem("high", "High"),
-            new CreateGifPresetItem("balanced", "Balanced"),
-            new CreateGifPresetItem("small", "Small file")
+            new CreateGifPresetItem("high", L.Get("CreateGifSettings_High_76fddf8d")),
+            new CreateGifPresetItem("balanced", L.Get("CreateGifSettings_Balanced_b9f90b2b")),
+            new CreateGifPresetItem("small", L.Get("CreateGifSettings_Small_file_461660a8"))
         ];
     }
 

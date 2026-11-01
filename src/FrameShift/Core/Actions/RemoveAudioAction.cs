@@ -23,8 +23,8 @@ public sealed class RemoveAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "remove-audio",
-        "Remove Audio",
-        "Creates a copy of the input video without audio.");
+        L.Get("RemoveAudioAction_Remove_Audio_0a161737"),
+        L.Get("RemoveAudioAction_Creates_a_copy_of_the_input_video_wi_ce6d1586"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -59,7 +59,7 @@ public sealed class RemoveAudioAction : IFrameShiftAction
         }
 
         request.Logger.Log($"Running '{Descriptor.Id}'...");
-        request.ProgressReporter?.ReportState("processing", "Preparing audio removal on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("RemoveAudioAction_Preparing_audio_removal_on_CPU_66ef7e55"));
 
         try
         {
@@ -90,7 +90,7 @@ public sealed class RemoveAudioAction : IFrameShiftAction
             if (runResult.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("RemoveAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, runResult.CancellationScope);
             }
 
@@ -107,7 +107,7 @@ public sealed class RemoveAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("RemoveAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

@@ -21,8 +21,8 @@ public sealed class ConvertImageAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "convert-image",
-        "Convert Image",
-        "Converts an image to another format.");
+        L.Get("ConvertImageAction_Convert_Image_2c4e60c4"),
+        L.Get("ConvertImageAction_Converts_an_image_to_another_format_273f4154"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -56,7 +56,7 @@ public sealed class ConvertImageAction : IFrameShiftAction
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.ProgressReporter?.ReportState("processing", $"Preparing image conversion to {target.DisplayName.ToLowerInvariant()} ({profile.DisplayName.ToLowerInvariant()}) on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Format("ConvertImageAction_Preparing_image_conversion_to_0_1_on_e10ffb5d",target.DisplayName.ToLowerInvariant(),profile.DisplayName.ToLowerInvariant()));
 
         try
         {
@@ -74,7 +74,7 @@ public sealed class ConvertImageAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("ConvertImageAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
@@ -91,7 +91,7 @@ public sealed class ConvertImageAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("ConvertImageAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)

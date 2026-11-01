@@ -59,8 +59,8 @@ internal static partial class Program
 
         logger.Log($"Program: Remove Background model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Remove Background",
-            "Download the AI model to enable background removal",
+            L.Get("ProgramAiPreflight_FrameShift_AI_Remove_Background_5f00939f"),
+            L.Get("ProgramAiPreflight_Download_the_AI_model_to_enable_back_e6df7236"),
             IconPaths.RemoveBackgroundAiIcon,
             model.DisplayName,
             model.License,
@@ -208,7 +208,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Upscale Image")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Upscale_Image_a28d14ef"))));
             return false;
         }
     }
@@ -216,10 +216,11 @@ internal static partial class Program
     private static bool EnsureUpscaleModelReady(
         AppLogger logger,
         IReadOnlyDictionary<string, string>? options = null,
-        string featureName = "Upscale Image",
+        string? featureName = null,
         bool videoMode = false,
         IReadOnlyList<string>? inputPaths = null)
     {
+        featureName ??= L.Get("Common_UpscaleImage");
         var model = ResolveUpscaleModel(options, logger, videoMode);
         if (videoMode)
         {
@@ -250,7 +251,7 @@ internal static partial class Program
         logger.Log($"Program: {featureName} model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
             $"FrameShift AI - {featureName}",
-            $"Download the AI model to enable {(videoMode ? "video" : "image")} upscaling",
+            L.Format("ProgramAiPreflight_Download_the_AI_model_to_enable_0_up_eba538e7",(videoMode ? L.Get("ProgramAiPreflight_video_516f7651") : L.Get("ProgramAiPreflight_image_ad51d0c7"))),
             videoMode ? IconPaths.UpscaleVideoAiIcon : IconPaths.UpscaleImageAiIcon,
             model.DisplayName,
             model.License,
@@ -284,7 +285,7 @@ internal static partial class Program
             var model = Upscale.UpscaleModelCatalog.GetById(modelId);
             if (model is null || !model.RecommendedForVideo)
             {
-                ShowCliError($"Unknown or unsupported video upscale model: {modelId}.");
+                ShowCliError(L.Format("ProgramAiPreflight_Unknown_or_unsupported_video_upscale_c91d95c3",modelId));
                 return false;
             }
 
@@ -358,7 +359,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Upscale Video")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Upscale_Video_a5fd36b8"))));
             return false;
         }
     }
@@ -489,7 +490,7 @@ internal static partial class Program
             }
 
             using var picker = new CreateSubtitlesPickerForm(
-                "Create Subtitle File",
+                L.Get("ProgramAiPreflight_Create_Subtitle_File_f84bd02e"),
                 CreateSubtitlesPickerForm.BuildSourceLabel(inputPaths),
                 initialOutputFormat,
                 initialAssPreset);
@@ -508,7 +509,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Create Subtitles")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Create_Subtitles_a2d77e96"))));
             return false;
         }
     }
@@ -538,8 +539,8 @@ internal static partial class Program
         // Keep existing artifacts until a verified replacement can be activated atomically.
         logger.Log($"Program: Create Subtitles model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Create Subtitles",
-            $"Download {model.DisplayName} to enable local subtitle creation",
+            L.Get("ProgramAiPreflight_FrameShift_AI_Create_Subtitles_f80b294a"),
+            L.Format("ProgramAiPreflight_Download_0_to_enable_local_subtitle__6ca40e37",model.DisplayName),
             IconPaths.CreateSubtitlesAiIcon,
             model.DisplayName,
             model.License,
@@ -611,8 +612,8 @@ internal static partial class Program
 
         logger.Log($"Program: Separate Audio model missing. Opening DownloadModelForm. preferGpu={preferGpu}.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Audio Separation",
-            "Download the AI model to enable audio stem separation",
+            L.Get("ProgramAiPreflight_FrameShift_AI_Audio_Separation_ddf5faf8"),
+            L.Get("ProgramAiPreflight_Download_the_AI_model_to_enable_audi_2a23aaff"),
             IconPaths.SeparateAudioAiIcon,
             displayName,
             SeparateAudio.ModelDownloader.ModelLicense,
@@ -644,8 +645,8 @@ internal static partial class Program
 
         logger.Log("Program: Remove Noise models missing. Opening DownloadModelForm.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Remove Noise",
-            "Download the AI model to enable noise removal",
+            L.Get("ProgramAiPreflight_FrameShift_AI_Remove_Noise_4c1352c7"),
+            L.Get("ProgramAiPreflight_Download_the_AI_model_to_enable_nois_8e3f486d"),
             IconPaths.RemoveNoiseAiIcon,
             RemoveNoise.DeepFilterNetModelDownloader.ModelDisplayName,
             RemoveNoise.DeepFilterNetModelDownloader.ModelLicense,
@@ -705,8 +706,8 @@ internal static partial class Program
 
         logger.Log($"Program: RIFE model missing. Opening DownloadModelForm. modelId={model.Id}.");
         using var downloadForm = new DownloadModelForm(
-            "FrameShift AI - Interpolate Video",
-            "Download the AI model to enable RIFE video interpolation",
+            L.Get("ProgramAiPreflight_FrameShift_AI_Interpolate_Video_680d9040"),
+            L.Get("ProgramAiPreflight_Download_the_AI_model_to_enable_RIFE_eb11d88e"),
             IconPaths.InterpolateAiIcon,
             model.DisplayName,
             model.License,
@@ -828,7 +829,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Remove Noise (Video)")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Remove_Noise_Video_80c7b2b4"))));
             return false;
         }
     }
@@ -891,7 +892,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Remove Noise")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Remove_Noise_1056e64f"))));
             return false;
         }
     }
@@ -982,7 +983,7 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed("Audio Separation")));
+            ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramAiPreflight_Audio_Separation_e0f92f56"))));
             return false;
         }
     }

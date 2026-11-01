@@ -25,8 +25,8 @@ public sealed class CutAudioAction : IFrameShiftAction
 
     public ActionDescriptor Descriptor { get; } = new(
         "cut-audio",
-        "Cut Audio",
-        "Cuts an audio file between a start time and an end time.");
+        L.Get("CutAudioAction_Cut_Audio_a2cd06d1"),
+        L.Get("CutAudioAction_Cuts_an_audio_file_between_a_start_t_7af99ec4"));
 
     public async Task<ActionExecutionResult> ExecuteAsync(ActionRequest request, CancellationToken cancellationToken)
     {
@@ -113,7 +113,7 @@ public sealed class CutAudioAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
         request.Logger.Log($"Cut audio strategy: re-encode to {outputExtension} for sample-accurate trimming.");
-        request.ProgressReporter?.ReportState("processing", "Preparing audio cut on CPU...");
+        request.ProgressReporter?.ReportState("processing", L.Get("CutAudioAction_Preparing_audio_cut_on_CPU_61ff005f"));
 
         try
         {
@@ -131,14 +131,14 @@ public sealed class CutAudioAction : IFrameShiftAction
             if (result.Canceled)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                request.ProgressReporter?.ReportState("canceled", "Canceled.");
+                request.ProgressReporter?.ReportState("canceled", L.Get("CutAudioAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
             if (result.ExitCode != 0 || !File.Exists(outputPath))
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
-                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "FFmpeg failed during audio cut.");
+                var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("CutAudioAction_FFmpeg_failed_during_audio_cut_e45e2c2f"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
@@ -148,7 +148,7 @@ public sealed class CutAudioAction : IFrameShiftAction
         catch (OperationCanceledException)
         {
             ConversionActionHelper.DeleteIfExists(outputPath);
-            request.ProgressReporter?.ReportState("canceled", "Canceled.");
+            request.ProgressReporter?.ReportState("canceled", L.Get("CutAudioAction_Canceled_437433cc"));
             return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, CancellationScope.All);
         }
         catch (Exception ex)
@@ -202,7 +202,7 @@ public sealed class CutAudioAction : IFrameShiftAction
             ".flac" => new AudioEncodingPlan("Audio", "flac", ["-compression_level", "5"]),
             ".m4a" => new AudioEncodingPlan("Audio", "aac", ["-b:a", "256k"]),
             ".ogg" => new AudioEncodingPlan("Audio", "libvorbis", ["-q:a", "6"]),
-            _ => throw new NotSupportedException($"Unsupported audio source '{sourceExtension}'.")
+            _ => throw new NotSupportedException(L.Format("CutAudioAction_Unsupported_audio_source_0_bbac1c55",sourceExtension))
         };
     }
 

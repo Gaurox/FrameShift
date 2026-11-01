@@ -48,7 +48,7 @@ internal static partial class Program
 
             if (!JoinVideosSettings.TryParseMode(modeText, out var mode))
             {
-                ShowCliError("The --join-mode option requires one of: auto, copy, normalize.");
+                ShowCliError(L.Get("ProgramJoinVideos_The_join_mode_option_requires_one_of_3f60afd7"));
                 return 1;
             }
 
@@ -143,7 +143,7 @@ internal static partial class Program
         catch (Exception ex)
         {
             logger.Log($"Program: Join Videos failed to send to primary instance: {ex}");
-            ShowCliError("FrameShift is already preparing Join Videos, but the new videos could not be added.");
+            ShowCliError(L.Get("ProgramJoinVideos_FrameShift_is_already_preparing_Join_00e11b80"));
             return 1;
         }
     }

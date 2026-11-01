@@ -13,13 +13,13 @@ internal sealed record OcrSettings(string Model = "small", string Format = "txt"
         {
             var value = Get(key, fallback);
             if (!allowed.Contains(value))
-                throw new ArgumentException($"Invalid --{key}. Expected {string.Join(", ", allowed)}.");
+                throw new ArgumentException(L.Format("OcrSettings_Invalid_0_Expected_1_e2ffe983",key,string.Join(", ", allowed)));
             return value;
         }
 
         var result = new OcrSettings(Choice("ocr-model", "small", "small", "tiny"), Choice("ocr-format", "txt", "txt", "pdf", "json"), Get("ocr-pages", ""), Choice("ocr-layout", "lines", "lines", "paragraphs") == "paragraphs", Choice("ocr-page-markers", "true", "true", "false") == "true", Choice("ocr-text-source", "auto", "auto", "ocr") == "ocr", int.Parse(Choice("ocr-dpi", "200", "200", "300"), CultureInfo.InvariantCulture), int.Parse(Choice("ocr-rotation", "0", "0", "90", "180", "270"), CultureInfo.InvariantCulture), Choice("ocr-device", "auto", "auto", "cpu") == "cpu");
         if (result.Format == "pdf" && result.OcrOnly)
-            throw new ArgumentException("OCR only is available for TXT and JSON. Searchable PDF preserves existing text.");
+            throw new ArgumentException(L.Get("OcrSettings_OCR_only_is_available_for_TXT_and_JS_f2991b47"));
         // Validate syntax without silently clipping ranges to a particular document.
         if (result.Pages.Length > 0)
             result.GetPages(int.MaxValue);
@@ -41,24 +41,24 @@ internal sealed record OcrSettings(string Model = "small", string Format = "txt"
     public int[] GetPages(int pageCount)
     {
         if (pageCount < 1)
-            throw new InvalidDataException("The PDF contains no pages.");
+            throw new InvalidDataException(L.Get("OcrSettings_The_PDF_contains_no_pages_9f46aba9"));
         if (string.IsNullOrWhiteSpace(Pages))
             return Enumerable.Range(1, pageCount).ToArray();
         if (Pages.Length > 1024)
-            throw new ArgumentException("The page selection is too long.");
+            throw new ArgumentException(L.Get("OcrSettings_The_page_selection_is_too_long_56bf7a7a"));
         var selected = new SortedSet<int>();
         foreach (var token in Pages.Split(','))
         {
             var ends = token.Trim().Split('-');
             if (ends.Length is < 1 or > 2 || !int.TryParse(ends[0].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var first))
-                throw new ArgumentException("Invalid page selection. Use numbers and ranges, for example 1-3,5.");
+                throw new ArgumentException(L.Get("OcrSettings_Invalid_page_selection_Use_numbers_a_6e6a4f34"));
             var last = first;
             if (ends.Length == 2 && !int.TryParse(ends[1].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out last))
-                throw new ArgumentException("Invalid page range. Use a range such as 1-3.");
+                throw new ArgumentException(L.Get("OcrSettings_Invalid_page_range_Use_a_range_such__cd9b8471"));
             if (first < 1 || last < first || last > pageCount)
-                throw new ArgumentException($"Page range '{token.Trim()}' is outside this document (1-{pageCount}).");
+                throw new ArgumentException(L.Format("OcrSettings_Page_range_0_is_outside_this_documen_3b4622b1",token.Trim(),pageCount));
             if ((long)last - first + selected.Count > 100_000)
-                throw new ArgumentException("Select at most 100,000 pages per operation.");
+                throw new ArgumentException(L.Get("OcrSettings_Select_at_most_100_000_pages_per_ope_2d262954"));
             for (var page = first;; page++)
             {
                 selected.Add(page);

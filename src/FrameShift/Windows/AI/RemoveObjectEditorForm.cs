@@ -92,11 +92,11 @@ public sealed class RemoveObjectEditorForm : Form
     private void BuildUi()
     {
         FrameShiftWindowPolicy.Initialize(this, new Size(1100, 720), new Size(480, 340));
-        FrameShiftWindowChrome.Apply(this, "FrameShift - Remove Object", IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon);
+        FrameShiftWindowChrome.Apply(this, L.Get("RemoveObjectEditorForm_FrameShift_Remove_Object_3dfdec3d"), IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon);
         ControlHelper.SetDoubleBuffered(this);
         _canvasPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(30, 30, 30), TabStop = true };
-        _canvasPanel.AccessibleName = "Object removal mask canvas";
-        _canvasPanel.AccessibleDescription = "Image and painted removal mask. Brush, eraser and zoom controls are available in the options panel.";
+        _canvasPanel.AccessibleName = L.Get("RemoveObjectEditorForm_Object_removal_mask_canvas_9e7d3152");
+        _canvasPanel.AccessibleDescription = L.Get("RemoveObjectEditorForm_Image_and_painted_removal_mask_Brush_4769143b");
         ControlHelper.SetDoubleBuffered(_canvasPanel);
         _canvasPanel.Cursor = s_hiddenCursor;
         _canvasPanel.Paint += CanvasOnPaint;
@@ -118,41 +118,41 @@ public sealed class RemoveObjectEditorForm : Form
             UpdateZoomLabel();
             _canvasPanel.Invalidate();
         };
-        _btnBrush = FrameShiftUiFactory.CreateMeasuredActionButton("Brush", false);
+        _btnBrush = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Brush_e537813b"), false);
         _btnBrush.Click += (_, _) => SetTool(true);
-        _btnEraser = FrameShiftUiFactory.CreateMeasuredActionButton("Eraser", false);
+        _btnEraser = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Eraser_d2990eb2"), false);
         _btnEraser.Click += (_, _) => SetTool(false);
-        var mode = FrameShiftUiFactory.CreateSection("Mode", FrameShiftUiFactory.CreateChoiceRow(_btnBrush, _btnEraser));
+        var mode = FrameShiftUiFactory.CreateSection(L.Get("RemoveObjectEditorForm_Mode_f5e5ac60"), FrameShiftUiFactory.CreateChoiceRow(_btnBrush, _btnEraser));
         _brushSizeSlider = new TrackBar { Minimum = 1, Maximum = 200, Value = DefaultBrushSize, TickFrequency = 20, TickStyle = TickStyle.None };
         _brushSizeNum = new NumericUpDown { Minimum = 1, Maximum = 200, Value = DefaultBrushSize };
         _brushSizeSlider.ValueChanged += (_, _) => { _brushSize = _brushSizeSlider.Value; if (_brushSizeNum.Value != _brushSize) _brushSizeNum.Value = _brushSize; };
         _brushSizeNum.ValueChanged += (_, _) => { _brushSize = (int)_brushSizeNum.Value; if (_brushSizeSlider.Value != _brushSize) _brushSizeSlider.Value = _brushSize; };
-        var size = FrameShiftUiFactory.CreateSection("Brush size", FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("Diameter", _brushSizeNum, "px", 96), _brushSizeSlider));
-        _btnReset = FrameShiftUiFactory.CreateMeasuredActionButton("Reset mask", false);
+        var size = FrameShiftUiFactory.CreateSection(L.Get("RemoveObjectEditorForm_Brush_size_cb8e8db2"), FrameShiftUiFactory.CreateVerticalStack(
+            FrameShiftUiFactory.CreateFieldRow(L.Get("RemoveObjectEditorForm_Diameter_efc3f7a8"), _brushSizeNum, "px", 96), _brushSizeSlider));
+        _btnReset = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Reset_mask_19c89eed"), false);
         _btnReset.Click += (_, _) => ResetMask();
-        _btnFit = FrameShiftUiFactory.CreateMeasuredActionButton("Fit", false);
+        _btnFit = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Fit_b4987394"), false);
         _btnFit.Click += (_, _) => FitToWindow();
-        _zoomLabel = FrameShiftUiFactory.CreateWrappingLabel("Zoom 100%");
-        var actions = FrameShiftUiFactory.CreateSection("View & mask", FrameShiftUiFactory.CreateVerticalStack(
+        _zoomLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("RemoveObjectEditorForm_Zoom_100_0c32e0eb"));
+        var actions = FrameShiftUiFactory.CreateSection(L.Get("RemoveObjectEditorForm_View_mask_88152c7f"), FrameShiftUiFactory.CreateVerticalStack(
             FrameShiftUiFactory.CreateChoiceRow(_btnReset, _btnFit), _zoomLabel));
         _modelCombo = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         foreach (var def in ObjectRemovalModelCatalog.GetAll()) _modelCombo.Items.Add(new ModelComboItem(def));
         _modelCombo.SelectedIndex = 0;
-        var model = FrameShiftUiFactory.CreateSection("Model", FrameShiftUiFactory.CreateFieldRow("Model", _modelCombo));
+        var model = FrameShiftUiFactory.CreateSection(L.Get("RemoveObjectEditorForm_Model_44c0cd42"), FrameShiftUiFactory.CreateFieldRow(L.Get("RemoveObjectEditorForm_Model_44c0cd42"), _modelCombo));
         _progressBar = new ProgressBar { Style = ProgressBarStyle.Continuous };
-        _progressLabel = FrameShiftUiFactory.CreateWrappingLabel("Loading image...");
-        _progressPanel = FrameShiftUiFactory.CreateSection("Activity", FrameShiftUiFactory.CreateVerticalStack(_progressBar, _progressLabel));
-        _btnCancel = FrameShiftUiFactory.CreateMeasuredActionButton("Cancel", false);
+        _progressLabel = FrameShiftUiFactory.CreateWrappingLabel(L.Get("RemoveObjectEditorForm_Loading_image_d981dc58"));
+        _progressPanel = FrameShiftUiFactory.CreateSection(L.Get("RemoveObjectEditorForm_Activity_e34230a6"), FrameShiftUiFactory.CreateVerticalStack(_progressBar, _progressLabel));
+        _btnCancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Cancel_998b9c48"), false);
         _btnCancel.Click += (_, _) => CancelOrClose();
-        _btnApply = FrameShiftUiFactory.CreateMeasuredActionButton("Apply", true);
+        _btnApply = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("RemoveObjectEditorForm_Apply_3d57c12e"), true);
         _btnApply.Enabled = false;
         _btnApply.Click += async (_, _) => await StartInferenceAsync();
-        var header = FrameShiftUiFactory.CreateHeader("FrameShift - Remove Object", $"Source: {Path.GetFileName(_inputPath)}",
+        var header = FrameShiftUiFactory.CreateHeader(L.Get("RemoveObjectEditorForm_FrameShift_Remove_Object_3dfdec3d"), L.Format("RemoveObjectEditorForm_Source_0_653ab450",Path.GetFileName(_inputPath)),
             IconPaths.RemoveObjectAiIcon, IconPaths.FrameShiftAiIcon, "✂");
         Controls.Add(FrameShiftEditorShellUi.Create(header, _canvasPanel, FrameShiftDialogLayout.CreateActions(_btnCancel, _btnApply),
             FrameShiftUiFactory.CreateVerticalStack(mode, size, actions, model, _progressPanel),
-            FrameShiftUiFactory.CreateStatusMessage("Paint over the object to remove. PNG output stays next to the source. [ ] adjusts brush size.")));
+            FrameShiftUiFactory.CreateStatusMessage(L.Get("RemoveObjectEditorForm_Paint_over_the_object_to_remove_PNG__a3b9b0a6"))));
         AcceptButton = _btnApply;
         CancelButton = _btnCancel;
         SetTool(true);
@@ -186,7 +186,7 @@ public sealed class RemoveObjectEditorForm : Form
         catch (Exception ex)
         {
             _logger.Log($"RemoveObjectEditorForm: failed to load image. {ex}");
-            if (CanUpdateUi) _progressLabel.Text = $"Image unavailable: {ex.Message}";
+            if (CanUpdateUi) _progressLabel.Text = L.Format("RemoveObjectEditorForm_Image_unavailable_0_c65bb780",ex.Message);
         }
         finally { bitmap?.Dispose(); }
     });
@@ -518,7 +518,7 @@ public sealed class RemoveObjectEditorForm : Form
 
     private void UpdateZoomLabel()
     {
-        _zoomLabel.Text = $"Zoom {(int)(_zoom * 100)}%";
+        _zoomLabel.Text = L.Format("RemoveObjectEditorForm_Zoom_0_c380e7d1",(int)(_zoom * 100));
     }
 
     private void CancelOrClose()
@@ -561,7 +561,7 @@ public sealed class RemoveObjectEditorForm : Form
 
         if (!HasAnyMask())
         {
-            MessageBox.Show("Nothing to remove — paint over the object first.",
+            MessageBox.Show(L.Get("RemoveObjectEditorForm_Nothing_to_remove_paint_over_the_obj_48c33cc2"),
                 "FrameShift", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
@@ -619,7 +619,7 @@ public sealed class RemoveObjectEditorForm : Form
             _logger.Log($"RemoveObjectEditorForm: inference failed. {ex}");
             if (CanUpdateUi)
             {
-                MessageBox.Show($"Inference failed: {ex.Message}", "FrameShift",
+                MessageBox.Show(L.Format("RemoveObjectEditorForm_Inference_failed_0_64cc9415",ex.Message), "FrameShift",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -680,14 +680,14 @@ public sealed class RemoveObjectEditorForm : Form
         _brushSizeSlider.Enabled = false;
         _brushSizeNum.Enabled = false;
         _canvasPanel.Enabled = false;
-        _progressLabel.Text = "Closing: waiting for AI processing...";
+        _progressLabel.Text = L.Get("RemoveObjectEditorForm_Closing_waiting_for_AI_processing_713f7417");
     }
 
     private Task<bool> DownloadModelAsync(ObjectRemovalModelDefinition def)
     {
         using var dlForm = new DownloadModelForm(
-            "FrameShift AI - Remove Object",
-            "Download the AI model to enable object removal",
+            L.Get("RemoveObjectEditorForm_FrameShift_AI_Remove_Object_c574fc19"),
+            L.Get("RemoveObjectEditorForm_Download_the_AI_model_to_enable_obje_0bdcd367"),
             IconPaths.RemoveObjectAiIcon,
             def.DisplayName,
             def.License,

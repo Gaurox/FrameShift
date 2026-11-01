@@ -25,11 +25,11 @@ internal static class UpscaleTiler
     public static IReadOnlyList<TilePlan> Plan(int width, int height, int tileSize, int margin)
     {
         if (width <= 0 || height <= 0)
-            throw new ArgumentOutOfRangeException(nameof(width), "Image dimensions must be positive.");
+            throw new ArgumentOutOfRangeException(nameof(width), L.Get("UpscaleTiler_Image_dimensions_must_be_positive_3e8a4395"));
         if (tileSize <= 0)
-            throw new ArgumentOutOfRangeException(nameof(tileSize), "Tile size must be positive.");
+            throw new ArgumentOutOfRangeException(nameof(tileSize), L.Get("UpscaleTiler_Tile_size_must_be_positive_fce2c665"));
         if (margin < 0)
-            throw new ArgumentOutOfRangeException(nameof(margin), "Margin must be non-negative.");
+            throw new ArgumentOutOfRangeException(nameof(margin), L.Get("UpscaleTiler_Margin_must_be_non_negative_85c90450"));
 
         var tiles = new List<TilePlan>();
 

@@ -29,7 +29,7 @@ public static class ActionLauncher
 
         if (inputPaths.Count == 0)
         {
-            throw new ArgumentException("At least one input path is required.", nameof(inputPaths));
+            throw new ArgumentException(L.Get("ActionLauncher_At_least_one_input_path_is_required_29721118"), nameof(inputPaths));
         }
 
         var args = new List<string>(inputPaths.Count + entry.ExtraCliArgs.Count + 2)
@@ -90,7 +90,7 @@ public static class ActionLauncher
     {
         var startInfo = CreateStartInfo(entry, inputPaths, ResolveExecutablePath());
         return Process.Start(startInfo)
-            ?? throw new InvalidOperationException("Failed to start the FrameShift child process.");
+            ?? throw new InvalidOperationException(L.Get("ActionLauncher_Failed_to_start_the_FrameShift_child_2994ef2a"));
     }
 
     /// <summary>Resolves the path to the running FrameShift executable.</summary>
@@ -108,6 +108,6 @@ public static class ActionLauncher
             return path;
         }
 
-        throw new InvalidOperationException("Could not resolve the FrameShift executable path.");
+        throw new InvalidOperationException(L.Get("ActionLauncher_Could_not_resolve_the_FrameShift_exe_ffb1e512"));
     }
 }

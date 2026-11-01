@@ -161,7 +161,7 @@ internal static class AddSubtitlesToVideoSubtitleSourceLoader
     {
         if (string.IsNullOrWhiteSpace(srtText))
         {
-            throw new InvalidOperationException("Subtitle file is empty.");
+            throw new InvalidOperationException(L.Get("AddSubtitlesToVideoSubtitleSourceLoader_Subtitle_file_is_empty_86f90360"));
         }
 
         var normalized = srtText.Replace("\r\n", "\n", StringComparison.Ordinal)
@@ -173,7 +173,7 @@ internal static class AddSubtitlesToVideoSubtitleSourceLoader
 
         if (blocks.Length == 0)
         {
-            throw new InvalidOperationException("Subtitle file does not contain any subtitle block.");
+            throw new InvalidOperationException(L.Get("AddSubtitlesToVideoSubtitleSourceLoader_Subtitle_file_does_not_contain_any_s_d1bc6694"));
         }
 
         var segments = new List<SubtitleSegment>(blocks.Length);
@@ -224,7 +224,7 @@ internal static class AddSubtitlesToVideoSubtitleSourceLoader
 
         if (segments.Count == 0)
         {
-            throw new InvalidOperationException("Subtitle file does not contain readable timings.");
+            throw new InvalidOperationException(L.Get("AddSubtitlesToVideoSubtitleSourceLoader_Subtitle_file_does_not_contain_reada_6b524feb"));
         }
 
         var totalDuration = segments[^1].End;
