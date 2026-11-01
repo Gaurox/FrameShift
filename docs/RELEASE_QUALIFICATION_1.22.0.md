@@ -378,6 +378,61 @@ Evidence: `scratch/release-1.22-pending-language-before-fix.log`,
 `scratch/release-1.22-pending-language-targeted.log`, and
 `scratch/release-1.22-pending-language/pending-language-fixed.trx`.
 
+## Current five-language candidate with pending-language fix
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`d4dabacbd8d3176fde3d731cb151fb01f31a65e4`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, mandatory tests, self-contained
+win-x64 publication, payload/runtime/tool/notice checks and Inno Setup 6.7.1
+compilation pass. The canonical build reports no compiler or restore warnings.
+
+- **1,048 passed, 0 failures, 17 conditional skips, 1,065 total**, in **4 m 18 s**.
+  The existing six OCR, six real-model AI and five subtitle cases retain their
+  activation/model/corpus requirements; they are not counted as passing.
+- The payload contains **808 files**, with exactly the Chinese, Spanish,
+  Brazilian Portuguese and Russian FrameShift satellite assemblies for both the
+  application and worker, alongside English neutral resources. No additional
+  FrameShift translation, loop types, private licence files, model weights, debug
+  symbols or test assemblies are packaged.
+- Managed metadata verifies ten app/worker/resource assemblies and their expected
+  resource names. The application is 1.22.0.0, with product version
+  `1.22.0+d4dabacbd8d3176fde3d731cb151fb01f31a65e4`. The worker remains 1.18.1.0;
+  both self-contained runtimes remain 8.0.31.
+- An isolated process loads the actual published application and worker assemblies
+  and invokes their shared language initializer/resource loader. **22 lookups pass**:
+  all five languages, regional/installer aliases including `ru-RU`, `ru_KZ` and
+  `russian`, and English fallback for `pt-PT`, with numeric culture preserved.
+  This verifies packaged language selection and text without starting native models;
+  it does not claim model inference or installed acceptance. The actual worker uses
+  the existing `FRAMESHIFT_UI_LANGUAGE` environment setting with the same loader.
+
+- The actual published Settings form also passes the original English -> Russian ->
+  close/reopen -> English workflow, with a temporary preferences file, current UI
+  unchanged and other preferences preserved. Evidence:
+  `scratch/release-1.22-pending-language-workflow.json`.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,490,968 bytes | `F0D37AF0D71111FC1F58C08B053B640B4B58F5062C84C6DD2313E96E3B762293` |
+| Application DLL | 5,586,944 bytes | `49E9C8286C5EEB4D541457E7BBAED727F6A56B942A2401A0489593C488FC914D` |
+| Subtitle worker DLL | 296,448 bytes | `1ACF808B6576CC786F8C22EFBEE5650DD070059DE2A298624244024D1301E8FF` |
+| Application Chinese satellite | 260,608 bytes | `CFE890093C094ED022CBC46358FC0535F3AD5EFA9B6E53707A5C5F95B47CB9C8` |
+| Application Spanish satellite | 272,896 bytes | `44929D985C517CB900349C4960B4CD45CCD2B6B9A285556300B9CDE83CC0BBB8` |
+| Application Brazilian Portuguese satellite | 273,920 bytes | `C154AE76E69B99677054ECFDBF21AF0663EDBA8D14A3966707322F65103BBD9A` |
+| Application Russian satellite | 316,416 bytes | `F943ADBA06A3C595BCBD3EA62859855E750D43608BD1974D573ED6182977E4A9` |
+| Worker Chinese satellite | 260,608 bytes | `A5EDEA295ED6718AE766C6D3B1E6CB47CE4C436B1EB5B9E7BDFE7A5ADCB1B764` |
+| Worker Spanish satellite | 272,896 bytes | `F7FC6A70D6578424393AB93409303C8F96AD82F54C1FC6D8CEBDFFFEC4B46BF5` |
+| Worker Brazilian Portuguese satellite | 273,920 bytes | `CD6643719BF82022B07C51CC77E799160EF630614537C0D54EF2ACD78EF0BE4A` |
+| Worker Russian satellite | 316,416 bytes | `E1AFFE088F7A35063E5EFC5E368BD670D1F424C31938DE5965198EC2141C03B8` |
+
+The installer was **not run**; nothing was pushed or published. The checksum beside
+the installer identifies this exact candidate. Documentation/checksum commits after
+the clean source build do not change its binaries. Evidence:
+`scratch/release-1.22-pending-language-canonical.log`,
+`scratch/release-1.22-pending-language-managed-metadata.jsonl`,
+`scratch/release-1.22-pending-language-packaged-languages.jsonl`, and
+`builds/release-1.22-pending-language/artifact-verification.json`.
+
 ## Work before a public release
 
 - Qualify the dependency/runtime maintenance identified by the retained audit work:
