@@ -135,7 +135,7 @@ Os modos BRIA RMBG-2.0 equilibrado e de alta qualidade exigem obter o modelo man
 
 O aplicativo usa **C#, .NET 8 LTS, WinForms, FFmpeg e FFprobe**, com componentes de IA local baseados no ONNX Runtime DirectML. O processamento de arquivos não exige serviços na nuvem.
 
-Instale o **.NET SDK 8.0.425** no Windows. O [global.json](global.json) fixa essa versão; ter apenas um SDK mais recente não a substitui. No PowerShell, a partir da raiz do repositório:
+Instale o **.NET SDK 8.0.427** no Windows. O [global.json](global.json) fixa essa versão; ter apenas um SDK mais recente não a substitui. No PowerShell, a partir da raiz do repositório:
 
 ```powershell
 dotnet --version
@@ -146,7 +146,7 @@ dotnet test .\tests\FrameShift.Tests\FrameShift.Tests.csproj --no-restore
 dotnet run --project .\src\FrameShift\FrameShift.csproj
 ```
 
-`dotnet --version` deve indicar `8.0.425`. Esses comandos usam a configuração de desenvolvimento e não geram um instalador distribuível. A restauração das dependências pode exigir acesso às fontes de pacotes configuradas. A execução depende das ferramentas e dos recursos nativos do projeto.
+`dotnet --version` deve indicar `8.0.427`. Esses comandos usam a configuração de desenvolvimento e não geram um instalador distribuível. A restauração das dependências pode exigir acesso às fontes de pacotes configuradas. A execução depende das ferramentas e dos recursos nativos do projeto.
 
 Sem uma preferência salva nem um arquivo de idioma de instalação, o programa usa inglês. Escolha Português (Brasil) em Configurações e reinicie o aplicativo.
 

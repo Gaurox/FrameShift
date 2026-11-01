@@ -15,11 +15,13 @@ additional native-worker and OCR license texts identified below.
 
 FrameShift bundles `ffmpeg.exe` and `ffprobe.exe` as part of its installer and local toolchain.
 
-- Build: [`9.0-essentials_build-www.gyan.dev`](https://www.gyan.dev/ffmpeg/builds/) by Gyan Doshi (release build, 4 August 2026)
-- Distribution archive: [`ffmpeg-release-essentials.zip`](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip), SHA-256 `E6B54767A6065919048F1A098EB27211CA4E12B4348A05D88777A5855D0B6E71`
-- Upstream project: [FFmpeg 9.0 "Lei"](https://ffmpeg.org/download.html), source commit [`d32b387f2b`](https://github.com/FFmpeg/FFmpeg/commit/d32b387f2b)
-- Bundled binary SHA-256: `ffmpeg.exe` `227AF0691433B703FFC5725E47F7D06EEFC34B4A72E7870E73D30E2CDA483ECF`; `ffprobe.exe` `901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88`
-- Configuration verified from both binaries: static GPLv3 build with `--enable-gpl --enable-version3`, including FrameShift-required codecs/libraries such as libx264, libx265, libvpx, libopus, libmp3lame, libwebp and libass.
+- Build: [`2026-10-29-git-31ba826726-essentials_build-www.gyan.dev`](https://github.com/GyanD/codexffmpeg/releases/tag/2026-10-29-git-31ba826726) by Gyan Doshi (Windows x64 static essentials build, 29 October 2026).
+- Vendor archive: [`ffmpeg-2026-10-29-git-31ba826726-essentials_build.7z`](https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-2026-10-29-git-31ba826726-essentials_build.7z), SHA-256 `94C9D4EAE0817F4C2CC8C78FE2D001DB347CE4A433A52F1D9312FF6A886451F8`.
+- Upstream project: [FFmpeg](https://ffmpeg.org/download.html), source commit [`31ba826726fd0d1547f2c22e041848d1d7f3f860`](https://github.com/FFmpeg/FFmpeg/commit/31ba826726fd0d1547f2c22e041848d1d7f3f860).
+- This revision includes the fixes for [MP4 encryption metadata stack exhaustion](https://github.com/FFmpeg/FFmpeg/commit/969c7eb091989a664cb7bf66a1f02051cc46cb52) and [uninitialized HDR10+ metadata bytes](https://github.com/FFmpeg/FFmpeg/commit/2c2f6e96e31795ae95a8f8323a493ffbc493111f).
+- Bundled binary SHA-256: `ffmpeg.exe` `557E97AF30A1C9B6DFBD08A1D2A04894279DD15A77D23B1723E560CC7F4FC90E`; `ffprobe.exe` `11CB2352BAC147BB8906F567AF9AF1DA3779ECA73E7A71A49A81C7D277E289CD`.
+- The repository stores these two unmodified executables in `src/FrameShift/Tools/ffmpeg/ffmpeg-tools.zip` (SHA-256 `AD1A117ECE468DC5888FD735C6421AA5B80E954353C88FBAD01BC970E98AF524`); it is extracted offline during build and is not included in the installer.
+- Configuration verified from bundled FFmpeg: static GPLv3 build with `--enable-gpl --enable-version3`, including FrameShift-required codecs/libraries such as libx264, libx265, libvpx, libopus, libmp3lame, libwebp and libass.
 - License: **GNU General Public License v3.0 or later** (build compiled with `--enable-gpl --enable-version3`)
 - Source code: https://ffmpeg.org/download.html
 
@@ -29,12 +31,16 @@ In compliance with the GPL, users who wish to obtain the corresponding source co
 
 ---
 
-## .NET Runtime
+## .NET Runtime and System.Security.Cryptography.Pkcs
 
 The self-contained `win-x64` publish includes the .NET 8 Windows Desktop runtime.
 
 - Source: https://github.com/dotnet/runtime and https://github.com/dotnet/wpf
 - License: **MIT License**
+- Build SDK: Microsoft .NET **8.0.427**; self-contained .NET/Windows Desktop runtime: **8.0.33** (application and subtitle worker).
+- Explicit NuGet dependency: **System.Security.Cryptography.Pkcs 8.0.2**, overriding PDFsharp's older transitive requirement.
+- Release notes: [.NET 8.0.33](https://github.com/dotnet/core/blob/main/release-notes/8.0/8.0.33/8.0.33.md).
+- PKCS package copyright: Microsoft Corporation. The self-contained runtime's licence and third-party notices are included in its payload.
 
 ---
 

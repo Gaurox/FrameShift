@@ -30,6 +30,8 @@
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <!-- Override PDFsharp's older transitive version with the serviced .NET 8 package. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="4.1.2" />
     <PackageReference Include="PDFiumCore" Version="156.0.8076" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
@@ -56,7 +58,7 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
 
-    <Content Include="Tools\ffmpeg\**\*">
+    <Content Include="Tools\ffmpeg\ffmpeg.exe;Tools\ffmpeg\ffprobe.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
@@ -85,6 +87,12 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+
+  <Target Name="PrepareBundledFfmpeg" BeforeTargets="PrepareForBuild">
+    <Unzip SourceFiles="$(MSBuildProjectDirectory)\Tools\ffmpeg\ffmpeg-tools.zip"
+           DestinationFolder="$(MSBuildProjectDirectory)\Tools\ffmpeg"
+           SkipUnchangedFiles="true" />
+  </Target>
 
   <Target Name="CopyCreateSubtitlesWorkerForBuild" AfterTargets="Build">
     <PropertyGroup>

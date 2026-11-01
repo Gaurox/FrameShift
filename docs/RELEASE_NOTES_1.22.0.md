@@ -14,6 +14,9 @@ Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
 
 ## Preparation details
 
+- **Dependency security:** bundled .NET/Windows Desktop 8.0.33, PKCS 8.0.2, and
+  FFmpeg/FFprobe from the pinned 29 October build, including the MP4 encryption
+  metadata and HDR10+ fixes. The build SDK is 8.0.427.
 - **English, simplified Chinese, Spanish, Brazilian Portuguese and Russian:** one application and installer, translated
   settings, tools, progress and errors, with optional Explorer menus in the
   installer's selected language. Settings also synchronizes installed Explorer

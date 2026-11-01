@@ -16,6 +16,9 @@ and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
   reporting cancelled or failed updates without losing the application preference.
 - Explorer menus change only after the language preference is saved successfully.
   A failed save restores the previous selection and displays a translated error.
+- Security servicing: SDK 8.0.427 and bundled .NET/Windows Desktop 8.0.33,
+  PKCS 8.0.2, and pinned FFmpeg/FFprobe with the MP4 stack-exhaustion and HDR10+
+  metadata fixes. Clean checkouts extract the verified tools offline from a ZIP.
 - A small shared language catalog drives preferences and Settings; the worker includes
   translation resources automatically. English, simplified Chinese, Spanish, Brazilian Portuguese and Russian ship in 1.22.
 - Media integrity, cancellation, bounded image/PDF/audio memory, batched queues,

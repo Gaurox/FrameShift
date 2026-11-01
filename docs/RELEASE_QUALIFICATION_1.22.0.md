@@ -489,7 +489,7 @@ English/Chinese menu refresh and return-to-English checks appeared correct. Thes
 are owner-reported observations, not automated desktop verification. Alternate
 administrator credentials remain unqualified.
 
-## Current candidate with the language-save guard
+## Previous candidate with the language-save guard
 
 Settings now checks `FrameShiftUiSettings.TrySave` before invoking Explorer menu
 synchronization. A failed write leaves menu captions untouched and cannot request
@@ -540,12 +540,55 @@ app/worker satellite hashes). The checksum beside the installer identifies this
 candidate. Later documentation/checksum commits do not change its binaries.
 The installer was not run; nothing was pushed or published.
 
+## Current dependency-security preparation
+
+The three findings from the 1 November dependency review are addressed:
+
+- SDK **8.0.427**, with self-contained .NET/Windows Desktop **8.0.33** required for
+  both the application and worker. The canonical build checks manifests and actual
+  runtime DLL file versions, retaining the existing ImageSharp checks.
+- Explicit **System.Security.Cryptography.Pkcs 8.0.2** overrides PDFsharp 6.2.4's
+  older requirement. The application, test and UI-sample locks change only that
+  package's resolved version; the worker lock is unchanged. The release gate also
+  rejects the old PKCS dependency graph, missing PKCS DLL or an old runtime DLL.
+- Gyan's static essentials build **2026-10-29-git-31ba826726** is pinned to source
+  `31ba826726fd0d1547f2c22e041848d1d7f3f860`. GitHub comparisons confirm both security
+  commits are ancestors: MP4 list-free stack exhaustion `969c7eb091989a664cb7bf66a1f02051cc46cb52`
+  and uninitialized HDR10+ serialization `2c2f6e96e31795ae95a8f8323a493ffbc493111f`.
+  The vendor archive SHA-256 and Microsoft SDK SHA-512 were verified before use.
+
+Both new FFmpeg executables exceed GitHub's 100 MiB limit. Their unmodified bytes
+are therefore tracked as a **81,769,492-byte ZIP**, extracted by the SDK before
+build and by the release script for missing/old source tools. No Git LFS, network
+download, runtime extraction or additional installed tool is required. The ZIP is
+excluded from the payload. Source/binary provenance and all hashes are recorded in
+`src/FrameShift/Tools/ffmpeg/PROVENANCE.json` and `THIRD_PARTY_NOTICES.md`.
+
+Fresh-cache online NuGet scans of the application, worker, tests and UI samples
+report **zero vulnerable packages**, including transitive dependencies. The actual
+FFprobe passes a bounded real MP4 test with **20,000 PSSH entries**; FFmpeg reports
+the pinned revision and required GPL/codec/filter libraries. A separate SDK test
+materialized byte-identical executables with both source tools initially absent.
+Release-script fixtures also cover offline extraction, archive tampering and old
+runtime/PKCS rejection, including Windows PowerShell compatibility.
+The final targeted Release run passes **203 tests, 0 failures, 0 skips**, covering
+the release gate, actual FFmpeg/FFprobe, cancellation, output preservation,
+orientation, localization and theme behavior with the serviced runtime.
+
+Evidence: `scratch/release-1.22-serviced-*-vulnerabilities.json`,
+`scratch/release-1.22-security-ffmpeg-materialization.log`, and the targeted TRX
+files under `scratch/release-1.22-security-servicing`, including
+`security-servicing-targeted-final.trx`. The clean canonical rebuild
+will identify the new installer. None of these checks installs the application or
+operates the desktop; nothing is pushed or published.
+
 ## Work before a public release
 
-- Qualify the dependency/runtime maintenance identified by the retained audit work:
-  D01/D03 together and evaluation of D02. Current .NET 8.0.31, SDK 8.0.425 and
-  ImageSharp 4.1.2 pins are unchanged by the localization work. Recheck appropriate
-  versions and the transitive vulnerability scan before public distribution.
+- Recheck package advisories immediately before public distribution if the candidate
+  is held. Current servicing targets are SDK 8.0.427, runtime 8.0.33, PKCS 8.0.2 and
+  the pinned FFmpeg security snapshot. .NET 8 support ends on 10 November 2026;
+  plan the next supported-LTS migration separately rather than claiming these
+  patches extend that support period.
 - Validate a fresh install, upgrade from published 1.21.1, switching the installer
   language, Explorer component selection and uninstall in all five languages. In particular,
   foreign model files and existing user preferences must survive.

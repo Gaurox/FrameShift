@@ -10,6 +10,7 @@
 *.css text
 
 *.exe binary
+*.zip binary
 *.dll binary
 *.ico binary
 *.png binary

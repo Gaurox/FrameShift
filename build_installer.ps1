@@ -9,9 +9,10 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $script:BundledFfmpegHashes = @{
-    'Tools\ffmpeg\ffmpeg.exe' = '227AF0691433B703FFC5725E47F7D06EEFC34B4A72E7870E73D30E2CDA483ECF'
-    'Tools\ffmpeg\ffprobe.exe' = '901F0EFE4793CBB0F017101E3427F816E8FBF9A407BD585F49DF30F4325CFD88'
+    'Tools\ffmpeg\ffmpeg.exe' = '557E97AF30A1C9B6DFBD08A1D2A04894279DD15A77D23B1723E560CC7F4FC90E'
+    'Tools\ffmpeg\ffprobe.exe' = '11CB2352BAC147BB8906F567AF9AF1DA3779ECA73E7A71A49A81C7D277E289CD'
 }
+$script:BundledFfmpegArchiveHash = 'AD1A117ECE468DC5888FD735C6421AA5B80E954353C88FBAD01BC970E98AF524'
 
 $script:DistributionNoticeFiles = @(
     @{ Source = 'LICENSE'; Published = 'licenses\LICENSE' },
@@ -76,6 +77,40 @@ function Assert-ExpectedSha256 {
 
     if (![string]::Equals($actualHash, $ExpectedHash, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "$Label SHA-256 mismatch. Expected $ExpectedHash, got ${actualHash}: $Path"
+    }
+}
+
+function Expand-BundledFfmpeg {
+    param([string]$PayloadRoot)
+
+    $archivePath = Join-Path $PayloadRoot 'Tools\ffmpeg\ffmpeg-tools.zip'
+    Assert-RequiredFile -Path $archivePath -Label 'Bundled FFmpeg archive'
+    Assert-ExpectedSha256 -Path $archivePath -Label 'Bundled FFmpeg archive' -ExpectedHash $script:BundledFfmpegArchiveHash
+    $needsExtraction = $false
+    foreach ($relativePath in $script:BundledFfmpegHashes.Keys) {
+        $toolPath = Join-Path $PayloadRoot $relativePath
+        if (!(Test-Path -LiteralPath $toolPath -PathType Leaf)) {
+            $needsExtraction = $true
+        }
+        else {
+            try {
+                Assert-ExpectedSha256 -Path $toolPath -Label 'Materialized FFmpeg tool' -ExpectedHash $script:BundledFfmpegHashes[$relativePath]
+            }
+            catch { $needsExtraction = $true }
+        }
+    }
+    if ($needsExtraction) {
+        [System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem') | Out-Null
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($archivePath)
+        try {
+            foreach ($name in @('ffmpeg.exe', 'ffprobe.exe')) {
+                $entry = $archive.GetEntry($name)
+                if ($null -eq $entry) { throw "Bundled FFmpeg archive is missing $name" }
+                $destination = Join-Path $PayloadRoot "Tools\ffmpeg\$name"
+                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $destination, $true)
+            }
+        }
+        finally { $archive.Dispose() }
     }
 }
 
@@ -275,7 +310,7 @@ function Assert-PublishPayload {
 function Assert-ManagedPayload {
     param([string]$Directory, [string]$Name, [switch]$Desktop)
 
-    $runtimeVersion = '8.0.31'
+    $runtimeVersion = '8.0.33'
     $configPath = Join-Path $Directory "$Name.runtimeconfig.json"
     $depsPath = Join-Path $Directory "$Name.deps.json"
     Assert-RequiredFile -Path $configPath -Label 'Runtime manifest'
@@ -296,15 +331,20 @@ function Assert-ManagedPayload {
         throw "Runtime dependency manifest mismatch: $depsPath"
     }
     $binaryVersions = @{
-        'coreclr.dll' = '8.0.3126.42015'
-        'System.Private.CoreLib.dll' = '8.0.3126.42015'
+        'coreclr.dll' = '8.0.3326.52219'
+        'System.Private.CoreLib.dll' = '8.0.3326.52219'
     }
     if ($Desktop) {
         $desktopLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/*' })
         if ($desktopLibraries.Count -ne 1 -or $desktopLibraries[0] -ne "runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64/$runtimeVersion") {
             throw "Desktop dependency manifest mismatch: $depsPath"
         }
-        $binaryVersions['System.Windows.Forms.dll'] = '8.0.3126.42106'
+        $binaryVersions['System.Windows.Forms.dll'] = '8.0.3326.52211'
+        $pkcsLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'System.Security.Cryptography.Pkcs/*' })
+        if ($pkcsLibraries.Count -ne 1 -or $pkcsLibraries[0] -ne 'System.Security.Cryptography.Pkcs/8.0.2') {
+            throw "System.Security.Cryptography.Pkcs 8.0.2 is required before distribution: $depsPath"
+        }
+        $binaryVersions['System.Security.Cryptography.Pkcs.dll'] = '8.0.3326.52219'
         $imageLibraries = @($deps.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'SixLabors.ImageSharp/*' })
         if ($imageLibraries.Count -ne 1 -or $imageLibraries[0] -ne 'SixLabors.ImageSharp/4.1.2') {
             throw "ImageSharp 4.1.2 is required before distribution: $depsPath"
@@ -338,6 +378,7 @@ try {
     Assert-RequiredFile -Path $changelogPath -Label 'CHANGELOG.md'
     Assert-RequiredFile -Path $issFile -Label 'Inno Setup script'
     Assert-PublishDirectoryIsSafe -RepositoryRoot $repoRoot -PublishDirectory $publishDir
+    Expand-BundledFfmpeg -PayloadRoot $appSourceDir
     Assert-BundledFfmpegPayload -PayloadRoot $appSourceDir -Label 'Bundled FFmpeg source payload'
     Assert-DistributionNoticeSources -RepositoryRoot $repoRoot
 
@@ -366,13 +407,13 @@ try {
 
     Write-Host 'Restoring locked dependencies...' -ForegroundColor Cyan
     # A locally prepared official SDK is convenient without changing the machine installation.
-    $localSdk = Join-Path $repoRoot '.buildcheck\sdk\8.0.425'
+    $localSdk = Join-Path $repoRoot '.buildcheck\sdk\8.0.427'
     if (Test-Path -LiteralPath (Join-Path $localSdk 'dotnet.exe') -PathType Leaf) {
         $env:PATH = "$localSdk;$env:PATH"
         $env:DOTNET_CLI_HOME = Join-Path $repoRoot '.buildcheck\dotnet-home'
     }
     $sdkVersion = (& dotnet --version | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $sdkVersion -ne '8.0.425') { throw 'The release requires .NET SDK 8.0.425.' }
+    if ($LASTEXITCODE -ne 0 -or $sdkVersion -ne '8.0.427') { throw 'The release requires .NET SDK 8.0.427.' }
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'

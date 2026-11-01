@@ -1,4 +1,7 @@
 # Build outputs
+# Materialized from the verified ZIP during build; the archive stays in Git.
+src/FrameShift/Tools/ffmpeg/ffmpeg.exe
+src/FrameShift/Tools/ffmpeg/ffprobe.exe
 **/bin/
 **/obj/
 publish/

@@ -62,7 +62,7 @@ BRIA RMBG-2.0 的均衡与高质量模式需要用户自行从 [BRIA 官方模�
 
 ## 源码开发
 
-请在 Windows 上安装 **.NET SDK 8.0.425**。仓库的 [global.json](global.json) 锁定该版本，禁用自动滚动至其他 SDK；仅安装较新 SDK 不能替代所要求的版本。
+请在 Windows 上安装 **.NET SDK 8.0.427**。仓库的 [global.json](global.json) 锁定该版本，禁用自动滚动至其他 SDK；仅安装较新 SDK 不能替代所要求的版本。
 
 在仓库根目录使用 PowerShell 执行：
 
@@ -75,7 +75,7 @@ dotnet test .\tests\FrameShift.Tests\FrameShift.Tests.csproj --no-restore
 dotnet run --project .\src\FrameShift\FrameShift.csproj
 ```
 
-`dotnet --version` 应显示 `8.0.425`。上述测试和运行命令使用默认开发配置；它们不生成可分发安装包。依赖还原需要访问配置的包源，应用运行还依赖项目中配置的 FFmpeg、FFprobe 和原生资源。
+`dotnet --version` 应显示 `8.0.427`。上述测试和运行命令使用默认开发配置；它们不生成可分发安装包。依赖还原需要访问配置的包源，应用运行还依赖项目中配置的 FFmpeg、FFprobe 和原生资源。
 
 直接从源码启动时，若没有保存的语言偏好或安装语言文件，应用程序默认使用英文。可在“设置”中选择简体中文，然后重新启动。
 

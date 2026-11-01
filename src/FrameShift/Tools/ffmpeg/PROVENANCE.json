@@ -1,0 +1,29 @@
+{
+  "provider": "Gyan Doshi",
+  "build": "2026-10-29-git-31ba826726-essentials_build-www.gyan.dev",
+  "sourceRevision": "31ba826726fd0d1547f2c22e041848d1d7f3f860",
+  "sourceUrl": "https://github.com/FFmpeg/FFmpeg/commit/31ba826726fd0d1547f2c22e041848d1d7f3f860",
+  "vendorArchiveUrl": "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-2026-10-29-git-31ba826726-essentials_build.7z",
+  "vendorArchiveSha256": "94C9D4EAE0817F4C2CC8C78FE2D001DB347CE4A433A52F1D9312FF6A886451F8",
+  "repositoryArchive": "ffmpeg-tools.zip",
+  "repositoryArchiveSha256": "AD1A117ECE468DC5888FD735C6421AA5B80E954353C88FBAD01BC970E98AF524",
+  "repositoryArchiveBytes": 81769492,
+  "binariesUnmodified": true,
+  "license": "GPL-3.0-or-later",
+  "binaries": {
+    "ffmpeg.exe": { "bytes": 108702720, "sha256": "557E97AF30A1C9B6DFBD08A1D2A04894279DD15A77D23B1723E560CC7F4FC90E" },
+    "ffprobe.exe": { "bytes": 108486656, "sha256": "11CB2352BAC147BB8906F567AF9AF1DA3779ECA73E7A71A49A81C7D277E289CD" }
+  },
+  "verifiedSecurityFixAncestors": [
+    {
+      "commit": "969c7eb091989a664cb7bf66a1f02051cc46cb52",
+      "description": "Avoid stack exhaustion when freeing MOV/MP4 encryption init-info lists (CVE-2026-107678).",
+      "comparison": "https://github.com/FFmpeg/FFmpeg/compare/969c7eb091989a664cb7bf66a1f02051cc46cb52...31ba826726fd0d1547f2c22e041848d1d7f3f860"
+    },
+    {
+      "commit": "2c2f6e96e31795ae95a8f8323a493ffbc493111f",
+      "description": "Fix uninitialized bytes in HDR10+ metadata serialization.",
+      "comparison": "https://github.com/FFmpeg/FFmpeg/compare/2c2f6e96e31795ae95a8f8323a493ffbc493111f...31ba826726fd0d1547f2c22e041848d1d7f3f860"
+    }
+  ]
+}

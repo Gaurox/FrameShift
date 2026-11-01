@@ -58,6 +58,13 @@ The only official release command is:
 
 `build_installer.ps1` is the canonical, blocking workflow. In order, it validates the required files, version/changelog and clean Git state; verifies the pinned SHA-256 values of the bundled FFmpeg and FFprobe binaries; restores all projects with `--locked-mode`; runs `dotnet test` in Release with `--no-restore`; clears only `publish\FrameShift-win-x64`; publishes a self-contained `win-x64` payload with `--no-restore`; verifies the application, the FFmpeg/FFprobe payload hashes, subtitle-worker payload and the static distribution-notice set; then compiles Inno Setup from that exact publish directory. Any required failure, including an unavailable or failing Inno compiler, returns a non-zero exit code. Use `-AllowDirty` only for an intentional local build from a dirty tree.
 
+Version 1.22 requires SDK **8.0.427**, bundled runtime **8.0.33** and PKCS **8.0.2**.
+The verified `src/FrameShift/Tools/ffmpeg/ffmpeg-tools.zip` is tracked instead of the
+two executables, which exceed GitHub's individual file limit. SDK builds extract
+the tools automatically; the canonical script verifies the archive before extracting
+missing/old binaries, then checks binary hashes in both source and output. Extraction
+is offline. The ZIP and development provenance files must not enter the installer.
+
 `build_all.ps1`, `build_publish.ps1`, and `build_publish.bat` are compatibility wrappers to the same workflow. They do not offer optional test, publish-only, or installer-skipping modes.
 
 Manual steps after the script completes:
