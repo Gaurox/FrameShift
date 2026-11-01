@@ -219,6 +219,53 @@ Evidence: `scratch/release-1.22-ptbr-targeted.log`,
 `scratch/release-1.22-ptbr-screenshots/`, and
 `scratch/release-1.22-ptbr-ui-probe.log`.
 
+## Current four-language candidate
+
+The clean canonical `build_installer.ps1` completed on 1 November 2026 from
+`b1ac337dac3b128148b733a25935c4bf24bf9230`, without `-AllowDirty` or `-RunInstaller`.
+All three locked restores, Release compilation, mandatory tests, self-contained
+win-x64 publication, payload/runtime/tool/notice checks and Inno Setup 6.7.1
+compilation pass. The canonical build reports no compiler or restore warnings.
+
+- **1,032 passed, 0 failures, 17 conditional skips, 1,049 total**, in **5 m 47 s**.
+  The existing six OCR, six real-model AI and five subtitle cases retain their
+  activation/model/corpus requirements; they are not counted as passing.
+- The payload contains **806 files**, with exactly the Chinese, Spanish and
+  Brazilian Portuguese satellite assemblies for both the application and worker,
+  alongside English neutral resources. No additional FrameShift translation, loop types,
+  private licence files, model weights, debug symbols or test assemblies are packaged.
+- Managed metadata verifies eight app/worker/resource assemblies and their expected
+  resource names. The application is 1.22.0.0, with product version
+  `1.22.0+b1ac337dac3b128148b733a25935c4bf24bf9230`. The worker remains 1.18.1.0;
+  both self-contained runtimes remain 8.0.31.
+- An isolated process loads the actual published application and worker assemblies
+  and invokes their shared language initializer/resource loader. **14 lookups pass**:
+  all four languages, Brazilian Portuguese aliases and English fallback for `pt-PT`,
+  with numeric culture preserved. This verifies packaged language selection and text
+  without starting native models; it does not claim model inference or installed
+  acceptance. The actual worker links the same catalog/loader and receives the
+  existing `FRAMESHIFT_UI_LANGUAGE` environment setting.
+
+| Current artifact | Size | SHA-256 |
+| --- | --- | --- |
+| `installer/FrameShift_1.22.0_Setup.exe` | 175,442,780 bytes | `C18C78C9F0DA3745535EA28C50F77F5DA4232CDD4DDAF4E02C6A0976936F652A` |
+| Application DLL | 5,586,944 bytes | `E0302A293ECA23B4B77901059B095C7C971F4F68C85D531E2F76294797223920` |
+| Subtitle worker DLL | 296,448 bytes | `68FE0A3A0568E50F75E5D8A2279512A2194B742E01E1A0C6F1A45D546796B7D2` |
+| Application Chinese satellite | 260,608 bytes | `6F160EAE7572CCA2F7E28371F1792E6948E0304B28A2CC64364101C53D816A2F` |
+| Application Spanish satellite | 272,896 bytes | `BA572D392A3E58A23541F4054DD36C80FCC3A300721EA1CCFE0F687F5917C2F3` |
+| Application Brazilian Portuguese satellite | 273,920 bytes | `727359D20D26DF0E51737DD75EADF9FF47CD38981BEFEC46386C510B4EE95445` |
+| Worker Chinese satellite | 260,608 bytes | `57D8142329910D0D84291B2290521D21402E1C59D06EC3BFA591C645B1660424` |
+| Worker Spanish satellite | 272,896 bytes | `8108D0DAD5247A91DCD9D804879E5E9DB64B9D3D10F0450BC2CDB5121DC75577` |
+| Worker Brazilian Portuguese satellite | 273,920 bytes | `4A5DFA51A0F77AB6605576D1A1DF0FDF107E2A66045920E7C7FE4309D57F31E7` |
+
+The installer was **not run**; nothing was pushed or published. The checksum beside
+the installer identifies this exact candidate. Documentation/checksum commits after
+the clean source build do not change its binaries. Evidence:
+`scratch/release-1.22-ptbr-canonical.log`,
+`scratch/release-1.22-ptbr-managed-metadata.jsonl`,
+`scratch/release-1.22-ptbr-packaged-languages.jsonl`, and
+`builds/release-1.22-ptbr/artifact-verification.json`.
+
 ## Work before a public release
 
 - Qualify the dependency/runtime maintenance identified by the retained audit work:
