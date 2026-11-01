@@ -1,6 +1,6 @@
 # FrameShift 1.22.0 multilingual preparation
 
-Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish candidate,
+Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish/Brazilian Portuguese candidate,
 based on published 1.21.1 and the six general correction lots. It contains no Find
 Loop code. The former private loop candidate is preserved separately; see the
 [branch plan](RELEASE_PLAN_1.22_1.23.md). Nothing is pushed, installed or published
@@ -110,7 +110,7 @@ The installer, checksum, qualification and report are archived in that same fold
 The [translation procedure](LOCALIZATION.md#adding-a-future-language) documents the
 remaining explicit installer registration and translation/layout acceptance work.
 
-## Spanish addition
+## Spanish addition (archived candidate)
 
 - The catalog now registers neutral Spanish (`es`), including regional preferences
   such as `es-ES`, `es-MX` and `es-AR`, with no new architecture or dependencies.
@@ -143,7 +143,7 @@ The isolated UI probe's restore reports NU1900 because the sandbox cannot reach 
 NuGet vulnerability feed. It is not a completed vulnerability audit; the canonical
 release build below performs its own locked restores and required checks.
 
-## Current English/Chinese/Spanish candidate
+## English/Chinese/Spanish candidate (archived)
 
 The clean canonical `build_installer.ps1` completed on 1 November 2026 from
 `63703429fe4e9e11a6bf012aad5cee2305c22a1a`, without `-AllowDirty` or `-RunInstaller`.
@@ -178,13 +178,46 @@ compilation pass. The canonical build reports no compiler or restore warnings.
 | Worker Chinese satellite | 260,608 bytes | `367917344CEE2E7707C2BB3CA04A4D9F2301A5DC86728C970411FE54E9258E5A` |
 | Worker Spanish satellite | 272,896 bytes | `9C09371763B635B076529835F6294763F2D206B92F231BF06C8AC361CFE910EC` |
 
-The installer was **not run**; nothing was pushed or published. The checksum beside
-the installer identifies this exact candidate. Documentation/checksum commits after
+The installer was **not run**; nothing was pushed or published. This installer, its
+checksum, qualification and artifact report are archived under
+`builds/release-1.22-spanish/`. The checksum beside the installer identifies the newest
+candidate. Documentation/checksum commits after
 the clean source build do not change its binaries. Evidence:
 `scratch/release-1.22-spanish-canonical.log`,
 `scratch/release-1.22-spanish-worker/probe.log`,
 `scratch/release-1.22-spanish-managed-metadata.jsonl`, and
 `builds/release-1.22-spanish/artifact-verification.json`.
+
+## Brazilian Portuguese addition
+
+- The existing shared catalog registers **`pt-BR` / Português (Brasil)** and the
+  installer alias `brazilianportuguese`. Generic `pt` and `pt-PT` remain unsupported
+  and fall back to English. No new framework, dependency or per-form language logic
+  is introduced. English, Chinese and Spanish application resources are unchanged.
+- All **1,790 resources** are translated into Brazilian Portuguese, including
+  actions, dialogs, progress, errors and the subtitle worker. Composite format
+  specifiers, arguments, newlines and file-filter patterns are preserved. Contextual
+  labels distinguish the light theme from light denoising and clearing a composition
+  from clearing icon-size selections.
+- All **139 installer custom messages** are present in Brazilian Portuguese, alongside
+  the three existing complete sets. The vendored official `BrazilianPortuguese.isl`
+  matches the pinned Inno Setup 6.7.1 source; its credits and licence are retained.
+- **48 targeted Release tests pass, 0 failures, 0 skips**, covering every registered
+  resource, installer agreement, aliases, numeric culture, stable action IDs, language
+  persistence, four Settings renders and six narrow/long-caption layout cases.
+- A separate hidden WinForms process initializes `pt-BR` before action catalogs and
+  verifies **43 translated actions at 360 and 580 pixels**, with action buttons and
+  search controls inside their containers. The Settings and 360-pixel action renders
+  were inspected. Neither probe writes user preferences or installs the app.
+- `README.pt-BR.md` covers usage, all feature families, models, development and
+  packaging. All four READMEs link to each other; local links and images resolve.
+  Credits for zhazhayu01's Chinese translation, README and narrow-window correction
+  are retained. Native-speaker linguistic review and installed acceptance are pending.
+
+Evidence: `scratch/release-1.22-ptbr-targeted.log`,
+`scratch/release-1.22-ptbr/localization-ptbr.trx`,
+`scratch/release-1.22-ptbr-screenshots/`, and
+`scratch/release-1.22-ptbr-ui-probe.log`.
 
 ## Work before a public release
 
@@ -193,7 +226,7 @@ the clean source build do not change its binaries. Evidence:
   ImageSharp 4.1.2 pins are unchanged by the localization work. Recheck appropriate
   versions and the transitive vulnerability scan before public distribution.
 - Validate a fresh install, upgrade from published 1.21.1, switching the installer
-  language, Explorer component selection and uninstall in all three languages. In particular,
+  language, Explorer component selection and uninstall in all four languages. In particular,
   foreign model files and existing user preferences must survive.
 - Check actual Windows font scaling/DPI, keyboard/accessibility, both themes and
   native menu rendering. Hidden render/layout tests do not replace this acceptance.

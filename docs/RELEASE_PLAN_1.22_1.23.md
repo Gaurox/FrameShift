@@ -44,5 +44,6 @@ loop documentation were not copied into the new release.
 
 The Chinese contribution is pinned at `f078b0c`; its resource-based integration
 and language behavior are described in [LOCALIZATION.md](LOCALIZATION.md).
-The later Spanish addition uses the same catalog and resource mechanism; the final
-1.22 candidate includes English, simplified Chinese and Spanish, with no loop code.
+The later Spanish and Brazilian Portuguese additions use the same catalog and
+resource mechanism; the final 1.22 candidate includes English, simplified Chinese,
+Spanish and Brazilian Portuguese, with no loop code.

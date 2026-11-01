@@ -14,8 +14,15 @@ other contributors. Its version is 1.7.1 (20250625). `INNO-LICENSE.txt` also app
 
 SHA-256 of the vendored file: `C61EE6287D6A10DB186CCE43B556422E0A8BC631784132468A9CEBCA4F2DF0D5`.
 
+`BrazilianPortuguese.isl` is the unmodified Brazilian Portuguese translation shipped
+with Inno Setup 6.7.1, also available at
+[jrsoftware/issrc, tag is-6_7_1](https://github.com/jrsoftware/issrc/blob/is-6_7_1/Files/Languages/BrazilianPortuguese.isl).
+Its header credits Cesar82 and remains unchanged. `INNO-LICENSE.txt` also applies.
+
+SHA-256 of the vendored file: `E7E5E3DBD0DDEE4C5A1F502F3035E431A21F87E68CEF9A0295680B63ED61200B`.
+
 FrameShift's own component, Explorer and Pascal-script messages live in the
-`[CustomMessages]` section of `../FrameShift.iss`, with `english`, `chinesesimp`
-and `spanish` entries. All three languages use the same payload, application ID,
+`[CustomMessages]` section of `../FrameShift.iss`, with `english`, `chinesesimp`,
+`spanish` and `brazilianportuguese` entries. All four languages use the same payload, application ID,
 component IDs and command lines. The installer stores its application language
 default in `{app}/language.txt`; uninstall removes that owned file.

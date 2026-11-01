@@ -2,15 +2,16 @@
 
 Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
 
-- **English, simplified Chinese and Spanish:** one application and installer, translated
+- **English, simplified Chinese, Spanish and Brazilian Portuguese:** one application and installer, translated
   settings, tools, progress and errors, with optional Explorer menus in the
   installer's selected language. An application preference applies on next launch.
   Chinese translation and narrow-window corrections originate from
   [zhazhayu01](https://github.com/zhazhayu01/FrameShift).
 - **Future translations:** a shared language catalog supplies Settings and language
   resolution; resource files are included automatically in the subtitle worker.
-  Version 1.22 ships English, simplified Chinese and neutral Spanish (`es`), including
-  the installer and linked READMEs. Regional Spanish preferences use this translation.
+  Version 1.22 ships English, simplified Chinese, neutral Spanish (`es`) and Brazilian
+  Portuguese (`pt-BR`), including the installer and four linked READMEs. Regional
+  Spanish preferences use the neutral Spanish translation.
 - **Media integrity and cancellation:** reject unsupported multichannel separation,
   preserve transparent upscale pixels and existing write-probe files, propagate
   cancellation to FFmpeg and interrupt native noise-removal inference.

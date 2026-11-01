@@ -60,6 +60,12 @@ public sealed class LocalizationTests
     [InlineData("es-MX", "es")]
     [InlineData("es-AR", "es")]
     [InlineData(" es_ES ", "es")]
+    [InlineData("pt-BR", "pt-BR")]
+    [InlineData("PT-br", "pt-BR")]
+    [InlineData(" pt_BR ", "pt-BR")]
+    [InlineData("brazilianportuguese", "pt-BR")]
+    [InlineData("pt-PT", "en")]
+    [InlineData("pt", "en")]
     [InlineData(null, "en")]
     [InlineData(" ", "en")]
     [InlineData("invalid/culture", "en")]
@@ -139,6 +145,7 @@ public sealed class LocalizationTests
     [Theory]
     [InlineData("zh-Hans-CN", "zh-CN")]
     [InlineData("es-MX", "es")]
+    [InlineData("pt_BR", "pt-BR")]
     public void DisplayLanguageInitialization_LeavesNumericCultureUnchanged(string language, string expected)
     {
         var previousUiCulture = CultureInfo.CurrentUICulture;
@@ -161,6 +168,7 @@ public sealed class LocalizationTests
     [Theory]
     [InlineData("zh-CN", "视频", "转换")]
     [InlineData("es", "video", "Convertir")]
+    [InlineData("pt-BR", "vídeo", "Converter")]
     public void LocalizedMessages_PreserveUnicodePaths_AndInternalActionValues(string language, string mediaName, string actionName)
     {
         var previous = CultureInfo.CurrentUICulture;
@@ -181,6 +189,7 @@ public sealed class LocalizationTests
     [InlineData("en", "FrameShift - Settings", "System")]
     [InlineData("zh-CN", "FrameShift - 设置", "跟随系统")]
     [InlineData("es", "FrameShift - Configuración", "Sistema")]
+    [InlineData("pt-BR", "FrameShift - Configurações", "Sistema")]
     public void Settings_RenderInSupportedLanguages_WithStablePreferenceValues(string language, string title, string systemTheme)
     {
         StaTest.Run(() =>
@@ -223,6 +232,7 @@ public sealed class LocalizationTests
     [Theory]
     [InlineData("zh-Hans", "zh-CN")]
     [InlineData("es-MX", "es")]
+    [InlineData("pt_br", "pt-BR")]
     public void LanguagePreference_RoundTrips_WithoutDroppingExistingSettings(string language, string expected)
     {
         var directory = Path.Combine(Path.GetTempPath(), "FrameShift language été 中文 " + Guid.NewGuid().ToString("N"));

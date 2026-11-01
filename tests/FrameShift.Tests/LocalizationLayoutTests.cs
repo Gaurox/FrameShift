@@ -13,6 +13,8 @@ public sealed class LocalizationLayoutTests
     [InlineData(360, "提取文字和调整图像尺寸 - ")]
     [InlineData(580, "Extraer texto y cambiar tamaño de imagen - ")]
     [InlineData(360, "Extraer texto y cambiar tamaño de imagen - ")]
+    [InlineData(580, "Extrair texto e aumentar resolução da imagem - ")]
+    [InlineData(360, "Extrair texto e aumentar resolução da imagem - ")]
     public void LongLocalizedActionCaptions_KeepSearchAndButtonsInsideTheViewport(int width, string prefix)
     {
         StaTest.Run(() =>

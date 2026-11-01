@@ -1,10 +1,10 @@
 # FrameShift
 
-🌐 **English** | [简体中文](README.zh-CN.md) | [Español](README.es.md)
+🌐 **English** | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md)
 
 The published version remains **1.21.1**. The **unpublished 1.22.0 preparation** adds
-English, simplified Chinese, Spanish and general reliability fixes; Find Loop is reserved for
-1.23. See the [draft notes](docs/RELEASE_NOTES_1.22.0.md) and
+English, simplified Chinese, Spanish, Brazilian Portuguese and general reliability
+fixes; Find Loop is reserved for 1.23. See the [draft notes](docs/RELEASE_NOTES_1.22.0.md) and
 [branch separation](docs/RELEASE_PLAN_1.22_1.23.md).
 
 **Special thanks to [zhazhayu01](https://github.com/zhazhayu01)** for the simplified
