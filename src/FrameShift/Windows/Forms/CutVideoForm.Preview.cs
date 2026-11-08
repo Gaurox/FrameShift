@@ -62,8 +62,8 @@ public sealed partial class CutVideoForm
             bitmap = null; // The form now owns the image.
             _labelPreviewState.Text = position is null
                 ? L.Format("CutVideoForm_Preview_Previewing_0_frame_1_2_439822df",Capitalize(boundary),frame,CutVideoMath.FormatPreciseTime(seconds))
-                : $"Previewing {Capitalize(boundary)} native frame at {CutVideoMath.FormatPreciseTime(seconds)}" +
-                    (boundary == "end" ? " (last included image; end time is exclusive)" : "");
+                : L.Format("Loop_NativePreview", Capitalize(boundary), CutVideoMath.FormatPreciseTime(seconds)) +
+                    (boundary == "end" ? L.Get("Loop_LastIncluded") : "");
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         catch (VideoLoopSourceChangedException) { InvalidateChangedSource(); }

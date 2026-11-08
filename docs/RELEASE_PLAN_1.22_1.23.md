@@ -17,9 +17,13 @@ output helpers are merged with the published code rather than replaced.
 All 1,843 existing entries in each of the five display-resource files are
 unchanged. Existing localized Cut Video, preview and queue messages remain in
 use. Three translated footer commands (Export Selection / Loop / SDR Loop) are
-added in all five languages, with a context-switch regression test. The remaining
-new Find Loop controls, analysis/status messages and errors still contain the
-historical English wording: full localization is an explicit next step.
+added in the initial integration, with a context-switch regression test. The
+9 November localization follow-up adds the remaining 160 Find Loop resources
+in all five languages: **163 Find Loop keys, 2,006 total entries per catalog**.
+Controls, candidate assessments/columns, accessibility instructions, progress,
+preview descriptions, HDR/color messages, resource/error messages and CLI errors
+now use the existing `L.Get` / `L.Format` mechanism. CLI values, candidate IDs,
+FFmpeg parameters, filenames and raw diagnostics retain their existing contracts.
 
 The published installer script, dependency locks, SDK/runtime pins, verified
 FFmpeg archive, release notes, checksums and translated READMEs are preserved.
@@ -39,7 +43,7 @@ Find Loop/bounded-capture/queue run passes **334 tests, 0 failures, 1 skip**
 workflows; it does not establish manual visual/DPI acceptance. Its local TRX is
 `scratch/loop-1.23-tests/find-loop-integration.trx`.
 
-The final complete Release suite finishes on **9 November 2026** with **1,409
+The integration baseline's complete Release suite finishes on **9 November 2026** with **1,409
 passed, 0 failures, 18 conditional skips, 1,427 total** in **9 m 7 s**. All five
 new multilingual context-switch cases pass. Skips require opt-in settings or
 unavailable OCR/AI fixtures, plus the optional loop benchmark. The final TRX is
@@ -48,10 +52,23 @@ is `scratch/loop-1.23-translation-preservation.json`. Compilation and Git
 whitespace checks pass. This is source/build/automated-test validation, with no
 installer or manual Windows acceptance claimed.
 
+The **9 November localization follow-up** builds successfully in Release with the
+same SDK and locked dependencies. Its final targeted run passes **229 tests,
+0 failures, 0 skips** in **3 m 55 s**, covering registered-resource coverage and
+format arguments, existing language/Explorer behavior, all Find Loop WinForms
+tests, color policy, resource limits and loop contracts. Five new cases exercise
+localized candidates and batch descriptions under a comma-decimal numeric culture,
+preserving exact bounds, candidate IDs and CLI values. The local evidence is
+`scratch/loop-1.23-localization-tests/localization-final.trx` and `resources.json`
+in that directory. All 1,843 published entries per language remain unchanged.
+The full-suite result above predates this text-only localization follow-up;
+the complete suite has not been rerun for this step. Interactive visual/DPI
+and installer acceptance remain pending.
+
 Next work before a 1.23 candidate:
 
-1. Complete Find Loop resources in all registered languages and check long labels,
-   candidate columns, keyboard access and narrow layouts.
+1. Visually review translated long labels, candidate columns, keyboard access and
+   narrow layouts in the interactive Windows acceptance; resource translation is complete.
 2. Qualify the integrated feature with the serviced FFmpeg/.NET payload; retain
    historical limits for real HDR footage and perceptual loop quality.
 3. Complete interactive Windows acceptance (DPI/text scaling, themes, actual

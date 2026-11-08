@@ -5553,4 +5553,484 @@
   <data name="Loop_ExportSdr" xml:space="preserve">
     <value>导出 SDR 循环</value>
   </data>
+  <data name="Loop_Find" xml:space="preserve">
+    <value>查找循环</value>
+  </data>
+  <data name="Loop_PreviewJunction" xml:space="preserve">
+    <value>预览衔接</value>
+  </data>
+  <data name="Loop_FullPreview" xml:space="preserve">
+    <value>完整循环预览</value>
+  </data>
+  <data name="Loop_CreatePingPong" xml:space="preserve">
+    <value>创建正放/倒放循环</value>
+  </data>
+  <data name="Loop_StopSearch" xml:space="preserve">
+    <value>停止查找</value>
+  </data>
+  <data name="Loop_StopPreview" xml:space="preserve">
+    <value>停止预览</value>
+  </data>
+  <data name="Loop_BackToCut" xml:space="preserve">
+    <value>返回剪切</value>
+  </data>
+  <data name="Loop_Advanced" xml:space="preserve">
+    <value>高级选项</value>
+  </data>
+  <data name="Loop_HideAdvanced" xml:space="preserve">
+    <value>隐藏高级选项</value>
+  </data>
+  <data name="Loop_Auto" xml:space="preserve">
+    <value>自动</value>
+  </data>
+  <data name="Loop_Strict" xml:space="preserve">
+    <value>严格</value>
+  </data>
+  <data name="Loop_Normal" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="Loop_Permissive" xml:space="preserve">
+    <value>宽松</value>
+  </data>
+  <data name="Loop_KeepAudio" xml:space="preserve">
+    <value>保留源音频（不分析衔接）</value>
+  </data>
+  <data name="Loop_PlaybackSpeed" xml:space="preserve">
+    <value>播放速度</value>
+  </data>
+  <data name="Loop_MinimumDuration" xml:space="preserve">
+    <value>最短时长</value>
+  </data>
+  <data name="Loop_MinimumHint" xml:space="preserve">
+    <value>秒（留空 = 自动）</value>
+  </data>
+  <data name="Loop_Sensitivity" xml:space="preserve">
+    <value>灵敏度</value>
+  </data>
+  <data name="Loop_ExportRepeats" xml:space="preserve">
+    <value>导出重复次数</value>
+  </data>
+  <data name="Loop_FullPreviewHint" xml:space="preserve">
+    <value>完整预览：三个连续的低分辨率循环。较长的选区可能超出临时空间限制；请改用“预览衔接”。</value>
+  </data>
+  <data name="Loop_ExportHint" xml:space="preserve">
+    <value>导出：在源文件旁创建不重名的 MP4。预览无声。</value>
+  </data>
+  <data name="Loop_Tools" xml:space="preserve">
+    <value>循环工具</value>
+  </data>
+  <data name="Loop_NaturalHint" xml:space="preserve">
+    <value>自然循环：请检查衔接。不分析音频连续性。</value>
+  </data>
+  <data name="Loop_PingPongHint" xml:space="preserve">
+    <value>正放/倒放：选区先正放再倒放，无音频。可变帧率视频使用源文件的平均帧率。</value>
+  </data>
+  <data name="Loop_SearchStopped" xml:space="preserve">
+    <value>查找已停止。保留当前选区。</value>
+  </data>
+  <data name="Loop_PreviewStopped" xml:space="preserve">
+    <value>预览已停止。</value>
+  </data>
+  <data name="Loop_MinimumInvalid" xml:space="preserve">
+    <value>最短时长须留空（自动）或为 0.1 至 600 秒之间的数值。</value>
+  </data>
+  <data name="Loop_MinimumRange" xml:space="preserve">
+    <value>最短时长须在 0.1 至 600 秒之间。此限制不影响源文件或候选片段的时长。</value>
+  </data>
+  <data name="Loop_Rendering" xml:space="preserve">
+    <value>正在渲染循环…</value>
+  </data>
+  <data name="Loop_SourceChanged" xml:space="preserve">
+    <value>源文件已更改。请重新打开“剪切视频”以刷新元数据和选区。</value>
+  </data>
+  <data name="Loop_SourceChangedPreview" xml:space="preserve">
+    <value>源文件在预览渲染期间已更改。请重新打开“剪切视频”以刷新元数据。</value>
+  </data>
+  <data name="Loop_PreviewComplete" xml:space="preserve">
+    <value>预览完成。可重播缓存的低分辨率预览，或检查全分辨率导出以查看细节。</value>
+  </data>
+  <data name="Loop_SelectionEmpty" xml:space="preserve">
+    <value>原生时间戳选区须至少包含一帧。</value>
+  </data>
+  <data name="Loop_NoCandidates" xml:space="preserve">
+    <value>此次查找未找到满意的自然循环候选。可保留当前选区、调整高级选项或创建正放/倒放循环。</value>
+  </data>
+  <data name="Loop_PreviousSelection" xml:space="preserve">
+    <value> 已保留先前选区。</value>
+  </data>
+  <data name="Loop_LimitedCoverage" xml:space="preserve">
+    <value> 采样或候选数量限制了查找范围；可能仍有其他循环。</value>
+  </data>
+  <data name="Loop_NativeNumbers" xml:space="preserve">
+    <value>  |  原生时间戳（已解码帧编号）</value>
+  </data>
+  <data name="Loop_ApproximateNumbers" xml:space="preserve">
+    <value>  |  原生时间戳（VFR 帧编号为近似值）</value>
+  </data>
+  <data name="Loop_CustomSelection" xml:space="preserve">
+    <value>  |  自定义选区</value>
+  </data>
+  <data name="Loop_IndexHint" xml:space="preserve">
+    <value>  |  索引完成前帧编号为近似值；以原生时间为准</value>
+  </data>
+  <data name="Loop_LastIncluded" xml:space="preserve">
+    <value> （最后包含的图像；结束时间不包含在选区内）</value>
+  </data>
+  <data name="Loop_Review" xml:space="preserve">
+    <value>需检查</value>
+  </data>
+  <data name="Loop_Promising" xml:space="preserve">
+    <value>有潜力</value>
+  </data>
+  <data name="Loop_Approximate" xml:space="preserve">
+    <value>近似</value>
+  </data>
+  <data name="Loop_SpeedInvalid" xml:space="preserve">
+    <value>循环速度须为 1、0.75 或 0.5；重复次数须为 1 至 10。</value>
+  </data>
+  <data name="Loop_SlowMotionOnly" xml:space="preserve">
+    <value>仅正放/倒放循环支持慢动作。</value>
+  </data>
+  <data name="Loop_PingPongSilent" xml:space="preserve">
+    <value>正放/倒放循环无声。不支持倒放音频。</value>
+  </data>
+  <data name="Loop_ModeRequired" xml:space="preserve">
+    <value>循环选项需要 --loop-mode natural|pingpong。</value>
+  </data>
+  <data name="Loop_ModeInvalid" xml:space="preserve">
+    <value>循环模式须为 natural 或 pingpong。</value>
+  </data>
+  <data name="Loop_AudioInvalid" xml:space="preserve">
+    <value>循环音频须为 keep 或 mute。</value>
+  </data>
+  <data name="Loop_CandidateIdRequired" xml:space="preserve">
+    <value>需要循环候选 ID。</value>
+  </data>
+  <data name="Loop_FiniteBounds" xml:space="preserve">
+    <value>循环边界须表示有限且非空的片段。</value>
+  </data>
+  <data name="Loop_SourceUnavailable" xml:space="preserve">
+    <value>视频源文件已不可用。</value>
+  </data>
+  <data name="Loop_FrameBoundsInvalid" xml:space="preserve">
+    <value>视频帧边界须为按顺序排列的正整数。</value>
+  </data>
+  <data name="Loop_NoDecodedFrames" xml:space="preserve">
+    <value>没有可用的已解码视频帧。</value>
+  </data>
+  <data name="Loop_PositiveFrameRequired" xml:space="preserve">
+    <value>需要正数帧编号。</value>
+  </data>
+  <data name="Loop_NoBoundaryFrame" xml:space="preserve">
+    <value>此边界没有可用的视频帧。</value>
+  </data>
+  <data name="Loop_NativeStepInvalid" xml:space="preserve">
+    <value>原生帧导航每次移动一帧。</value>
+  </data>
+  <data name="Loop_IndexBudget" xml:space="preserve">
+    <value>原生帧索引超出 256 MiB 限制。请使用时间边界选择此片段。</value>
+  </data>
+  <data name="Loop_NonIncreasingTimes" xml:space="preserve">
+    <value>视频原生时间戳并非严格递增。</value>
+  </data>
+  <data name="Loop_ReadTimingFailed" xml:space="preserve">
+    <value>无法读取原生帧时间。</value>
+  </data>
+  <data name="Loop_PreviewSourceUnavailable" xml:space="preserve">
+    <value>预览源文件已不可用。</value>
+  </data>
+  <data name="Loop_PreviewBoundsInvalid" xml:space="preserve">
+    <value>预览需要有限且非空的视频选区。</value>
+  </data>
+  <data name="Loop_PixelAspectInvalid" xml:space="preserve">
+    <value>源文件像素宽高比无效。</value>
+  </data>
+  <data name="Loop_FullClip" xml:space="preserve">
+    <value>完整循环预览：三个连续循环</value>
+  </data>
+  <data name="Loop_NaturalClip" xml:space="preserve">
+    <value>衔接预览：结束 → 开始（一个真实衔接）</value>
+  </data>
+  <data name="Loop_PingPongClip" xml:space="preserve">
+    <value>正放/倒放预览：两个连续循环，包含两个转折点</value>
+  </data>
+  <data name="Loop_EndTurn" xml:space="preserve">
+    <value>独立片段 1/2：结束转折点</value>
+  </data>
+  <data name="Loop_StartTurn" xml:space="preserve">
+    <value>独立片段 2/2：开始转折点</value>
+  </data>
+  <data name="Loop_ResolveHeldFrame" xml:space="preserve">
+    <value>正在解析衔接预览的最后一个保持帧…</value>
+  </data>
+  <data name="Loop_NoJunctionFrame" xml:space="preserve">
+    <value>此衔接没有可用的已解码帧。</value>
+  </data>
+  <data name="Loop_ReadableExportRequired" xml:space="preserve">
+    <value>导出循环需要可读取的视频。</value>
+  </data>
+  <data name="Loop_ExportFpsLimit" xml:space="preserve">
+    <value>循环导出目前支持最高 240 FPS 的视频。</value>
+  </data>
+  <data name="Loop_DestinationExists" xml:space="preserve">
+    <value>循环目标文件已存在。请选择不重名的输出路径。</value>
+  </data>
+  <data name="Loop_BoundsOutsideSource" xml:space="preserve">
+    <value>循环边界须表示源文件内的非空片段。</value>
+  </data>
+  <data name="Loop_ResolveBoundary" xml:space="preserve">
+    <value>正在解析循环边界…</value>
+  </data>
+  <data name="Loop_EncodingNatural" xml:space="preserve">
+    <value>正在编码自然循环周期…</value>
+  </data>
+  <data name="Loop_PreparingSelection" xml:space="preserve">
+    <value>正在准备循环选区…</value>
+  </data>
+  <data name="Loop_Assembling" xml:space="preserve">
+    <value>正在组装连续循环重复…</value>
+  </data>
+  <data name="Loop_AssemblingPhase" xml:space="preserve">
+    <value>组装循环重复</value>
+  </data>
+  <data name="Loop_NoSelectionFrame" xml:space="preserve">
+    <value>选区不包含视频帧。</value>
+  </data>
+  <data name="Loop_NoLoopFrame" xml:space="preserve">
+    <value>循环选区不包含已解码帧。</value>
+  </data>
+  <data name="Loop_PreviewTwoFrames" xml:space="preserve">
+    <value>正放/倒放预览需要至少两个已解码帧。</value>
+  </data>
+  <data name="Loop_PingPongThreeFrames" xml:space="preserve">
+    <value>正放/倒放循环需要至少三个已解码帧。</value>
+  </data>
+  <data name="Loop_PreparingBackward" xml:space="preserve">
+    <value>正在准备倒放帧…</value>
+  </data>
+  <data name="Loop_DecodingFailed" xml:space="preserve">
+    <value>循环解码失败。</value>
+  </data>
+  <data name="Loop_FrameTimesUnavailable" xml:space="preserve">
+    <value>循环帧时间戳不可用。</value>
+  </data>
+  <data name="Loop_FrameTicksUnavailable" xml:space="preserve">
+    <value>原生帧时钟刻度不可用。</value>
+  </data>
+  <data name="Loop_RgbMismatch" xml:space="preserve">
+    <value>循环帧尺寸与其 RGB 像素不匹配。</value>
+  </data>
+  <data name="Loop_ComparisonSizeMismatch" xml:space="preserve">
+    <value>循环帧须使用相同的比较尺寸。</value>
+  </data>
+  <data name="Loop_DimensionsRequired" xml:space="preserve">
+    <value>需要有效的视频尺寸和像素宽高比。</value>
+  </data>
+  <data name="Loop_VideoNotFound" xml:space="preserve">
+    <value>未找到视频。</value>
+  </data>
+  <data name="Loop_ReadableVideoRequired" xml:space="preserve">
+    <value>需要可读取且时长和帧率已知的视频。</value>
+  </data>
+  <data name="Loop_SearchFpsLimit" xml:space="preserve">
+    <value>查找循环目前支持最高 240 FPS 的视频。</value>
+  </data>
+  <data name="Loop_SearchMinimumRange" xml:space="preserve">
+    <value>循环最短时长须在 0.1 至 600 秒之间。</value>
+  </data>
+  <data name="Loop_ReadingEndpoints" xml:space="preserve">
+    <value>正在读取视频原生端点…</value>
+  </data>
+  <data name="Loop_DistributingMatches" xml:space="preserve">
+    <value>快速扫描：按区域和时长类别分配空间匹配…</value>
+  </data>
+  <data name="Loop_EndpointsChecked" xml:space="preserve">
+    <value>源文件端点已检查。</value>
+  </data>
+  <data name="Loop_DiskCheckFailed" xml:space="preserve">
+    <value>无法检查此循环的可用磁盘空间。</value>
+  </data>
+  <data name="Loop_ShorterPreview" xml:space="preserve">
+    <value>请使用“预览衔接”或选择更短的片段。</value>
+  </data>
+  <data name="Loop_ShorterSegment" xml:space="preserve">
+    <value>请选择更短的片段。</value>
+  </data>
+  <data name="Loop_RenderingFailed" xml:space="preserve">
+    <value>循环渲染失败。</value>
+  </data>
+  <data name="Loop_TemporaryBudgetExceeded" xml:space="preserve">
+    <value>循环渲染超出 8 GB 临时空间限制。</value>
+  </data>
+  <data name="Loop_DiskFull" xml:space="preserve">
+    <value>循环渲染：磁盘空间不足，无法安全继续。</value>
+  </data>
+  <data name="Loop_ExportCanceled" xml:space="preserve">
+    <value>循环导出已取消。</value>
+  </data>
+  <data name="Loop_ExportFailed" xml:space="preserve">
+    <value>循环导出失败。</value>
+  </data>
+  <data name="Loop_CliBoundsRequired" xml:space="preserve">
+    <value>命令行循环导出需要明确的剪切边界。要使用查找循环，请不带循环命令行选项打开“剪切视频”。</value>
+  </data>
+  <data name="Loop_VideoLoop" xml:space="preserve">
+    <value>视频循环</value>
+  </data>
+  <data name="Loop_ColorRangeUnsupported" xml:space="preserve">
+    <value>不支持源文件的色彩范围；请检查其色彩元数据。</value>
+  </data>
+  <data name="Loop_HdrMetadataRequired" xml:space="preserve">
+    <value>HDR 转 SDR 需要 BT.2020 原色和 BT.2020 非恒定亮度矩阵。源元数据缺失或不一致。</value>
+  </data>
+  <data name="Loop_MatrixUnsupported" xml:space="preserve">
+    <value>源色彩矩阵不受支持或与 SDR 配置冲突。导出循环前请检查源色彩元数据。</value>
+  </data>
+  <data name="Loop_WideGamutMetadata" xml:space="preserve">
+    <value>SDR 广色域源元数据不完整或不受支持；需要 BT.2020 原色和非恒定亮度矩阵。</value>
+  </data>
+  <data name="Loop_WideGamutOutput" xml:space="preserve">
+    <value>SDR 广色域源 → SDR BT.709 输出（无 HDR 色调映射）。</value>
+  </data>
+  <data name="Loop_Sdr709Output" xml:space="preserve">
+    <value>SDR 源。循环输出：MP4/H.264 SDR BT.709。</value>
+  </data>
+  <data name="Loop_SdrOutput" xml:space="preserve">
+    <value>SDR 源。循环输出：MP4/H.264。</value>
+  </data>
+  <data name="Loop_TransferUnsupported" xml:space="preserve">
+    <value>源色彩传递函数缺失或不受支持。无法安全确定循环导出的 SDR/HDR；请检查源色彩元数据。</value>
+  </data>
+  <data name="Loop_UnspecifiedTransfer" xml:space="preserve">
+    <value>未指定色彩传递函数；循环输出使用 SDR 兼容路径。</value>
+  </data>
+  <data name="Loop_ColorFiltersFailed" xml:space="preserve">
+    <value>无法验证 FFmpeg 色彩转换滤镜。循环转换不可用。</value>
+  </data>
+  <data name="Loop_ExportAll" xml:space="preserve">
+    <value>导出全部候选（{0}）</value>
+  </data>
+  <data name="Loop_ColorReview" xml:space="preserve">
+    <value>{0} 衔接需要目视检查。导出前请预览。</value>
+  </data>
+  <data name="Loop_Unavailable" xml:space="preserve">
+    <value>循环不可用：{0}</value>
+  </data>
+  <data name="Loop_NativeUnavailable" xml:space="preserve">
+    <value>原生时间不可用：{0}</value>
+  </data>
+  <data name="Loop_ProxyReview" xml:space="preserve">
+    <value>{0}。低分辨率预览无声；请检查全分辨率导出以查看细节。</value>
+  </data>
+  <data name="Loop_PlaybackUnavailable" xml:space="preserve">
+    <value>循环播放不可用：{0}</value>
+  </data>
+  <data name="Loop_CandidatesFound" xml:space="preserve">
+    <value>{0} 个候选，除非按时长排序，否则优先显示最佳衔接。评估仅供参考；导出前请预览。</value>
+  </data>
+  <data name="Loop_SearchInProgress" xml:space="preserve">
+    <value>正在查找：目前有 {0} 个候选。结果更新时保留选区。</value>
+  </data>
+  <data name="Loop_TemporalCoverage" xml:space="preserve">
+    <value> 时间覆盖：分布窗口内共 {0:0.#} 秒；未采样窗口间隙。</value>
+  </data>
+  <data name="Loop_NativePreview" xml:space="preserve">
+    <value>正在预览{0}原生帧：{1}</value>
+  </data>
+  <data name="Loop_CandidateSummary" xml:space="preserve">
+    <value>{0} → {1}  |  {2:0.###} 秒  |  {3}</value>
+  </data>
+  <data name="Loop_DecodePreviewFailed" xml:space="preserve">
+    <value>循环预览解码失败：{0}</value>
+  </data>
+  <data name="Loop_MissingFilter" xml:space="preserve">
+    <value>FFmpeg 色彩转换所需的滤镜“{0}”缺失。请使用内置 FFmpeg；循环转换不可用。</value>
+  </data>
+  <data name="Loop_FastPass" xml:space="preserve">
+    <value>快速扫描：以 {0:0.###} FPS 分块扫描整个源文件…</value>
+  </data>
+  <data name="Loop_FastBlock" xml:space="preserve">
+    <value>快速扫描：块 {0}/{1}；{2} 个紧凑特征。</value>
+  </data>
+  <data name="Loop_PreciseChecked" xml:space="preserve">
+    <value>精确扫描：已检查 {0}/{1} 条分布轨迹。</value>
+  </data>
+  <data name="Loop_PreciseChecking" xml:space="preserve">
+    <value>精确扫描：正在检查轨迹 {0}/{1}…</value>
+  </data>
+  <data name="Loop_AnalysisComplete" xml:space="preserve">
+    <value>分析完成：{0} 个候选；已报告覆盖范围和限制。</value>
+  </data>
+  <data name="Loop_TerminationUnconfirmed" xml:space="preserve">
+    <value>无法确认媒体进程已终止。临时文件保留在“{0}”和“{1}”。</value>
+  </data>
+  <data name="Loop_PreparingPhase" xml:space="preserve">
+    <value>正在准备{0}</value>
+  </data>
+  <data name="Loop_DiskSpaceRequired" xml:space="preserve">
+    <value>{0}：磁盘空间不足（估计还需 {1:0.##} MB）。请选择更短的片段或释放磁盘空间。</value>
+  </data>
+  <data name="Loop_InvalidCliOption" xml:space="preserve">
+    <value>循环选项无效：{0}。请提供支持的选项及其值。</value>
+  </data>
+  <data name="Loop_HdrOutput" xml:space="preserve">
+    <value>HDR 源 → SDR 输出（BT.709）。{0} 色调映射；参考峰值 {1:0} 尼特{2}</value>
+  </data>
+  <data name="Loop_ReferenceDisplay" xml:space="preserve">
+    <value>（回退值/参考显示器）。</value>
+  </data>
+  <data name="Loop_TemporarySpaceRequired" xml:space="preserve">
+    <value>{0}估计需要 {1:0.##} GB 临时空间，超出 8 GB 限制。{2}</value>
+  </data>
+  <data name="Loop_QueueCandidate" xml:space="preserve">
+    <value>候选 {0}/{1} · {2:0.###} 秒 · {3} → {4}（不包含结束时间）</value>
+  </data>
+  <data name="Loop_PlanNatural" xml:space="preserve">
+    <value>自然循环周期</value>
+  </data>
+  <data name="Loop_PlanPreview" xml:space="preserve">
+    <value>预览</value>
+  </data>
+  <data name="Loop_PlanPingPong" xml:space="preserve">
+    <value>正放/倒放周期</value>
+  </data>
+  <data name="Loop_ColumnEnd" xml:space="preserve">
+    <value>结束（不包含）</value>
+  </data>
+  <data name="Loop_ColumnDuration" xml:space="preserve">
+    <value>时长</value>
+  </data>
+  <data name="Loop_ColumnJunction" xml:space="preserve">
+    <value>衔接</value>
+  </data>
+  <data name="Loop_DurationFormat" xml:space="preserve">
+    <value>0.###' 秒'</value>
+  </data>
+  <data name="Loop_Indexing" xml:space="preserve">
+    <value>首次访问正在索引原生帧；仍可取消…</value>
+  </data>
+  <data name="Loop_NativeTiming" xml:space="preserve">
+    <value>视频原生时间</value>
+  </data>
+  <data name="Loop_Candidates" xml:space="preserve">
+    <value>循环候选</value>
+  </data>
+  <data name="Loop_CandidateKeyboard" xml:space="preserve">
+    <value>使用方向键选择候选。Enter 或空格键恢复其原始边界。不包含结束时间。双击仅选择，不导出。</value>
+  </data>
+  <data name="Loop_RenderingJunction" xml:space="preserve">
+    <value>正在渲染衔接的短无声低分辨率预览…</value>
+  </data>
+  <data name="Loop_RenderingFull" xml:space="preserve">
+    <value>正在渲染三个连续的低分辨率循环…</value>
+  </data>
+  <data name="Loop_SilentPreview" xml:space="preserve">
+    <value>视频循环预览（无声）</value>
+  </data>
+  <data name="Loop_NativeCapture" xml:space="preserve">
+    <value>剪切视频原生帧预览</value>
+  </data>
+  <data name="Loop_CutPreview" xml:space="preserve">
+    <value>剪切视频预览</value>
+  </data>
 </root>

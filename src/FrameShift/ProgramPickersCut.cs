@@ -125,7 +125,7 @@ internal static partial class Program
         var hasCliCutOptions = CutVideoSettings.ContainsAnyOption(options);
         if (!hasCliCutOptions && options.Keys.Any(VideoLoopSettings.OptionNames.Contains))
         {
-            ShowCliError("Loop CLI export requires explicit cut boundaries. Open Cut Video without loop CLI options to use Find Loop.");
+            ShowCliError(L.Get("Loop_CliBoundsRequired"));
             return false;
         }
         if (hasCliCutOptions)
@@ -245,8 +245,8 @@ internal static partial class Program
             foreach (var item in cut.ToOptions()) options[item.Key] = item.Value;
             foreach (var item in selection.ToOptions()) options[item.Key] = item.Value;
             var bounds = selection.Bounds;
-            var description = $"Candidate {index + 1}/{selections.Count} · {bounds.DurationSeconds:0.###} s · " +
-                $"{CutVideoMath.FormatPreciseTime(bounds.StartSeconds)} → {CutVideoMath.FormatPreciseTime(bounds.EndSeconds)} (end exclusive)";
+            var description = L.Format("Loop_QueueCandidate", index + 1, selections.Count, bounds.DurationSeconds,
+                CutVideoMath.FormatPreciseTime(bounds.StartSeconds), CutVideoMath.FormatPreciseTime(bounds.EndSeconds));
             logger.Log($"Loop batch {description}; candidate {selection.CandidateId}; source '{source}'.");
             return new ActionRequest(source, logger, null, new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(options))
                 { QueueItemDescription = description, ExpectedLoopSource = selection.SourceStamp };

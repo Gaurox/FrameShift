@@ -72,6 +72,16 @@ each argument and its numeric format. Keep filenames, identifiers, state keys,
 regular expressions, raw FFmpeg diagnostics and processing parameters outside them.
 Display labels for enums and choices are separate from their stored values.
 
+Find Loop in the unpublished 1.23 integration uses 163 `Loop_*` resources in all
+five languages, including candidate columns/assessments, accessibility instructions,
+preview and search status, color/HDR decisions, disk/cancellation errors and CLI
+validation. Sensitivity labels are translated while their selection indexes still
+map to `LoopSensitivity`. Numeric export values, native bounds and candidate IDs
+remain invariant. Candidate duration cells retain numeric values for sorting and
+use a localized display format. The original 1.22 catalog entries are unchanged.
+Multilingual UI tests use a comma-decimal numeric culture to check that translated
+candidates still produce the exact same CLI values and native bounds.
+
 `ExplorerMenu_*` resources retain the installer's existing translations. The small
 Windows helper maps known installed menu paths to these resources; tests check all
 registered languages against the Inno messages and verify that only captions change.

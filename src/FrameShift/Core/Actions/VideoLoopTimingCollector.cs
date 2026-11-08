@@ -33,7 +33,7 @@ internal sealed class VideoLoopTimingCollector(int maximumFrames, Action<VideoLo
         if (observer is not null)
         {
             var native = Regex.Match(line, @"\bn:\s*\d+\s+pts:\s*(-?\d+)\s+pts_time:\s*\S+\s+duration:\s*(-?\d+)");
-            if (!native.Success || _denominator <= 0) throw new InvalidOperationException("Native frame ticks are unavailable.");
+            if (!native.Success || _denominator <= 0) throw new InvalidOperationException(L.Get("Loop_FrameTicksUnavailable"));
             observer(new(long.Parse(native.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture),
                 long.Parse(native.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture), _numerator, _denominator));
         }

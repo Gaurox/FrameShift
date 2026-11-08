@@ -5553,4 +5553,484 @@ Los archivos WAV se crean junto al origen, con nombres únicos.</value>
   <data name="Loop_ExportSdr" xml:space="preserve">
     <value>Exportar bucle SDR</value>
   </data>
+  <data name="Loop_Find" xml:space="preserve">
+    <value>Buscar bucle</value>
+  </data>
+  <data name="Loop_PreviewJunction" xml:space="preserve">
+    <value>Vista previa de unión</value>
+  </data>
+  <data name="Loop_FullPreview" xml:space="preserve">
+    <value>Vista previa completa</value>
+  </data>
+  <data name="Loop_CreatePingPong" xml:space="preserve">
+    <value>Crear bucle de ida y vuelta</value>
+  </data>
+  <data name="Loop_StopSearch" xml:space="preserve">
+    <value>Detener búsqueda</value>
+  </data>
+  <data name="Loop_StopPreview" xml:space="preserve">
+    <value>Parar vista previa</value>
+  </data>
+  <data name="Loop_BackToCut" xml:space="preserve">
+    <value>Volver al corte</value>
+  </data>
+  <data name="Loop_Advanced" xml:space="preserve">
+    <value>Opciones avanzadas</value>
+  </data>
+  <data name="Loop_HideAdvanced" xml:space="preserve">
+    <value>Ocultar opciones avanzadas</value>
+  </data>
+  <data name="Loop_Auto" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="Loop_Strict" xml:space="preserve">
+    <value>Estricta</value>
+  </data>
+  <data name="Loop_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Loop_Permissive" xml:space="preserve">
+    <value>Permisiva</value>
+  </data>
+  <data name="Loop_KeepAudio" xml:space="preserve">
+    <value>Conservar audio original (unión sin analizar)</value>
+  </data>
+  <data name="Loop_PlaybackSpeed" xml:space="preserve">
+    <value>Velocidad de reproducción</value>
+  </data>
+  <data name="Loop_MinimumDuration" xml:space="preserve">
+    <value>Duración mínima</value>
+  </data>
+  <data name="Loop_MinimumHint" xml:space="preserve">
+    <value>segundos (vacío = Automático)</value>
+  </data>
+  <data name="Loop_Sensitivity" xml:space="preserve">
+    <value>Sensibilidad</value>
+  </data>
+  <data name="Loop_ExportRepeats" xml:space="preserve">
+    <value>Repeticiones al exportar</value>
+  </data>
+  <data name="Loop_FullPreviewHint" xml:space="preserve">
+    <value>Vista previa completa: tres ciclos continuos a resolución reducida. Una selección larga puede superar el límite de espacio temporal; use Vista previa de unión.</value>
+  </data>
+  <data name="Loop_ExportHint" xml:space="preserve">
+    <value>Exportación: MP4 con nombre único junto al original. Vista previa sin sonido.</value>
+  </data>
+  <data name="Loop_Tools" xml:space="preserve">
+    <value>Herramientas de bucle</value>
+  </data>
+  <data name="Loop_NaturalHint" xml:space="preserve">
+    <value>Bucle natural: revise la unión. No se analiza la continuidad del audio.</value>
+  </data>
+  <data name="Loop_PingPongHint" xml:space="preserve">
+    <value>Ida y vuelta: la selección se reproduce hacia delante y luego hacia atrás, sin audio. VFR usa los FPS medios del original.</value>
+  </data>
+  <data name="Loop_SearchStopped" xml:space="preserve">
+    <value>Búsqueda detenida. Se conserva la selección actual.</value>
+  </data>
+  <data name="Loop_PreviewStopped" xml:space="preserve">
+    <value>Vista previa detenida.</value>
+  </data>
+  <data name="Loop_MinimumInvalid" xml:space="preserve">
+    <value>La duración mínima debe estar vacía (Automático) o ser un número entre 0.1 y 600 segundos.</value>
+  </data>
+  <data name="Loop_MinimumRange" xml:space="preserve">
+    <value>La duración mínima debe estar entre 0.1 y 600 segundos. Esto no limita la duración del original ni de los candidatos.</value>
+  </data>
+  <data name="Loop_Rendering" xml:space="preserve">
+    <value>Renderizando bucle...</value>
+  </data>
+  <data name="Loop_SourceChanged" xml:space="preserve">
+    <value>El original ha cambiado. Vuelva a abrir Cortar vídeo para actualizar sus metadatos y la selección.</value>
+  </data>
+  <data name="Loop_SourceChangedPreview" xml:space="preserve">
+    <value>El original cambió durante el renderizado de la vista previa. Vuelva a abrir Cortar vídeo para actualizar sus metadatos.</value>
+  </data>
+  <data name="Loop_PreviewComplete" xml:space="preserve">
+    <value>Vista previa terminada. Reproduzca la copia en caché o revise los detalles en una exportación a resolución completa.</value>
+  </data>
+  <data name="Loop_SelectionEmpty" xml:space="preserve">
+    <value>La selección con tiempos nativos debe contener al menos un fotograma.</value>
+  </data>
+  <data name="Loop_NoCandidates" xml:space="preserve">
+    <value>No se encontró un candidato natural satisfactorio. Conserve la selección, ajuste las opciones avanzadas o cree un bucle de ida y vuelta.</value>
+  </data>
+  <data name="Loop_PreviousSelection" xml:space="preserve">
+    <value> Se conserva la selección anterior.</value>
+  </data>
+  <data name="Loop_LimitedCoverage" xml:space="preserve">
+    <value> Cobertura limitada por el muestreo o el límite de candidatos; puede haber otros bucles.</value>
+  </data>
+  <data name="Loop_NativeNumbers" xml:space="preserve">
+    <value>  |  tiempos nativos (números de fotogramas decodificados)</value>
+  </data>
+  <data name="Loop_ApproximateNumbers" xml:space="preserve">
+    <value>  |  tiempos nativos (números de fotogramas aproximados para VFR)</value>
+  </data>
+  <data name="Loop_CustomSelection" xml:space="preserve">
+    <value>  |  Selección personalizada</value>
+  </data>
+  <data name="Loop_IndexHint" xml:space="preserve">
+    <value>  |  números aproximados hasta indexar; prevalecen los tiempos nativos</value>
+  </data>
+  <data name="Loop_LastIncluded" xml:space="preserve">
+    <value> (última imagen incluida; tiempo final excluido)</value>
+  </data>
+  <data name="Loop_Review" xml:space="preserve">
+    <value>Requiere revisión</value>
+  </data>
+  <data name="Loop_Promising" xml:space="preserve">
+    <value>Prometedor</value>
+  </data>
+  <data name="Loop_Approximate" xml:space="preserve">
+    <value>Aproximado</value>
+  </data>
+  <data name="Loop_SpeedInvalid" xml:space="preserve">
+    <value>La velocidad debe ser 1, 0.75 o 0.5; las repeticiones deben estar entre 1 y 10.</value>
+  </data>
+  <data name="Loop_SlowMotionOnly" xml:space="preserve">
+    <value>La cámara lenta solo está disponible para ida y vuelta.</value>
+  </data>
+  <data name="Loop_PingPongSilent" xml:space="preserve">
+    <value>Los bucles de ida y vuelta no tienen sonido. No se admite audio invertido.</value>
+  </data>
+  <data name="Loop_ModeRequired" xml:space="preserve">
+    <value>Las opciones de bucle requieren --loop-mode natural|pingpong.</value>
+  </data>
+  <data name="Loop_ModeInvalid" xml:space="preserve">
+    <value>El modo de bucle debe ser natural o pingpong.</value>
+  </data>
+  <data name="Loop_AudioInvalid" xml:space="preserve">
+    <value>El audio del bucle debe ser keep o mute.</value>
+  </data>
+  <data name="Loop_CandidateIdRequired" xml:space="preserve">
+    <value>Se requiere un ID de candidato de bucle.</value>
+  </data>
+  <data name="Loop_FiniteBounds" xml:space="preserve">
+    <value>Los límites del bucle deben definir un segmento finito y no vacío.</value>
+  </data>
+  <data name="Loop_SourceUnavailable" xml:space="preserve">
+    <value>El vídeo original ya no está disponible.</value>
+  </data>
+  <data name="Loop_FrameBoundsInvalid" xml:space="preserve">
+    <value>Los límites de fotogramas deben ser enteros positivos ordenados.</value>
+  </data>
+  <data name="Loop_NoDecodedFrames" xml:space="preserve">
+    <value>No hay fotogramas de vídeo decodificados disponibles.</value>
+  </data>
+  <data name="Loop_PositiveFrameRequired" xml:space="preserve">
+    <value>Se requiere un número de fotograma positivo.</value>
+  </data>
+  <data name="Loop_NoBoundaryFrame" xml:space="preserve">
+    <value>No hay un fotograma disponible en este límite.</value>
+  </data>
+  <data name="Loop_NativeStepInvalid" xml:space="preserve">
+    <value>La navegación nativa avanza un fotograma cada vez.</value>
+  </data>
+  <data name="Loop_IndexBudget" xml:space="preserve">
+    <value>El índice de fotogramas supera el límite de 256 MiB. Use límites de tiempo para esta selección.</value>
+  </data>
+  <data name="Loop_NonIncreasingTimes" xml:space="preserve">
+    <value>Los tiempos nativos del vídeo no son estrictamente crecientes.</value>
+  </data>
+  <data name="Loop_ReadTimingFailed" xml:space="preserve">
+    <value>No se pueden leer los tiempos nativos de los fotogramas.</value>
+  </data>
+  <data name="Loop_PreviewSourceUnavailable" xml:space="preserve">
+    <value>El original de la vista previa ya no está disponible.</value>
+  </data>
+  <data name="Loop_PreviewBoundsInvalid" xml:space="preserve">
+    <value>La vista previa requiere una selección finita y no vacía.</value>
+  </data>
+  <data name="Loop_PixelAspectInvalid" xml:space="preserve">
+    <value>La relación de aspecto de píxel del original no es válida.</value>
+  </data>
+  <data name="Loop_FullClip" xml:space="preserve">
+    <value>Vista previa completa: tres ciclos continuos</value>
+  </data>
+  <data name="Loop_NaturalClip" xml:space="preserve">
+    <value>Vista previa de unión: final → inicio (una unión real)</value>
+  </data>
+  <data name="Loop_PingPongClip" xml:space="preserve">
+    <value>Vista previa de ida y vuelta: dos ciclos continuos, ambos cambios de dirección</value>
+  </data>
+  <data name="Loop_EndTurn" xml:space="preserve">
+    <value>Clip separado 1/2: cambio de dirección final</value>
+  </data>
+  <data name="Loop_StartTurn" xml:space="preserve">
+    <value>Clip separado 2/2: cambio de dirección inicial</value>
+  </data>
+  <data name="Loop_ResolveHeldFrame" xml:space="preserve">
+    <value>Resolviendo el último fotograma mantenido para la vista previa de unión...</value>
+  </data>
+  <data name="Loop_NoJunctionFrame" xml:space="preserve">
+    <value>No hay un fotograma decodificado disponible para esta unión.</value>
+  </data>
+  <data name="Loop_ReadableExportRequired" xml:space="preserve">
+    <value>Se requiere un vídeo legible para exportar el bucle.</value>
+  </data>
+  <data name="Loop_ExportFpsLimit" xml:space="preserve">
+    <value>La exportación de bucles admite vídeos de hasta 240 FPS.</value>
+  </data>
+  <data name="Loop_DestinationExists" xml:space="preserve">
+    <value>El destino del bucle ya existe. Elija una ruta de salida única.</value>
+  </data>
+  <data name="Loop_BoundsOutsideSource" xml:space="preserve">
+    <value>Los límites del bucle deben definir un segmento no vacío dentro del original.</value>
+  </data>
+  <data name="Loop_ResolveBoundary" xml:space="preserve">
+    <value>Resolviendo el límite del bucle...</value>
+  </data>
+  <data name="Loop_EncodingNatural" xml:space="preserve">
+    <value>Codificando el ciclo del bucle natural...</value>
+  </data>
+  <data name="Loop_PreparingSelection" xml:space="preserve">
+    <value>Preparando la selección del bucle...</value>
+  </data>
+  <data name="Loop_Assembling" xml:space="preserve">
+    <value>Ensamblando repeticiones continuas del bucle...</value>
+  </data>
+  <data name="Loop_AssemblingPhase" xml:space="preserve">
+    <value>Ensamblando repeticiones del bucle</value>
+  </data>
+  <data name="Loop_NoSelectionFrame" xml:space="preserve">
+    <value>La selección no contiene fotogramas de vídeo.</value>
+  </data>
+  <data name="Loop_NoLoopFrame" xml:space="preserve">
+    <value>La selección del bucle no contiene fotogramas decodificados.</value>
+  </data>
+  <data name="Loop_PreviewTwoFrames" xml:space="preserve">
+    <value>La vista previa de ida y vuelta requiere al menos dos fotogramas decodificados.</value>
+  </data>
+  <data name="Loop_PingPongThreeFrames" xml:space="preserve">
+    <value>Ida y vuelta requiere al menos tres fotogramas decodificados.</value>
+  </data>
+  <data name="Loop_PreparingBackward" xml:space="preserve">
+    <value>Preparando fotogramas inversos...</value>
+  </data>
+  <data name="Loop_DecodingFailed" xml:space="preserve">
+    <value>Error al decodificar el bucle.</value>
+  </data>
+  <data name="Loop_FrameTimesUnavailable" xml:space="preserve">
+    <value>Los tiempos de los fotogramas del bucle no están disponibles.</value>
+  </data>
+  <data name="Loop_FrameTicksUnavailable" xml:space="preserve">
+    <value>Los ticks nativos de los fotogramas no están disponibles.</value>
+  </data>
+  <data name="Loop_RgbMismatch" xml:space="preserve">
+    <value>Las dimensiones del fotograma no coinciden con sus píxeles RGB.</value>
+  </data>
+  <data name="Loop_ComparisonSizeMismatch" xml:space="preserve">
+    <value>Los fotogramas deben usar las mismas dimensiones de comparación.</value>
+  </data>
+  <data name="Loop_DimensionsRequired" xml:space="preserve">
+    <value>Se requieren dimensiones de vídeo y una relación de aspecto de píxel válidas.</value>
+  </data>
+  <data name="Loop_VideoNotFound" xml:space="preserve">
+    <value>Vídeo no encontrado.</value>
+  </data>
+  <data name="Loop_ReadableVideoRequired" xml:space="preserve">
+    <value>Se requiere un vídeo legible con duración y frecuencia de fotogramas conocidas.</value>
+  </data>
+  <data name="Loop_SearchFpsLimit" xml:space="preserve">
+    <value>Buscar bucle admite vídeos de hasta 240 FPS.</value>
+  </data>
+  <data name="Loop_SearchMinimumRange" xml:space="preserve">
+    <value>La duración mínima del bucle debe estar entre 0.1 y 600 segundos.</value>
+  </data>
+  <data name="Loop_ReadingEndpoints" xml:space="preserve">
+    <value>Leyendo los extremos nativos del vídeo...</value>
+  </data>
+  <data name="Loop_DistributingMatches" xml:space="preserve">
+    <value>Pasada rápida: distribuyendo coincidencias espaciales por regiones y grupos de duración...</value>
+  </data>
+  <data name="Loop_EndpointsChecked" xml:space="preserve">
+    <value>Extremos del original comprobados.</value>
+  </data>
+  <data name="Loop_DiskCheckFailed" xml:space="preserve">
+    <value>No se puede comprobar el espacio disponible para este bucle.</value>
+  </data>
+  <data name="Loop_ShorterPreview" xml:space="preserve">
+    <value>Use Vista previa de unión o seleccione un segmento más corto.</value>
+  </data>
+  <data name="Loop_ShorterSegment" xml:space="preserve">
+    <value>Seleccione un segmento más corto.</value>
+  </data>
+  <data name="Loop_RenderingFailed" xml:space="preserve">
+    <value>Error al renderizar el bucle.</value>
+  </data>
+  <data name="Loop_TemporaryBudgetExceeded" xml:space="preserve">
+    <value>El renderizado del bucle superó el límite temporal de 8 GB.</value>
+  </data>
+  <data name="Loop_DiskFull" xml:space="preserve">
+    <value>Renderizado del bucle: no hay espacio suficiente para continuar de forma segura.</value>
+  </data>
+  <data name="Loop_ExportCanceled" xml:space="preserve">
+    <value>Exportación del bucle cancelada.</value>
+  </data>
+  <data name="Loop_ExportFailed" xml:space="preserve">
+    <value>Error al exportar el bucle.</value>
+  </data>
+  <data name="Loop_CliBoundsRequired" xml:space="preserve">
+    <value>La exportación de bucles por CLI requiere límites de corte explícitos. Abra Cortar vídeo sin opciones CLI de bucle para usar Buscar bucle.</value>
+  </data>
+  <data name="Loop_VideoLoop" xml:space="preserve">
+    <value>Bucle de vídeo</value>
+  </data>
+  <data name="Loop_ColorRangeUnsupported" xml:space="preserve">
+    <value>El rango de color del original no es compatible; compruebe sus metadatos de color.</value>
+  </data>
+  <data name="Loop_HdrMetadataRequired" xml:space="preserve">
+    <value>HDR a SDR requiere primarias BT.2020 y una matriz BT.2020 de luminancia no constante. Faltan metadatos del original o son incoherentes.</value>
+  </data>
+  <data name="Loop_MatrixUnsupported" xml:space="preserve">
+    <value>La matriz de color no es compatible o entra en conflicto con el perfil SDR. Compruebe los metadatos de color antes de exportar el bucle.</value>
+  </data>
+  <data name="Loop_WideGamutMetadata" xml:space="preserve">
+    <value>Los metadatos SDR de gama amplia están incompletos o no son compatibles; se requieren primarias BT.2020 y matriz de luminancia no constante.</value>
+  </data>
+  <data name="Loop_WideGamutOutput" xml:space="preserve">
+    <value>Original SDR de gama amplia → salida SDR BT.709 (sin mapeo de tonos HDR).</value>
+  </data>
+  <data name="Loop_Sdr709Output" xml:space="preserve">
+    <value>Original SDR. Salida del bucle: MP4/H.264 SDR BT.709.</value>
+  </data>
+  <data name="Loop_SdrOutput" xml:space="preserve">
+    <value>Original SDR. Salida del bucle: MP4/H.264.</value>
+  </data>
+  <data name="Loop_TransferUnsupported" xml:space="preserve">
+    <value>La función de transferencia falta o no es compatible. No se puede determinar SDR/HDR de forma segura para el bucle; compruebe los metadatos de color.</value>
+  </data>
+  <data name="Loop_UnspecifiedTransfer" xml:space="preserve">
+    <value>Transferencia de color sin especificar; se usa la ruta de compatibilidad SDR para el bucle.</value>
+  </data>
+  <data name="Loop_ColorFiltersFailed" xml:space="preserve">
+    <value>No se pueden verificar los filtros de conversión de color de FFmpeg. La conversión de bucles no está disponible.</value>
+  </data>
+  <data name="Loop_ExportAll" xml:space="preserve">
+    <value>Exportar todos los candidatos ({0})</value>
+  </data>
+  <data name="Loop_ColorReview" xml:space="preserve">
+    <value>{0} Las uniones requieren revisión visual. Previsualice antes de exportar.</value>
+  </data>
+  <data name="Loop_Unavailable" xml:space="preserve">
+    <value>Bucle no disponible: {0}</value>
+  </data>
+  <data name="Loop_NativeUnavailable" xml:space="preserve">
+    <value>Tiempos nativos no disponibles: {0}</value>
+  </data>
+  <data name="Loop_ProxyReview" xml:space="preserve">
+    <value>{0}. Copia sin sonido; revise los detalles en la exportación a resolución completa.</value>
+  </data>
+  <data name="Loop_PlaybackUnavailable" xml:space="preserve">
+    <value>Reproducción del bucle no disponible: {0}</value>
+  </data>
+  <data name="Loop_CandidatesFound" xml:space="preserve">
+    <value>{0} candidato(s), mejores uniones primero salvo al ordenar por duración. Las valoraciones son estimaciones; previsualice antes de exportar.</value>
+  </data>
+  <data name="Loop_SearchInProgress" xml:space="preserve">
+    <value>Búsqueda en curso: {0} candidato(s) hasta ahora. Se conserva la selección mientras llegan resultados.</value>
+  </data>
+  <data name="Loop_TemporalCoverage" xml:space="preserve">
+    <value> Cobertura temporal: {0:0.#} segundos en ventanas distribuidas; los intervalos no se muestrearon.</value>
+  </data>
+  <data name="Loop_NativePreview" xml:space="preserve">
+    <value>Vista previa del fotograma nativo de {0} en {1}</value>
+  </data>
+  <data name="Loop_CandidateSummary" xml:space="preserve">
+    <value>{0} → {1}  |  {2:0.###} s  |  {3}</value>
+  </data>
+  <data name="Loop_DecodePreviewFailed" xml:space="preserve">
+    <value>Error al decodificar la vista previa del bucle: {0}</value>
+  </data>
+  <data name="Loop_MissingFilter" xml:space="preserve">
+    <value>La conversión de color de FFmpeg requiere el filtro ausente '{0}'. Use el FFmpeg incluido; la conversión de bucles no está disponible.</value>
+  </data>
+  <data name="Loop_FastPass" xml:space="preserve">
+    <value>Pasada rápida: {0:0.###} FPS en bloques limitados por el original...</value>
+  </data>
+  <data name="Loop_FastBlock" xml:space="preserve">
+    <value>Pasada rápida: bloque {0}/{1}; {2} firmas compactas.</value>
+  </data>
+  <data name="Loop_PreciseChecked" xml:space="preserve">
+    <value>Pasada precisa: {0}/{1} pistas distribuidas comprobadas.</value>
+  </data>
+  <data name="Loop_PreciseChecking" xml:space="preserve">
+    <value>Pasada precisa: comprobando pista {0}/{1}...</value>
+  </data>
+  <data name="Loop_AnalysisComplete" xml:space="preserve">
+    <value>Análisis terminado: {0} candidato(s); se indican la cobertura y los límites.</value>
+  </data>
+  <data name="Loop_TerminationUnconfirmed" xml:space="preserve">
+    <value>No se pudo confirmar la finalización del proceso multimedia. Se conservaron los archivos temporales en '{0}' y '{1}'.</value>
+  </data>
+  <data name="Loop_PreparingPhase" xml:space="preserve">
+    <value>Preparando {0}</value>
+  </data>
+  <data name="Loop_DiskSpaceRequired" xml:space="preserve">
+    <value>{0}: espacio insuficiente (se estiman {1:0.##} MB adicionales). Seleccione un segmento más corto o libere espacio.</value>
+  </data>
+  <data name="Loop_InvalidCliOption" xml:space="preserve">
+    <value>Opción de bucle no válida: {0}. Indique una opción admitida y su valor.</value>
+  </data>
+  <data name="Loop_HdrOutput" xml:space="preserve">
+    <value>Original HDR → salida SDR (BT.709). Mapeo de tonos {0}; pico de referencia {1:0} nits{2}</value>
+  </data>
+  <data name="Loop_ReferenceDisplay" xml:space="preserve">
+    <value> (valor alternativo/pantalla de referencia).</value>
+  </data>
+  <data name="Loop_TemporarySpaceRequired" xml:space="preserve">
+    <value>{0} requiere unos {1:0.##} GB de espacio temporal, por encima del límite de 8 GB. {2}</value>
+  </data>
+  <data name="Loop_QueueCandidate" xml:space="preserve">
+    <value>Candidato {0}/{1} · {2:0.###} s · {3} → {4} (final excluido)</value>
+  </data>
+  <data name="Loop_PlanNatural" xml:space="preserve">
+    <value>ciclo natural</value>
+  </data>
+  <data name="Loop_PlanPreview" xml:space="preserve">
+    <value>vista previa</value>
+  </data>
+  <data name="Loop_PlanPingPong" xml:space="preserve">
+    <value>ciclo de ida y vuelta</value>
+  </data>
+  <data name="Loop_ColumnEnd" xml:space="preserve">
+    <value>Final (excluido)</value>
+  </data>
+  <data name="Loop_ColumnDuration" xml:space="preserve">
+    <value>Duración</value>
+  </data>
+  <data name="Loop_ColumnJunction" xml:space="preserve">
+    <value>Unión</value>
+  </data>
+  <data name="Loop_DurationFormat" xml:space="preserve">
+    <value>0.###' s'</value>
+  </data>
+  <data name="Loop_Indexing" xml:space="preserve">
+    <value>Indexando fotogramas nativos para el primer acceso; puede cancelar...</value>
+  </data>
+  <data name="Loop_NativeTiming" xml:space="preserve">
+    <value>Tiempos nativos del vídeo</value>
+  </data>
+  <data name="Loop_Candidates" xml:space="preserve">
+    <value>Candidatos de bucle</value>
+  </data>
+  <data name="Loop_CandidateKeyboard" xml:space="preserve">
+    <value>Seleccione un candidato con las flechas. Intro o Espacio restaura sus límites originales. El final se excluye. Doble clic selecciona sin exportar.</value>
+  </data>
+  <data name="Loop_RenderingJunction" xml:space="preserve">
+    <value>Renderizando una vista previa corta y sin sonido de la unión...</value>
+  </data>
+  <data name="Loop_RenderingFull" xml:space="preserve">
+    <value>Renderizando tres ciclos continuos a resolución reducida...</value>
+  </data>
+  <data name="Loop_SilentPreview" xml:space="preserve">
+    <value>Vista previa del bucle (sin sonido)</value>
+  </data>
+  <data name="Loop_NativeCapture" xml:space="preserve">
+    <value>Vista previa nativa de Cortar vídeo</value>
+  </data>
+  <data name="Loop_CutPreview" xml:space="preserve">
+    <value>Vista previa de Cortar vídeo</value>
+  </data>
 </root>

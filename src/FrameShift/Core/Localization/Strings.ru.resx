@@ -5553,4 +5553,484 @@
   <data name="Loop_ExportSdr" xml:space="preserve">
     <value>Экспортировать цикл SDR</value>
   </data>
+  <data name="Loop_Find" xml:space="preserve">
+    <value>Найти цикл</value>
+  </data>
+  <data name="Loop_PreviewJunction" xml:space="preserve">
+    <value>Предпросмотр стыка</value>
+  </data>
+  <data name="Loop_FullPreview" xml:space="preserve">
+    <value>Предпросмотр всего цикла</value>
+  </data>
+  <data name="Loop_CreatePingPong" xml:space="preserve">
+    <value>Создать цикл вперёд-назад</value>
+  </data>
+  <data name="Loop_StopSearch" xml:space="preserve">
+    <value>Остановить поиск</value>
+  </data>
+  <data name="Loop_StopPreview" xml:space="preserve">
+    <value>Остановить предпросмотр</value>
+  </data>
+  <data name="Loop_BackToCut" xml:space="preserve">
+    <value>Вернуться к обрезке</value>
+  </data>
+  <data name="Loop_Advanced" xml:space="preserve">
+    <value>Дополнительные параметры</value>
+  </data>
+  <data name="Loop_HideAdvanced" xml:space="preserve">
+    <value>Скрыть дополнительные параметры</value>
+  </data>
+  <data name="Loop_Auto" xml:space="preserve">
+    <value>Авто</value>
+  </data>
+  <data name="Loop_Strict" xml:space="preserve">
+    <value>Строгая</value>
+  </data>
+  <data name="Loop_Normal" xml:space="preserve">
+    <value>Обычная</value>
+  </data>
+  <data name="Loop_Permissive" xml:space="preserve">
+    <value>Мягкая</value>
+  </data>
+  <data name="Loop_KeepAudio" xml:space="preserve">
+    <value>Сохранить исходный звук (стык не анализируется)</value>
+  </data>
+  <data name="Loop_PlaybackSpeed" xml:space="preserve">
+    <value>Скорость воспроизведения</value>
+  </data>
+  <data name="Loop_MinimumDuration" xml:space="preserve">
+    <value>Минимальная длительность</value>
+  </data>
+  <data name="Loop_MinimumHint" xml:space="preserve">
+    <value>секунды (пусто = Авто)</value>
+  </data>
+  <data name="Loop_Sensitivity" xml:space="preserve">
+    <value>Чувствительность</value>
+  </data>
+  <data name="Loop_ExportRepeats" xml:space="preserve">
+    <value>Повторы при экспорте</value>
+  </data>
+  <data name="Loop_FullPreviewHint" xml:space="preserve">
+    <value>Полный предпросмотр: три непрерывных цикла в пониженном разрешении. Длинный фрагмент может превысить лимит временного пространства; используйте предпросмотр стыка.</value>
+  </data>
+  <data name="Loop_ExportHint" xml:space="preserve">
+    <value>Экспорт: MP4 с уникальным именем рядом с исходником. Предпросмотр без звука.</value>
+  </data>
+  <data name="Loop_Tools" xml:space="preserve">
+    <value>Инструменты циклов</value>
+  </data>
+  <data name="Loop_NaturalHint" xml:space="preserve">
+    <value>Естественный цикл: проверьте стык. Непрерывность звука не анализируется.</value>
+  </data>
+  <data name="Loop_PingPongHint" xml:space="preserve">
+    <value>Вперёд-назад: фрагмент воспроизводится вперёд, затем назад, без звука. Для VFR используется средняя частота кадров исходника.</value>
+  </data>
+  <data name="Loop_SearchStopped" xml:space="preserve">
+    <value>Поиск остановлен. Текущее выделение сохранено.</value>
+  </data>
+  <data name="Loop_PreviewStopped" xml:space="preserve">
+    <value>Предпросмотр остановлен.</value>
+  </data>
+  <data name="Loop_MinimumInvalid" xml:space="preserve">
+    <value>Минимальная длительность должна быть пустой (Авто) или числом от 0.1 до 600 секунд.</value>
+  </data>
+  <data name="Loop_MinimumRange" xml:space="preserve">
+    <value>Минимальная длительность должна быть от 0.1 до 600 секунд. Это не ограничивает длительность исходника или кандидатов.</value>
+  </data>
+  <data name="Loop_Rendering" xml:space="preserve">
+    <value>Рендеринг цикла...</value>
+  </data>
+  <data name="Loop_SourceChanged" xml:space="preserve">
+    <value>Исходник изменён. Заново откройте обрезку видео, чтобы обновить метаданные и выделение.</value>
+  </data>
+  <data name="Loop_SourceChangedPreview" xml:space="preserve">
+    <value>Исходник изменён во время рендеринга предпросмотра. Заново откройте обрезку видео для обновления метаданных.</value>
+  </data>
+  <data name="Loop_PreviewComplete" xml:space="preserve">
+    <value>Предпросмотр завершён. Повторите сохранённую копию или проверьте мелкие детали в экспорте полного разрешения.</value>
+  </data>
+  <data name="Loop_SelectionEmpty" xml:space="preserve">
+    <value>Выделение по исходным меткам времени должно содержать хотя бы один кадр.</value>
+  </data>
+  <data name="Loop_NoCandidates" xml:space="preserve">
+    <value>Подходящих кандидатов на естественный цикл не найдено. Сохраните выделение, измените дополнительные параметры или создайте цикл вперёд-назад.</value>
+  </data>
+  <data name="Loop_PreviousSelection" xml:space="preserve">
+    <value> Предыдущее выделение сохранено.</value>
+  </data>
+  <data name="Loop_LimitedCoverage" xml:space="preserve">
+    <value> Охват поиска ограничен выборкой или лимитом кандидатов; возможны другие циклы.</value>
+  </data>
+  <data name="Loop_NativeNumbers" xml:space="preserve">
+    <value>  |  исходные метки времени (номера декодированных кадров)</value>
+  </data>
+  <data name="Loop_ApproximateNumbers" xml:space="preserve">
+    <value>  |  исходные метки времени (приблизительные номера кадров для VFR)</value>
+  </data>
+  <data name="Loop_CustomSelection" xml:space="preserve">
+    <value>  |  Пользовательское выделение</value>
+  </data>
+  <data name="Loop_IndexHint" xml:space="preserve">
+    <value>  |  до индексации номера кадров приблизительны; приоритет у исходных меток времени</value>
+  </data>
+  <data name="Loop_LastIncluded" xml:space="preserve">
+    <value> (последний включённый кадр; время конца не включается)</value>
+  </data>
+  <data name="Loop_Review" xml:space="preserve">
+    <value>Требует проверки</value>
+  </data>
+  <data name="Loop_Promising" xml:space="preserve">
+    <value>Перспективный</value>
+  </data>
+  <data name="Loop_Approximate" xml:space="preserve">
+    <value>Приблизительный</value>
+  </data>
+  <data name="Loop_SpeedInvalid" xml:space="preserve">
+    <value>Скорость цикла должна быть 1, 0.75 или 0.5; число повторов — от 1 до 10.</value>
+  </data>
+  <data name="Loop_SlowMotionOnly" xml:space="preserve">
+    <value>Замедление доступно только для цикла вперёд-назад.</value>
+  </data>
+  <data name="Loop_PingPongSilent" xml:space="preserve">
+    <value>Циклы вперёд-назад не содержат звука. Обратное воспроизведение звука не поддерживается.</value>
+  </data>
+  <data name="Loop_ModeRequired" xml:space="preserve">
+    <value>Параметры цикла требуют --loop-mode natural|pingpong.</value>
+  </data>
+  <data name="Loop_ModeInvalid" xml:space="preserve">
+    <value>Режим цикла должен быть natural или pingpong.</value>
+  </data>
+  <data name="Loop_AudioInvalid" xml:space="preserve">
+    <value>Параметр звука цикла должен быть keep или mute.</value>
+  </data>
+  <data name="Loop_CandidateIdRequired" xml:space="preserve">
+    <value>Требуется ID кандидата цикла.</value>
+  </data>
+  <data name="Loop_FiniteBounds" xml:space="preserve">
+    <value>Границы цикла должны задавать конечный непустой фрагмент.</value>
+  </data>
+  <data name="Loop_SourceUnavailable" xml:space="preserve">
+    <value>Исходное видео больше недоступно.</value>
+  </data>
+  <data name="Loop_FrameBoundsInvalid" xml:space="preserve">
+    <value>Границы кадров должны быть упорядоченными положительными целыми числами.</value>
+  </data>
+  <data name="Loop_NoDecodedFrames" xml:space="preserve">
+    <value>Нет доступных декодированных кадров видео.</value>
+  </data>
+  <data name="Loop_PositiveFrameRequired" xml:space="preserve">
+    <value>Требуется положительный номер кадра.</value>
+  </data>
+  <data name="Loop_NoBoundaryFrame" xml:space="preserve">
+    <value>На этой границе нет доступного кадра видео.</value>
+  </data>
+  <data name="Loop_NativeStepInvalid" xml:space="preserve">
+    <value>Навигация по исходным кадрам перемещается на один кадр за раз.</value>
+  </data>
+  <data name="Loop_IndexBudget" xml:space="preserve">
+    <value>Индекс исходных кадров превышает лимит 256 МиБ. Используйте временные границы выделения.</value>
+  </data>
+  <data name="Loop_NonIncreasingTimes" xml:space="preserve">
+    <value>Исходные метки времени видео не возрастают строго.</value>
+  </data>
+  <data name="Loop_ReadTimingFailed" xml:space="preserve">
+    <value>Не удалось прочитать исходные метки времени кадров.</value>
+  </data>
+  <data name="Loop_PreviewSourceUnavailable" xml:space="preserve">
+    <value>Исходник предпросмотра больше недоступен.</value>
+  </data>
+  <data name="Loop_PreviewBoundsInvalid" xml:space="preserve">
+    <value>Для предпросмотра требуется конечный непустой фрагмент видео.</value>
+  </data>
+  <data name="Loop_PixelAspectInvalid" xml:space="preserve">
+    <value>Недопустимое соотношение сторон пикселя исходника.</value>
+  </data>
+  <data name="Loop_FullClip" xml:space="preserve">
+    <value>Полный предпросмотр: три непрерывных цикла</value>
+  </data>
+  <data name="Loop_NaturalClip" xml:space="preserve">
+    <value>Предпросмотр стыка: конец → начало (один реальный стык)</value>
+  </data>
+  <data name="Loop_PingPongClip" xml:space="preserve">
+    <value>Предпросмотр вперёд-назад: два непрерывных цикла, обе точки разворота</value>
+  </data>
+  <data name="Loop_EndTurn" xml:space="preserve">
+    <value>Отдельный клип 1/2: разворот в конце</value>
+  </data>
+  <data name="Loop_StartTurn" xml:space="preserve">
+    <value>Отдельный клип 2/2: разворот в начале</value>
+  </data>
+  <data name="Loop_ResolveHeldFrame" xml:space="preserve">
+    <value>Определение последнего удерживаемого кадра для предпросмотра стыка...</value>
+  </data>
+  <data name="Loop_NoJunctionFrame" xml:space="preserve">
+    <value>Нет декодированного кадра для этого стыка.</value>
+  </data>
+  <data name="Loop_ReadableExportRequired" xml:space="preserve">
+    <value>Для экспорта цикла требуется читаемое видео.</value>
+  </data>
+  <data name="Loop_ExportFpsLimit" xml:space="preserve">
+    <value>Экспорт циклов поддерживает видео с частотой до 240 кадров/с.</value>
+  </data>
+  <data name="Loop_DestinationExists" xml:space="preserve">
+    <value>Файл назначения цикла уже существует. Выберите уникальный путь вывода.</value>
+  </data>
+  <data name="Loop_BoundsOutsideSource" xml:space="preserve">
+    <value>Границы цикла должны задавать непустой фрагмент внутри исходника.</value>
+  </data>
+  <data name="Loop_ResolveBoundary" xml:space="preserve">
+    <value>Определение границы цикла...</value>
+  </data>
+  <data name="Loop_EncodingNatural" xml:space="preserve">
+    <value>Кодирование естественного цикла...</value>
+  </data>
+  <data name="Loop_PreparingSelection" xml:space="preserve">
+    <value>Подготовка выделения цикла...</value>
+  </data>
+  <data name="Loop_Assembling" xml:space="preserve">
+    <value>Сборка непрерывных повторов цикла...</value>
+  </data>
+  <data name="Loop_AssemblingPhase" xml:space="preserve">
+    <value>Сборка повторов цикла</value>
+  </data>
+  <data name="Loop_NoSelectionFrame" xml:space="preserve">
+    <value>Выделение не содержит кадров видео.</value>
+  </data>
+  <data name="Loop_NoLoopFrame" xml:space="preserve">
+    <value>Выделение цикла не содержит декодированных кадров.</value>
+  </data>
+  <data name="Loop_PreviewTwoFrames" xml:space="preserve">
+    <value>Предпросмотр вперёд-назад требует хотя бы два декодированных кадра.</value>
+  </data>
+  <data name="Loop_PingPongThreeFrames" xml:space="preserve">
+    <value>Цикл вперёд-назад требует хотя бы три декодированных кадра.</value>
+  </data>
+  <data name="Loop_PreparingBackward" xml:space="preserve">
+    <value>Подготовка кадров обратного воспроизведения...</value>
+  </data>
+  <data name="Loop_DecodingFailed" xml:space="preserve">
+    <value>Не удалось декодировать цикл.</value>
+  </data>
+  <data name="Loop_FrameTimesUnavailable" xml:space="preserve">
+    <value>Метки времени кадров цикла недоступны.</value>
+  </data>
+  <data name="Loop_FrameTicksUnavailable" xml:space="preserve">
+    <value>Исходные такты времени кадров недоступны.</value>
+  </data>
+  <data name="Loop_RgbMismatch" xml:space="preserve">
+    <value>Размеры кадра цикла не соответствуют его пикселям RGB.</value>
+  </data>
+  <data name="Loop_ComparisonSizeMismatch" xml:space="preserve">
+    <value>Кадры цикла должны иметь одинаковые размеры для сравнения.</value>
+  </data>
+  <data name="Loop_DimensionsRequired" xml:space="preserve">
+    <value>Требуются допустимые размеры видео и соотношение сторон пикселя.</value>
+  </data>
+  <data name="Loop_VideoNotFound" xml:space="preserve">
+    <value>Видео не найдено.</value>
+  </data>
+  <data name="Loop_ReadableVideoRequired" xml:space="preserve">
+    <value>Требуется читаемое видео с известной длительностью и частотой кадров.</value>
+  </data>
+  <data name="Loop_SearchFpsLimit" xml:space="preserve">
+    <value>Поиск циклов поддерживает видео с частотой до 240 кадров/с.</value>
+  </data>
+  <data name="Loop_SearchMinimumRange" xml:space="preserve">
+    <value>Минимальная длительность цикла должна быть от 0.1 до 600 секунд.</value>
+  </data>
+  <data name="Loop_ReadingEndpoints" xml:space="preserve">
+    <value>Чтение исходных границ видео...</value>
+  </data>
+  <data name="Loop_DistributingMatches" xml:space="preserve">
+    <value>Быстрый проход: распределение пространственных совпадений по областям и группам длительности...</value>
+  </data>
+  <data name="Loop_EndpointsChecked" xml:space="preserve">
+    <value>Границы исходника проверены.</value>
+  </data>
+  <data name="Loop_DiskCheckFailed" xml:space="preserve">
+    <value>Не удалось проверить свободное место для этого цикла.</value>
+  </data>
+  <data name="Loop_ShorterPreview" xml:space="preserve">
+    <value>Используйте предпросмотр стыка или выберите более короткий фрагмент.</value>
+  </data>
+  <data name="Loop_ShorterSegment" xml:space="preserve">
+    <value>Выберите более короткий фрагмент.</value>
+  </data>
+  <data name="Loop_RenderingFailed" xml:space="preserve">
+    <value>Не удалось выполнить рендеринг цикла.</value>
+  </data>
+  <data name="Loop_TemporaryBudgetExceeded" xml:space="preserve">
+    <value>Рендеринг цикла превысил лимит временного пространства 8 ГБ.</value>
+  </data>
+  <data name="Loop_DiskFull" xml:space="preserve">
+    <value>Рендеринг цикла: недостаточно места на диске для безопасного продолжения.</value>
+  </data>
+  <data name="Loop_ExportCanceled" xml:space="preserve">
+    <value>Экспорт цикла отменён.</value>
+  </data>
+  <data name="Loop_ExportFailed" xml:space="preserve">
+    <value>Не удалось экспортировать цикл.</value>
+  </data>
+  <data name="Loop_CliBoundsRequired" xml:space="preserve">
+    <value>Экспорт циклов из CLI требует явных границ обрезки. Для поиска циклов откройте обрезку видео без параметров цикла CLI.</value>
+  </data>
+  <data name="Loop_VideoLoop" xml:space="preserve">
+    <value>Цикл видео</value>
+  </data>
+  <data name="Loop_ColorRangeUnsupported" xml:space="preserve">
+    <value>Цветовой диапазон исходника не поддерживается; проверьте его метаданные цвета.</value>
+  </data>
+  <data name="Loop_HdrMetadataRequired" xml:space="preserve">
+    <value>Для HDR → SDR требуются первичные цвета BT.2020 и матрица BT.2020 с непостоянной яркостью. Метаданные исходника отсутствуют или противоречивы.</value>
+  </data>
+  <data name="Loop_MatrixUnsupported" xml:space="preserve">
+    <value>Цветовая матрица исходника не поддерживается или несовместима с профилем SDR. Перед экспортом цикла проверьте метаданные цвета.</value>
+  </data>
+  <data name="Loop_WideGamutMetadata" xml:space="preserve">
+    <value>Метаданные SDR с широким цветовым охватом неполны или не поддерживаются; требуются первичные цвета BT.2020 и матрица с непостоянной яркостью.</value>
+  </data>
+  <data name="Loop_WideGamutOutput" xml:space="preserve">
+    <value>Исходник SDR с широким охватом → вывод SDR BT.709 (без тонального отображения HDR).</value>
+  </data>
+  <data name="Loop_Sdr709Output" xml:space="preserve">
+    <value>Исходник SDR. Вывод цикла: MP4/H.264 SDR BT.709.</value>
+  </data>
+  <data name="Loop_SdrOutput" xml:space="preserve">
+    <value>Исходник SDR. Вывод цикла: MP4/H.264.</value>
+  </data>
+  <data name="Loop_TransferUnsupported" xml:space="preserve">
+    <value>Передаточная функция цвета отсутствует или не поддерживается. Нельзя надёжно определить SDR/HDR для экспорта цикла; проверьте метаданные цвета.</value>
+  </data>
+  <data name="Loop_UnspecifiedTransfer" xml:space="preserve">
+    <value>Передаточная функция не указана; для вывода цикла используется режим совместимости SDR.</value>
+  </data>
+  <data name="Loop_ColorFiltersFailed" xml:space="preserve">
+    <value>Не удалось проверить фильтры преобразования цвета FFmpeg. Преобразование циклов недоступно.</value>
+  </data>
+  <data name="Loop_ExportAll" xml:space="preserve">
+    <value>Экспорт всех кандидатов ({0})</value>
+  </data>
+  <data name="Loop_ColorReview" xml:space="preserve">
+    <value>{0} Стыки требуют визуальной проверки. Просмотрите перед экспортом.</value>
+  </data>
+  <data name="Loop_Unavailable" xml:space="preserve">
+    <value>Цикл недоступен: {0}</value>
+  </data>
+  <data name="Loop_NativeUnavailable" xml:space="preserve">
+    <value>Исходные метки времени недоступны: {0}</value>
+  </data>
+  <data name="Loop_ProxyReview" xml:space="preserve">
+    <value>{0}. Копия без звука; мелкие детали проверяйте в экспорте полного разрешения.</value>
+  </data>
+  <data name="Loop_PlaybackUnavailable" xml:space="preserve">
+    <value>Воспроизведение цикла недоступно: {0}</value>
+  </data>
+  <data name="Loop_CandidatesFound" xml:space="preserve">
+    <value>Кандидатов: {0}; лучшие стыки сначала, если не выбрана сортировка по длительности. Оценки приблизительны; просмотрите перед экспортом.</value>
+  </data>
+  <data name="Loop_SearchInProgress" xml:space="preserve">
+    <value>Поиск продолжается: найдено кандидатов — {0}. Выделение сохраняется при поступлении результатов.</value>
+  </data>
+  <data name="Loop_TemporalCoverage" xml:space="preserve">
+    <value> Временной охват: {0:0.#} с в распределённых окнах; промежутки не исследованы.</value>
+  </data>
+  <data name="Loop_NativePreview" xml:space="preserve">
+    <value>Предпросмотр исходного кадра {0} на {1}</value>
+  </data>
+  <data name="Loop_CandidateSummary" xml:space="preserve">
+    <value>{0} → {1}  |  {2:0.###} с  |  {3}</value>
+  </data>
+  <data name="Loop_DecodePreviewFailed" xml:space="preserve">
+    <value>Не удалось декодировать предпросмотр цикла: {0}</value>
+  </data>
+  <data name="Loop_MissingFilter" xml:space="preserve">
+    <value>Для преобразования цвета FFmpeg отсутствует фильтр '{0}'. Используйте встроенный FFmpeg; преобразование циклов недоступно.</value>
+  </data>
+  <data name="Loop_FastPass" xml:space="preserve">
+    <value>Быстрый проход: {0:0.###} кадров/с в ограниченных блоках по всему исходнику...</value>
+  </data>
+  <data name="Loop_FastBlock" xml:space="preserve">
+    <value>Быстрый проход: блок {0}/{1}; компактных сигнатур — {2}.</value>
+  </data>
+  <data name="Loop_PreciseChecked" xml:space="preserve">
+    <value>Точный проход: проверено распределённых траекторий — {0}/{1}.</value>
+  </data>
+  <data name="Loop_PreciseChecking" xml:space="preserve">
+    <value>Точный проход: проверка траектории {0}/{1}...</value>
+  </data>
+  <data name="Loop_AnalysisComplete" xml:space="preserve">
+    <value>Анализ завершён: кандидатов — {0}; охват и ограничения указаны.</value>
+  </data>
+  <data name="Loop_TerminationUnconfirmed" xml:space="preserve">
+    <value>Не удалось подтвердить завершение медиапроцесса. Временные файлы сохранены в '{0}' и '{1}'.</value>
+  </data>
+  <data name="Loop_PreparingPhase" xml:space="preserve">
+    <value>Подготовка: {0}</value>
+  </data>
+  <data name="Loop_DiskSpaceRequired" xml:space="preserve">
+    <value>{0}: недостаточно места (нужно ещё примерно {1:0.##} МБ). Выберите более короткий фрагмент или освободите место.</value>
+  </data>
+  <data name="Loop_InvalidCliOption" xml:space="preserve">
+    <value>Недопустимый параметр цикла: {0}. Укажите поддерживаемый параметр и его значение.</value>
+  </data>
+  <data name="Loop_HdrOutput" xml:space="preserve">
+    <value>Исходник HDR → вывод SDR (BT.709). Тональное отображение {0}; опорный пик {1:0} нит{2}</value>
+  </data>
+  <data name="Loop_ReferenceDisplay" xml:space="preserve">
+    <value> (резервное значение/эталонный дисплей).</value>
+  </data>
+  <data name="Loop_TemporarySpaceRequired" xml:space="preserve">
+    <value>{0}: требуется примерно {1:0.##} ГБ временного пространства, что превышает лимит 8 ГБ. {2}</value>
+  </data>
+  <data name="Loop_QueueCandidate" xml:space="preserve">
+    <value>Кандидат {0}/{1} · {2:0.###} с · {3} → {4} (конец не включён)</value>
+  </data>
+  <data name="Loop_PlanNatural" xml:space="preserve">
+    <value>естественный цикл</value>
+  </data>
+  <data name="Loop_PlanPreview" xml:space="preserve">
+    <value>предпросмотр</value>
+  </data>
+  <data name="Loop_PlanPingPong" xml:space="preserve">
+    <value>цикл вперёд-назад</value>
+  </data>
+  <data name="Loop_ColumnEnd" xml:space="preserve">
+    <value>Конец (не включён)</value>
+  </data>
+  <data name="Loop_ColumnDuration" xml:space="preserve">
+    <value>Длительность</value>
+  </data>
+  <data name="Loop_ColumnJunction" xml:space="preserve">
+    <value>Стык</value>
+  </data>
+  <data name="Loop_DurationFormat" xml:space="preserve">
+    <value>0.###' с'</value>
+  </data>
+  <data name="Loop_Indexing" xml:space="preserve">
+    <value>Индексация исходных кадров при первом обращении; отмена доступна...</value>
+  </data>
+  <data name="Loop_NativeTiming" xml:space="preserve">
+    <value>Исходные метки времени видео</value>
+  </data>
+  <data name="Loop_Candidates" xml:space="preserve">
+    <value>Кандидаты циклов</value>
+  </data>
+  <data name="Loop_CandidateKeyboard" xml:space="preserve">
+    <value>Выберите кандидата стрелками. Enter или Пробел восстанавливает исходные границы. Конец не включается. Двойной щелчок выбирает без экспорта.</value>
+  </data>
+  <data name="Loop_RenderingJunction" xml:space="preserve">
+    <value>Рендеринг короткого предпросмотра стыка без звука...</value>
+  </data>
+  <data name="Loop_RenderingFull" xml:space="preserve">
+    <value>Рендеринг трёх непрерывных циклов в пониженном разрешении...</value>
+  </data>
+  <data name="Loop_SilentPreview" xml:space="preserve">
+    <value>Предпросмотр видеоцикла (без звука)</value>
+  </data>
+  <data name="Loop_NativeCapture" xml:space="preserve">
+    <value>Предпросмотр исходного кадра при обрезке</value>
+  </data>
+  <data name="Loop_CutPreview" xml:space="preserve">
+    <value>Предпросмотр обрезки видео</value>
+  </data>
 </root>

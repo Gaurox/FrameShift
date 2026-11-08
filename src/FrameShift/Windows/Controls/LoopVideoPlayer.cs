@@ -12,7 +12,7 @@ internal sealed class LoopVideoPlayer : PictureBox
         Dock = DockStyle.Fill;
         SizeMode = PictureBoxSizeMode.Zoom;
         BackColor = Color.Black;
-        AccessibleName = "Loop video preview (silent)";
+        AccessibleName = L.Get("Loop_SilentPreview");
     }
 
     internal int PlayedFrames { get; private set; }
@@ -50,7 +50,7 @@ internal sealed class LoopVideoPlayer : PictureBox
             PlayedFrames++;
         }
         await decoder.WaitForExitAsync(token);
-        if (decoder.ExitCode != 0) throw new InvalidOperationException("Loop preview decoding failed: " + decoder.StandardError);
+        if (decoder.ExitCode != 0) throw new InvalidOperationException(L.Format("Loop_DecodePreviewFailed", decoder.StandardError));
     }
 
     protected override void Dispose(bool disposing)

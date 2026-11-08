@@ -16,12 +16,12 @@ internal sealed record VideoLoopResourcePlan(double TemporaryBytes, double Outpu
         var bytes = compact ? raw * 0.5 + pcm + 32 * 1024 * 1024
             : raw * 6 * (settings.Mode == VideoLoopMode.PingPong ? 4 : 1);
         return new(bytes, seconds * settings.Repetitions * (settings.Mode == VideoLoopMode.PingPong ? 2 : 1) / settings.Speed,
-            compact ? "natural cycle" : preview ? "preview" : "forward/backward cycle");
+            compact ? L.Get("Loop_PlanNatural") : preview ? L.Get("Loop_PlanPreview") : L.Get("Loop_PlanPingPong"));
     }
 }
 
 internal sealed class VideoLoopProcessTerminationException(string workspace, string destination)
-    : IOException($"Media process termination could not be confirmed. Temporary files were retained at '{workspace}' and '{destination}'.")
+    : IOException(L.Format("Loop_TerminationUnconfirmed", workspace, destination))
 {
     internal string Workspace { get; } = workspace;
     internal string Destination { get; } = destination;
@@ -45,7 +45,7 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
         var native = directory.StartsWith(@"\\?\", StringComparison.Ordinal) ? directory
             : directory.StartsWith(@"\\", StringComparison.Ordinal) ? @"\\?\UNC\" + directory[2..] : @"\\?\" + directory;
         if (!GetDiskFreeSpaceExW(native, out var available, out _, out _))
-            throw new IOException("Cannot check available disk space for this loop.", new Win32Exception(Marshal.GetLastWin32Error()));
+            throw new IOException(L.Get("Loop_DiskCheckFailed"), new Win32Exception(Marshal.GetLastWin32Error()));
         return (long)Math.Min((ulong)long.MaxValue, available);
     }
 
@@ -56,9 +56,9 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
     internal void CheckPlan(VideoLoopResourcePlan plan, bool preview)
     {
         if (!double.IsFinite(plan.TemporaryBytes) || plan.TemporaryBytes > MaximumTemporaryBytes)
-            throw new InvalidOperationException($"The {plan.Description} needs an estimated {plan.TemporaryBytes / (1024 * 1024 * 1024):0.##} GB of temporary space, above the 8 GB budget. " +
-                (preview ? "Use Preview junction or select a shorter segment." : "Select a shorter segment."));
-        CheckFree(workspace, plan.TemporaryBytes, $"Preparing {plan.Description}");
+            throw new InvalidOperationException(L.Format("Loop_TemporarySpaceRequired", plan.Description, plan.TemporaryBytes / (1024 * 1024 * 1024),
+                preview ? L.Get("Loop_ShorterPreview") : L.Get("Loop_ShorterSegment")));
+        CheckFree(workspace, plan.TemporaryBytes, L.Format("Loop_PreparingPhase", plan.Description));
     }
 
     internal void CheckOutput(double bytes, string phase) => CheckFree(destination, bytes, phase);
@@ -66,7 +66,7 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
     private void CheckFree(string path, double bytes, string phase)
     {
         if (!double.IsFinite(bytes) || bytes + FreeReserve > availableSpace(path) * 0.8)
-            throw new IOException($"{phase}: not enough disk space (estimated additional {bytes / (1024 * 1024):0.##} MB). Select a shorter segment or free disk space.");
+            throw new IOException(L.Format("Loop_DiskSpaceRequired", phase, bytes / (1024 * 1024)));
     }
 
     internal async Task<FfmpegRunResult> RunAsync(FfmpegRunner runner, string executable, IReadOnlyCollection<string> args,
@@ -80,7 +80,7 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
         try
         {
             result = await runner.RunAsync(executable, args, TimeSpan.FromSeconds(duration), progress,
-                inputPath, "Video Loop", "CPU", cancel.Token, observer).ConfigureAwait(false);
+                inputPath, L.Get("Loop_VideoLoop"), "CPU", cancel.Token, observer).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (resourceFailure is not null) { throw resourceFailure; }
         finally { stopWatch.Cancel(); await watch.ConfigureAwait(false); }
@@ -90,7 +90,7 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
         token.ThrowIfCancellationRequested();
         if (result.Canceled) throw new VideoLoopCancellationException(result.CancellationScope, token);
         if (result.ExitCode != 0)
-            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "Loop rendering failed."));
+            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("Loop_RenderingFailed")));
         return result;
 
         async Task WatchAsync()
@@ -101,9 +101,9 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
                 {
                     stopWatch.Token.ThrowIfCancellationRequested();
                     var actual = Directory.GetFiles(workspace).Sum(f => new FileInfo(f).Length);
-                    if (actual > MaximumTemporaryBytes) throw new IOException("Loop rendering exceeded the 8 GB temporary-work budget.");
+                    if (actual > MaximumTemporaryBytes) throw new IOException(L.Get("Loop_TemporaryBudgetExceeded"));
                     if (availableSpace(workspace) < FreeReserve || availableSpace(destination) < FreeReserve)
-                        throw new IOException("Loop rendering: not enough disk space to continue safely.");
+                        throw new IOException(L.Get("Loop_DiskFull"));
                     await Task.Delay(250, stopWatch.Token).ConfigureAwait(false);
                 }
             }

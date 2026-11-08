@@ -26,20 +26,20 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
         var range = Normalize(probe.VideoColorRange);
         var hdr = transfer is "smpte2084" or "arib-std-b67";
         if (range is not ("" or "tv" or "pc" or "limited" or "full"))
-            return new(hdr ? VideoLoopColorKind.Hdr : VideoLoopColorKind.Undetermined, false, "Source color range is unsupported; check the source color metadata.");
+            return new(hdr ? VideoLoopColorKind.Hdr : VideoLoopColorKind.Undetermined, false, L.Get("Loop_ColorRangeUnsupported"));
         if (hdr)
         {
             if (primaries != "bt2020" || space != "bt2020nc")
                 return new(VideoLoopColorKind.Hdr, false,
-                    "HDR-to-SDR requires BT.2020 primaries and a BT.2020 non-constant matrix. Source metadata is missing or inconsistent.");
+                    L.Get("Loop_HdrMetadataRequired"));
             // PQ is absolute. HLG uses zimg's 1000-nit reference display. Missing peak
             // metadata uses 1000 nits; never guess PQ from bit depth or missing transfer.
             var hasPqPeak = transfer == "smpte2084" && probe.VideoPeakLuminanceNits is >= 100 and <= 10000;
             var peak = hasPqPeak ? probe.VideoPeakLuminanceNits!.Value : 1000;
             var inputRange = range is "pc" or "full" ? "full" : "limited";
             return new(VideoLoopColorKind.Hdr, true,
-                $"HDR source → SDR output (BT.709). {(transfer == "smpte2084" ? "PQ" : "HLG")} tone mapping; reference peak {peak:0} nits" +
-                (!hasPqPeak ? " (fallback/reference display)." : "."))
+                L.Format("Loop_HdrOutput", transfer == "smpte2084" ? "PQ" : "HLG", peak,
+                !hasPqPeak ? L.Get("Loop_ReferenceDisplay") : "."))
             {
                 Filter = $"zscale=pin=bt2020:tin={transfer}:min=bt2020nc:rin={inputRange}:t=linear:npl=100," +
                     // tonemap uses colorspace for luma coefficients even on RGB pixels.
@@ -52,7 +52,7 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
 
         if (space is not ("" or "bt709" or "fcc" or "bt470bg" or "smpte170m" or "smpte240m" or "gbr" or "bt2020nc" or "bt2020c"))
             return new(VideoLoopColorKind.Undetermined, false,
-                "Source color matrix is unsupported or conflicts with the SDR profile. Check the source color metadata before loop export.");
+                L.Get("Loop_MatrixUnsupported"));
 
         var wideGamut = primaries is not ("" or "bt709" or "bt470m" or "bt470bg" or "smpte170m" or "smpte240m") ||
             space is "bt2020nc" or "bt2020c" || transfer is "bt2020-10" or "bt2020-12";
@@ -60,18 +60,18 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
             "gamma22" or "gamma28" or "bt470m" or "bt470bg" or "bt2020-10" or "bt2020-12")
         {
             if (wideGamut && (primaries != "bt2020" || space != "bt2020nc"))
-                return new(VideoLoopColorKind.Sdr, false, "SDR wide-gamut source metadata is incomplete or unsupported; BT.2020 primaries and non-constant matrix are required.");
+                return new(VideoLoopColorKind.Sdr, false, L.Get("Loop_WideGamutMetadata"));
             // Keep the established ordinary SDR path; explicitly tagged BT.709 and
             // wide-gamut SDR use the same range/matrix conversion as HDR, without tonemap.
             if (wideGamut || transfer == "bt709" && (primaries is "" or "bt709") && (space is "" or "bt709"))
                 return new(VideoLoopColorKind.Sdr, true, wideGamut
-                    ? "SDR wide-gamut source → SDR BT.709 output (no HDR tone mapping)."
-                    : "SDR source. Loop output: MP4/H.264 SDR BT.709.")
+                    ? L.Get("Loop_WideGamutOutput")
+                    : L.Get("Loop_Sdr709Output"))
                 {
                     Filter = $"zscale=pin={(wideGamut ? "bt2020" : "bt709")}:tin={transfer}:min={(wideGamut ? "bt2020nc" : "bt709")}:" +
                         $"rin={(range is "pc" or "full" ? "full" : "limited")}:p=bt709:t=bt709:m=bt709:r=limited:d=error_diffusion,format=yuv444p," + SdrTail
                 };
-            return new(VideoLoopColorKind.Sdr, true, "SDR source. Loop output: MP4/H.264.");
+            return new(VideoLoopColorKind.Sdr, true, L.Get("Loop_SdrOutput"));
         }
 
         // Missing high-bit-depth metadata is ambiguous, rather than evidence of HDR.
@@ -83,11 +83,11 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
                 @"(?:p|gray)(?:0?10|0?12|0?16|14)(?:le|be)?$|(?:rgb|bgr)48(?:le|be)?$|(?:rgba|bgra)64(?:le|be)?$|(?:p|gray)f32(?:le|be)?$");
         if (transfer.Length > 0 || highBitDepth || wideGamut)
             return new(VideoLoopColorKind.Undetermined, false,
-                "Source color transfer is missing or unsupported. SDR/HDR cannot be determined safely for loop export; check the source color metadata.");
+                L.Get("Loop_TransferUnsupported"));
 
         // Preserve the ordinary untagged SDR workflow. Do not call this confirmed SDR.
         return new(VideoLoopColorKind.Undetermined, true,
-            "Color transfer unspecified; using the SDR compatibility path for loop output.");
+            L.Get("Loop_UnspecifiedTransfer"));
     }
 
     public void RequireSupported()
@@ -109,7 +109,7 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
             {
                 var result = await runner.RunCaptureAsync(executable, ["-hide_banner", "-filters"], token).ConfigureAwait(false);
                 token.ThrowIfCancellationRequested();
-                if (!result.Success) throw new InvalidOperationException("Unable to verify FFmpeg color conversion filters. Loop conversion is unavailable.");
+                if (!result.Success) throw new InvalidOperationException(L.Get("Loop_ColorFiltersFailed"));
                 filters = Regex.Matches(result.StandardOutput, @"(?m)^\s*[TSC.]{2,3}\s+(\w+)\s+")
                     .Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
                 CapabilityCache[key] = filters;
@@ -122,7 +122,7 @@ public sealed record VideoLoopColorPolicy(VideoLoopColorKind Kind, bool CanRende
     internal void RequireFilters(IReadOnlySet<string> filters)
     {
         foreach (var name in ToneMapsHdr ? new[] { "zscale", "tonemap", "sidedata", "setparams" } : new[] { "zscale", "sidedata", "setparams" })
-            if (!filters.Contains(name)) throw new InvalidOperationException($"FFmpeg color conversion requires the missing '{name}' filter. Use the bundled FFmpeg; loop conversion is unavailable.");
+            if (!filters.Contains(name)) throw new InvalidOperationException(L.Format("Loop_MissingFilter", name));
     }
 
     internal void AddOutputArguments(List<string> arguments)

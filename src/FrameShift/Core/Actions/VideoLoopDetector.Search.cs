@@ -17,7 +17,7 @@ public sealed partial class VideoLoopDetector
     {
         var sar = probe.VideoSampleAspectRatio;
         if (!double.IsFinite(sar) || sar <= 0 || probe.VideoWidth <= 0 || probe.VideoHeight <= 0)
-            throw new ArgumentException("Valid video dimensions and pixel aspect ratio are required.");
+            throw new ArgumentException(L.Get("Loop_DimensionsRequired"));
         var width = probe.DisplayVideoWidth * (probe.RequiresDisplayDimensionSwap ? 1 : sar);
         var height = probe.DisplayVideoHeight * (probe.RequiresDisplayDimensionSwap ? sar : 1);
         var scale = Math.Min(1, 192 / Math.Max(width, height));
@@ -49,21 +49,21 @@ public sealed partial class VideoLoopDetector
         double? requestedMinimum, LoopSensitivity sensitivity, IProgress<VideoLoopProgress>? progress, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        if (!File.Exists(source)) throw new FileNotFoundException("Video not found.", source);
+        if (!File.Exists(source)) throw new FileNotFoundException(L.Get("Loop_VideoNotFound"), source);
         var sourceStamp = VideoLoopSourceStamp.Read(source);
         var duration = probe.Duration?.TotalSeconds ?? 0;
         var fps = probe.VideoFrameRate ?? 0;
         if (!probe.HasVideo || !double.IsFinite(fps) || fps <= 0 || !double.IsFinite(duration) || duration <= 0)
-            throw new ArgumentException("A readable video with a known duration and frame rate is required.");
-        if (fps > 240) throw new ArgumentException("Find Loop currently supports videos up to 240 FPS.");
+            throw new ArgumentException(L.Get("Loop_ReadableVideoRequired"));
+        if (fps > 240) throw new ArgumentException(L.Get("Loop_SearchFpsLimit"));
         if (requestedMinimum is double value && (!double.IsFinite(value) || value < 0.1 || value > 600) || !Enum.IsDefined(sensitivity))
-            throw new ArgumentException("Minimum loop duration must be between 0.1 and 600 seconds.");
+            throw new ArgumentException(L.Get("Loop_SearchMinimumRange"));
         var minimum = requestedMinimum ?? AutoMinimum(duration, fps);
         var color = VideoLoopColorPolicy.Evaluate(probe);
         await color.RequireAvailableAsync(runner, executable, token).ConfigureAwait(false);
         if (duration + 0.0000001 < minimum) return new([], 0);
         var endpointPhase = Stopwatch.StartNew();
-        progress?.Report(new(1, "Reading native video endpoints..."));
+        progress?.Report(new(1, L.Get("Loop_ReadingEndpoints")));
         using var timing = new VideoLoopTimingIndex(runner, executable, source, probe);
         var last = await timing.ResolveTimeAsync(duration, true, token).ConfigureAwait(false);
         duration = last.End;
@@ -76,7 +76,7 @@ public sealed partial class VideoLoopDetector
         var compact = new List<SearchSample>();
         var maxResident = 0;
         var phase = Stopwatch.StartNew();
-        progress?.Report(new(2, $"Fast pass: {plan.Rate:0.###} FPS in bounded blocks across the source..."));
+        progress?.Report(new(2, L.Format("Loop_FastPass", plan.Rate)));
         for (var blockIndex = 0; blockIndex < plan.Blocks.Count; blockIndex++)
         {
             token.ThrowIfCancellationRequested();
@@ -93,10 +93,10 @@ public sealed partial class VideoLoopDetector
             pixels.Clear(); // RGB frames are not retained by the source-wide signature index.
             CheckSource();
             progress?.Report(new(2 + (blockIndex + 1) * 26 / plan.Blocks.Count,
-                $"Fast pass: block {blockIndex + 1}/{plan.Blocks.Count}; {compact.Count} compact signatures."));
+                L.Format("Loop_FastBlock", blockIndex + 1, plan.Blocks.Count, compact.Count)));
         }
         var samplingElapsed = phase.Elapsed;
-        progress?.Report(new(30, "Fast pass: distributing spatial matches across regions and duration families..."));
+        progress?.Report(new(30, L.Get("Loop_DistributingMatches")));
         phase.Restart();
         var seedSearch = await Task.Run(() => SelectSeeds(compact, duration, minimum, plan.Rate, sensitivity, token), token).ConfigureAwait(false);
         var seedElapsed = phase.Elapsed;
@@ -123,7 +123,7 @@ public sealed partial class VideoLoopDetector
         else if (firstFrames.Count == 1 && lastFrames.Count == 1 && firstFrames[0].Time == lastFrames[0].Time && videoEnd - firstFrames[0].Time >= minimum)
             candidates.Add(new(firstFrames[0].Time, videoEnd, 100) { Seam = new(0, 0, 0, 0, 0, true, 0, 1) });
         firstFrames.Clear(); lastFrames.Clear();
-        ReportBatch(33, "Source endpoints checked.", 0);
+        ReportBatch(33, L.Get("Loop_EndpointsChecked"), 0);
         for (var index = 0; index < seedSearch.Candidates.Count; index++)
         {
             token.ThrowIfCancellationRequested();
@@ -146,8 +146,8 @@ public sealed partial class VideoLoopDetector
             left.Clear(); right.Clear();
             var percent = 35 + (index + 1) * 60 / Math.Max(1, seedSearch.Candidates.Count);
             if ((index + 1) % 8 == 0 || index + 1 == seedSearch.Candidates.Count)
-                ReportBatch(percent, $"Precise pass: {index + 1}/{seedSearch.Candidates.Count} distributed tracks checked.", index + 1);
-            else progress?.Report(new(percent, $"Precise pass: checking track {index + 1}/{seedSearch.Candidates.Count}..."));
+                ReportBatch(percent, L.Format("Loop_PreciseChecked", index + 1, seedSearch.Candidates.Count), index + 1);
+            else progress?.Report(new(percent, L.Format("Loop_PreciseChecking", index + 1, seedSearch.Candidates.Count)));
         }
         token.ThrowIfCancellationRequested();
         CheckSource();
@@ -155,7 +155,7 @@ public sealed partial class VideoLoopDetector
         AppLogger.LogStatic($"Find Loop: {size.Width}x{size.Height} refinement, {final.Candidates.Count} candidates, limits={final.Limits}.");
         foreach (var candidate in final.Candidates.Take(12))
             AppLogger.LogStatic($"Find Loop candidate {candidate.StartSeconds:R}..{candidate.EndSeconds:R}: {candidate.JunctionAssessment}; {candidate.Seam}");
-        progress?.Report(new(100, $"Analysis complete: {final.Candidates.Count} candidate(s); coverage and budgets are reported.") { Results = final });
+        progress?.Report(new(100, L.Format("Loop_AnalysisComplete", final.Candidates.Count)) { Results = final });
         return final;
 
         VideoLoopAnalysis Snapshot(int examined, bool completed)

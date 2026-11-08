@@ -5553,4 +5553,484 @@ Output WAV files are created next to the source with unique naming.</value>
   <data name="Loop_ExportSdr" xml:space="preserve">
     <value>Export SDR Loop</value>
   </data>
+  <data name="Loop_Find" xml:space="preserve">
+    <value>Find Loop</value>
+  </data>
+  <data name="Loop_PreviewJunction" xml:space="preserve">
+    <value>Preview junction</value>
+  </data>
+  <data name="Loop_FullPreview" xml:space="preserve">
+    <value>Full loop preview</value>
+  </data>
+  <data name="Loop_CreatePingPong" xml:space="preserve">
+    <value>Create forward/backward loop</value>
+  </data>
+  <data name="Loop_StopSearch" xml:space="preserve">
+    <value>Stop search</value>
+  </data>
+  <data name="Loop_StopPreview" xml:space="preserve">
+    <value>Stop preview</value>
+  </data>
+  <data name="Loop_BackToCut" xml:space="preserve">
+    <value>Back to Cut</value>
+  </data>
+  <data name="Loop_Advanced" xml:space="preserve">
+    <value>Advanced options</value>
+  </data>
+  <data name="Loop_HideAdvanced" xml:space="preserve">
+    <value>Hide advanced options</value>
+  </data>
+  <data name="Loop_Auto" xml:space="preserve">
+    <value>Auto</value>
+  </data>
+  <data name="Loop_Strict" xml:space="preserve">
+    <value>Strict</value>
+  </data>
+  <data name="Loop_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Loop_Permissive" xml:space="preserve">
+    <value>Permissive</value>
+  </data>
+  <data name="Loop_KeepAudio" xml:space="preserve">
+    <value>Keep source audio (junction not analyzed)</value>
+  </data>
+  <data name="Loop_PlaybackSpeed" xml:space="preserve">
+    <value>Playback speed</value>
+  </data>
+  <data name="Loop_MinimumDuration" xml:space="preserve">
+    <value>Minimum duration</value>
+  </data>
+  <data name="Loop_MinimumHint" xml:space="preserve">
+    <value>seconds (empty = Auto)</value>
+  </data>
+  <data name="Loop_Sensitivity" xml:space="preserve">
+    <value>Sensitivity</value>
+  </data>
+  <data name="Loop_ExportRepeats" xml:space="preserve">
+    <value>Export repeats</value>
+  </data>
+  <data name="Loop_FullPreviewHint" xml:space="preserve">
+    <value>Full preview: three continuous proxy cycles. Long selections may exceed the temporary-work budget; use Preview junction instead.</value>
+  </data>
+  <data name="Loop_ExportHint" xml:space="preserve">
+    <value>Export: unique MP4 next to the source. Preview is silent.</value>
+  </data>
+  <data name="Loop_Tools" xml:space="preserve">
+    <value>Loop tools</value>
+  </data>
+  <data name="Loop_NaturalHint" xml:space="preserve">
+    <value>Natural loop: junction to review. Audio continuity is not analyzed.</value>
+  </data>
+  <data name="Loop_PingPongHint" xml:space="preserve">
+    <value>Forward/backward: the selection plays forwards, then backwards, without audio. VFR uses the source average FPS.</value>
+  </data>
+  <data name="Loop_SearchStopped" xml:space="preserve">
+    <value>Search stopped. Current selection retained.</value>
+  </data>
+  <data name="Loop_PreviewStopped" xml:space="preserve">
+    <value>Preview stopped.</value>
+  </data>
+  <data name="Loop_MinimumInvalid" xml:space="preserve">
+    <value>Minimum duration must be empty (Auto) or a number between 0.1 and 600 seconds.</value>
+  </data>
+  <data name="Loop_MinimumRange" xml:space="preserve">
+    <value>Minimum duration must be between 0.1 and 600 seconds. This does not limit source or candidate duration.</value>
+  </data>
+  <data name="Loop_Rendering" xml:space="preserve">
+    <value>Rendering loop...</value>
+  </data>
+  <data name="Loop_SourceChanged" xml:space="preserve">
+    <value>The source changed. Reopen Cut Video to refresh its metadata and selection.</value>
+  </data>
+  <data name="Loop_SourceChangedPreview" xml:space="preserve">
+    <value>The source changed during preview rendering. Reopen Cut Video to refresh its metadata.</value>
+  </data>
+  <data name="Loop_PreviewComplete" xml:space="preserve">
+    <value>Preview complete. Replay the cached proxy, or review a full-resolution export for fine detail.</value>
+  </data>
+  <data name="Loop_SelectionEmpty" xml:space="preserve">
+    <value>The native selection must contain at least one frame.</value>
+  </data>
+  <data name="Loop_NoCandidates" xml:space="preserve">
+    <value>No satisfactory natural candidate found within this search. Keep the current selection, adjust Advanced options, or create a forward/backward loop.</value>
+  </data>
+  <data name="Loop_PreviousSelection" xml:space="preserve">
+    <value> Previous selection retained.</value>
+  </data>
+  <data name="Loop_LimitedCoverage" xml:space="preserve">
+    <value> Search coverage limited by sampling or candidate budgets; other loops may exist.</value>
+  </data>
+  <data name="Loop_NativeNumbers" xml:space="preserve">
+    <value>  |  native timestamps (decoded frame numbers)</value>
+  </data>
+  <data name="Loop_ApproximateNumbers" xml:space="preserve">
+    <value>  |  native timestamps (frame numbers approximate for VFR)</value>
+  </data>
+  <data name="Loop_CustomSelection" xml:space="preserve">
+    <value>  |  Custom selection</value>
+  </data>
+  <data name="Loop_IndexHint" xml:space="preserve">
+    <value>  |  frame numbers approximate until indexed; native times take priority</value>
+  </data>
+  <data name="Loop_LastIncluded" xml:space="preserve">
+    <value> (last included image; end time is exclusive)</value>
+  </data>
+  <data name="Loop_Review" xml:space="preserve">
+    <value>Needs review</value>
+  </data>
+  <data name="Loop_Promising" xml:space="preserve">
+    <value>Promising</value>
+  </data>
+  <data name="Loop_Approximate" xml:space="preserve">
+    <value>Approximate</value>
+  </data>
+  <data name="Loop_SpeedInvalid" xml:space="preserve">
+    <value>Loop speed must be 1, 0.75 or 0.5; repetitions must be between 1 and 10.</value>
+  </data>
+  <data name="Loop_SlowMotionOnly" xml:space="preserve">
+    <value>Slow motion is available only for Ping-Pong.</value>
+  </data>
+  <data name="Loop_PingPongSilent" xml:space="preserve">
+    <value>Ping-Pong loops are silent. Reversed audio is not supported.</value>
+  </data>
+  <data name="Loop_ModeRequired" xml:space="preserve">
+    <value>Loop options require --loop-mode natural|pingpong.</value>
+  </data>
+  <data name="Loop_ModeInvalid" xml:space="preserve">
+    <value>Loop mode must be natural or pingpong.</value>
+  </data>
+  <data name="Loop_AudioInvalid" xml:space="preserve">
+    <value>Loop audio must be keep or mute.</value>
+  </data>
+  <data name="Loop_CandidateIdRequired" xml:space="preserve">
+    <value>A loop candidate ID is required.</value>
+  </data>
+  <data name="Loop_FiniteBounds" xml:space="preserve">
+    <value>Loop boundaries must describe a finite, non-empty segment.</value>
+  </data>
+  <data name="Loop_SourceUnavailable" xml:space="preserve">
+    <value>The video source is no longer available.</value>
+  </data>
+  <data name="Loop_FrameBoundsInvalid" xml:space="preserve">
+    <value>Video frame bounds must be ordered positive integers.</value>
+  </data>
+  <data name="Loop_NoDecodedFrames" xml:space="preserve">
+    <value>No decoded video frames are available.</value>
+  </data>
+  <data name="Loop_PositiveFrameRequired" xml:space="preserve">
+    <value>A positive frame number is required.</value>
+  </data>
+  <data name="Loop_NoBoundaryFrame" xml:space="preserve">
+    <value>No video frame is available at this boundary.</value>
+  </data>
+  <data name="Loop_NativeStepInvalid" xml:space="preserve">
+    <value>Native navigation moves one frame at a time.</value>
+  </data>
+  <data name="Loop_IndexBudget" xml:space="preserve">
+    <value>The native frame index exceeds its 256 MiB budget. Use time bounds for this selection.</value>
+  </data>
+  <data name="Loop_NonIncreasingTimes" xml:space="preserve">
+    <value>Native video timestamps are not strictly increasing.</value>
+  </data>
+  <data name="Loop_ReadTimingFailed" xml:space="preserve">
+    <value>Cannot read native frame timing.</value>
+  </data>
+  <data name="Loop_PreviewSourceUnavailable" xml:space="preserve">
+    <value>The preview source is no longer available.</value>
+  </data>
+  <data name="Loop_PreviewBoundsInvalid" xml:space="preserve">
+    <value>A finite, non-empty video selection is required for preview.</value>
+  </data>
+  <data name="Loop_PixelAspectInvalid" xml:space="preserve">
+    <value>The source pixel aspect ratio is invalid.</value>
+  </data>
+  <data name="Loop_FullClip" xml:space="preserve">
+    <value>Full loop preview: three continuous cycles</value>
+  </data>
+  <data name="Loop_NaturalClip" xml:space="preserve">
+    <value>Junction preview: end → start (one real seam)</value>
+  </data>
+  <data name="Loop_PingPongClip" xml:space="preserve">
+    <value>Forward/backward preview: two continuous cycles, both turning points</value>
+  </data>
+  <data name="Loop_EndTurn" xml:space="preserve">
+    <value>Separate clip 1/2: end turning point</value>
+  </data>
+  <data name="Loop_StartTurn" xml:space="preserve">
+    <value>Separate clip 2/2: start turning point</value>
+  </data>
+  <data name="Loop_ResolveHeldFrame" xml:space="preserve">
+    <value>Resolving the last held frame for the junction preview...</value>
+  </data>
+  <data name="Loop_NoJunctionFrame" xml:space="preserve">
+    <value>No decoded frame is available for this junction.</value>
+  </data>
+  <data name="Loop_ReadableExportRequired" xml:space="preserve">
+    <value>A readable video is required for loop export.</value>
+  </data>
+  <data name="Loop_ExportFpsLimit" xml:space="preserve">
+    <value>Loop export currently supports videos up to 240 FPS.</value>
+  </data>
+  <data name="Loop_DestinationExists" xml:space="preserve">
+    <value>The loop destination already exists. Choose a unique output path.</value>
+  </data>
+  <data name="Loop_BoundsOutsideSource" xml:space="preserve">
+    <value>Loop boundaries must describe a non-empty segment inside the source.</value>
+  </data>
+  <data name="Loop_ResolveBoundary" xml:space="preserve">
+    <value>Resolving the loop boundary...</value>
+  </data>
+  <data name="Loop_EncodingNatural" xml:space="preserve">
+    <value>Encoding the natural loop cycle...</value>
+  </data>
+  <data name="Loop_PreparingSelection" xml:space="preserve">
+    <value>Preparing the loop selection...</value>
+  </data>
+  <data name="Loop_Assembling" xml:space="preserve">
+    <value>Assembling continuous loop repetitions...</value>
+  </data>
+  <data name="Loop_AssemblingPhase" xml:space="preserve">
+    <value>Assembling loop repetitions</value>
+  </data>
+  <data name="Loop_NoSelectionFrame" xml:space="preserve">
+    <value>The selection contains no video frame.</value>
+  </data>
+  <data name="Loop_NoLoopFrame" xml:space="preserve">
+    <value>The loop selection contains no decoded frame.</value>
+  </data>
+  <data name="Loop_PreviewTwoFrames" xml:space="preserve">
+    <value>Forward/backward preview requires at least two decoded frames.</value>
+  </data>
+  <data name="Loop_PingPongThreeFrames" xml:space="preserve">
+    <value>Ping-Pong requires at least three decoded frames.</value>
+  </data>
+  <data name="Loop_PreparingBackward" xml:space="preserve">
+    <value>Preparing backward frames...</value>
+  </data>
+  <data name="Loop_DecodingFailed" xml:space="preserve">
+    <value>Loop decoding failed.</value>
+  </data>
+  <data name="Loop_FrameTimesUnavailable" xml:space="preserve">
+    <value>Loop frame timestamps are unavailable.</value>
+  </data>
+  <data name="Loop_FrameTicksUnavailable" xml:space="preserve">
+    <value>Native frame ticks are unavailable.</value>
+  </data>
+  <data name="Loop_RgbMismatch" xml:space="preserve">
+    <value>Loop frame dimensions do not match its RGB pixels.</value>
+  </data>
+  <data name="Loop_ComparisonSizeMismatch" xml:space="preserve">
+    <value>Loop frames must use the same comparison dimensions.</value>
+  </data>
+  <data name="Loop_DimensionsRequired" xml:space="preserve">
+    <value>Valid video dimensions and pixel aspect ratio are required.</value>
+  </data>
+  <data name="Loop_VideoNotFound" xml:space="preserve">
+    <value>Video not found.</value>
+  </data>
+  <data name="Loop_ReadableVideoRequired" xml:space="preserve">
+    <value>A readable video with a known duration and frame rate is required.</value>
+  </data>
+  <data name="Loop_SearchFpsLimit" xml:space="preserve">
+    <value>Find Loop currently supports videos up to 240 FPS.</value>
+  </data>
+  <data name="Loop_SearchMinimumRange" xml:space="preserve">
+    <value>Minimum loop duration must be between 0.1 and 600 seconds.</value>
+  </data>
+  <data name="Loop_ReadingEndpoints" xml:space="preserve">
+    <value>Reading native video endpoints...</value>
+  </data>
+  <data name="Loop_DistributingMatches" xml:space="preserve">
+    <value>Fast pass: distributing spatial matches across regions and duration families...</value>
+  </data>
+  <data name="Loop_EndpointsChecked" xml:space="preserve">
+    <value>Source endpoints checked.</value>
+  </data>
+  <data name="Loop_DiskCheckFailed" xml:space="preserve">
+    <value>Cannot check available disk space for this loop.</value>
+  </data>
+  <data name="Loop_ShorterPreview" xml:space="preserve">
+    <value>Use Preview junction or select a shorter segment.</value>
+  </data>
+  <data name="Loop_ShorterSegment" xml:space="preserve">
+    <value>Select a shorter segment.</value>
+  </data>
+  <data name="Loop_RenderingFailed" xml:space="preserve">
+    <value>Loop rendering failed.</value>
+  </data>
+  <data name="Loop_TemporaryBudgetExceeded" xml:space="preserve">
+    <value>Loop rendering exceeded the 8 GB temporary-work budget.</value>
+  </data>
+  <data name="Loop_DiskFull" xml:space="preserve">
+    <value>Loop rendering: not enough disk space to continue safely.</value>
+  </data>
+  <data name="Loop_ExportCanceled" xml:space="preserve">
+    <value>Loop export canceled.</value>
+  </data>
+  <data name="Loop_ExportFailed" xml:space="preserve">
+    <value>Loop export failed.</value>
+  </data>
+  <data name="Loop_CliBoundsRequired" xml:space="preserve">
+    <value>Loop CLI export requires explicit cut boundaries. Open Cut Video without loop CLI options to use Find Loop.</value>
+  </data>
+  <data name="Loop_VideoLoop" xml:space="preserve">
+    <value>Video Loop</value>
+  </data>
+  <data name="Loop_ColorRangeUnsupported" xml:space="preserve">
+    <value>Source color range is unsupported; check the source color metadata.</value>
+  </data>
+  <data name="Loop_HdrMetadataRequired" xml:space="preserve">
+    <value>HDR-to-SDR requires BT.2020 primaries and a BT.2020 non-constant matrix. Source metadata is missing or inconsistent.</value>
+  </data>
+  <data name="Loop_MatrixUnsupported" xml:space="preserve">
+    <value>Source color matrix is unsupported or conflicts with the SDR profile. Check the source color metadata before loop export.</value>
+  </data>
+  <data name="Loop_WideGamutMetadata" xml:space="preserve">
+    <value>SDR wide-gamut source metadata is incomplete or unsupported; BT.2020 primaries and non-constant matrix are required.</value>
+  </data>
+  <data name="Loop_WideGamutOutput" xml:space="preserve">
+    <value>SDR wide-gamut source → SDR BT.709 output (no HDR tone mapping).</value>
+  </data>
+  <data name="Loop_Sdr709Output" xml:space="preserve">
+    <value>SDR source. Loop output: MP4/H.264 SDR BT.709.</value>
+  </data>
+  <data name="Loop_SdrOutput" xml:space="preserve">
+    <value>SDR source. Loop output: MP4/H.264.</value>
+  </data>
+  <data name="Loop_TransferUnsupported" xml:space="preserve">
+    <value>Source color transfer is missing or unsupported. SDR/HDR cannot be determined safely for loop export; check the source color metadata.</value>
+  </data>
+  <data name="Loop_UnspecifiedTransfer" xml:space="preserve">
+    <value>Color transfer unspecified; using the SDR compatibility path for loop output.</value>
+  </data>
+  <data name="Loop_ColorFiltersFailed" xml:space="preserve">
+    <value>Unable to verify FFmpeg color conversion filters. Loop conversion is unavailable.</value>
+  </data>
+  <data name="Loop_ExportAll" xml:space="preserve">
+    <value>Export All Candidates ({0})</value>
+  </data>
+  <data name="Loop_ColorReview" xml:space="preserve">
+    <value>{0} Junctions need visual review. Preview before exporting.</value>
+  </data>
+  <data name="Loop_Unavailable" xml:space="preserve">
+    <value>Loop unavailable: {0}</value>
+  </data>
+  <data name="Loop_NativeUnavailable" xml:space="preserve">
+    <value>Native timing unavailable: {0}</value>
+  </data>
+  <data name="Loop_ProxyReview" xml:space="preserve">
+    <value>{0}. Silent proxy; inspect full-resolution export for fine detail.</value>
+  </data>
+  <data name="Loop_PlaybackUnavailable" xml:space="preserve">
+    <value>Loop playback unavailable: {0}</value>
+  </data>
+  <data name="Loop_CandidatesFound" xml:space="preserve">
+    <value>{0} candidate(s), best junctions first unless sorted by duration. Assessments are estimates; preview before exporting.</value>
+  </data>
+  <data name="Loop_SearchInProgress" xml:space="preserve">
+    <value>Search in progress: {0} candidate(s) so far. Selection is retained while results arrive.</value>
+  </data>
+  <data name="Loop_TemporalCoverage" xml:space="preserve">
+    <value> Temporal coverage: {0:0.#} seconds in distributed windows; gaps were not sampled.</value>
+  </data>
+  <data name="Loop_NativePreview" xml:space="preserve">
+    <value>Previewing {0} native frame at {1}</value>
+  </data>
+  <data name="Loop_CandidateSummary" xml:space="preserve">
+    <value>{0} → {1}  |  {2:0.###} s  |  {3}</value>
+  </data>
+  <data name="Loop_DecodePreviewFailed" xml:space="preserve">
+    <value>Loop preview decoding failed: {0}</value>
+  </data>
+  <data name="Loop_MissingFilter" xml:space="preserve">
+    <value>FFmpeg color conversion requires the missing '{0}' filter. Use the bundled FFmpeg; loop conversion is unavailable.</value>
+  </data>
+  <data name="Loop_FastPass" xml:space="preserve">
+    <value>Fast pass: {0:0.###} FPS in bounded blocks across the source...</value>
+  </data>
+  <data name="Loop_FastBlock" xml:space="preserve">
+    <value>Fast pass: block {0}/{1}; {2} compact signatures.</value>
+  </data>
+  <data name="Loop_PreciseChecked" xml:space="preserve">
+    <value>Precise pass: {0}/{1} distributed tracks checked.</value>
+  </data>
+  <data name="Loop_PreciseChecking" xml:space="preserve">
+    <value>Precise pass: checking track {0}/{1}...</value>
+  </data>
+  <data name="Loop_AnalysisComplete" xml:space="preserve">
+    <value>Analysis complete: {0} candidate(s); coverage and budgets are reported.</value>
+  </data>
+  <data name="Loop_TerminationUnconfirmed" xml:space="preserve">
+    <value>Media process termination could not be confirmed. Temporary files were retained at '{0}' and '{1}'.</value>
+  </data>
+  <data name="Loop_PreparingPhase" xml:space="preserve">
+    <value>Preparing {0}</value>
+  </data>
+  <data name="Loop_DiskSpaceRequired" xml:space="preserve">
+    <value>{0}: not enough disk space (estimated additional {1:0.##} MB). Select a shorter segment or free disk space.</value>
+  </data>
+  <data name="Loop_InvalidCliOption" xml:space="preserve">
+    <value>Invalid loop option: {0}. Supply a supported option and its value.</value>
+  </data>
+  <data name="Loop_HdrOutput" xml:space="preserve">
+    <value>HDR source → SDR output (BT.709). {0} tone mapping; reference peak {1:0} nits{2}</value>
+  </data>
+  <data name="Loop_ReferenceDisplay" xml:space="preserve">
+    <value> (fallback/reference display).</value>
+  </data>
+  <data name="Loop_TemporarySpaceRequired" xml:space="preserve">
+    <value>The {0} needs an estimated {1:0.##} GB of temporary space, above the 8 GB budget. {2}</value>
+  </data>
+  <data name="Loop_QueueCandidate" xml:space="preserve">
+    <value>Candidate {0}/{1} · {2:0.###} s · {3} → {4} (end exclusive)</value>
+  </data>
+  <data name="Loop_PlanNatural" xml:space="preserve">
+    <value>natural cycle</value>
+  </data>
+  <data name="Loop_PlanPreview" xml:space="preserve">
+    <value>preview</value>
+  </data>
+  <data name="Loop_PlanPingPong" xml:space="preserve">
+    <value>forward/backward cycle</value>
+  </data>
+  <data name="Loop_ColumnEnd" xml:space="preserve">
+    <value>End (exclusive)</value>
+  </data>
+  <data name="Loop_ColumnDuration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Loop_ColumnJunction" xml:space="preserve">
+    <value>Junction</value>
+  </data>
+  <data name="Loop_DurationFormat" xml:space="preserve">
+    <value>0.###' s'</value>
+  </data>
+  <data name="Loop_Indexing" xml:space="preserve">
+    <value>Indexing native frames for the first access; cancellation remains available...</value>
+  </data>
+  <data name="Loop_NativeTiming" xml:space="preserve">
+    <value>Video native timing</value>
+  </data>
+  <data name="Loop_Candidates" xml:space="preserve">
+    <value>Loop candidates</value>
+  </data>
+  <data name="Loop_CandidateKeyboard" xml:space="preserve">
+    <value>Select a candidate with the arrows. Enter or Space restores its original bounds. End is exclusive. Double-click selects without exporting.</value>
+  </data>
+  <data name="Loop_RenderingJunction" xml:space="preserve">
+    <value>Rendering a short silent proxy of the junction...</value>
+  </data>
+  <data name="Loop_RenderingFull" xml:space="preserve">
+    <value>Rendering three continuous proxy cycles...</value>
+  </data>
+  <data name="Loop_SilentPreview" xml:space="preserve">
+    <value>Loop video preview (silent)</value>
+  </data>
+  <data name="Loop_NativeCapture" xml:space="preserve">
+    <value>Cut Video native preview</value>
+  </data>
+  <data name="Loop_CutPreview" xml:space="preserve">
+    <value>Cut Video Preview</value>
+  </data>
 </root>

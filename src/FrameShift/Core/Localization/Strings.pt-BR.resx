@@ -5553,4 +5553,484 @@ Os arquivos WAV de saída são criados ao lado da origem com nomes únicos.</val
   <data name="Loop_ExportSdr" xml:space="preserve">
     <value>Exportar loop SDR</value>
   </data>
+  <data name="Loop_Find" xml:space="preserve">
+    <value>Encontrar loop</value>
+  </data>
+  <data name="Loop_PreviewJunction" xml:space="preserve">
+    <value>Prévia da junção</value>
+  </data>
+  <data name="Loop_FullPreview" xml:space="preserve">
+    <value>Prévia do loop completo</value>
+  </data>
+  <data name="Loop_CreatePingPong" xml:space="preserve">
+    <value>Criar loop de ida e volta</value>
+  </data>
+  <data name="Loop_StopSearch" xml:space="preserve">
+    <value>Parar busca</value>
+  </data>
+  <data name="Loop_StopPreview" xml:space="preserve">
+    <value>Parar prévia</value>
+  </data>
+  <data name="Loop_BackToCut" xml:space="preserve">
+    <value>Voltar ao corte</value>
+  </data>
+  <data name="Loop_Advanced" xml:space="preserve">
+    <value>Opções avançadas</value>
+  </data>
+  <data name="Loop_HideAdvanced" xml:space="preserve">
+    <value>Ocultar opções avançadas</value>
+  </data>
+  <data name="Loop_Auto" xml:space="preserve">
+    <value>Automático</value>
+  </data>
+  <data name="Loop_Strict" xml:space="preserve">
+    <value>Rigorosa</value>
+  </data>
+  <data name="Loop_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Loop_Permissive" xml:space="preserve">
+    <value>Permissiva</value>
+  </data>
+  <data name="Loop_KeepAudio" xml:space="preserve">
+    <value>Manter áudio original (junção não analisada)</value>
+  </data>
+  <data name="Loop_PlaybackSpeed" xml:space="preserve">
+    <value>Velocidade de reprodução</value>
+  </data>
+  <data name="Loop_MinimumDuration" xml:space="preserve">
+    <value>Duração mínima</value>
+  </data>
+  <data name="Loop_MinimumHint" xml:space="preserve">
+    <value>segundos (vazio = Automático)</value>
+  </data>
+  <data name="Loop_Sensitivity" xml:space="preserve">
+    <value>Sensibilidade</value>
+  </data>
+  <data name="Loop_ExportRepeats" xml:space="preserve">
+    <value>Repetições na exportação</value>
+  </data>
+  <data name="Loop_FullPreviewHint" xml:space="preserve">
+    <value>Prévia completa: três ciclos contínuos em resolução reduzida. Seleções longas podem exceder o limite de espaço temporário; use Prévia da junção.</value>
+  </data>
+  <data name="Loop_ExportHint" xml:space="preserve">
+    <value>Exportação: MP4 com nome único ao lado do original. A prévia não tem áudio.</value>
+  </data>
+  <data name="Loop_Tools" xml:space="preserve">
+    <value>Ferramentas de loop</value>
+  </data>
+  <data name="Loop_NaturalHint" xml:space="preserve">
+    <value>Loop natural: revise a junção. A continuidade do áudio não é analisada.</value>
+  </data>
+  <data name="Loop_PingPongHint" xml:space="preserve">
+    <value>Ida e volta: a seleção é reproduzida para a frente e depois para trás, sem áudio. VFR usa o FPS médio do original.</value>
+  </data>
+  <data name="Loop_SearchStopped" xml:space="preserve">
+    <value>Busca interrompida. Seleção atual mantida.</value>
+  </data>
+  <data name="Loop_PreviewStopped" xml:space="preserve">
+    <value>Prévia interrompida.</value>
+  </data>
+  <data name="Loop_MinimumInvalid" xml:space="preserve">
+    <value>A duração mínima deve ficar vazia (Automático) ou ser um número entre 0.1 e 600 segundos.</value>
+  </data>
+  <data name="Loop_MinimumRange" xml:space="preserve">
+    <value>A duração mínima deve estar entre 0.1 e 600 segundos. Isso não limita a duração do original nem dos candidatos.</value>
+  </data>
+  <data name="Loop_Rendering" xml:space="preserve">
+    <value>Renderizando loop...</value>
+  </data>
+  <data name="Loop_SourceChanged" xml:space="preserve">
+    <value>O original foi alterado. Reabra Cortar vídeo para atualizar os metadados e a seleção.</value>
+  </data>
+  <data name="Loop_SourceChangedPreview" xml:space="preserve">
+    <value>O original foi alterado durante a renderização da prévia. Reabra Cortar vídeo para atualizar os metadados.</value>
+  </data>
+  <data name="Loop_PreviewComplete" xml:space="preserve">
+    <value>Prévia concluída. Reproduza a cópia em cache ou confira os detalhes em uma exportação na resolução original.</value>
+  </data>
+  <data name="Loop_SelectionEmpty" xml:space="preserve">
+    <value>A seleção com tempos nativos deve conter pelo menos um quadro.</value>
+  </data>
+  <data name="Loop_NoCandidates" xml:space="preserve">
+    <value>Nenhum candidato natural satisfatório foi encontrado nesta busca. Mantenha a seleção, ajuste as opções avançadas ou crie um loop de ida e volta.</value>
+  </data>
+  <data name="Loop_PreviousSelection" xml:space="preserve">
+    <value> Seleção anterior mantida.</value>
+  </data>
+  <data name="Loop_LimitedCoverage" xml:space="preserve">
+    <value> Cobertura limitada pela amostragem ou pelo limite de candidatos; outros loops podem existir.</value>
+  </data>
+  <data name="Loop_NativeNumbers" xml:space="preserve">
+    <value>  |  tempos nativos (números dos quadros decodificados)</value>
+  </data>
+  <data name="Loop_ApproximateNumbers" xml:space="preserve">
+    <value>  |  tempos nativos (números de quadros aproximados para VFR)</value>
+  </data>
+  <data name="Loop_CustomSelection" xml:space="preserve">
+    <value>  |  Seleção personalizada</value>
+  </data>
+  <data name="Loop_IndexHint" xml:space="preserve">
+    <value>  |  números aproximados até a indexação; tempos nativos têm prioridade</value>
+  </data>
+  <data name="Loop_LastIncluded" xml:space="preserve">
+    <value> (última imagem incluída; tempo final exclusivo)</value>
+  </data>
+  <data name="Loop_Review" xml:space="preserve">
+    <value>Precisa de revisão</value>
+  </data>
+  <data name="Loop_Promising" xml:space="preserve">
+    <value>Promissor</value>
+  </data>
+  <data name="Loop_Approximate" xml:space="preserve">
+    <value>Aproximado</value>
+  </data>
+  <data name="Loop_SpeedInvalid" xml:space="preserve">
+    <value>A velocidade deve ser 1, 0.75 ou 0.5; as repetições devem estar entre 1 e 10.</value>
+  </data>
+  <data name="Loop_SlowMotionOnly" xml:space="preserve">
+    <value>A câmera lenta só está disponível para ida e volta.</value>
+  </data>
+  <data name="Loop_PingPongSilent" xml:space="preserve">
+    <value>Loops de ida e volta não têm áudio. Áudio invertido não é compatível.</value>
+  </data>
+  <data name="Loop_ModeRequired" xml:space="preserve">
+    <value>As opções de loop exigem --loop-mode natural|pingpong.</value>
+  </data>
+  <data name="Loop_ModeInvalid" xml:space="preserve">
+    <value>O modo do loop deve ser natural ou pingpong.</value>
+  </data>
+  <data name="Loop_AudioInvalid" xml:space="preserve">
+    <value>O áudio do loop deve ser keep ou mute.</value>
+  </data>
+  <data name="Loop_CandidateIdRequired" xml:space="preserve">
+    <value>É necessário um ID de candidato de loop.</value>
+  </data>
+  <data name="Loop_FiniteBounds" xml:space="preserve">
+    <value>Os limites do loop devem definir um segmento finito e não vazio.</value>
+  </data>
+  <data name="Loop_SourceUnavailable" xml:space="preserve">
+    <value>O vídeo original não está mais disponível.</value>
+  </data>
+  <data name="Loop_FrameBoundsInvalid" xml:space="preserve">
+    <value>Os limites dos quadros devem ser inteiros positivos em ordem.</value>
+  </data>
+  <data name="Loop_NoDecodedFrames" xml:space="preserve">
+    <value>Não há quadros de vídeo decodificados disponíveis.</value>
+  </data>
+  <data name="Loop_PositiveFrameRequired" xml:space="preserve">
+    <value>É necessário um número de quadro positivo.</value>
+  </data>
+  <data name="Loop_NoBoundaryFrame" xml:space="preserve">
+    <value>Não há quadro de vídeo disponível neste limite.</value>
+  </data>
+  <data name="Loop_NativeStepInvalid" xml:space="preserve">
+    <value>A navegação nativa move um quadro por vez.</value>
+  </data>
+  <data name="Loop_IndexBudget" xml:space="preserve">
+    <value>O índice de quadros excede o limite de 256 MiB. Use limites de tempo para esta seleção.</value>
+  </data>
+  <data name="Loop_NonIncreasingTimes" xml:space="preserve">
+    <value>Os tempos nativos do vídeo não são estritamente crescentes.</value>
+  </data>
+  <data name="Loop_ReadTimingFailed" xml:space="preserve">
+    <value>Não foi possível ler os tempos nativos dos quadros.</value>
+  </data>
+  <data name="Loop_PreviewSourceUnavailable" xml:space="preserve">
+    <value>O original da prévia não está mais disponível.</value>
+  </data>
+  <data name="Loop_PreviewBoundsInvalid" xml:space="preserve">
+    <value>A prévia exige uma seleção de vídeo finita e não vazia.</value>
+  </data>
+  <data name="Loop_PixelAspectInvalid" xml:space="preserve">
+    <value>A proporção de pixel do original é inválida.</value>
+  </data>
+  <data name="Loop_FullClip" xml:space="preserve">
+    <value>Prévia do loop completo: três ciclos contínuos</value>
+  </data>
+  <data name="Loop_NaturalClip" xml:space="preserve">
+    <value>Prévia da junção: fim → início (uma junção real)</value>
+  </data>
+  <data name="Loop_PingPongClip" xml:space="preserve">
+    <value>Prévia de ida e volta: dois ciclos contínuos, ambos os pontos de inversão</value>
+  </data>
+  <data name="Loop_EndTurn" xml:space="preserve">
+    <value>Clipe separado 1/2: inversão no fim</value>
+  </data>
+  <data name="Loop_StartTurn" xml:space="preserve">
+    <value>Clipe separado 2/2: inversão no início</value>
+  </data>
+  <data name="Loop_ResolveHeldFrame" xml:space="preserve">
+    <value>Resolvendo o último quadro mantido para a prévia da junção...</value>
+  </data>
+  <data name="Loop_NoJunctionFrame" xml:space="preserve">
+    <value>Não há quadro decodificado disponível para esta junção.</value>
+  </data>
+  <data name="Loop_ReadableExportRequired" xml:space="preserve">
+    <value>É necessário um vídeo legível para exportar o loop.</value>
+  </data>
+  <data name="Loop_ExportFpsLimit" xml:space="preserve">
+    <value>A exportação de loops aceita vídeos de até 240 FPS.</value>
+  </data>
+  <data name="Loop_DestinationExists" xml:space="preserve">
+    <value>O destino do loop já existe. Escolha um caminho de saída exclusivo.</value>
+  </data>
+  <data name="Loop_BoundsOutsideSource" xml:space="preserve">
+    <value>Os limites do loop devem definir um segmento não vazio dentro do original.</value>
+  </data>
+  <data name="Loop_ResolveBoundary" xml:space="preserve">
+    <value>Resolvendo o limite do loop...</value>
+  </data>
+  <data name="Loop_EncodingNatural" xml:space="preserve">
+    <value>Codificando o ciclo do loop natural...</value>
+  </data>
+  <data name="Loop_PreparingSelection" xml:space="preserve">
+    <value>Preparando a seleção do loop...</value>
+  </data>
+  <data name="Loop_Assembling" xml:space="preserve">
+    <value>Montando repetições contínuas do loop...</value>
+  </data>
+  <data name="Loop_AssemblingPhase" xml:space="preserve">
+    <value>Montando repetições do loop</value>
+  </data>
+  <data name="Loop_NoSelectionFrame" xml:space="preserve">
+    <value>A seleção não contém quadros de vídeo.</value>
+  </data>
+  <data name="Loop_NoLoopFrame" xml:space="preserve">
+    <value>A seleção do loop não contém quadros decodificados.</value>
+  </data>
+  <data name="Loop_PreviewTwoFrames" xml:space="preserve">
+    <value>A prévia de ida e volta exige pelo menos dois quadros decodificados.</value>
+  </data>
+  <data name="Loop_PingPongThreeFrames" xml:space="preserve">
+    <value>Ida e volta exige pelo menos três quadros decodificados.</value>
+  </data>
+  <data name="Loop_PreparingBackward" xml:space="preserve">
+    <value>Preparando quadros invertidos...</value>
+  </data>
+  <data name="Loop_DecodingFailed" xml:space="preserve">
+    <value>Falha ao decodificar o loop.</value>
+  </data>
+  <data name="Loop_FrameTimesUnavailable" xml:space="preserve">
+    <value>Os tempos dos quadros do loop não estão disponíveis.</value>
+  </data>
+  <data name="Loop_FrameTicksUnavailable" xml:space="preserve">
+    <value>Os ticks nativos dos quadros não estão disponíveis.</value>
+  </data>
+  <data name="Loop_RgbMismatch" xml:space="preserve">
+    <value>As dimensões do quadro não correspondem aos pixels RGB.</value>
+  </data>
+  <data name="Loop_ComparisonSizeMismatch" xml:space="preserve">
+    <value>Os quadros devem usar as mesmas dimensões de comparação.</value>
+  </data>
+  <data name="Loop_DimensionsRequired" xml:space="preserve">
+    <value>São necessárias dimensões de vídeo e uma proporção de pixel válidas.</value>
+  </data>
+  <data name="Loop_VideoNotFound" xml:space="preserve">
+    <value>Vídeo não encontrado.</value>
+  </data>
+  <data name="Loop_ReadableVideoRequired" xml:space="preserve">
+    <value>É necessário um vídeo legível com duração e taxa de quadros conhecidas.</value>
+  </data>
+  <data name="Loop_SearchFpsLimit" xml:space="preserve">
+    <value>Encontrar loop aceita vídeos de até 240 FPS.</value>
+  </data>
+  <data name="Loop_SearchMinimumRange" xml:space="preserve">
+    <value>A duração mínima do loop deve estar entre 0.1 e 600 segundos.</value>
+  </data>
+  <data name="Loop_ReadingEndpoints" xml:space="preserve">
+    <value>Lendo os extremos nativos do vídeo...</value>
+  </data>
+  <data name="Loop_DistributingMatches" xml:space="preserve">
+    <value>Passagem rápida: distribuindo correspondências espaciais por regiões e grupos de duração...</value>
+  </data>
+  <data name="Loop_EndpointsChecked" xml:space="preserve">
+    <value>Extremos do original verificados.</value>
+  </data>
+  <data name="Loop_DiskCheckFailed" xml:space="preserve">
+    <value>Não foi possível verificar o espaço disponível para este loop.</value>
+  </data>
+  <data name="Loop_ShorterPreview" xml:space="preserve">
+    <value>Use Prévia da junção ou selecione um segmento mais curto.</value>
+  </data>
+  <data name="Loop_ShorterSegment" xml:space="preserve">
+    <value>Selecione um segmento mais curto.</value>
+  </data>
+  <data name="Loop_RenderingFailed" xml:space="preserve">
+    <value>Falha ao renderizar o loop.</value>
+  </data>
+  <data name="Loop_TemporaryBudgetExceeded" xml:space="preserve">
+    <value>A renderização do loop excedeu o limite temporário de 8 GB.</value>
+  </data>
+  <data name="Loop_DiskFull" xml:space="preserve">
+    <value>Renderização do loop: espaço insuficiente para continuar com segurança.</value>
+  </data>
+  <data name="Loop_ExportCanceled" xml:space="preserve">
+    <value>Exportação do loop cancelada.</value>
+  </data>
+  <data name="Loop_ExportFailed" xml:space="preserve">
+    <value>Falha ao exportar o loop.</value>
+  </data>
+  <data name="Loop_CliBoundsRequired" xml:space="preserve">
+    <value>A exportação de loops por CLI exige limites de corte explícitos. Abra Cortar vídeo sem opções CLI de loop para usar Encontrar loop.</value>
+  </data>
+  <data name="Loop_VideoLoop" xml:space="preserve">
+    <value>Loop de vídeo</value>
+  </data>
+  <data name="Loop_ColorRangeUnsupported" xml:space="preserve">
+    <value>A faixa de cor do original não é compatível; verifique seus metadados de cor.</value>
+  </data>
+  <data name="Loop_HdrMetadataRequired" xml:space="preserve">
+    <value>HDR para SDR exige primárias BT.2020 e matriz BT.2020 de luminância não constante. Os metadados do original estão ausentes ou inconsistentes.</value>
+  </data>
+  <data name="Loop_MatrixUnsupported" xml:space="preserve">
+    <value>A matriz de cor não é compatível ou conflita com o perfil SDR. Verifique os metadados de cor antes de exportar o loop.</value>
+  </data>
+  <data name="Loop_WideGamutMetadata" xml:space="preserve">
+    <value>Os metadados SDR de ampla gama estão incompletos ou não são compatíveis; são necessárias primárias BT.2020 e matriz de luminância não constante.</value>
+  </data>
+  <data name="Loop_WideGamutOutput" xml:space="preserve">
+    <value>Original SDR de ampla gama → saída SDR BT.709 (sem mapeamento de tons HDR).</value>
+  </data>
+  <data name="Loop_Sdr709Output" xml:space="preserve">
+    <value>Original SDR. Saída do loop: MP4/H.264 SDR BT.709.</value>
+  </data>
+  <data name="Loop_SdrOutput" xml:space="preserve">
+    <value>Original SDR. Saída do loop: MP4/H.264.</value>
+  </data>
+  <data name="Loop_TransferUnsupported" xml:space="preserve">
+    <value>A função de transferência está ausente ou não é compatível. Não é possível determinar SDR/HDR com segurança para o loop; verifique os metadados de cor.</value>
+  </data>
+  <data name="Loop_UnspecifiedTransfer" xml:space="preserve">
+    <value>Transferência de cor não especificada; usando o modo de compatibilidade SDR para o loop.</value>
+  </data>
+  <data name="Loop_ColorFiltersFailed" xml:space="preserve">
+    <value>Não foi possível verificar os filtros de conversão de cor do FFmpeg. A conversão de loops não está disponível.</value>
+  </data>
+  <data name="Loop_ExportAll" xml:space="preserve">
+    <value>Exportar todos os candidatos ({0})</value>
+  </data>
+  <data name="Loop_ColorReview" xml:space="preserve">
+    <value>{0} As junções precisam de revisão visual. Veja a prévia antes de exportar.</value>
+  </data>
+  <data name="Loop_Unavailable" xml:space="preserve">
+    <value>Loop indisponível: {0}</value>
+  </data>
+  <data name="Loop_NativeUnavailable" xml:space="preserve">
+    <value>Tempos nativos indisponíveis: {0}</value>
+  </data>
+  <data name="Loop_ProxyReview" xml:space="preserve">
+    <value>{0}. Cópia sem áudio; confira os detalhes na exportação em resolução original.</value>
+  </data>
+  <data name="Loop_PlaybackUnavailable" xml:space="preserve">
+    <value>Reprodução do loop indisponível: {0}</value>
+  </data>
+  <data name="Loop_CandidatesFound" xml:space="preserve">
+    <value>{0} candidato(s), melhores junções primeiro, exceto ao ordenar por duração. As avaliações são estimativas; veja a prévia antes de exportar.</value>
+  </data>
+  <data name="Loop_SearchInProgress" xml:space="preserve">
+    <value>Busca em andamento: {0} candidato(s) até agora. A seleção é mantida enquanto chegam resultados.</value>
+  </data>
+  <data name="Loop_TemporalCoverage" xml:space="preserve">
+    <value> Cobertura temporal: {0:0.#} segundos em janelas distribuídas; os intervalos não foram amostrados.</value>
+  </data>
+  <data name="Loop_NativePreview" xml:space="preserve">
+    <value>Prévia do quadro nativo de {0} em {1}</value>
+  </data>
+  <data name="Loop_CandidateSummary" xml:space="preserve">
+    <value>{0} → {1}  |  {2:0.###} s  |  {3}</value>
+  </data>
+  <data name="Loop_DecodePreviewFailed" xml:space="preserve">
+    <value>Falha ao decodificar a prévia do loop: {0}</value>
+  </data>
+  <data name="Loop_MissingFilter" xml:space="preserve">
+    <value>A conversão de cor do FFmpeg exige o filtro ausente '{0}'. Use o FFmpeg incluído; a conversão de loops não está disponível.</value>
+  </data>
+  <data name="Loop_FastPass" xml:space="preserve">
+    <value>Passagem rápida: {0:0.###} FPS em blocos limitados ao longo do original...</value>
+  </data>
+  <data name="Loop_FastBlock" xml:space="preserve">
+    <value>Passagem rápida: bloco {0}/{1}; {2} assinaturas compactas.</value>
+  </data>
+  <data name="Loop_PreciseChecked" xml:space="preserve">
+    <value>Passagem precisa: {0}/{1} trajetórias distribuídas verificadas.</value>
+  </data>
+  <data name="Loop_PreciseChecking" xml:space="preserve">
+    <value>Passagem precisa: verificando trajetória {0}/{1}...</value>
+  </data>
+  <data name="Loop_AnalysisComplete" xml:space="preserve">
+    <value>Análise concluída: {0} candidato(s); cobertura e limites informados.</value>
+  </data>
+  <data name="Loop_TerminationUnconfirmed" xml:space="preserve">
+    <value>Não foi possível confirmar o encerramento do processo de mídia. Os arquivos temporários foram mantidos em '{0}' e '{1}'.</value>
+  </data>
+  <data name="Loop_PreparingPhase" xml:space="preserve">
+    <value>Preparando {0}</value>
+  </data>
+  <data name="Loop_DiskSpaceRequired" xml:space="preserve">
+    <value>{0}: espaço insuficiente (estimativa de mais {1:0.##} MB). Selecione um segmento mais curto ou libere espaço.</value>
+  </data>
+  <data name="Loop_InvalidCliOption" xml:space="preserve">
+    <value>Opção de loop inválida: {0}. Informe uma opção aceita e seu valor.</value>
+  </data>
+  <data name="Loop_HdrOutput" xml:space="preserve">
+    <value>Original HDR → saída SDR (BT.709). Mapeamento de tons {0}; pico de referência {1:0} nits{2}</value>
+  </data>
+  <data name="Loop_ReferenceDisplay" xml:space="preserve">
+    <value> (valor alternativo/tela de referência).</value>
+  </data>
+  <data name="Loop_TemporarySpaceRequired" xml:space="preserve">
+    <value>{0} exige cerca de {1:0.##} GB de espaço temporário, acima do limite de 8 GB. {2}</value>
+  </data>
+  <data name="Loop_QueueCandidate" xml:space="preserve">
+    <value>Candidato {0}/{1} · {2:0.###} s · {3} → {4} (fim exclusivo)</value>
+  </data>
+  <data name="Loop_PlanNatural" xml:space="preserve">
+    <value>ciclo natural</value>
+  </data>
+  <data name="Loop_PlanPreview" xml:space="preserve">
+    <value>prévia</value>
+  </data>
+  <data name="Loop_PlanPingPong" xml:space="preserve">
+    <value>ciclo de ida e volta</value>
+  </data>
+  <data name="Loop_ColumnEnd" xml:space="preserve">
+    <value>Fim (exclusivo)</value>
+  </data>
+  <data name="Loop_ColumnDuration" xml:space="preserve">
+    <value>Duração</value>
+  </data>
+  <data name="Loop_ColumnJunction" xml:space="preserve">
+    <value>Junção</value>
+  </data>
+  <data name="Loop_DurationFormat" xml:space="preserve">
+    <value>0.###' s'</value>
+  </data>
+  <data name="Loop_Indexing" xml:space="preserve">
+    <value>Indexando quadros nativos para o primeiro acesso; ainda é possível cancelar...</value>
+  </data>
+  <data name="Loop_NativeTiming" xml:space="preserve">
+    <value>Tempos nativos do vídeo</value>
+  </data>
+  <data name="Loop_Candidates" xml:space="preserve">
+    <value>Candidatos de loop</value>
+  </data>
+  <data name="Loop_CandidateKeyboard" xml:space="preserve">
+    <value>Selecione um candidato com as setas. Enter ou Espaço restaura os limites originais. O fim é exclusivo. Clique duplo seleciona sem exportar.</value>
+  </data>
+  <data name="Loop_RenderingJunction" xml:space="preserve">
+    <value>Renderizando uma prévia curta e sem áudio da junção...</value>
+  </data>
+  <data name="Loop_RenderingFull" xml:space="preserve">
+    <value>Renderizando três ciclos contínuos em resolução reduzida...</value>
+  </data>
+  <data name="Loop_SilentPreview" xml:space="preserve">
+    <value>Prévia do loop de vídeo (sem áudio)</value>
+  </data>
+  <data name="Loop_NativeCapture" xml:space="preserve">
+    <value>Prévia nativa de Cortar vídeo</value>
+  </data>
+  <data name="Loop_CutPreview" xml:space="preserve">
+    <value>Prévia de Cortar vídeo</value>
+  </data>
 </root>

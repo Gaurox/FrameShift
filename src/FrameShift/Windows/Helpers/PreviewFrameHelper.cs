@@ -27,7 +27,7 @@ public static class PreviewFrameHelper
                 "-copyts", "-i", source, "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
                 $"select='eq(pts,{frame.Pts.ToString(System.Globalization.CultureInfo.InvariantCulture)})'" + (color.ConvertsToSdr ? "," + color.Filter : ""),
                 "-frames:v", "1", "-fps_mode", "passthrough", file };
-            var result = await runner.RunAsync(executable, args, null, null, source, "Cut Video native preview", "CPU", token).ConfigureAwait(false);
+            var result = await runner.RunAsync(executable, args, null, null, source, L.Get("Loop_NativeCapture"), "CPU", token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             if (result.Canceled) throw new OperationCanceledException(token);
             if (result.ExitCode != 0 || !result.ProcessTerminationConfirmed || !File.Exists(file))

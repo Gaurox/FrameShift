@@ -100,13 +100,13 @@ public sealed class CutVideoAction : IFrameShiftAction
                     request, probe, settings, loop, bounds, cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (VideoLoopCancellationException ex) { return new(false, "Loop export canceled.", null, true, ex.Scope); }
-        catch (OperationCanceledException) { return new(false, "Loop export canceled.", null, true, CancellationScope.All); }
+        catch (VideoLoopCancellationException ex) { return new(false, L.Get("Loop_ExportCanceled"), null, true, ex.Scope); }
+        catch (OperationCanceledException) { return new(false, L.Get("Loop_ExportCanceled"), null, true, CancellationScope.All); }
         catch (Exception ex)
         {
             request.Logger.Log($"Loop export failed: {ex}");
             request.ProgressReporter?.ReportState("failed", ex.Message);
-            return new(false, ConversionActionHelper.GetFriendlyExceptionMessage(ex, "Loop export failed."));
+            return new(false, ConversionActionHelper.GetFriendlyExceptionMessage(ex, L.Get("Loop_ExportFailed")));
         }
 
         using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(

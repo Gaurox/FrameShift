@@ -62,7 +62,7 @@ public sealed partial class CutVideoForm
     {
         _loopExecutable = executable; _loopProbe = probe; _loopRunner = runner;
         _loopColorPolicy = VideoLoopColorPolicy.Evaluate(probe);
-        _exportAllLoops = FrameShiftUiFactory.CreateMeasuredActionButton("Export All Candidates (0)", false);
+        _exportAllLoops = FrameShiftUiFactory.CreateMeasuredActionButton(L.Format("Loop_ExportAll", 0), false);
         _exportAllLoops.Name = "exportAllLoopCandidates";
         _exportAllLoops.Visible = false;
         _exportAllLoops.Click += (_, _) => ConfirmAllLoopCandidates();
@@ -71,42 +71,42 @@ public sealed partial class CutVideoForm
             if (_loopColorPolicy.CanRender && _loopColorPolicy.ConvertsToSdr)
                 await StartLoopWorkAsync(PreflightLoopColorAsync, LoopBusy.Switching, null);
         };
-        _loopMinimum = new TextBox { Name = "loopMinimum", PlaceholderText = "Auto" };
+        _loopMinimum = new TextBox { Name = "loopMinimum", PlaceholderText = L.Get("Loop_Auto") };
         _loopRepeat = new NumericUpDown { Name = "loopRepeat", Minimum = 1, Maximum = 10, Value = 1 };
-        _loopSensitivity = Choice("loopSensitivity", "Strict", "Normal", "Permissive");
+        _loopSensitivity = Choice("loopSensitivity", L.Get("Loop_Strict"), L.Get("Loop_Normal"), L.Get("Loop_Permissive"));
         _loopSensitivity.SelectedIndex = 1;
         _loopResults = CreateLoopCandidateGrid();
         _loopSpeed = Choice("loopSpeed", "1x", "0.75x", "0.5x");
-        _loopAudio = new CheckBox { Name = "loopAudio", Text = "Keep source audio (junction not analyzed)", Checked = probe.HasAudio, AutoSize = true };
+        _loopAudio = new CheckBox { Name = "loopAudio", Text = L.Get("Loop_KeepAudio"), Checked = probe.HasAudio, AutoSize = true };
         _loopSpeed.SelectedIndexChanged += (_, _) => InvalidateLoopPreview();
         _loopStatus = FrameShiftUiFactory.CreateWrappingLabel(_loopColorPolicy.CanRender
-            ? $"{_loopColorPolicy.Message} Junctions need visual review. Preview before exporting."
+            ? L.Format("Loop_ColorReview", _loopColorPolicy.Message)
             : _loopColorPolicy.Message);
         _loopStatus.Name = "loopStatus";
         _loopProgress = new ProgressBar { Name = "loopProgress", Dock = DockStyle.Top, Minimum = 0, Maximum = 100, Visible = false };
-        _findLoop = FrameShiftUiFactory.CreateMeasuredActionButton("Find Loop", false);
-        _previewLoop = FrameShiftUiFactory.CreateMeasuredActionButton("Preview junction", false);
-        _fullPreviewLoop = FrameShiftUiFactory.CreateMeasuredActionButton("Full loop preview", false);
-        _pingPongLoop = FrameShiftUiFactory.CreateMeasuredActionButton("Create forward/backward loop", false);
-        _stopSearch = FrameShiftUiFactory.CreateMeasuredActionButton("Stop search", false);
-        _stopPreview = FrameShiftUiFactory.CreateMeasuredActionButton("Stop preview", false);
-        _loopBackToSelection = FrameShiftUiFactory.CreateMeasuredActionButton("Back to Cut", false);
-        _advancedLoop = FrameShiftUiFactory.CreateMeasuredActionButton("Advanced options", false);
+        _findLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_Find"), false);
+        _previewLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_PreviewJunction"), false);
+        _fullPreviewLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_FullPreview"), false);
+        _pingPongLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_CreatePingPong"), false);
+        _stopSearch = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_StopSearch"), false);
+        _stopPreview = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_StopPreview"), false);
+        _loopBackToSelection = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_BackToCut"), false);
+        _advancedLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_Advanced"), false);
         _loopBackToSelection.Click += async (_, _) => await SetLoopContextAsync(LoopContext.Cut);
         _advancedLoop.Click += (_, _) => ToggleLoopAdvancedOptions();
-        _loopSpeedRow = FrameShiftUiFactory.CreateFieldRow("Playback speed", _loopSpeed, logicalEditorWidth: 100);
+        _loopSpeedRow = FrameShiftUiFactory.CreateFieldRow(L.Get("Loop_PlaybackSpeed"), _loopSpeed, logicalEditorWidth: 100);
         _loopAdvanced = FrameShiftUiFactory.CreateVerticalStack(
-            FrameShiftUiFactory.CreateFieldRow("Minimum duration", _loopMinimum, "seconds (empty = Auto)", logicalEditorWidth: 120),
-            FrameShiftUiFactory.CreateFieldRow("Sensitivity", _loopSensitivity, logicalEditorWidth: 180),
-            FrameShiftUiFactory.CreateFieldRow("Export repeats", _loopRepeat, logicalEditorWidth: 80), _loopAudio,
+            FrameShiftUiFactory.CreateFieldRow(L.Get("Loop_MinimumDuration"), _loopMinimum, L.Get("Loop_MinimumHint"), logicalEditorWidth: 120),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("Loop_Sensitivity"), _loopSensitivity, logicalEditorWidth: 180),
+            FrameShiftUiFactory.CreateFieldRow(L.Get("Loop_ExportRepeats"), _loopRepeat, logicalEditorWidth: 80), _loopAudio,
             FrameShiftUiFactory.CreateChoiceRow(_fullPreviewLoop),
-            FrameShiftUiFactory.CreateWrappingLabel("Full preview: three continuous proxy cycles. Long selections may exceed the temporary-work budget; use Preview junction instead."));
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("Loop_FullPreviewHint")));
         _loopAdvancedHost = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty };
         _loopOptions = FrameShiftUiFactory.CreateVerticalStack(
             _loopProgress, _loopStatus, _loopResults,
             FrameShiftUiFactory.CreateChoiceRow(_previewLoop, _stopPreview, _loopBackToSelection),
             _loopSpeedRow, _advancedLoop, _loopAdvancedHost,
-            FrameShiftUiFactory.CreateWrappingLabel("Export: unique MP4 next to the source. Preview is silent."));
+            FrameShiftUiFactory.CreateWrappingLabel(L.Get("Loop_ExportHint")));
         _loopOptions.Visible = false;
         // Detached options cost no space or layout work in ordinary Cut Video.
         _loopOptionsHost = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty };
@@ -125,7 +125,7 @@ public sealed partial class CutVideoForm
         _loopColorStatus.Name = "loopColorStatus";
         controls.Add(_loopColorStatus);
         controls.Add(_loopOptionsHost);
-        return FrameShiftUiFactory.CreateSection("Loop tools", FrameShiftUiFactory.CreateVerticalStack(controls.ToArray()));
+        return FrameShiftUiFactory.CreateSection(L.Get("Loop_Tools"), FrameShiftUiFactory.CreateVerticalStack(controls.ToArray()));
     }
 
     private void ToggleLoopAdvancedOptions()
@@ -133,7 +133,7 @@ public sealed partial class CutVideoForm
         var expand = _loopAdvanced.Parent is null;
         if (expand) _loopAdvancedHost.Controls.Add(_loopAdvanced);
         else _loopAdvancedHost.Controls.Remove(_loopAdvanced);
-        _advancedLoop.Text = expand ? "Hide advanced options" : "Advanced options";
+        _advancedLoop.Text = expand ? L.Get("Loop_HideAdvanced") : L.Get("Loop_Advanced");
     }
 
     internal Task SetLoopContextAsync(LoopContext context) =>
@@ -163,8 +163,8 @@ public sealed partial class CutVideoForm
                 var natural = context == LoopContext.Natural;
                 _loopAudio.Checked = natural && _loopProbe.HasAudio;
                 if (natural) _loopSpeed.SelectedIndex = 0;
-                _loopStatus.Text = natural ? "Natural loop: junction to review. Audio continuity is not analyzed."
-                    : "Forward/backward: the selection plays forwards, then backwards, without audio. VFR uses the source average FPS.";
+                _loopStatus.Text = natural ? L.Get("Loop_NaturalHint")
+                    : L.Get("Loop_PingPongHint");
             }
             RefreshSelectionUi(false);
         }
@@ -235,13 +235,13 @@ public sealed partial class CutVideoForm
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
             if (!_closing && !_sourceInvalid && ReferenceEquals(_loopCancellation, cts))
-                _loopStatus.Text = _loopBusy == LoopBusy.Searching ? "Search stopped. Current selection retained." : "Preview stopped.";
+                _loopStatus.Text = _loopBusy == LoopBusy.Searching ? L.Get("Loop_SearchStopped") : L.Get("Loop_PreviewStopped");
         }
         catch (VideoLoopSourceChangedException) { InvalidateChangedSource(); }
         catch (Exception ex)
         {
             AppLogger.LogStatic($"Cut Video loop failed: {ex}");
-            if (!_closing && !_sourceInvalid && !IsDisposed && ReferenceEquals(_loopCancellation, cts)) _loopStatus.Text = $"Loop unavailable: {ex.Message}";
+            if (!_closing && !_sourceInvalid && !IsDisposed && ReferenceEquals(_loopCancellation, cts)) _loopStatus.Text = L.Format("Loop_Unavailable", ex.Message);
         }
         finally
         {
@@ -264,7 +264,7 @@ public sealed partial class CutVideoForm
         _cutOk.Name = loop ? "exportLoop" : "exportSelection";
         _cutOk.Enabled = !busy && !_sourceInvalid && (!loop || _loopColorPolicy.CanRender);
         var batchCount = BatchLoopCandidates().Count;
-        _exportAllLoops.Text = $"Export All Candidates ({batchCount})";
+        _exportAllLoops.Text = L.Format("Loop_ExportAll", batchCount);
         _exportAllLoops.Visible = natural && batchCount > 0;
         // Detach the optional command so the shared action bar measures ordinary
         // Cut with its original two buttons, including on a narrow window.
@@ -307,9 +307,9 @@ public sealed partial class CutVideoForm
             return VideoLoopDetector.AutoMinimum(_loopProbe.Duration?.TotalSeconds ?? 0, _fps);
         if (!double.TryParse(_loopMinimum.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out var seconds) &&
             !double.TryParse(_loopMinimum.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out seconds))
-            throw new ArgumentException("Minimum duration must be empty (Auto) or a number between 0.1 and 600 seconds.");
+            throw new ArgumentException(L.Get("Loop_MinimumInvalid"));
         if (!double.IsFinite(seconds) || seconds < 0.1 || seconds > 600)
-            throw new ArgumentException("Minimum duration must be between 0.1 and 600 seconds. This does not limit source or candidate duration.");
+            throw new ArgumentException(L.Get("Loop_MinimumRange"));
         return seconds;
     }
 
@@ -432,7 +432,7 @@ public sealed partial class CutVideoForm
         public void ReportQueue(IReadOnlyList<string> items) { }
         public void ReportQueueItem(string currentFile, string state, string? message = null) { }
         public void ReportProgress(int value, string? file, string? action, string? message, string? etaText = null) =>
-            ((IProgress<VideoLoopProgress>)_progress).Report(new(value / 10, message ?? "Rendering loop..."));
+            ((IProgress<VideoLoopProgress>)_progress).Report(new(value / 10, message ?? L.Get("Loop_Rendering")));
         public void ReportState(string state, string? message = null) =>
             ((IProgress<VideoLoopProgress>)_progress).Report(new(0, message ?? state));
     }

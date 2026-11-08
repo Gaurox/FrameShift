@@ -41,10 +41,10 @@ internal sealed class VideoLoopFrameReader(FfmpegRunner runner, string executabl
             args.AddRange(["-vf", filter, "-frames:v", maxFrames.ToString(CultureInfo.InvariantCulture),
                 "-fps_mode", "passthrough", "-f", "rawvideo", file]);
             var timing = new VideoLoopTimingCollector(maxFrames);
-            var result = await runner.RunAsync(executable, args, TimeSpan.FromSeconds(duration), progress, source, "Find Loop", "CPU", token, timing.Observe).ConfigureAwait(false);
+            var result = await runner.RunAsync(executable, args, TimeSpan.FromSeconds(duration), progress, source, L.Get("Loop_Find"), "CPU", token, timing.Observe).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             if (result.Canceled) throw new OperationCanceledException(token);
-            if (result.ExitCode != 0) throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "Loop decoding failed."));
+            if (result.ExitCode != 0) throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("Loop_DecodingFailed")));
             var times = timing.Times;
             var frames = new List<Frame>();
             await using var stream = File.OpenRead(file);
@@ -54,7 +54,7 @@ internal sealed class VideoLoopFrameReader(FfmpegRunner runner, string executabl
                 token.ThrowIfCancellationRequested();
                 var pixels = new byte[checked(width * height * 3)];
                 await stream.ReadExactlyAsync(pixels, token).ConfigureAwait(false);
-                if (frames.Count >= times.Count) throw new InvalidOperationException("Loop frame timestamps are unavailable.");
+                if (frames.Count >= times.Count) throw new InvalidOperationException(L.Get("Loop_FrameTimesUnavailable"));
                 frames.Add(new Frame(sampleRate is null ? times[frames.Count] - videoStartSeconds : seek + times[frames.Count], pixels)
                 {
                     Duration = frames.Count < timing.Timings.Count ? timing.Timings[frames.Count].Duration : 0,

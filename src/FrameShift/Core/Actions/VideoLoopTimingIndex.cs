@@ -15,12 +15,12 @@ internal sealed record VideoLoopSourceStamp(string Path, long Length, long Writt
     internal static VideoLoopSourceStamp Read(string source)
     {
         var file = new FileInfo(source);
-        if (!file.Exists) throw new FileNotFoundException("The video source is no longer available.", source);
+        if (!file.Exists) throw new FileNotFoundException(L.Get("Loop_SourceUnavailable"), source);
         return new(file.FullName, file.Length, file.LastWriteTimeUtc.Ticks, file.CreationTimeUtc.Ticks);
     }
 }
 
-internal sealed class VideoLoopSourceChangedException() : IOException("The source changed. Reopen Cut Video to refresh its metadata and selection.");
+internal sealed class VideoLoopSourceChangedException() : IOException(L.Get("Loop_SourceChanged"));
 internal sealed record VideoLoopFramePosition(VideoLoopTimestamp Timestamp, double Time, double End, int? Number);
 internal sealed record VideoLoopResolvedSelection(VideoLoopFramePosition Start, VideoLoopFramePosition Last)
 {
@@ -77,18 +77,18 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     internal Task<VideoLoopResolvedSelection> ResolveFramesAsync(int start, int end, CancellationToken token, Action<string>? status = null) =>
         ExecuteAsync(async t =>
         {
-            if (start < 1 || end < start) throw new ArgumentException("Video frame bounds must be ordered positive integers.");
+            if (start < 1 || end < start) throw new ArgumentException(L.Get("Loop_FrameBoundsInvalid"));
             await EnsureOrdinalAsync(end, t, status).ConfigureAwait(false);
-            if (IndexedFrameCount == 0) throw new InvalidOperationException("No decoded video frames are available.");
+            if (IndexedFrameCount == 0) throw new InvalidOperationException(L.Get("Loop_NoDecodedFrames"));
             return new VideoLoopResolvedSelection(Position(Math.Min(start, IndexedFrameCount)), Position(Math.Min(end, IndexedFrameCount)));
         }, token);
 
     internal Task<VideoLoopFramePosition> ResolveFrameAsync(int frame, CancellationToken token, Action<string>? status = null) =>
         ExecuteAsync(async t =>
         {
-            if (frame < 1) throw new ArgumentException("A positive frame number is required.");
+            if (frame < 1) throw new ArgumentException(L.Get("Loop_PositiveFrameRequired"));
             await EnsureOrdinalAsync(frame, t, status).ConfigureAwait(false);
-            if (IndexedFrameCount == 0) throw new InvalidOperationException("No decoded video frames are available.");
+            if (IndexedFrameCount == 0) throw new InvalidOperationException(L.Get("Loop_NoDecodedFrames"));
             return Position(Math.Min(frame, IndexedFrameCount));
         }, token);
 
@@ -96,14 +96,14 @@ internal sealed class VideoLoopTimingIndex : IDisposable
         ExecuteAsync(async t =>
         {
             var frame = await FindAsync(seconds, beforeExclusiveEnd, t).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("No video frame is available at this boundary.");
+                ?? throw new InvalidOperationException(L.Get("Loop_NoBoundaryFrame"));
             return await PositionAsync(frame, t).ConfigureAwait(false);
         }, token);
 
     internal Task<VideoLoopFramePosition?> NeighborAsync(VideoLoopFramePosition current, int delta, CancellationToken token) =>
         ExecuteAsync(async t =>
         {
-            if (delta is not (-1 or 1)) throw new ArgumentException("Native navigation moves one frame at a time.");
+            if (delta is not (-1 or 1)) throw new ArgumentException(L.Get("Loop_NativeStepInvalid"));
             var stamp = await FindAsync(current.Time + (delta > 0 ? 2 * Epsilon : 0), delta < 0, t).ConfigureAwait(false);
             return stamp is null ? null : await PositionAsync(stamp.Value, t).ConfigureAwait(false);
         }, token);
@@ -138,8 +138,8 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     {
         if (frame < IndexedFrameCount || IsComplete) return;
         var wanted = Math.Min((long)frame + 129, MaximumIndexBytes / RecordBytes);
-        if (wanted <= frame) throw new InvalidOperationException("The native frame index exceeds its 256 MiB budget. Use time bounds for this selection.");
-        status?.Invoke("Indexing native frames for the first access; cancellation remains available...");
+        if (wanted <= frame) throw new InvalidOperationException(L.Get("Loop_IndexBudget"));
+        status?.Invoke(L.Get("Loop_Indexing"));
         var last = IndexedFrameCount > 0 ? Read(IndexedFrameCount) : (VideoLoopTimestamp?)null;
         var count = (int)(wanted - IndexedFrameCount);
         var chunk = _index + $".{Guid.NewGuid():N}.chunk";
@@ -189,15 +189,15 @@ internal sealed class VideoLoopTimingIndex : IDisposable
         VideoLoopTimestamp? last = after;
         var timing = new VideoLoopTimingCollector(count, stamp =>
         {
-            if (last is { } p && stamp.Seconds <= p.Seconds) throw new InvalidOperationException("Native video timestamps are not strictly increasing.");
+            if (last is { } p && stamp.Seconds <= p.Seconds) throw new InvalidOperationException(L.Get("Loop_NonIncreasingTimes"));
             last = stamp; observe(stamp); DecodedFrameCount++;
         }, retainTimings: false);
         DecodePasses++;
-        var result = await _runner.RunAsync(_executable, args, null, null, _source, "Video native timing", "CPU", token, timing.Observe).ConfigureAwait(false);
+        var result = await _runner.RunAsync(_executable, args, null, null, _source, L.Get("Loop_NativeTiming"), "CPU", token, timing.Observe).ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
         if (result.Canceled) throw new OperationCanceledException(token);
         if (result.ExitCode != 0 || !result.ProcessTerminationConfirmed)
-            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, "Cannot read native frame timing."));
+            throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("Loop_ReadTimingFailed")));
     }
 
     private async Task<VideoLoopTimestamp?> FindAsync(double time, bool before, CancellationToken token)

@@ -27,7 +27,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
                 cut, settings, exactBounds, request.ProgressReporter, token).ConfigureAwait(false);
         }
         catch (VideoLoopProcessTerminationException) { output.RetainForUnconfirmedProcess(); throw; }
-        return ConversionActionHelper.CompleteOutput(output, request, "Video Loop", token);
+        return ConversionActionHelper.CompleteOutput(output, request, L.Get("Loop_VideoLoop"), token);
     }
 
     public async Task RenderAsync(string executable, string probeExecutable, string source, string destination,
@@ -50,14 +50,14 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         var color = VideoLoopColorPolicy.Evaluate(probe);
         await color.RequireAvailableAsync(runner, executable, token).ConfigureAwait(false);
         if (!probe.HasVideo || probe.VideoWidth <= 0 || probe.VideoHeight <= 0 || !double.IsFinite(cut.Fps) || cut.Fps <= 0)
-            throw new ArgumentException("A readable video is required for loop export.");
-        if (cut.Fps > 240) throw new ArgumentException("Loop export currently supports videos up to 240 FPS.");
+            throw new ArgumentException(L.Get("Loop_ReadableExportRequired"));
+        if (cut.Fps > 240) throw new ArgumentException(L.Get("Loop_ExportFpsLimit"));
         if (File.Exists(destination) || Directory.Exists(destination))
-            throw new IOException("The loop destination already exists. Choose a unique output path.");
+            throw new IOException(L.Get("Loop_DestinationExists"));
         var bounds = exactBounds ?? await ResolveFrameBoundsAsync(executable, source, cut, probe, token).ConfigureAwait(false);
         if (!double.IsFinite(bounds.StartSeconds) || !double.IsFinite(bounds.EndSeconds) || bounds.StartSeconds < 0 || bounds.DurationSeconds <= 0 ||
             bounds.EndSeconds > (probe.Duration?.TotalSeconds ?? 0) + 1 / cut.Fps)
-            throw new ArgumentException("Loop boundaries must describe a non-empty segment inside the source.");
+            throw new ArgumentException(L.Get("Loop_BoundsOutsideSource"));
         var compactNatural = preview is null && settings.Mode == VideoLoopMode.Natural;
         var keepAudio = preview is null && settings.Mode == VideoLoopMode.Natural && settings.KeepAudio && probe.HasAudio;
         var segments = preview?.Segments ?? [bounds];
@@ -80,7 +80,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
             if (VideoLoopSourceStamp.Read(source) != stamp) throw new VideoLoopSourceChangedException();
             if (compactNatural)
             {
-                progress?.ReportState("processing", "Resolving the loop boundary...");
+                progress?.ReportState("processing", L.Get("Loop_ResolveBoundary"));
                 bounds = await ResolveNaturalStartAsync(executable, source, probe, bounds, budget, progress, token).ConfigureAwait(false);
                 segments = [bounds];
             }
@@ -89,7 +89,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
             var forwards = new List<(string File, double Duration)>();
             foreach (var segment in segments)
             {
-                progress?.ReportState("processing", compactNatural ? "Encoding the natural loop cycle..." : "Preparing the loop selection...");
+                progress?.ReportState("processing", compactNatural ? L.Get("Loop_EncodingNatural") : L.Get("Loop_PreparingSelection"));
                 var file = Path.Combine(workspace, $"forward_{forwards.Count}." + (compactNatural ? "mov" : "mkv"));
                 var duration = await RenderForwardAsync(executable, source, file, probe, segment, cut.Fps,
                     settings.Mode, keepAudio, preview, compactNatural, budget, progress, token).ConfigureAwait(false);
@@ -110,11 +110,11 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
             }
 
             if (VideoLoopSourceStamp.Read(source) != stamp) throw new VideoLoopSourceChangedException();
-            progress?.ReportState("processing", "Assembling continuous loop repetitions...");
+            progress?.ReportState("processing", L.Get("Loop_Assembling"));
             var actualCycleBytes = Directory.GetFiles(workspace).Sum(f => new FileInfo(f).Length);
             var outputSeconds = cycleDuration * settings.Repetitions / settings.Speed;
             budget.CheckOutput(compactNatural ? new FileInfo(cycle).Length * (double)settings.Repetitions * 1.1 + outputSeconds * 32000
-                : actualCycleBytes * settings.Repetitions + 1024 * 1024, "Assembling loop repetitions");
+                : actualCycleBytes * settings.Repetitions + 1024 * 1024, L.Get("Loop_AssemblingPhase"));
             Logging.AppLogger.LogStatic($"Video Loop: actual temporary {actualCycleBytes} bytes; output duration {outputSeconds:R} seconds; compact video copy={compactNatural}.");
             var final = Prefix();
             if (settings.Mode == VideoLoopMode.Natural)
@@ -175,7 +175,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
             "-frames:v", "1", "-fps_mode", "passthrough", "-f", "null", "-"]);
         var timing = new VideoLoopTimingCollector(1);
         await budget.RunAsync(runner, executable, args, bounds.DurationSeconds, progress, token, timing.Observe).ConfigureAwait(false);
-        if (timing.Timings.Count == 0) throw new ArgumentException("The selection contains no video frame.");
+        if (timing.Timings.Count == 0) throw new ArgumentException(L.Get("Loop_NoSelectionFrame"));
         return bounds with { StartSeconds = timing.Timings[0].Time - probe.VideoStartSeconds };
     }
 
@@ -211,7 +211,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         var timing = new VideoLoopTimingCollector(1);
         await budget.RunAsync(runner, executable, args, bounds.DurationSeconds, progress, token, compactNatural ? null : timing.Observe).ConfigureAwait(false);
         if (compactNatural) return bounds.DurationSeconds;
-        if (timing.Timings.Count == 0) throw new InvalidOperationException("The loop selection contains no decoded frame.");
+        if (timing.Timings.Count == 0) throw new InvalidOperationException(L.Get("Loop_NoLoopFrame"));
         // A short preview window may start between native frames. Preserve the hold
         // up to its exclusive end rather than stretching it back to the requested seek.
         return end - timing.Timings[0].Time;
@@ -222,7 +222,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         var result = await probeRunner.RunProbeAsync(probeExecutable,
             ["-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0", file], token).ConfigureAwait(false);
         if (!result.Success || !int.TryParse(result.Output.Trim(), out var count) || count < 2)
-            throw new InvalidOperationException("Forward/backward preview requires at least two decoded frames.");
+            throw new InvalidOperationException(L.Get("Loop_PreviewTwoFrames"));
         return count;
     }
 
@@ -252,7 +252,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
     {
         var count = await ReadFrameCountAsync(probeExecutable, forward, token).ConfigureAwait(false);
         if (count < 3)
-            throw new InvalidOperationException("Ping-Pong requires at least three decoded frames.");
+            throw new InvalidOperationException(L.Get("Loop_PingPongThreeFrames"));
         var parts = new List<string> { forward };
         // N frames forward, then N-2 frames backwards: neither turning point is duplicated.
         await AppendReversePartsAsync(executable, forward, workspace, probe, fps, parts, 1, count - 1, budget, progress, token).ConfigureAwait(false);
@@ -265,7 +265,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         IProgressReporter? progress, CancellationToken token)
     {
         var chunkSize = (int)Math.Clamp(128L * 1024 * 1024 / ((long)probe.VideoWidth * probe.VideoHeight * 8), 1, 120);
-        progress?.ReportState("processing", "Preparing backward frames...");
+        progress?.ReportState("processing", L.Get("Loop_PreparingBackward"));
         for (var end = lastExclusive; end > first; )
         {
             token.ThrowIfCancellationRequested();

@@ -37,7 +37,7 @@ internal static partial class Program
                 var key = token[2..].ToLowerInvariant();
                 if (actionId != "cut-video" || !VideoLoopSettings.OptionNames.Contains(key) || index + 1 >= args.Length || args[index + 1].StartsWith("--", StringComparison.Ordinal))
                 {
-                    error = $"Invalid loop option: {token}. Supply a supported option and its value.";
+                    error = L.Format("Loop_InvalidCliOption", token);
                     return false;
                 }
                 options[key] = args[++index];

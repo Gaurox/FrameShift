@@ -47,7 +47,7 @@ public sealed partial class CutVideoForm : Form
     {
         _inputPath = inputPath;
         _hasInjectedCapture = previewLoader is not null;
-        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(ffmpegPath, ffmpegRunner, inputPath, seconds, "Cut Video Preview", token));
+        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(ffmpegPath, ffmpegRunner, inputPath, seconds, L.Get("Loop_CutPreview"), token));
         _fps = probe.VideoFrameRate ?? throw new InvalidOperationException(MediaActionMessages.VideoFrameRateUnavailable());
         _totalFrames = probe.EstimatedVideoFrameCount is long count && count > 0
             ? (int)Math.Min(int.MaxValue, count)
@@ -240,10 +240,10 @@ public sealed partial class CutVideoForm : Form
         var selectedFrames = _selection.EndFrame - _selection.StartFrame + 1;
         _labelSelection.Text = L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4",_selection.StartFrame,_selection.EndFrame,CutVideoMath.FormatPreciseTime(startTimeSeconds),CutVideoMath.FormatPreciseTime(endTimeSeconds),selectedFrames);
         if (_loopCandidate is not null) _labelSelection.Text += NativeTimingEnabled && _nativeStartNumberKnown && _nativeEndNumberKnown
-            ? "  |  native timestamps (decoded frame numbers)" : "  |  native timestamps (frame numbers approximate for VFR)";
-        else if (_loopContext != LoopContext.Cut) _labelSelection.Text += "  |  Custom selection";
+            ? L.Get("Loop_NativeNumbers") : L.Get("Loop_ApproximateNumbers");
+        else if (_loopContext != LoopContext.Cut) _labelSelection.Text += L.Get("Loop_CustomSelection");
         if (NativeTimingEnabled && (!_nativeStartNumberKnown || !_nativeEndNumberKnown))
-            _labelSelection.Text += "  |  frame numbers approximate until indexed; native times take priority";
+            _labelSelection.Text += L.Get("Loop_IndexHint");
         _selectionPanel.Invalidate();
 
         if (refreshPreview)

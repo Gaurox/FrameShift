@@ -45,7 +45,7 @@ internal sealed class VideoLoopPreviewBuilder(FfmpegRunner runner, FfprobeRunner
         VideoLoopSettings settings, VideoLoopCandidate? bounds, VideoLoopPreviewKind kind)
     {
         var file = new FileInfo(source);
-        if (!file.Exists) throw new FileNotFoundException("The preview source is no longer available.", source);
+        if (!file.Exists) throw new FileNotFoundException(L.Get("Loop_PreviewSourceUnavailable"), source);
         return new(file.FullName, file.Length, file.LastWriteTimeUtc.Ticks, cut,
             bounds is null ? null : new(bounds.StartSeconds, bounds.EndSeconds, 0), settings.Mode, settings.Speed, kind,
             $"{probe.VideoPixelFormat}|{probe.VideoColorSpace}|{probe.VideoColorTransfer}|{probe.VideoColorPrimaries}|{probe.VideoBitDepth}|{probe.VideoColorRange}|{probe.VideoPeakLuminanceNits:R}|" +
@@ -60,26 +60,26 @@ internal sealed class VideoLoopPreviewBuilder(FfmpegRunner runner, FfprobeRunner
         VideoLoopColorPolicy.Evaluate(probe).RequireSupported();
         if (!Enum.IsDefined(kind) || !double.IsFinite(bounds.StartSeconds) || !double.IsFinite(bounds.EndSeconds) ||
             bounds.StartSeconds < 0 || bounds.DurationSeconds <= 0 || probe.VideoWidth <= 0 || probe.VideoHeight <= 0)
-            throw new ArgumentException("A finite, non-empty video selection is required for preview.");
+            throw new ArgumentException(L.Get("Loop_PreviewBoundsInvalid"));
         var sar = probe.VideoSampleAspectRatio;
-        if (!double.IsFinite(sar) || sar <= 0) throw new ArgumentException("The source pixel aspect ratio is invalid.");
+        if (!double.IsFinite(sar) || sar <= 0) throw new ArgumentException(L.Get("Loop_PixelAspectInvalid"));
         var displayWidth = probe.DisplayVideoWidth * (probe.RequiresDisplayDimensionSwap ? 1 : sar);
         var displayHeight = probe.DisplayVideoHeight * (probe.RequiresDisplayDimensionSwap ? sar : 1);
         var scale = Math.Min(1, MaximumDimension / Math.Max(displayWidth, displayHeight));
         var width = Math.Max(2, (int)Math.Round(displayWidth * scale / 2) * 2);
         var height = Math.Max(2, (int)Math.Round(displayHeight * scale / 2) * 2);
         if (kind == VideoLoopPreviewKind.FullLoop)
-            return [new(bounds, VideoLoopPreviewContent.FullLoop, width, height, 3, "Full loop preview: three continuous cycles")];
+            return [new(bounds, VideoLoopPreviewContent.FullLoop, width, height, 3, L.Get("Loop_FullClip"))];
         if (settings.Mode == VideoLoopMode.Natural)
-            return [new(bounds, VideoLoopPreviewContent.NaturalJunction, width, height, 1, "Junction preview: end → start (one real seam)")];
+            return [new(bounds, VideoLoopPreviewContent.NaturalJunction, width, height, 1, L.Get("Loop_NaturalClip"))];
         if (4 * bounds.DurationSeconds / settings.Speed <= 6)
-            return [new(bounds, VideoLoopPreviewContent.FullLoop, width, height, 2, "Forward/backward preview: two continuous cycles, both turning points")];
+            return [new(bounds, VideoLoopPreviewContent.FullLoop, width, height, 2, L.Get("Loop_PingPongClip"))];
         var window = Math.Min(Math.Max(1.5 * settings.Speed, 3 / (probe.VideoFrameRate ?? 1)), bounds.DurationSeconds);
         return [
             new(new(bounds.EndSeconds - window, bounds.EndSeconds, 0), VideoLoopPreviewContent.EndTurn, width, height, 1,
-                "Separate clip 1/2: end turning point"),
+                L.Get("Loop_EndTurn")),
             new(new(bounds.StartSeconds, bounds.StartSeconds + window, 0), VideoLoopPreviewContent.StartTurn, width, height, 1,
-                "Separate clip 2/2: start turning point")];
+                L.Get("Loop_StartTurn"))];
     }
 
     internal async Task<VideoLoopPreview> BuildAsync(string executable, string probeExecutable, string source,
@@ -123,7 +123,7 @@ internal sealed class VideoLoopPreviewBuilder(FfmpegRunner runner, FfprobeRunner
         var reader = new VideoLoopFrameReader(runner, executable, source, probe.VideoStartSeconds - probe.FormatStartSeconds, probe.VideoStartSeconds);
         var frames = await reader.ReadAsync(tail.StartSeconds, tail.DurationSeconds, null, 1024, token).ConfigureAwait(false);
         if (frames.Count > 0) return plan;
-        progress?.ReportState("processing", "Resolving the last held frame for the junction preview...");
+        progress?.ReportState("processing", L.Get("Loop_ResolveHeldFrame"));
         // Sparse VFR may hold one image throughout the entire requested tail window.
         // Find that image in bounded blocks, then shorten its leading hold to the window.
         var lookback = tail.DurationSeconds;
@@ -133,7 +133,7 @@ internal sealed class VideoLoopPreviewBuilder(FfmpegRunner runner, FfprobeRunner
             var seek = Math.Max(plan.Bounds.StartSeconds, plan.Bounds.EndSeconds - lookback);
             frames = await reader.ReadAsync(seek, plan.Bounds.EndSeconds - seek, null, 1024, token).ConfigureAwait(false);
         }
-        if (frames.Count == 0) throw new InvalidOperationException("No decoded frame is available for this junction.");
+        if (frames.Count == 0) throw new InvalidOperationException(L.Get("Loop_NoJunctionFrame"));
         var last = frames[^1];
         while (frames.Count == 1024)
         {

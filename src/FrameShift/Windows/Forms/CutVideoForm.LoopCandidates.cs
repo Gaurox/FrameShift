@@ -11,8 +11,8 @@ public sealed partial class CutVideoForm
     {
         var grid = new LoopCandidateGrid
         {
-            Name = "loopResults", AccessibleName = "Loop candidates",
-            AccessibleDescription = "Select a candidate with the arrows. Enter or Space restores its original bounds. End is exclusive. Double-click selects without exporting.",
+            Name = "loopResults", AccessibleName = L.Get("Loop_Candidates"),
+            AccessibleDescription = L.Get("Loop_CandidateKeyboard"),
             ReadOnly = true, MultiSelect = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
             AllowUserToAddRows = false, AllowUserToDeleteRows = false, AllowUserToResizeRows = false,
             RowHeadersVisible = false, AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
@@ -26,14 +26,14 @@ public sealed partial class CutVideoForm
         grid.DefaultCellStyle.SelectionForeColor = FrameShiftTheme.TextPrimary;
         grid.ColumnHeadersDefaultCellStyle.BackColor = FrameShiftTheme.Surface;
         grid.ColumnHeadersDefaultCellStyle.ForeColor = FrameShiftTheme.TextPrimary;
-        foreach (var (name, title) in new[] { ("Start", "Start"), ("End", "End (exclusive)"), ("Duration", "Duration"), ("Junction", "Junction") })
+        foreach (var (name, title) in new[] { ("Start", L.Get("CutVideo_Start")), ("End", L.Get("Loop_ColumnEnd")), ("Duration", L.Get("Loop_ColumnDuration")), ("Junction", L.Get("Loop_ColumnJunction")) })
             grid.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = name, HeaderText = title,
                 SortMode = name == "Duration" ? DataGridViewColumnSortMode.Automatic : DataGridViewColumnSortMode.NotSortable,
                 AutoSizeMode = name == "Junction" ? DataGridViewAutoSizeColumnMode.Fill : DataGridViewAutoSizeColumnMode.None
             });
-        grid.Columns["Duration"]!.DefaultCellStyle.Format = "0.###' s'";
+        grid.Columns["Duration"]!.DefaultCellStyle.Format = L.Get("Loop_DurationFormat");
         FrameShiftGridUi.Apply(grid, ("Start", 125), ("End", 125), ("Duration", 100));
         void Metrics()
         {
@@ -93,17 +93,17 @@ public sealed partial class CutVideoForm
             else _loopCandidate = (VideoLoopCandidate)_loopResults.SelectedRows[0].Tag!;
         }
         _loopStatus.Text = analysis.Candidates.Count == 0
-            ? "No satisfactory natural candidate found within this search. Keep the current selection, adjust Advanced options, or create a forward/backward loop."
-            : $"{analysis.Candidates.Count} candidate(s), best junctions first unless sorted by duration. Assessments are estimates; preview before exporting.";
-        if (!analysis.SearchCompleted) _loopStatus.Text = $"Search in progress: {analysis.Candidates.Count} candidate(s) so far. Selection is retained while results arrive.";
+            ? L.Get("Loop_NoCandidates")
+            : L.Format("Loop_CandidatesFound", analysis.Candidates.Count);
+        if (!analysis.SearchCompleted) _loopStatus.Text = L.Format("Loop_SearchInProgress", analysis.Candidates.Count);
         // A new search need not rediscover the chosen seam. Keep its native timestamps,
         // rather than silently rounding the user's selection through average-FPS fields.
         if (current is not null && _loopResults.SelectedRows.Count == 0)
-            _loopStatus.Text += " Previous selection retained.";
+            _loopStatus.Text += L.Get("Loop_PreviousSelection");
         if (analysis.Limits != VideoLoopSearchLimits.None)
-            _loopStatus.Text += " Search coverage limited by sampling or candidate budgets; other loops may exist.";
+            _loopStatus.Text += L.Get("Loop_LimitedCoverage");
         if (analysis.Limits.HasFlag(VideoLoopSearchLimits.TemporalCoverage))
-            _loopStatus.Text += $" Temporal coverage: {analysis.Diagnostics.CoveredSeconds:0.#} seconds in distributed windows; gaps were not sampled.";
+            _loopStatus.Text += L.Format("Loop_TemporalCoverage", analysis.Diagnostics.CoveredSeconds);
         UpdateLoopCommands();
         if (!hadRows) RevealLoopControl(_previewLoop);
     }

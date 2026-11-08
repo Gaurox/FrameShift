@@ -24,7 +24,7 @@ public sealed partial class CutVideoForm
             InvalidateLoopPreviewCache();
             await _loopPreviewCleanupTask;
             _loopStatus.Text = kind == VideoLoopPreviewKind.Junction
-                ? "Rendering a short silent proxy of the junction..." : "Rendering three continuous proxy cycles...";
+                ? L.Get("Loop_RenderingJunction") : L.Get("Loop_RenderingFull");
             VideoLoopPreview? rendered = null;
             try
             {
@@ -33,7 +33,7 @@ public sealed partial class CutVideoForm
                     bounds, kind, new LoopUiProgress(this, token), token);
                 token.ThrowIfCancellationRequested();
                 if (!CheckSourceStillValid() || key != VideoLoopPreviewBuilder.Key(_inputPath, _loopProbe, cut, settings, LoopRenderBounds, kind))
-                    throw new IOException("The source changed during preview rendering. Reopen Cut Video to refresh its metadata.");
+                    throw new IOException(L.Get("Loop_SourceChangedPreview"));
                 if (_closing || IsDisposed) return;
                 _loopPreview = rendered;
                 _loopPreviewKey = key;
@@ -74,17 +74,17 @@ public sealed partial class CutVideoForm
             for (var i = 0; i < preview.Clips.Count; i++)
             {
                 cts.Token.ThrowIfCancellationRequested();
-                _loopStatus.Text = $"{preview.Clips[i].Description}. Silent proxy; inspect full-resolution export for fine detail.";
+                _loopStatus.Text = L.Format("Loop_ProxyReview", preview.Clips[i].Description);
                 if (i > 0) await Task.Delay(350, cts.Token);
                 await player.PlayAsync(_loopExecutable, _loopRunner, preview.Clips[i].Path, preview.Width, preview.Height, cts.Token);
             }
             if (!_closing && !IsDisposed && !cts.IsCancellationRequested)
-                _loopStatus.Text = "Preview complete. Replay the cached proxy, or review a full-resolution export for fine detail.";
+                _loopStatus.Text = L.Get("Loop_PreviewComplete");
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
         {
-            if (!_closing && !IsDisposed && !cts.IsCancellationRequested) _loopStatus.Text = $"Loop playback unavailable: {ex.Message}";
+            if (!_closing && !IsDisposed && !cts.IsCancellationRequested) _loopStatus.Text = L.Format("Loop_PlaybackUnavailable", ex.Message);
         }
         finally
         {

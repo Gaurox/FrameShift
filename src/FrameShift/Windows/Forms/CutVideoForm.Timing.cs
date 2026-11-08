@@ -59,7 +59,7 @@ public sealed partial class CutVideoForm
         try { _loopResults.Rows.Clear(); }
         finally { _updatingLoopResults = false; }
         StopPreview();
-        _labelPreviewState.Text = _loopStatus.Text = "The source changed. Reopen Cut Video to refresh its metadata and selection.";
+        _labelPreviewState.Text = _loopStatus.Text = L.Get("Loop_SourceChanged");
         UpdateLoopCommands();
     }
 
@@ -126,7 +126,7 @@ public sealed partial class CutVideoForm
         catch (Exception ex)
         {
             if (!_closing && !_sourceInvalid && !token.IsCancellationRequested)
-                _labelPreviewState.Text = _loopStatus.Text = $"Native timing unavailable: {ex.Message}";
+                _labelPreviewState.Text = _loopStatus.Text = L.Format("Loop_NativeUnavailable", ex.Message);
         }
         finally
         {
@@ -214,7 +214,7 @@ public sealed partial class CutVideoForm
             var end = await _timingIndex!.ResolveTimeAsync(_nativeEndTime.Value, true, token);
             token.ThrowIfCancellationRequested(); CommitNativeBoundary("end", end, false);
         }
-        if (_nativeStartTime >= _nativeEndTime) throw new InvalidOperationException("The native selection must contain at least one frame.");
+        if (_nativeStartTime >= _nativeEndTime) throw new InvalidOperationException(L.Get("Loop_SelectionEmpty"));
         RefreshSelectionUi(false);
     }
 

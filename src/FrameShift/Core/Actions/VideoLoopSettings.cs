@@ -13,11 +13,11 @@ public sealed record VideoLoopSettings(VideoLoopMode Mode, double Speed = 1, int
     public void Validate()
     {
         if (!Enum.IsDefined(Mode) || Speed is not (1 or 0.75 or 0.5) || Repetitions is < 1 or > 10)
-            throw new ArgumentException("Loop speed must be 1, 0.75 or 0.5; repetitions must be between 1 and 10.");
+            throw new ArgumentException(L.Get("Loop_SpeedInvalid"));
         if (Mode == VideoLoopMode.Natural && Speed != 1)
-            throw new ArgumentException("Slow motion is available only for Ping-Pong.");
+            throw new ArgumentException(L.Get("Loop_SlowMotionOnly"));
         if (Mode == VideoLoopMode.PingPong && KeepAudio)
-            throw new ArgumentException("Ping-Pong loops are silent. Reversed audio is not supported.");
+            throw new ArgumentException(L.Get("Loop_PingPongSilent"));
     }
 
     public Dictionary<string, string> ToOptions() => new()
@@ -33,21 +33,21 @@ public sealed record VideoLoopSettings(VideoLoopMode Mode, double Speed = 1, int
         if (options is null || !options.TryGetValue(ModeKey, out var mode))
         {
             if (options?.Keys.Any(OptionNames.Contains) == true)
-                throw new ArgumentException("Loop options require --loop-mode natural|pingpong.");
+                throw new ArgumentException(L.Get("Loop_ModeRequired"));
             return null;
         }
         var parsedMode = mode.ToLowerInvariant() switch
         {
             "natural" => VideoLoopMode.Natural,
             "pingpong" => VideoLoopMode.PingPong,
-            _ => throw new ArgumentException("Loop mode must be natural or pingpong.")
+            _ => throw new ArgumentException(L.Get("Loop_ModeInvalid"))
         };
         var speed = options.TryGetValue("loop-speed", out var s) ? double.Parse(s, CultureInfo.InvariantCulture) : 1;
         var repeat = options.TryGetValue("loop-repeat", out var r) ? int.Parse(r, CultureInfo.InvariantCulture) : 1;
         var audio = options.TryGetValue("loop-audio", out var a) ? a.ToLowerInvariant() switch
         {
             "keep" => true, "mute" => false,
-            _ => throw new ArgumentException("Loop audio must be keep or mute.")
+            _ => throw new ArgumentException(L.Get("Loop_AudioInvalid"))
         } : parsedMode == VideoLoopMode.Natural;
         var settings = new VideoLoopSettings(parsedMode, speed, repeat, audio);
         settings.Validate();
@@ -60,9 +60,9 @@ public sealed record VideoLoopCandidate(double StartSeconds, double EndSeconds, 
     // Quality is a ranking score, not a probability or percentage of visual correctness.
     public VideoLoopSeamMetrics? Seam { get; init; }
     public double DurationSeconds => EndSeconds - StartSeconds;
-    public string JunctionAssessment => Seam is null ? "Needs review" : Seam.Error <= 0.012 ? "Promising"
-        : Seam.Error <= 0.04 ? "Approximate" : "Needs review";
-    public override string ToString() => $"{CutVideoMath.FormatPreciseTime(StartSeconds)} → {CutVideoMath.FormatPreciseTime(EndSeconds)}  |  {DurationSeconds:0.###} s  |  {JunctionAssessment}";
+    public string JunctionAssessment => Seam is null ? L.Get("Loop_Review") : Seam.Error <= 0.012 ? L.Get("Loop_Promising")
+        : Seam.Error <= 0.04 ? L.Get("Loop_Approximate") : L.Get("Loop_Review");
+    public override string ToString() => L.Format("Loop_CandidateSummary", CutVideoMath.FormatPreciseTime(StartSeconds), CutVideoMath.FormatPreciseTime(EndSeconds), DurationSeconds, JunctionAssessment);
 }
 
 public sealed record VideoLoopSeamMetrics(double Appearance, double Lighting, double Motion, double Continuity,
@@ -116,10 +116,10 @@ public sealed record VideoLoopExportSelection(string CandidateId, VideoLoopCandi
 
     public Dictionary<string, string> ToOptions()
     {
-        if (string.IsNullOrWhiteSpace(CandidateId)) throw new ArgumentException("A loop candidate ID is required.");
+        if (string.IsNullOrWhiteSpace(CandidateId)) throw new ArgumentException(L.Get("Loop_CandidateIdRequired"));
         if (!double.IsFinite(Bounds.StartSeconds) || !double.IsFinite(Bounds.EndSeconds) ||
             Bounds.StartSeconds < 0 || Bounds.EndSeconds <= Bounds.StartSeconds)
-            throw new ArgumentException("Loop boundaries must describe a finite, non-empty segment.");
+            throw new ArgumentException(L.Get("Loop_FiniteBounds"));
         Settings.Validate();
         var options = Settings.ToOptions();
         options["loop-start"] = Bounds.StartSeconds.ToString("R", CultureInfo.InvariantCulture);

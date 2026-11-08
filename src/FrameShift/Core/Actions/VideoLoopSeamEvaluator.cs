@@ -231,13 +231,13 @@ internal sealed class VideoLoopSeamEvaluator
     private static void Validate(Frame frame)
     {
         if (frame.PixelWidth <= 0 || frame.PixelHeight <= 0 || frame.Pixels.Length != (long)frame.PixelWidth * frame.PixelHeight * 3)
-            throw new ArgumentException("Loop frame dimensions do not match its RGB pixels.");
+            throw new ArgumentException(L.Get("Loop_RgbMismatch"));
     }
 
     private static void RequireSameSize(Frame a, Frame b)
     {
         Validate(a); Validate(b);
         if (a.PixelWidth != b.PixelWidth || a.PixelHeight != b.PixelHeight)
-            throw new ArgumentException("Loop frames must use the same comparison dimensions.");
+            throw new ArgumentException(L.Get("Loop_ComparisonSizeMismatch"));
     }
 }
