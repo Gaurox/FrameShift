@@ -1,7 +1,7 @@
 # Localization
 
-FrameShift 1.22 prepares one application and installer in English, simplified Chinese,
-Spanish, Brazilian Portuguese and Russian. It is not published yet. English is the fallback
+FrameShift 1.22.0 was published on 8 November 2026 with one application and installer
+in English, simplified Chinese, Spanish, Brazilian Portuguese and Russian. English is the fallback
 for development builds, missing installation defaults and unsupported language values.
 Only display culture is selected; numeric
 parsing, CLI options, model IDs, persisted values, FFmpeg parameters and output

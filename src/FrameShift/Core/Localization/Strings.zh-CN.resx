@@ -5544,4 +5544,13 @@
   <data name="Settings_LanguageSaveFailed" xml:space="preserve">
     <value>无法保存语言设置，资源管理器菜单未更改。请检查设置文件的访问权限，然后重新选择语言。</value>
   </data>
+  <data name="Loop_ExportSelection" xml:space="preserve">
+    <value>导出选区</value>
+  </data>
+  <data name="Loop_Export" xml:space="preserve">
+    <value>导出循环</value>
+  </data>
+  <data name="Loop_ExportSdr" xml:space="preserve">
+    <value>导出 SDR 循环</value>
+  </data>
 </root>

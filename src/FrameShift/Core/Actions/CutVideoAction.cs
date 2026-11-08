@@ -41,6 +41,9 @@ public sealed class CutVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.InputFileNotFound(request.InputPath));
         }
 
+        if (request.ExpectedLoopSource is { } expected && VideoLoopSourceStamp.Read(request.InputPath) != expected)
+            return new(false, new VideoLoopSourceChangedException().Message);
+
         var sourceExtension = Path.GetExtension(request.InputPath).ToLowerInvariant();
         if (!VideoConversionCatalog.IsSupportedSourceExtension(sourceExtension))
         {
@@ -82,6 +85,28 @@ public sealed class CutVideoAction : IFrameShiftAction
         if (!CutVideoSettings.TryFromOptions(request.Options, fps.Value, totalFrames, out var settings, out var settingsError) || settings is null)
         {
             return new ActionExecutionResult(false, settingsError ?? MediaActionMessages.CutVideoSettingsMissing());
+        }
+
+        try
+        {
+            if (VideoLoopSettings.FromOptions(request.Options) is { } loop)
+            {
+                VideoLoopCandidate? bounds = null;
+                if (request.Options!.TryGetValue("loop-start", out var start) && request.Options.TryGetValue("loop-end", out var end))
+                    bounds = new VideoLoopCandidate(double.Parse(start, CultureInfo.InvariantCulture), double.Parse(end, CultureInfo.InvariantCulture), 0);
+                request.Logger.Log($"Cut Video loop: {request.QueueItemDescription}; candidate {request.Options.GetValueOrDefault("loop-candidate")}; " +
+                    $"bounds {bounds?.StartSeconds:R} → {bounds?.EndSeconds:R}; {loop.Mode}, speed {loop.Speed}, repeats {loop.Repetitions}, audio {loop.KeepAudio}.");
+                return await new VideoLoopExporter(_ffmpegRunner, _ffprobeRunner) { ExpectedSource = request.ExpectedLoopSource }.ExportAsync(ffmpegPath, ffprobePath,
+                    request, probe, settings, loop, bounds, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (VideoLoopCancellationException ex) { return new(false, "Loop export canceled.", null, true, ex.Scope); }
+        catch (OperationCanceledException) { return new(false, "Loop export canceled.", null, true, CancellationScope.All); }
+        catch (Exception ex)
+        {
+            request.Logger.Log($"Loop export failed: {ex}");
+            request.ProgressReporter?.ReportState("failed", ex.Message);
+            return new(false, ConversionActionHelper.GetFriendlyExceptionMessage(ex, "Loop export failed."));
         }
 
         using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(

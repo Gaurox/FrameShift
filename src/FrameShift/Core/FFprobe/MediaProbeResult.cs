@@ -18,6 +18,10 @@ public sealed record MediaProbeResult(
 {
     public bool HasSubtitles => SubtitleCodecs.Count > 0;
 
+    public double FormatStartSeconds { get; init; }
+    public double VideoStartSeconds { get; init; }
+    public double VideoSampleAspectRatio { get; init; } = 1;
+
     public int PrimaryAudioSampleRate { get; init; } = 0;
 
     public int PrimaryAudioChannels { get; init; } = 0;
@@ -31,6 +35,8 @@ public sealed record MediaProbeResult(
     public string? VideoColorTransfer { get; init; }
 
     public string? VideoColorPrimaries { get; init; }
+    public string? VideoColorRange { get; init; }
+    public double? VideoPeakLuminanceNits { get; init; }
 
     public string? VideoProfile { get; init; }
 

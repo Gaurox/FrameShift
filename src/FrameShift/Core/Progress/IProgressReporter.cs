@@ -15,11 +15,20 @@ public interface IProgressReporter
 
     bool IsQueueItemCancellationRequested(string inputPath);
 
+    bool IsQueueItemCancellationRequested(string inputPath, string queueItemId)
+        => IsQueueItemCancellationRequested(inputPath);
+
     void ReportQueue(IReadOnlyList<string> items);
 
     void ReportProgress(int progressValue, string? currentFile, string? currentAction, string? message, string? etaText = null);
 
+    void ReportProgress(int progressValue, string? currentFile, string? currentAction, string? message, string? etaText, string queueItemId)
+        => ReportProgress(progressValue, currentFile, currentAction, message, etaText);
+
     void ReportState(string state, string? message = null);
 
     void ReportQueueItem(string currentFile, string state, string? message = null);
+
+    void ReportQueueItem(string currentFile, string queueItemId, string state, string? message)
+        => ReportQueueItem(currentFile, state, message);
 }

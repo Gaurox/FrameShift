@@ -82,6 +82,37 @@ public sealed class BoundedMediaCaptureTests : IDisposable
         Assert.EndsWith("final diagnostic", error);
     }
 
+    [Fact]
+    public async Task StreamingTimingsSurviveTruncationAndKeepExactHighFpsTicks()
+    {
+        var timing = new VideoLoopTimingCollector(3601);
+        var result = await new FfmpegRunner(new AppLogger()).RunAsync(Shell, Arguments("showinfo-flood"), null, null,
+            "source été.mp4", "Find Loop test", "CPU", default, timing.Observe).WaitAsync(TimeSpan.FromSeconds(15));
+        Assert.Equal(0, result.ExitCode);
+        Assert.InRange(result.StandardError.Length, 1, BoundedProcessText.DiagnosticLimit);
+        Assert.Contains("truncated", result.StandardError);
+        Assert.EndsWith("final diagnostic", result.StandardError.TrimEnd());
+        Assert.DoesNotContain("config in time_base", result.StandardError);
+        Assert.Equal(3601, timing.Times.Count);
+        Assert.Equal(3601, timing.Timings.Count);
+        for (var i = 0; i < 3601; i++)
+        {
+            Assert.Equal((90000000L + 375L * i) / 90000d, timing.Timings[i].Time, 9);
+            Assert.Equal(1 / 240d, timing.Timings[i].Duration, 12);
+        }
+        Assert.True(VideoLoopFrameReader.ParseTimes(result.StandardError).Count < timing.Times.Count);
+    }
+
+    [Fact]
+    public void TimingCapacityKeepsOnlyTheRequestedPrefix()
+    {
+        var timing = new VideoLoopTimingCollector(1);
+        timing.Observe("[Parsed_showinfo_0] n: 0 pts: 0 pts_time: 0 duration: 1 duration_time: 1");
+        timing.Observe("[Parsed_showinfo_0] n: 1 pts: 1 pts_time: 1 duration: 1 duration_time: 1");
+        Assert.Equal(new[] { 0d }, timing.Times);
+        Assert.Single(timing.Timings);
+    }
+
     [Theory]
     [InlineData("\n")]
     [InlineData("\r\n")]

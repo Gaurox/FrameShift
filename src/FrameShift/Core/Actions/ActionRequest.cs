@@ -8,4 +8,8 @@ public sealed record ActionRequest(
     string InputPath,
     AppLogger Logger,
     IProgressReporter? ProgressReporter,
-    IReadOnlyDictionary<string, string>? Options = null);
+    IReadOnlyDictionary<string, string>? Options = null)
+{
+    public string? QueueItemDescription { get; init; }
+    internal VideoLoopSourceStamp? ExpectedLoopSource { get; init; }
+}

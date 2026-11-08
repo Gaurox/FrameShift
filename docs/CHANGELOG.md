@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.23 — Unreleased
+
+- Integrate the preserved Find Loop work into Cut Video on top of published
+  multilingual 1.22.0: natural search, forward/backward loops, native timings,
+  silent previews and queued candidate exports.
+- Preserve 1.22 translations and servicing fixes; translate the three export
+  footer commands into all five supported languages. Remaining Find Loop wording
+  and Windows/installer acceptance are pending. No 1.23 package is released.
+
 ## 1.22.0
 
 Released on 8 November 2026 after owner acceptance and publication authorization. GitHub tag: `v1.22.0`.

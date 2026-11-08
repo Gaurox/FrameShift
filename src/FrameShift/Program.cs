@@ -201,10 +201,12 @@ internal static partial class Program
 
         if (actionId.Equals("cut-video", StringComparison.OrdinalIgnoreCase))
         {
-            if (!EnsureCutVideoOptions(inputPaths, options, logger))
+            if (!EnsureCutVideoOptions(inputPaths, options, logger, out var loopBatch))
             {
                 return 0;
             }
+            if (loopBatch is not null)
+                return RunQueuedRequestsWithProgressForm(action, loopBatch, logger, "loop-candidates");
         }
 
         if (actionId.Equals("create-gif", StringComparison.OrdinalIgnoreCase))

@@ -56,7 +56,7 @@ public sealed class FfprobeRunner
         var arguments = new[]
         {
             "-v", "error",
-            "-show_entries", "format=duration:stream=index,codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,nb_frames,duration,sample_rate,channels,pix_fmt,color_space,color_transfer,color_primaries,profile,bits_per_raw_sample:stream_tags=rotate:stream_side_data=rotation",
+            "-show_entries", "format=duration,start_time:stream=index,codec_type,codec_name,width,height,sample_aspect_ratio,avg_frame_rate,r_frame_rate,nb_frames,duration,start_time,sample_rate,channels,pix_fmt,color_space,color_transfer,color_primaries,color_range,profile,bits_per_raw_sample:stream_tags=rotate:stream_side_data=rotation,side_data_type,max_luminance,max_content",
             "-of", "json",
             inputPath
         };
@@ -91,8 +91,12 @@ public sealed class FfprobeRunner
             var videoColorSpace = default(string);
             var videoColorTransfer = default(string);
             var videoColorPrimaries = default(string);
+            var videoColorRange = default(string);
+            double? videoPeakLuminanceNits = null;
             var videoProfile = default(string);
             int? videoBitDepth = null;
+            var videoStartSeconds = 0d;
+            var videoSampleAspectRatio = 1d;
 
             foreach (var streamElement in streamsElement.EnumerateArray())
             {
@@ -135,10 +139,24 @@ public sealed class FfprobeRunner
                 else if (string.Equals(codecType, "video", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(videoCodec))
                 {
                     videoCodec = codecName?.ToLowerInvariant();
+                    videoSampleAspectRatio = ParseFrameRate(GetStringValue(streamElement, "sample_aspect_ratio")?.Replace(':', '/')) ?? 1;
+                    if (double.TryParse(GetStringValue(streamElement, "start_time"), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedStart))
+                        videoStartSeconds = parsedStart;
                     videoPixelFormat = GetStringValue(streamElement, "pix_fmt");
                     videoColorSpace = GetStringValue(streamElement, "color_space");
                     videoColorTransfer = GetStringValue(streamElement, "color_transfer");
                     videoColorPrimaries = GetStringValue(streamElement, "color_primaries");
+                    videoColorRange = GetStringValue(streamElement, "color_range");
+                    if (streamElement.TryGetProperty("side_data_list", out var colorSideData) && colorSideData.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var data in colorSideData.EnumerateArray())
+                        {
+                            var mastering = ParseFrameRate(GetStringValue(data, "max_luminance"));
+                            var content = ParseFrameRate(GetStringValue(data, "max_content"));
+                            foreach (var peak in new[] { mastering, content })
+                                if (peak is >= 100 and <= 10000) videoPeakLuminanceNits = Math.Max(videoPeakLuminanceNits ?? 0, peak.Value);
+                        }
+                    }
                     videoProfile = GetStringValue(streamElement, "profile");
                     videoBitDepth = TryParseBitDepth(GetStringValue(streamElement, "bits_per_raw_sample"));
                     rotationDegrees = TryGetRotationDegrees(streamElement);
@@ -181,6 +199,10 @@ public sealed class FfprobeRunner
             }
 
             TimeSpan? duration = null;
+            var formatStartSeconds = 0d;
+            if (document.RootElement.TryGetProperty("format", out var formatStartElement) &&
+                double.TryParse(GetStringValue(formatStartElement, "start_time"), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedFormatStart))
+                formatStartSeconds = parsedFormatStart;
             if (document.RootElement.TryGetProperty("format", out var formatElement) &&
                 formatElement.TryGetProperty("duration", out var durationElement))
             {
@@ -194,6 +216,13 @@ public sealed class FfprobeRunner
             }
 
             var durationSeconds = duration?.TotalSeconds ?? videoStreamDurationSeconds;
+            if (string.Equals(videoColorTransfer, "smpte2084", StringComparison.OrdinalIgnoreCase))
+            {
+                // HDR10 SEI commonly lives on decoded frames, rather than stream side
+                // data. Read only a bounded initial packet window, never scan the file.
+                var framePeak = await TryReadHdrPeakAsync(executablePath, inputPath, cancellationToken).ConfigureAwait(false);
+                if (framePeak is not null) videoPeakLuminanceNits = Math.Max(videoPeakLuminanceNits ?? 0, framePeak.Value);
+            }
             if (videoFrameCount is null &&
                 videoFrameRate is not null &&
                 durationSeconds is not null &&
@@ -226,15 +255,42 @@ public sealed class FfprobeRunner
                 VideoColorSpace = videoColorSpace,
                 VideoColorTransfer = videoColorTransfer,
                 VideoColorPrimaries = videoColorPrimaries,
+                VideoColorRange = videoColorRange,
+                VideoPeakLuminanceNits = videoPeakLuminanceNits,
                 VideoProfile = videoProfile,
-                VideoBitDepth = videoBitDepth
+                VideoBitDepth = videoBitDepth,
+                VideoStartSeconds = videoStartSeconds,
+                FormatStartSeconds = formatStartSeconds,
+                VideoSampleAspectRatio = videoSampleAspectRatio
             }, null);
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.Log($"ffprobe parse failed: {ex.Message}");
             return new MediaProbeAttemptResult(null, ConversionActionHelper.GetFriendlyProbeError(result.StandardError));
         }
+    }
+
+    private async Task<double?> TryReadHdrPeakAsync(string executable, string source, CancellationToken token)
+    {
+        var result = await RunProbeAsync(executable, ["-v", "error", "-threads", "2", "-select_streams", "v:0",
+            "-read_intervals", "%+#32", "-show_frames", "-show_entries", "frame_side_data=max_luminance,max_content", "-of", "json", source], token).ConfigureAwait(false);
+        if (!result.Success) return null; // The color policy reports its nominal fallback.
+        try
+        {
+            using var document = JsonDocument.Parse(result.Output);
+            double? peak = null;
+            if (document.RootElement.TryGetProperty("frames", out var frames))
+                foreach (var frame in frames.EnumerateArray())
+                    if (frame.TryGetProperty("side_data_list", out var dataList))
+                        foreach (var data in dataList.EnumerateArray())
+                            foreach (var name in new[] { "max_luminance", "max_content" })
+                                if (ParseFrameRate(GetStringValue(data, name)) is double value && value is >= 100 and <= 10000)
+                                    peak = Math.Max(peak ?? 0, value);
+            return peak;
+        }
+        catch (JsonException) { return null; }
     }
 
     public async Task<(JoinVideoProbeResult? Probe, string? Error)> TryProbeJoinVideoAsync(

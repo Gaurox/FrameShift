@@ -105,8 +105,10 @@ internal static partial class Program
         }
     }
 
-    private static bool EnsureCutVideoOptions(List<string> inputPaths, Dictionary<string, string> options, AppLogger logger)
+    private static bool EnsureCutVideoOptions(List<string> inputPaths, Dictionary<string, string> options, AppLogger logger,
+        out IReadOnlyList<ActionRequest>? batchRequests)
     {
+        batchRequests = null;
         if (inputPaths.Count != 1)
         {
             ShowCliError(MediaActionMessages.ExactlyOneSourceFileRequired(L.Get("ProgramPickersCut_Cut_Video_2106db79")));
@@ -121,6 +123,11 @@ internal static partial class Program
         }
 
         var hasCliCutOptions = CutVideoSettings.ContainsAnyOption(options);
+        if (!hasCliCutOptions && options.Keys.Any(VideoLoopSettings.OptionNames.Contains))
+        {
+            ShowCliError("Loop CLI export requires explicit cut boundaries. Open Cut Video without loop CLI options to use Find Loop.");
+            return false;
+        }
         if (hasCliCutOptions)
         {
             var toolLocator = new ToolLocator();
@@ -206,10 +213,19 @@ internal static partial class Program
                 return false;
             }
 
+            if (picker.SelectedLoopExports is { Count: > 0 } selections)
+            {
+                batchRequests = CreateLoopBatchRequests(inputPaths[0], picker.Selection, selections, options, logger);
+                return true;
+            }
+
             foreach (var item in picker.Selection.ToOptions())
             {
                 options[item.Key] = item.Value;
             }
+
+            if (picker.SelectedLoopOptions is { } loopOptions)
+                foreach (var item in loopOptions) options[item.Key] = item.Value;
 
             return true;
         }
@@ -218,6 +234,24 @@ internal static partial class Program
             ShowCliError(ConversionActionHelper.GetFriendlyExceptionMessage(ex, MediaActionMessages.Failed(L.Get("ProgramPickersCut_Cut_Video_2106db79"))));
             return false;
         }
+    }
+
+    internal static IReadOnlyList<ActionRequest> CreateLoopBatchRequests(string source, CutVideoSettings cut,
+        IReadOnlyList<VideoLoopExportSelection> selections, IReadOnlyDictionary<string, string> baseOptions, AppLogger logger)
+    {
+        var requests = selections.Select((selection, index) =>
+        {
+            var options = new Dictionary<string, string>(baseOptions, StringComparer.OrdinalIgnoreCase);
+            foreach (var item in cut.ToOptions()) options[item.Key] = item.Value;
+            foreach (var item in selection.ToOptions()) options[item.Key] = item.Value;
+            var bounds = selection.Bounds;
+            var description = $"Candidate {index + 1}/{selections.Count} · {bounds.DurationSeconds:0.###} s · " +
+                $"{CutVideoMath.FormatPreciseTime(bounds.StartSeconds)} → {CutVideoMath.FormatPreciseTime(bounds.EndSeconds)} (end exclusive)";
+            logger.Log($"Loop batch {description}; candidate {selection.CandidateId}; source '{source}'.");
+            return new ActionRequest(source, logger, null, new System.Collections.ObjectModel.ReadOnlyDictionary<string, string>(options))
+                { QueueItemDescription = description, ExpectedLoopSource = selection.SourceStamp };
+        }).ToArray();
+        return Array.AsReadOnly(requests);
     }
 
     private static bool EnsureCreateGifOptions(List<string> inputPaths, Dictionary<string, string> options, AppLogger logger)

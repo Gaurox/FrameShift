@@ -46,6 +46,7 @@ public sealed partial class CutVideoForm : Form
         Func<double, CancellationToken, Task<Bitmap>>? previewLoader)
     {
         _inputPath = inputPath;
+        _hasInjectedCapture = previewLoader is not null;
         _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(ffmpegPath, ffmpegRunner, inputPath, seconds, "Cut Video Preview", token));
         _fps = probe.VideoFrameRate ?? throw new InvalidOperationException(MediaActionMessages.VideoFrameRateUnavailable());
         _totalFrames = probe.EstimatedVideoFrameCount is long count && count > 0
@@ -107,24 +108,30 @@ public sealed partial class CutVideoForm : Form
         _selectionPanel.MouseDown += SelectionPanelOnMouseDown;
         _selectionPanel.MouseMove += SelectionPanelOnMouseMove;
         _selectionPanel.MouseUp += SelectionPanelOnMouseUp;
+        var loopControls = CreateLoopControls(ffmpegPath, probe, ffmpegRunner);
         var options = FrameShiftUiFactory.CreateSection(L.Get("CutVideoForm_Selection_dfd52658"), FrameShiftUiFactory.CreateVerticalStack(
             CreateBoundaryRows(
                 CreateBoundaryGroup(L.Get("CutVideoForm_Start_19a9997b"), _textStart, _buttonStartPrev, _buttonStartNext, _textStartTime),
                 CreateBoundaryGroup(L.Get("CutVideoForm_End_a1c0e75a"), _textEnd, _buttonEndPrev, _buttonEndNext, _textEndTime)),
-            _selectionPanel, _labelSelection, _labelPreviewState));
-        var buttonOk = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutVideoForm_OK_3215dae8"), true);
-        buttonOk.Click += (_, _) => ConfirmCut();
+            _selectionPanel, _labelSelection, _labelPreviewState, loopControls));
+        _cutSelectionControls = _selectionPanel;
+        var buttonOk = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_ExportSelection"), true);
+        _cutOk = buttonOk;
+        buttonOk.Name = "exportSelection";
+        buttonOk.Click += (_, _) => ConfirmSelection();
         var buttonCancel = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("CutVideoForm_Cancel_998b9c48"), false);
         buttonCancel.DialogResult = DialogResult.Cancel;
         var header = FrameShiftUiFactory.CreateHeader(L.Get("CutVideoForm_FrameShift_Cut_video_654b1c4b"),
             L.Format("CutVideoForm_Source_0_FPS_1_0_Frames_2_5338f9af",Path.GetFileName(_inputPath),_fps,_totalFrames),
             IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "✂");
-        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options,
-            FrameShiftDialogLayout.CreateActions(buttonCancel, buttonOk)));
+        _cutActions = FrameShiftDialogLayout.CreateActions(buttonCancel, _exportAllLoops, buttonOk);
+        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options, _cutActions));
         AcceptButton = buttonOk;
         CancelButton = buttonCancel;
+        UpdateLoopCommands();
         _previewTimer = new System.Windows.Forms.Timer { Interval = 140 };
         _previewTimer.Tick += PreviewTimerOnTick;
+        InitializeNativeTiming();
         FormClosing += CloseAfterPreviewAsync;
         Shown += async (_, _) => await RequestPreviewAsync(1);
         RefreshSelectionUi(refreshPreview: false);
@@ -209,23 +216,34 @@ public sealed partial class CutVideoForm : Form
 
     private void RefreshSelectionUi(bool refreshPreview)
     {
+        InvalidateNativeFrameEdits();
+        if (_loopCandidate is not null && _candidateFrames != (_selection.StartFrame, _selection.EndFrame))
+            MarkCustomLoopSelection();
+        if (refreshPreview && _loopCandidate is null && _loopContext != LoopContext.Cut)
+            _loopCustomSelection = true;
+        if (refreshPreview) StopLoopPlayback();
         _uiState.UpdatingText = true;
         try
         {
             _textStart.Text = _selection.StartFrame.ToString(CultureInfo.InvariantCulture);
             _textEnd.Text = _selection.EndFrame.ToString(CultureInfo.InvariantCulture);
-            _textStartTime.Text = CutVideoMath.FormatPreciseTime((_selection.StartFrame - 1) / _fps);
-            _textEndTime.Text = CutVideoMath.FormatPreciseTime(_selection.EndFrame / _fps);
+            _textStartTime.Text = CutVideoMath.FormatPreciseTime(_nativeStartTime ?? _loopCandidate?.StartSeconds ?? (_selection.StartFrame - 1) / _fps);
+            _textEndTime.Text = CutVideoMath.FormatPreciseTime(_nativeEndTime ?? _loopCandidate?.EndSeconds ?? _selection.EndFrame / _fps);
         }
         finally
         {
             _uiState.UpdatingText = false;
         }
 
-        var startTimeSeconds = (_selection.StartFrame - 1) / _fps;
-        var endTimeSeconds = _selection.EndFrame / _fps;
+        var startTimeSeconds = _nativeStartTime ?? _loopCandidate?.StartSeconds ?? (_selection.StartFrame - 1) / _fps;
+        var endTimeSeconds = _nativeEndTime ?? _loopCandidate?.EndSeconds ?? _selection.EndFrame / _fps;
         var selectedFrames = _selection.EndFrame - _selection.StartFrame + 1;
         _labelSelection.Text = L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4",_selection.StartFrame,_selection.EndFrame,CutVideoMath.FormatPreciseTime(startTimeSeconds),CutVideoMath.FormatPreciseTime(endTimeSeconds),selectedFrames);
+        if (_loopCandidate is not null) _labelSelection.Text += NativeTimingEnabled && _nativeStartNumberKnown && _nativeEndNumberKnown
+            ? "  |  native timestamps (decoded frame numbers)" : "  |  native timestamps (frame numbers approximate for VFR)";
+        else if (_loopContext != LoopContext.Cut) _labelSelection.Text += "  |  Custom selection";
+        if (NativeTimingEnabled && (!_nativeStartNumberKnown || !_nativeEndNumberKnown))
+            _labelSelection.Text += "  |  frame numbers approximate until indexed; native times take priority";
         _selectionPanel.Invalidate();
 
         if (refreshPreview)
@@ -295,6 +313,10 @@ public sealed partial class CutVideoForm : Form
         try
         {
             var rawValue = string.Equals(target, "start", StringComparison.Ordinal) ? _textStartTime.Text : _textEndTime.Text;
+            var nativeTime = target == "start" ? _nativeStartTime : _nativeEndTime;
+            if (NativeTimingEnabled && nativeTime is { } value && rawValue == CutVideoMath.FormatPreciseTime(value)) return true;
+            if (_loopCandidate is { } currentCandidate && rawValue == CutVideoMath.FormatPreciseTime(
+                target == "start" ? currentCandidate.StartSeconds : currentCandidate.EndSeconds)) return true;
             if (!CutVideoSettings.TryParseTimeText(rawValue, out var seconds))
             {
                 throw new InvalidOperationException(string.Equals(target, "start", StringComparison.Ordinal)
@@ -305,6 +327,9 @@ public sealed partial class CutVideoForm : Form
             var frameValue = string.Equals(target, "start", StringComparison.Ordinal)
                 ? CutVideoMath.ConvertStartTimeToFrame(seconds, _fps)
                 : CutVideoMath.ConvertEndTimeToFrame(seconds, _fps);
+
+            if (!NativeTimingEnabled && _loopCandidate is { } candidate && rawValue != CutVideoMath.FormatPreciseTime(
+                target == "start" ? candidate.StartSeconds : candidate.EndSeconds)) MarkCustomLoopSelection();
 
             if (string.Equals(target, "start", StringComparison.Ordinal))
             {
@@ -325,6 +350,8 @@ public sealed partial class CutVideoForm : Form
                 _selection.EndFrame = frameValue;
             }
 
+            if (NativeTimingEnabled) ApplyNativeTimeEdit(target, seconds);
+
             _uiState.ActiveBoundary = target;
             RefreshSelectionUi(true);
             return true;
@@ -343,6 +370,7 @@ public sealed partial class CutVideoForm : Form
         {
             return;
         }
+        if (NativeTimingEnabled) { _ = StepNativeBoundaryAsync(target, delta); return; }
 
         if (string.Equals(target, "start", StringComparison.Ordinal))
         {
@@ -381,6 +409,7 @@ public sealed partial class CutVideoForm : Form
 
     private void ConfirmCut()
     {
+        if (_loopBusy != LoopBusy.Idle || _nativeBusy || _closing || !CheckSourceStillValid()) return;
         try
         {
             if (!ApplyBoundaryFromText("start") || !ApplyBoundaryFromText("end"))

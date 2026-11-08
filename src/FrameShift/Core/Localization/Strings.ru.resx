@@ -5544,4 +5544,13 @@
   <data name="Settings_LanguageSaveFailed" xml:space="preserve">
     <value>Не удалось сохранить язык. Меню Проводника не изменены. Проверьте доступ к файлу настроек и выберите язык повторно.</value>
   </data>
+  <data name="Loop_ExportSelection" xml:space="preserve">
+    <value>Экспортировать выделение</value>
+  </data>
+  <data name="Loop_Export" xml:space="preserve">
+    <value>Экспортировать цикл</value>
+  </data>
+  <data name="Loop_ExportSdr" xml:space="preserve">
+    <value>Экспортировать цикл SDR</value>
+  </data>
 </root>

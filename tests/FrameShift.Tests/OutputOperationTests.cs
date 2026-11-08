@@ -5,6 +5,22 @@ namespace FrameShift.Tests;
 
 public sealed class OutputOperationTests : IDisposable
 {
+    [Fact]
+    public void UnconfirmedProcess_RetainsOnlyItsOwnedWorkspace_WithoutPublication()
+    {
+        var desired = Path.Combine(_root, "retained.mp4");
+        string workspace;
+        using (var output = OutputOperation.ForFile(desired))
+        {
+            workspace = output.WorkspacePath;
+            File.WriteAllText(output.WorkingPath, "partial");
+            output.RetainForUnconfirmedProcess();
+        }
+        Assert.True(Directory.Exists(workspace));
+        Assert.False(File.Exists(desired));
+        Assert.Single(Directory.GetFiles(workspace));
+    }
+
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"frameshift é {Guid.NewGuid():N}");
     public OutputOperationTests() => Directory.CreateDirectory(_root);
     public void Dispose() => Directory.Delete(_root, true);

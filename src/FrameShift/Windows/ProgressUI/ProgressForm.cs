@@ -242,6 +242,11 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         }
     }
 
+    public bool IsQueueItemCancellationRequested(string inputPath, string queueItemId)
+    {
+        lock (_canceledQueueItems) return _canceledQueueItems.Contains(queueItemId);
+    }
+
     public void RequestCancel()
     {
         AppLogger.LogStatic($"ProgressForm: RequestCancel entered. cancellationRequested={_cancellationRequested}, isDisposed={IsDisposed}, isHandleCreated={IsHandleCreated}.");
@@ -350,6 +355,12 @@ public sealed partial class ProgressForm : Form, IProgressReporter
     }
 
     public void ReportProgress(int progressValue, string? currentFile, string? currentAction, string? message, string? etaText = null)
+        => ReportProgressCore(progressValue, currentFile, currentAction, message, etaText, null);
+
+    public void ReportProgress(int progressValue, string? currentFile, string? currentAction, string? message, string? etaText, string queueItemId)
+        => ReportProgressCore(progressValue, currentFile, currentAction, message, etaText, queueItemId);
+
+    private void ReportProgressCore(int progressValue, string? currentFile, string? currentAction, string? message, string? etaText, string? queueItemId)
     {
         RunOnUiThread(() =>
         {
@@ -371,7 +382,8 @@ public sealed partial class ProgressForm : Form, IProgressReporter
                 ? "100%"
                 : $"{Math.Floor(clampedValue / 10d):0}%";
             _percentLabel.Text = percent;
-            var currentItemIsCanceling = !string.IsNullOrWhiteSpace(currentFile) && IsQueueItemCancellationRequested(currentFile);
+            var currentItemIsCanceling = !string.IsNullOrWhiteSpace(currentFile) && (queueItemId is null
+                ? IsQueueItemCancellationRequested(currentFile) : IsQueueItemCancellationRequested(currentFile, queueItemId));
             _etaLabel.Text = currentItemIsCanceling ? string.Empty : etaText ?? string.Empty;
 
             var liveMessage = currentItemIsCanceling ? L.Get("ProgressForm_Canceling_current_file_f8d72e93")
@@ -381,7 +393,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
 
             if (!string.IsNullOrWhiteSpace(currentFile) && !currentItemIsCanceling)
             {
-                UpdateQueueItemInternal(currentFile, "processing", message);
+                UpdateQueueItemInternal(currentFile, "processing", message, queueItemId);
             }
         });
     }
@@ -402,10 +414,24 @@ public sealed partial class ProgressForm : Form, IProgressReporter
     }
 
     public void ReportQueueItem(string currentFile, string state, string? message = null)
+        => ReportQueueItemCore(currentFile, state, message, null);
+
+    public void ReportQueueItem(string currentFile, string queueItemId, string state, string? message)
+        => ReportQueueItemCore(currentFile, state, message, queueItemId);
+
+    private void ReportQueueItemCore(string currentFile, string state, string? message, string? queueItemId)
     {
         RunOnUiThread(() =>
         {
-            UpdateQueueItemInternal(currentFile, state, message);
+            UpdateQueueItemInternal(currentFile, state, message, queueItemId);
+            if (queueItemId is not null && state == "queued" && !string.IsNullOrWhiteSpace(message) &&
+                _queueRows.TryGetValue(queueItemId, out var describedRow))
+            {
+                // A display label is independent of the real path used for execution,
+                // cancellation and the details pane.
+                describedRow.Cells[0].Value = $"{Path.GetFileName(currentFile)} · {message.Replace(Environment.NewLine, " ")}";
+                describedRow.Cells[0].ToolTipText = currentFile + Environment.NewLine + message;
+            }
             if (string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase))
             {
                 ResetProgressDisplay();
@@ -581,13 +607,20 @@ public sealed partial class ProgressForm : Form, IProgressReporter
         queueItemIds.Add(queueItemId);
     }
 
-    private void UpdateQueueItemInternal(string currentFile, string state, string? message)
+    private void UpdateQueueItemInternal(string currentFile, string state, string? message, string? occurrenceId = null)
     {
-        if (!TryGetQueueRowForPath(currentFile, state, out var queueItemId, out var row))
+        var queueItemId = occurrenceId ?? string.Empty;
+        DataGridViewRow row;
+        var found = occurrenceId is not null ? _queueRows.TryGetValue(occurrenceId, out row!)
+            : TryGetQueueRowForPath(currentFile, state, out queueItemId, out row!);
+        if (!found)
         {
             AppLogger.LogStatic($"ProgressForm: UpdateQueueItemInternal skipped because row was not found for '{currentFile}' with target state '{state}'.");
             return;
         }
+
+        if (occurrenceId is not null && state == "processing" &&
+            Convert.ToString(row.Cells[1].Value) is "done" or "failed" or "canceled") return;
 
         if (row.DataGridView != _queueGrid || row.Index < 0)
         {
@@ -653,7 +686,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
             }
         }
 
-        UpdateQueueItemInternal(TryGetQueueItemPath(queueItemId) ?? string.Empty, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"));
+        UpdateQueueItemInternal(TryGetQueueItemPath(queueItemId) ?? string.Empty, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"), queueItemId);
     }
 
     private void QueueGridOnCellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
@@ -757,7 +790,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
                 var inputPath = TryGetQueueItemPath(queueItemId);
                 if (!string.IsNullOrWhiteSpace(inputPath))
                 {
-                    UpdateQueueItemInternal(inputPath, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"));
+                    UpdateQueueItemInternal(inputPath, "canceling", L.Get("ProgressForm_Canceling_current_file_f8d72e93"), queueItemId);
                 }
             }
         });
@@ -783,7 +816,7 @@ public sealed partial class ProgressForm : Form, IProgressReporter
                 var inputPath = TryGetQueueItemPath(queueItemId);
                 if (!string.IsNullOrWhiteSpace(inputPath))
                 {
-                    UpdateQueueItemInternal(inputPath, "canceled", MediaActionMessages.CanceledBeforeProcessing());
+                    UpdateQueueItemInternal(inputPath, "canceled", MediaActionMessages.CanceledBeforeProcessing(), queueItemId);
                 }
             }
         });

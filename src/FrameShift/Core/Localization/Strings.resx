@@ -5544,4 +5544,13 @@ Output WAV files are created next to the source with unique naming.</value>
   <data name="Settings_LanguageSaveFailed" xml:space="preserve">
     <value>The language could not be saved. Explorer menus were not changed. Check access to the settings file, then select the language again.</value>
   </data>
+  <data name="Loop_ExportSelection" xml:space="preserve">
+    <value>Export Selection</value>
+  </data>
+  <data name="Loop_Export" xml:space="preserve">
+    <value>Export Loop</value>
+  </data>
+  <data name="Loop_ExportSdr" xml:space="preserve">
+    <value>Export SDR Loop</value>
+  </data>
 </root>

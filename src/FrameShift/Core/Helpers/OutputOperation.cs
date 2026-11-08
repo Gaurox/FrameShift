@@ -10,6 +10,7 @@ internal sealed class OutputOperation : IDisposable
     private readonly string _desiredPath;
     private readonly bool _directory;
     private bool _disposed;
+    private bool _retainWorkspace;
 
     private OutputOperation(string desiredPath, bool directory)
     {
@@ -33,6 +34,12 @@ internal sealed class OutputOperation : IDisposable
 
     public static OutputOperation ForFile(string desiredPath) => new(desiredPath, false);
     public static OutputOperation ForDirectory(string desiredPath) => new(desiredPath, true);
+
+    internal void RetainForUnconfirmedProcess()
+    {
+        _retainWorkspace = true;
+        LogCleanupFailure($"Process termination was not confirmed; output workspace retained: {WorkspacePath}");
+    }
 
     public string Publish(CancellationToken cancellationToken)
     {
@@ -88,6 +95,7 @@ internal sealed class OutputOperation : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
+        if (_retainWorkspace) return;
         try { Directory.Delete(WorkspacePath, recursive: true); }
         catch (DirectoryNotFoundException) { }
         catch (IOException ex) { LogCleanupFailure($"Output workspace cleanup failed: {ex.Message}"); }

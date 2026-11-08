@@ -1,5 +1,66 @@
 # Separating 1.22 and 1.23
 
+## Current integration — 8 November 2026
+
+Multilingual **1.22.0 is published**, tagged `v1.22.0`, at `6d230c6`
+(`origin/main`). The local integration branch **`codex/integrate-find-loop-1.23`**
+starts at that exact commit. `codex/feature-loop-1.23` remains untouched at
+`137311e`; it is the historical backup, not the branch to release.
+
+The integration selectively ports `c906026`, `f9c0444`, the final `VideoLoop*`
+sources and the two timing-collector tests omitted from multilingual 1.22.
+It restores natural search, forward/backward loops, native frame timing,
+silent junction/full previews, color policy, bounded resources and queued
+candidate exports inside Cut Video. Shared queue/progress, probe, preview and
+output helpers are merged with the published code rather than replaced.
+
+All 1,843 existing entries in each of the five display-resource files are
+unchanged. Existing localized Cut Video, preview and queue messages remain in
+use. Three translated footer commands (Export Selection / Loop / SDR Loop) are
+added in all five languages, with a context-switch regression test. The remaining
+new Find Loop controls, analysis/status messages and errors still contain the
+historical English wording: full localization is an explicit next step.
+
+The published installer script, dependency locks, SDK/runtime pins, verified
+FFmpeg archive, release notes, checksums and translated READMEs are preserved.
+No installer has been rebuilt or installed, and no branch, tag, release or
+website has been published. App/installer version metadata still says 1.22.0
+until a coordinated 1.23 packaging change; a development build from this branch
+must not be distributed as the published 1.22.0 payload.
+
+The restored [feature guide](FIND_LOOP.md), [improvement plan](FIND_LOOP_IMPROVEMENT_PLAN.md)
+and [validation history](FIND_LOOP_VALIDATION.md) are explicitly marked historical.
+Their old installer results do not qualify this new integration.
+
+Local validation uses `.buildcheck/sdk/8.0.427/dotnet.exe`, matching `global.json`,
+with Release configuration and the existing locked dependencies. The first targeted
+Find Loop/bounded-capture/queue run passes **334 tests, 0 failures, 1 skip**
+(the opt-in search benchmark). It exercises generated media and automated WinForms
+workflows; it does not establish manual visual/DPI acceptance. Its local TRX is
+`scratch/loop-1.23-tests/find-loop-integration.trx`.
+
+The final complete Release suite finishes on **9 November 2026** with **1,409
+passed, 0 failures, 18 conditional skips, 1,427 total** in **9 m 7 s**. All five
+new multilingual context-switch cases pass. Skips require opt-in settings or
+unavailable OCR/AI fixtures, plus the optional loop benchmark. The final TRX is
+`scratch/loop-1.23-tests/full-release.trx`; the resource-preservation comparison
+is `scratch/loop-1.23-translation-preservation.json`. Compilation and Git
+whitespace checks pass. This is source/build/automated-test validation, with no
+installer or manual Windows acceptance claimed.
+
+Next work before a 1.23 candidate:
+
+1. Complete Find Loop resources in all registered languages and check long labels,
+   candidate columns, keyboard access and narrow layouts.
+2. Qualify the integrated feature with the serviced FFmpeg/.NET payload; retain
+   historical limits for real HDR footage and perceptual loop quality.
+3. Complete interactive Windows acceptance (DPI/text scaling, themes, actual
+   Explorer launch and monitor changes where available).
+4. Coordinate 1.23 versions, release notes and private packaging, then qualify
+   fresh install/upgrade/uninstall. Publication needs a later owner instruction.
+
+## Historical split preparation
+
 Prepared on 1 November 2026 at the owner's request. No remote branch, tag, GitHub
 release or website is published by this preparation.
 

@@ -1,5 +1,13 @@
 # FrameShift Code File Index
 
+Find Loop (unreleased 1.23 integration):
+- `src/FrameShift/Core/Actions/VideoLoop*.cs` — search, native timestamps, color policy, bounded previews and exports.
+- `src/FrameShift/Windows/Forms/CutVideoForm.Loop*.cs` and `CutVideoForm.Timing.cs` — Cut Video contexts, candidates, previews and native navigation.
+- `src/FrameShift/Windows/Controls/LoopVideoPlayer.cs` — paced, cancelable silent playback.
+- `src/FrameShift/Core/Progress/QueueItemProgressReporter.cs` — distinguish candidate occurrences sharing a source path.
+- `tests/FrameShift.Tests/VideoLoop*.cs` — media, lifecycle, timing, UI and multilingual command regressions.
+- [Current integration status and remaining gates](RELEASE_PLAN_1.22_1.23.md).
+
 Extract Text (OCR):
 - `src/FrameShift/ProgramOcr.cs` — Explorer queue, picker and model preparation.
 - `src/FrameShift/Windows/AI/ExtractTextPickerForm.cs` — native WinForms options.

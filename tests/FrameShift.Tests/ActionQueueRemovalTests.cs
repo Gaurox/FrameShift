@@ -8,6 +8,8 @@ using FrameShift.Core.Actions;
 using FrameShift.Core.Logging;
 using FrameShift.Windows.Batch;
 using FrameShift.Windows.ProgressUI;
+using FrameShift.Core.Progress;
+using System.Windows.Forms;
 using Xunit;
 
 namespace FrameShift.Tests;
@@ -15,6 +17,57 @@ namespace FrameShift.Tests;
 [Collection(WinFormsTestCollection.Name)]
 public sealed class ActionQueueRemovalTests
 {
+    [Fact]
+    public void DuplicateOccurrence_RoutesProgressAndCancel_ToTheExactRow_AndKeepsFailureDetails()
+    {
+        StaTest.Run(() =>
+        {
+            using var form = new ProgressForm();
+            const string path = @"C:\été\same.mp4";
+            form.ReportQueue([path, path, path]);
+            var first = new QueueItemProgressReporter(form, path, "generic:0", "Candidate 1/3 · 2 s");
+            var second = new QueueItemProgressReporter(form, path, "generic:1", "Candidate 2/3 · 4 s");
+            var third = new QueueItemProgressReporter(form, path, "generic:2", "Candidate 3/3 · 6 s");
+            first.ReportQueueItem(path, "done", "first output");
+            second.ReportQueueItem(path, "processing", "encoding");
+            var grid = (DataGridView)typeof(ProgressForm).GetField("_queueGrid", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(form)!;
+            typeof(ProgressForm).GetMethod("QueueGridOnCellContentClick", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(form, [grid, new DataGridViewCellEventArgs(3, 1)]);
+            Assert.False(first.IsQueueItemCancellationRequested(path)); Assert.True(second.IsQueueItemCancellationRequested(path));
+            Assert.False(third.IsQueueItemCancellationRequested(path));
+            second.ReportProgress(250, path, "Video Loop", "progress");
+            Assert.Equal("canceling", grid.Rows[1].Cells[1].Value);
+            second.ReportQueueItem(path, "failed", "specific failure");
+            third.ReportProgress(500, path, "Video Loop", "third encoding");
+            Assert.Equal("done", grid.Rows[0].Cells[1].Value);
+            Assert.Equal("failed", grid.Rows[1].Cells[1].Value);
+            Assert.Contains("Candidate 2/3", Convert.ToString(grid.Rows[1].Cells[2].Value));
+            Assert.Contains("specific failure", Convert.ToString(grid.Rows[1].Cells[2].Value));
+            Assert.Equal("processing", grid.Rows[2].Cells[1].Value);
+            // Late progress cannot revive a completed/failed occurrence or target another row.
+            second.ReportProgress(700, path, "Video Loop", "late");
+            Assert.Equal("failed", grid.Rows[1].Cells[1].Value);
+            form.RemoveQueueItem("generic:2");
+            third.ReportQueueItem(path, "done", "late removed");
+            Assert.Equal(2, grid.Rows.Count); Assert.Equal("done", grid.Rows[0].Cells[1].Value);
+        });
+    }
+
+    [Fact]
+    public void GlobalCancel_UpdatesEachDuplicateWithoutChangingTheCompletedRow()
+    {
+        StaTest.Run(() =>
+        {
+            using var form = new ProgressForm(); const string path = @"C:\same.mp4";
+            form.ReportQueue([path, path, path, path]);
+            form.ReportQueueItem(path, "generic:0", "done", "completed output");
+            form.ReportQueueItem(path, "generic:1", "processing", "working");
+            form.RequestCancel();
+            var grid = (DataGridView)typeof(ProgressForm).GetField("_queueGrid", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(form)!;
+            Assert.Equal("done", grid.Rows[0].Cells[1].Value); Assert.Equal("canceling", grid.Rows[1].Cells[1].Value);
+            Assert.Equal("canceled", grid.Rows[2].Cells[1].Value); Assert.Equal("canceled", grid.Rows[3].Cells[1].Value);
+        });
+    }
     [Fact]
     public void ProgressForm_RemovedQueuedItem_RemainsMarkedByItsOccurrenceId()
     {

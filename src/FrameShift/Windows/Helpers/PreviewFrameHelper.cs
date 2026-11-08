@@ -13,6 +13,32 @@ public static class PreviewFrameHelper
     private const int AnimatedPreviewFps = 12;
     private const int AnimatedPreviewMaxDimension = 960;
 
+    internal static async Task<Bitmap> CaptureNativeFrameAsync(string executable, FfmpegRunner runner, string source,
+        FrameShift.Core.FFprobe.MediaProbeResult probe, FrameShift.Core.Actions.VideoLoopTimestamp frame, CancellationToken token)
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"frameshift_preview_{Guid.NewGuid():N}.png");
+        try
+        {
+            var color = FrameShift.Core.Actions.VideoLoopColorPolicy.Evaluate(probe);
+            await color.RequireAvailableAsync(runner, executable, token).ConfigureAwait(false);
+            var args = new List<string> { "-hide_banner", "-loglevel", "error", "-progress", "pipe:1", "-nostats", "-y",
+                "-threads", "2", "-filter_threads", "1",
+                "-ss", FrameShift.Core.Actions.VideoLoopFrameReader.Number(Math.Max(0, frame.Seconds - probe.FormatStartSeconds - 0.1)),
+                "-copyts", "-i", source, "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
+                $"select='eq(pts,{frame.Pts.ToString(System.Globalization.CultureInfo.InvariantCulture)})'" + (color.ConvertsToSdr ? "," + color.Filter : ""),
+                "-frames:v", "1", "-fps_mode", "passthrough", file };
+            var result = await runner.RunAsync(executable, args, null, null, source, "Cut Video native preview", "CPU", token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
+            if (result.Canceled) throw new OperationCanceledException(token);
+            if (result.ExitCode != 0 || !result.ProcessTerminationConfirmed || !File.Exists(file))
+                throw new InvalidOperationException(FrameShift.Core.Actions.MediaActionMessages.PreviewGenerationFailed());
+            using var stream = File.OpenRead(file);
+            using var image = Image.FromStream(stream, false, false);
+            return new Bitmap(image);
+        }
+        finally { FrameShift.Core.Actions.ConversionActionHelper.DeleteIfExists(file); }
+    }
+
     public static async Task<Bitmap> CaptureFrameAsync(
         string ffmpegPath,
         FfmpegRunner ffmpegRunner,

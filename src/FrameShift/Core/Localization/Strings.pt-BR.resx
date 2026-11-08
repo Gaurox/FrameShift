@@ -5544,4 +5544,13 @@ Os arquivos WAV de saída são criados ao lado da origem com nomes únicos.</val
   <data name="Settings_LanguageSaveFailed" xml:space="preserve">
     <value>Não foi possível salvar o idioma. Os menus do Explorador não foram alterados. Verifique o acesso ao arquivo de configurações e selecione o idioma novamente.</value>
   </data>
+  <data name="Loop_ExportSelection" xml:space="preserve">
+    <value>Exportar seleção</value>
+  </data>
+  <data name="Loop_Export" xml:space="preserve">
+    <value>Exportar loop</value>
+  </data>
+  <data name="Loop_ExportSdr" xml:space="preserve">
+    <value>Exportar loop SDR</value>
+  </data>
 </root>
