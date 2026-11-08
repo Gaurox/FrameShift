@@ -1,4 +1,19 @@
-# FrameShift 1.22.0 multilingual preparation
+# FrameShift 1.22.0 multilingual qualification
+
+## Owner acceptance and publication authorization — 8 November 2026
+
+The owner reports completing minimum manual tests, accepts that scope, and explicitly
+authorizes publication of 1.22.0 with the approved release note, installer and SHA256.
+This acceptance does not mark the remaining manual matrix or the 17 conditional
+automated skips as executed. The validated installer remains unchanged:
+`7B2D0E2C7B157A80D2BCD5019F8361AFE960D63C6B279F37AE727B84E049CF9C`.
+Its application source is `0e818872e562c60ce3d602e325af763588b7f7b4`;
+subsequent release-documentation commits do not change the payload. Find Loop stays
+on the preserved 1.23 branches and is excluded from the `v1.22.0` release.
+
+The sections below retain the historical preparation and evidence, including checks
+that were not independently performed. The earlier non-publication statements
+describe those preparation stages, before the owner's publication authorization.
 
 Prepared on 1 November 2026. This is the English/simplified Chinese/Spanish/Brazilian Portuguese/Russian candidate,
 based on published 1.21.1 and the six general correction lots. It contains no Find

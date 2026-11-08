@@ -2,9 +2,10 @@
 
 ## 1.22.0
 
-Unpublished preparation: English/simplified Chinese/Spanish/Brazilian Portuguese/Russian application and installer, plus
+Released on 8 November 2026 after owner acceptance and publication authorization. GitHub tag: `v1.22.0`.
+English/simplified Chinese/Spanish/Brazilian Portuguese/Russian application and installer, plus
 the six general correction lots. **Find Loop is reserved for 1.23.** See the
-[draft notes](RELEASE_NOTES_1.22.0.md), [qualification](RELEASE_QUALIFICATION_1.22.0.md)
+[release notes](RELEASE_NOTES_1.22.0.md), [qualification](RELEASE_QUALIFICATION_1.22.0.md)
 and [preserved branch plan](RELEASE_PLAN_1.22_1.23.md).
 
 - English, Chinese, Spanish, Brazilian Portuguese and Russian display resources, language preference applied on next launch,

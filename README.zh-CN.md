@@ -6,7 +6,7 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 项目作者及维护者为 [Gaurox](https://github.com/Gaurox/FrameShift)，项目采用 [GPL-3.0 许可](LICENSE)，第三方组件与模型的声明见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
-**特别感谢 [zhazhayu01](https://github.com/zhazhayu01)！** 他在 [FrameShift 简体中文 fork](https://github.com/zhazhayu01/FrameShift) 中提供了简体中文界面、提示、安装器及中文 README，并修复了窄窗口下搜索框和操作按钮超出可见边界的布局问题。中文翻译与该布局修复已纳入本分支的 1.22.0 准备工作。
+**特别感谢 [zhazhayu01](https://github.com/zhazhayu01)！** 他在 [FrameShift 简体中文 fork](https://github.com/zhazhayu01/FrameShift) 中提供了简体中文界面、提示、安装器及中文 README，并修复了窄窗口下搜索框和操作按钮超出可见边界的布局问题。中文翻译与该布局修复已纳入 1.22.0 版本。
 
 本说明尽可能沿用他的[中文 README 原文](https://github.com/zhazhayu01/FrameShift/blob/f078b0c3490ae43abba807bba24692df8ef446da/README.zh-CN.md)，并根据当前版本更新了发布状态、语言选择和安装器构建说明。原始贡献为提交 [`f078b0c`](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da)，基于 FrameShift 1.21.1。感谢他为中文用户所做的翻译、文档与界面改进。
 
@@ -18,7 +18,7 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 **[下载当前公开发行版](https://github.com/Gaurox/FrameShift/releases/latest)**。
 
-当前公开版本仍为 **[1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1)**，该公开版本尚不包含本分支的多语言改动。本分支正在准备 **1.22.0 英文／简体中文／西班牙文／巴西葡萄牙文／俄文版本**；安装包已在本地构建，但**尚未公开发布**。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
+当前公开版本为 **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)**，支持英文、简体中文、西班牙文、巴西葡萄牙文和俄文。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
 
 1.22.0 包含通用可靠性修复与五种语言支持，**不包含 Find Loop**；循环视频功能保留到未来的 1.23。当前变更与验证范围见 [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)。
 
@@ -83,7 +83,7 @@ dotnet run --project .\src\FrameShift\FrameShift.csproj
 
 Release 构建使用 ImageSharp 4，需要有效且私密的 `sixlabors.lic`。维护者应先确认许可证仍然有效，通过 `SixLaborsLicenseFile` 提供文件路径；不得提交许可证、输出密钥内容，或将许可证放入安装包。不得跳过许可验证，也不得为了构建而降级至存在已知漏洞的 ImageSharp 版本。最终用户不需要自行提供此构建许可证。
 
-当前 1.22.0 候选安装包已使用 **Inno Setup 6.7.1** 构建验证。简体中文语言文件随仓库保存在 [`installer/Languages/ChineseSimplified.isl`](installer/Languages/ChineseSimplified.isl)，安装脚本直接引用该文件，**无须修改编译器安装目录或另行下载中文文件**。该文件来自 Inno Setup 官方源码仓库，固定来源、原始译者与许可见[语言文件说明](installer/Languages/README.md)。
+1.22.0 安装包已使用 **Inno Setup 6.7.1** 构建验证。简体中文语言文件随仓库保存在 [`installer/Languages/ChineseSimplified.isl`](installer/Languages/ChineseSimplified.isl)，安装脚本直接引用该文件，**无须修改编译器安装目录或另行下载中文文件**。该文件来自 Inno Setup 官方源码仓库，固定来源、原始译者与许可见[语言文件说明](installer/Languages/README.md)。
 
 唯一正式发布入口是仓库根目录的 `build_installer.ps1`：
 
@@ -105,7 +105,7 @@ $env:SixLaborsLicenseFile = 'C:\受保护目录\sixlabors.lic'
 ## 项目文档
 
 - [英文项目说明](README.md)：完整功能介绍、截图和历史版本信息。
-- [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)：当前多语言候选版本及未完成事项。
+- [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)：多语言版本及验证范围。
 - [本地化维护说明](docs/LOCALIZATION.md)：翻译来源、语言选择与资源维护。
 - [1.22 与 1.23 分支安排](docs/RELEASE_PLAN_1.22_1.23.md)：通用修复与循环视频功能的分离。
 - [zhazhayu01 原 fork 的本地化台账](https://github.com/zhazhayu01/FrameShift/blob/f078b0c3490ae43abba807bba24692df8ef446da/docs/LOCALIZATION_ZH_CN.md)：该贡献在 1.21.1 基线上的修改范围、术语及历史验证记录，不代表本分支 1.22.0 的验证结果。

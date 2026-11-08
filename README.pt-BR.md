@@ -4,9 +4,9 @@
 
 **Ferramenta gratuita e de código aberto para processar vídeos, áudios, imagens e PDFs no Windows, com integração ao Explorador e IA local.**
 
-A versão pública continua sendo a **1.21.1**. Esta ramificação prepara a **1.22.0 em inglês, chinês simplificado, espanhol, português brasileiro e russo**, ainda **não publicada**. O recurso Find Loop fica reservado para a futura 1.23. Consulte as [notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
+A versão **1.22.0** está disponível em inglês, chinês simplificado, espanhol, português brasileiro e russo. O recurso Find Loop fica reservado para a futura 1.23. Consulte as [notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
 
-Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para chinês simplificado, pelo README chinês e pela correção da disposição em janelas estreitas. Sua [contribuição original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada nesta preparação. A tradução para português brasileiro parte dos recursos originais e usa o mesmo catálogo de idiomas.
+Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para chinês simplificado, pelo README chinês e pela correção da disposição em janelas estreitas. Sua [contribuição original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada na 1.22.0. A tradução para português brasileiro parte dos recursos originais e usa o mesmo catálogo de idiomas.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="Exemplo de uso do FrameShift pelo menu de contexto do Explorador" width="900" />
@@ -29,7 +29,7 @@ Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para c
 
 **[Baixar a versão pública mais recente](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-A versão pública **[1.21.1](https://github.com/Gaurox/FrameShift/releases/tag/1.21.1)** ainda não inclui as alterações de idioma desta ramificação. O instalador da 1.22.0 é preparado e verificado localmente antes da publicação.
+Versão atual: **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)**. O instalador inclui os cinco idiomas.
 
 O FrameShift foi desenvolvido para **Windows 10 e Windows 11 de 64 bits**. O instalador é autocontido: inclui o ambiente .NET, FFmpeg e FFprobe. O usuário final não precisa instalá-los separadamente. Os modelos de IA são obtidos à parte, conforme o recurso utilizado.
 

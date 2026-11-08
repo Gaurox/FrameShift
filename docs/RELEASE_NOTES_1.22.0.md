@@ -1,16 +1,13 @@
-# FrameShift 1.22.0 — draft
+# FrameShift 1.22.0 — Multilingual update
 
-Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
+Release date: 8 November 2026. Find Loop is reserved for 1.23.
 
 ## Short release note
 
-- Thanks to [@zhazhayu01](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da)
-  for the Simplified Chinese translation, Chinese README and narrow-window layout
-  fix, adapted and integrated into FrameShift 1.22.0.
-- Adds Spanish, Brazilian Portuguese and Russian. The application, installer and
-  READMEs now support five languages, including English and Simplified Chinese.
-- Changing the language in Settings also updates installed Explorer menus, with
-  Windows administrator authorization when required.
+- Adds Simplified Chinese, Spanish, Brazilian Portuguese and Russian alongside English, with translated application interfaces, installer and READMEs.
+- Special thanks to [@zhazhayu01](https://github.com/zhazhayu01/FrameShift) for the original Simplified Chinese translation, Chinese README and narrow-window layout fix, adapted and integrated into this release.
+- Changing the language in Settings also updates installed Explorer context menus, requesting administrator permission when needed. The application language takes effect after restarting.
+- Includes general stability fixes and security updates to bundled .NET, FFmpeg and FFprobe dependencies.
 
 ## Preparation details
 
@@ -46,4 +43,4 @@ Unpublished multilingual release candidate. Find Loop is reserved for 1.23.
 
 See [qualification](RELEASE_QUALIFICATION_1.22.0.md) for the exact candidate and its
 remaining checks, and [branch separation](RELEASE_PLAN_1.22_1.23.md) for preserved
-loop work. This draft does not authorize publication.
+loop work. The owner accepted the manual-test scope and authorized publication on 8 November 2026.
