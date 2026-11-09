@@ -16,6 +16,8 @@ Les plans Main, Remove Object et Extract Frames conservent leur conception d'ori
 
 ## Quick Links
 
+- [1.23.0 private installer candidate — not published](RELEASE_QUALIFICATION_1.23.0.md)
+- [1.23.0 draft release notes](RELEASE_NOTES_1.23.0.md)
 - [1.23 Find Loop integration status](RELEASE_PLAN_1.22_1.23.md)
 - [Find Loop guide — historical feature documentation](FIND_LOOP.md)
 - [Find Loop improvement plan — historical](FIND_LOOP_IMPROVEMENT_PLAN.md)

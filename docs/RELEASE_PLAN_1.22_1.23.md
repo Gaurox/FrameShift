@@ -27,8 +27,8 @@ FFmpeg parameters, filenames and raw diagnostics retain their existing contracts
 
 The published installer script, dependency locks, SDK/runtime pins, verified
 FFmpeg archive, release notes, checksums and translated READMEs are preserved.
-No installer has been rebuilt or installed, and no branch, tag, release or
-website has been published. The 9 November private packaging preparation advances
+The 9 November private installer is built but not installed; no branch, tag,
+release or website has been published. The private packaging preparation advances
 application metadata to **1.23.0**. It is a development candidate, with work still
 continuing on the integration branch. The [private qualification report](RELEASE_QUALIFICATION_1.23.0.md)
 identifies its build and artifacts; this does not authorize public release.
@@ -77,6 +77,13 @@ Next work before a 1.23 candidate:
 4. Qualify each private 1.23.0 candidate, including fresh install/upgrade/uninstall.
    Keep dated artifacts while development continues. Publication needs a later
    owner instruction.
+
+The first private 1.23.0 installer builds successfully from `df0fae2`. Its canonical
+suite passes **1,414 tests, 0 failures, 18 conditional skips**. The exact payload's
+five-language resources and natural/forward-backward exports pass additional smoke
+checks. The dated installer, SHA-256, source identity and remaining acceptance are
+recorded in [private qualification](RELEASE_QUALIFICATION_1.23.0.md). This is a working
+snapshot; the branch remains open for further development, without publication.
 
 ## Historical split preparation
 
