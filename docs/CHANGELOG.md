@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.23 — Unreleased
+## 1.23.0
+
+Unreleased. Private development candidate; work continues on the integration branch.
 
 - Integrate the preserved Find Loop work into Cut Video on top of published
   multilingual 1.22.0: natural search, forward/backward loops, native timings,

@@ -28,9 +28,10 @@ FFmpeg parameters, filenames and raw diagnostics retain their existing contracts
 The published installer script, dependency locks, SDK/runtime pins, verified
 FFmpeg archive, release notes, checksums and translated READMEs are preserved.
 No installer has been rebuilt or installed, and no branch, tag, release or
-website has been published. App/installer version metadata still says 1.22.0
-until a coordinated 1.23 packaging change; a development build from this branch
-must not be distributed as the published 1.22.0 payload.
+website has been published. The 9 November private packaging preparation advances
+application metadata to **1.23.0**. It is a development candidate, with work still
+continuing on the integration branch. The [private qualification report](RELEASE_QUALIFICATION_1.23.0.md)
+identifies its build and artifacts; this does not authorize public release.
 
 The restored [feature guide](FIND_LOOP.md), [improvement plan](FIND_LOOP_IMPROVEMENT_PLAN.md)
 and [validation history](FIND_LOOP_VALIDATION.md) are explicitly marked historical.
@@ -73,8 +74,9 @@ Next work before a 1.23 candidate:
    historical limits for real HDR footage and perceptual loop quality.
 3. Complete interactive Windows acceptance (DPI/text scaling, themes, actual
    Explorer launch and monitor changes where available).
-4. Coordinate 1.23 versions, release notes and private packaging, then qualify
-   fresh install/upgrade/uninstall. Publication needs a later owner instruction.
+4. Qualify each private 1.23.0 candidate, including fresh install/upgrade/uninstall.
+   Keep dated artifacts while development continues. Publication needs a later
+   owner instruction.
 
 ## Historical split preparation
 

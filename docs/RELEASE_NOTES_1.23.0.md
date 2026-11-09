@@ -1,0 +1,26 @@
+# FrameShift 1.23.0 — Find Loop
+
+**Unreleased private development candidate.** Prepared on 9 November 2026.
+Development continues on `codex/integrate-find-loop-1.23`; this version number
+does not indicate final acceptance or authorization to publish.
+
+- Find natural video loops inside Cut Video, compare candidate junctions and
+  preview them before export. Search coverage and resource limits are reported;
+  results remain estimates requiring visual review.
+- Create silent forward/backward loops, with playback speed and repetition options.
+- Use native frame timestamps, silent junction/full previews, bounded temporary
+  storage and individual queued candidate exports. Outputs remain adjacent to
+  sources with unique names.
+- Convert supported HDR/wide-gamut sources to SDR BT.709 for loop output, with
+  explicit color-metadata/filter validation.
+- Translate all Find Loop display text into English, simplified Chinese, Spanish,
+  Brazilian Portuguese and Russian, preserving the published 1.22 translations,
+  language behavior and servicing fixes.
+
+This candidate uses the existing .NET 8 self-contained win-x64 and Inno Setup
+workflow. Public READMEs and the website continue to describe published 1.22.0.
+See [private qualification](RELEASE_QUALIFICATION_1.23.0.md) and the
+[integration plan](RELEASE_PLAN_1.22_1.23.md) for build evidence and remaining work.
+
+Interactive Windows/DPI/keyboard and installation acceptance, perceptual review
+and broader real HDR footage qualification remain open. No release date is set.
