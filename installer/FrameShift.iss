@@ -1,4 +1,4 @@
-﻿#define InstallerSpace " "
+#define InstallerSpace " "
 #define MyAppName "FrameShift"
 #define MyAppId "FrameShift"
 #ifndef MyAppVersion
@@ -6,6 +6,9 @@
 #endif
 #define MyAppPublisher "FrameShift"
 #define MyAppExeName "FrameShift.exe"
+#ifndef ShellMenuBuildId
+#error ShellMenuBuildId is required — run build_installer.ps1
+#endif
 #ifndef PublishOutputDir
 #define PublishOutputDir "..\publish\FrameShift-win-x64"
 #endif
@@ -103,7 +106,9 @@ Name: "tools"; Description: "{cm:Text_dcb23c7eb5}"; Types: complete custom
 Name: "tools\media_info"; Description: "{cm:Text_0fc6e5a501}"; Types: complete custom
 
 [Files]
-Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Tools\ffmpeg\*,Workers\CreateSubtitlesWorker\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
+Source: "{#AppPayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Shell\*,Tools\ffmpeg\*,Workers\CreateSubtitlesWorker\*,logs\*,*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
+; Content-addressed Native AOT DLLs remain pinned to their host lifetime. Never overwrite a loaded build.
+Source: "{#AppPayloadDir}\Shell\*"; DestDir: "{app}\Shell"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs uninsrestartdelete; Excludes: "*.pdb,*.dbg"; Components: core; Check: IsX64OS
 Source: "{#AppPayloadDir}\Workers\CreateSubtitlesWorker\*"; DestDir: "{app}\Workers\CreateSubtitlesWorker"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.pdb,createdump.exe,mscordaccore*.dll,mscordbi.dll,onnxruntime.lib,DirectML.Debug.dll,DirectML.Debug.pdb"; Components: core
 Source: "{#AppPayloadDir}\Tools\ffmpeg\ffmpeg.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: core
 Source: "{#AppPayloadDir}\Tools\ffmpeg\ffprobe.exe"; DestDir: "{app}\Tools\ffmpeg"; Flags: ignoreversion; Components: core
@@ -115,6 +120,26 @@ Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilena
 Type: files; Name: "{app}\language.txt"
 
 [CustomMessages]
+english.ShellIntegrityError=The FrameShift Shell component failed its integrity check. Installation cannot continue.
+chinesesimp.ShellIntegrityError=FrameShift 外壳组件未通过完整性检查，安装无法继续。
+spanish.ShellIntegrityError=El componente Shell de FrameShift no superó la verificación de integridad. La instalación no puede continuar.
+brazilianportuguese.ShellIntegrityError=O componente Shell do FrameShift falhou na verificação de integridade. A instalação não pode continuar.
+russian.ShellIntegrityError=Компонент оболочки FrameShift не прошёл проверку целостности. Установка не может быть продолжена.
+russian.ShellExtractKeys=Извлечь ключевые кадры
+russian.ShellExtractLast=Извлечь последний кадр
+russian.ShellExtractFirst=Извлечь первый кадр
+brazilianportuguese.ShellExtractKeys=Extrair quadros-chave
+brazilianportuguese.ShellExtractLast=Extrair o último quadro
+brazilianportuguese.ShellExtractFirst=Extrair o primeiro quadro
+spanish.ShellExtractKeys=Extraer fotogramas clave
+spanish.ShellExtractLast=Extraer el último fotograma
+spanish.ShellExtractFirst=Extraer el primer fotograma
+chinesesimp.ShellExtractKeys=提取关键帧
+chinesesimp.ShellExtractLast=提取最后一帧
+chinesesimp.ShellExtractFirst=提取第一帧
+english.ShellExtractKeys=Extract keyframes
+english.ShellExtractLast=Extract last frame
+english.ShellExtractFirst=Extract first frame
 english.AppLanguage=en
 chinesesimp.AppLanguage=zh-CN
 english.Text_1fe0d37d15=Complete installation
@@ -823,6 +848,9 @@ const
   ImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   PdfImageExtensions = '.png,.jpg,.jpeg,.webp,.bmp';
   UninstallSubkey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{#MyAppId}_is1';
+  LegacyVideoShellClsid = '{A95006B5-BD87-4F69-9F52-14B8EA06DA33}';
+  NativeShellClsid = '{F6740A5A-42BC-4716-9512-531F0B254862}';
+  NativeShellData = 'Software\FrameShift\ShellMenus';
   ExistingInstallStateOlder = -1;
   ExistingInstallStateSame = 0;
   ExistingInstallStateNewer = 1;
@@ -1298,6 +1326,12 @@ var
 begin
   KeyPath := SpecificKeyPath + '\shell\' + MenuKey;
   RegWriteStringValue(Hive, KeyPath, 'MUIVerb', LabelText);
+  if MenuKey = 'first_frame' then
+    RegWriteStringValue(Hive, KeyPath, 'FlatMUIVerb', CustomMessage('ShellExtractFirst'))
+  else if MenuKey = 'last_frame' then
+    RegWriteStringValue(Hive, KeyPath, 'FlatMUIVerb', CustomMessage('ShellExtractLast'))
+  else if MenuKey = 'keyframes' then
+    RegWriteStringValue(Hive, KeyPath, 'FlatMUIVerb', CustomMessage('ShellExtractKeys'));
   if IconPath <> '' then
   begin
     RegWriteStringValue(Hive, KeyPath, 'Icon', IconPath);
@@ -1857,6 +1891,129 @@ begin
     ApplyAIActionMenuList(ImageExtensions + ',.pdf', 'extract_text', CustomMessage('Text_456f83e647'), 'extract-text', '');
 end;
 
+procedure CleanupNativeMenus;
+var
+  Remaining, Ext: string;
+begin
+  Remaining := VideoExtensions + ',' + AudioExtensions + ',' + ImageExtensions + ',.pdf';
+  while Remaining <> '' do
+  begin
+    Ext := GetListItem(Remaining);
+    RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Classes\SystemFileAssociations\' + Ext + '\shellex\ContextMenuHandlers\FrameShift.NativeVideo');
+    RegDeleteKeyIncludingSubkeys(HKCU64, 'Software\Classes\SystemFileAssociations\' + Ext + '\shellex\ContextMenuHandlers\FrameShift.NativeVideo');
+    RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Classes\SystemFileAssociations\' + Ext + '\shellex\ContextMenuHandlers\FrameShift.NativeMenus');
+    RegDeleteKeyIncludingSubkeys(HKCU64, 'Software\Classes\SystemFileAssociations\' + Ext + '\shellex\ContextMenuHandlers\FrameShift.NativeMenus');
+  end;
+  RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Classes\CLSID\' + LegacyVideoShellClsid);
+  RegDeleteKeyIncludingSubkeys(HKCU64, 'Software\Classes\CLSID\' + LegacyVideoShellClsid);
+  RegDeleteKeyIncludingSubkeys(HKLM64, 'Software\Classes\CLSID\' + NativeShellClsid);
+  RegDeleteKeyIncludingSubkeys(HKCU64, 'Software\Classes\CLSID\' + NativeShellClsid);
+  RegDeleteKeyIncludingSubkeys(HKLM64, NativeShellData);
+  RegDeleteKeyIncludingSubkeys(HKCU64, NativeShellData);
+end;
+
+procedure CopyMenuData(const Source, Destination: string);
+var
+  Names: TArrayOfString;
+  I: Integer;
+  Value: string;
+begin
+  { The source was just rebuilt by InstallSelectedMenus; all menu values are strings. }
+  if RegGetValueNames(HKLM64, Source, Names) then
+    for I := 0 to GetArrayLength(Names) - 1 do
+      if RegQueryStringValue(HKLM64, Source, Names[I], Value) then
+        if not RegWriteStringValue(HKLM64, Destination, Names[I], Value) then
+          RaiseException('Unable to write FrameShift menu data.');
+  if RegGetSubkeyNames(HKLM64, Source, Names) then
+    for I := 0 to GetArrayLength(Names) - 1 do
+      CopyMenuData(Source + '\' + Names[I], Destination + '\' + Names[I]);
+end;
+
+function NativeMenuGroup(const GroupIndex: Integer): string;
+begin
+  if GroupIndex = 0 then Result := 'FrameShift' else Result := 'FrameShiftAI';
+end;
+
+procedure InstallNativeMenus;
+var
+  Remaining, Ext, Source, Destination, DllPath, Failure: string;
+  HasCommands: Boolean;
+  GroupIndex: Integer;
+begin
+  { x64 emulation can run the application on Arm64, but not an x64 in-process Shell DLL. }
+  CleanupNativeMenus;
+  if not IsX64OS then exit;
+  DllPath := ExpandConstant('{app}\Shell\{#ShellMenuBuildId}\FrameShift.ShellMenu.dll');
+  if CompareText(GetSHA256OfFile(DllPath), '{#ShellMenuBuildId}') <> 0 then
+    RaiseException(CustomMessage('ShellIntegrityError'));
+  try
+    HasCommands := False;
+    Remaining := VideoExtensions + ',' + AudioExtensions + ',' + ImageExtensions + ',.pdf';
+    while Remaining <> '' do
+    begin
+      Ext := GetListItem(Remaining);
+      for GroupIndex := 0 to 1 do
+      begin
+        Source := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\' + NativeMenuGroup(GroupIndex);
+        Destination := NativeShellData + '\' + Ext + '\shell\' + NativeMenuGroup(GroupIndex);
+        if RegKeyExists(HKLM64, Source) then
+        begin
+          CopyMenuData(Source, Destination);
+          HasCommands := True;
+        end;
+      end;
+    end;
+    if HasCommands then
+    begin
+      { Schema 2 makes a still-loaded video-only candidate decline the new metadata. }
+      if not RegWriteDWordValue(HKLM64, NativeShellData, 'SchemaVersion', 2) or
+         not RegWriteStringValue(HKLM64, NativeShellData, 'ExecutablePath', ExpandConstant('{app}\{#MyAppExeName}')) or
+         not RegWriteStringValue(HKLM64, 'Software\Classes\CLSID\' + NativeShellClsid + '\InprocServer32', '', DllPath) or
+         not RegWriteStringValue(HKLM64, 'Software\Classes\CLSID\' + NativeShellClsid + '\InprocServer32', 'ThreadingModel', 'Apartment') then
+        RaiseException('Unable to complete FrameShift menu registration.');
+      { Activate only after every selected command and the COM class are ready. }
+      Remaining := VideoExtensions + ',' + AudioExtensions + ',' + ImageExtensions + ',.pdf';
+      while Remaining <> '' do
+      begin
+        Ext := GetListItem(Remaining);
+        if RegKeyExists(HKLM64, NativeShellData + '\' + Ext) then
+        begin
+          if not RegWriteStringValue(HKLM64,
+            'Software\Classes\SystemFileAssociations\' + Ext + '\shellex\ContextMenuHandlers\FrameShift.NativeMenus', '', NativeShellClsid) then
+            RaiseException('Unable to register the FrameShift menus.');
+          for GroupIndex := 0 to 1 do
+          begin
+            Source := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\' + NativeMenuGroup(GroupIndex);
+            if RegKeyExists(HKLM64, Source) then
+              if not RegDeleteKeyIncludingSubkeys(HKLM64, Source) then
+                RaiseException('Unable to remove the previous FrameShift menu.');
+          end;
+        end;
+      end;
+    end;
+  except
+    Failure := GetExceptionMessage;
+    try
+      { Keep the rebuilt static menu usable if registration/migration fails. }
+      Remaining := VideoExtensions + ',' + AudioExtensions + ',' + ImageExtensions + ',.pdf';
+      while Remaining <> '' do
+      begin
+        Ext := GetListItem(Remaining);
+        for GroupIndex := 0 to 1 do
+        begin
+          Source := 'Software\Classes\SystemFileAssociations\' + Ext + '\shell\' + NativeMenuGroup(GroupIndex);
+          Destination := NativeShellData + '\' + Ext + '\shell\' + NativeMenuGroup(GroupIndex);
+          if not RegKeyExists(HKLM64, Source) and RegKeyExists(HKLM64, Destination) then
+            CopyMenuData(Destination, Source);
+        end;
+      end;
+    finally
+      CleanupNativeMenus;
+    end;
+    RaiseException(Failure);
+  end;
+end;
+
 function GetDefaultModelsDir(): string;
 begin
   Result := ExpandConstant('{localappdata}\FrameShift\AI\Models');
@@ -2263,6 +2420,7 @@ begin
     if not SaveStringToFile(ExpandConstant('{app}\language.txt'), CustomMessage('AppLanguage'), False) then
       RaiseException(CustomMessage('LanguageWriteError'));
     InstallSelectedMenus;
+    InstallNativeMenus;
     SHChangeNotify($08000000, $0000, 0, 0);
     if AiModelsPage <> nil then
       WriteAiModelSettings(Trim(AiModelsDirEdit.Text));
@@ -2690,6 +2848,7 @@ begin
   begin
     CleanupContextMenuKeys;
     CleanupContextMenuAIKeys;
+    CleanupNativeMenus;
     SHChangeNotify($08000000, $0000, 0, 0);
 
     // settings.json is user-controlled. An unsafe custom path is ignored and never

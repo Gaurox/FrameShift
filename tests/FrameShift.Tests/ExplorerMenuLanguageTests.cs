@@ -311,6 +311,49 @@ public sealed class ExplorerMenuLanguageTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(Languages))]
+    public void NativeDescriptions_UpdateExistingFlatCaptions_WithoutChangingCommands(string language)
+    {
+        using var fixture = new MenuFixture();
+        foreach (var (leaf, resource) in ExplorerMenuLanguage.FlatResources)
+        {
+            var path = @".mp4\shell\FrameShift\shell\extract_specific_frames\shell\" + leaf;
+            fixture.Add(path);
+            using var key = fixture.Root.OpenSubKey(path, true);
+            key!.SetValue("FlatMUIVerb", "Original flat caption");
+        }
+        var before = Snapshot(fixture.Root);
+        var changes = ExplorerMenuLanguage.FindCaptionChanges(fixture.Root, MenuFixture.Executable, language);
+        Assert.Equal(6, changes.Count);
+        ExplorerMenuLanguage.ApplyCaptionChanges(fixture.Root, changes);
+        var after = Snapshot(fixture.Root);
+        Assert.Equal(before.Keys.Order(), after.Keys.Order());
+        foreach (var (path, value) in before)
+        {
+            var change = changes.SingleOrDefault(item => path == item.KeyPath + "|" + item.ValueName);
+            Assert.Equal(change is null ? value : "String:" + change.Caption, after[path]);
+        }
+        Assert.Empty(ExplorerMenuLanguage.FindCaptionChanges(fixture.Root, MenuFixture.Executable, language));
+    }
+
+    [Theory]
+    [MemberData(nameof(Languages))]
+    public void FlatExtractionCaptions_MatchInstallerAndKeepPublishedTranslations(string language)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss"))) directory = directory.Parent;
+        Assert.NotNull(directory);
+        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var installerLanguage = language switch { "en" => "english", "zh-CN" => "chinesesimp", _ => AppLanguages.Resolve(language).Aliases.Single() };
+        foreach (var (resource, message) in new[] { ("extract_first_frame", "ShellExtractFirst"), ("extract_last_frame", "ShellExtractLast"), ("extract_keyframes", "ShellExtractKeys") })
+        {
+            var expected = Regex.Match(script, @"(?m)^" + installerLanguage + @"\." + message + @"=(.*)\r?$").Groups[1].Value.TrimEnd('\r');
+            Assert.False(string.IsNullOrWhiteSpace(expected));
+            Assert.Equal(expected, L.Get("ExplorerMenu_" + resource, CultureInfo.GetCultureInfo(language)));
+        }
+    }
+
     private static IEnumerable<Control> Descendants(Control root)
     {
         foreach (Control child in root.Controls)

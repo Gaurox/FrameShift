@@ -4,6 +4,16 @@
 
 Unreleased. Private development candidate; work continues on the integration branch.
 
+- Add a C#/.NET 8 Native AOT handler for the classic x64 Explorer video menu,
+  exposing the complete selected command set and flattening the specific-frame
+  extractions. Preserve component selection, five languages and Cut Video's Find
+  Loop entry. Native COM checks are isolated; actual Explorer and installer
+  acceptance remain pending. Content-addressed DLLs avoid replacing loaded builds.
+- Extend that handler to classic/AI video, audio and image menus, plus PDF OCR,
+  inserting FrameShift and FrameShift AI consecutively. Preserve all fixed
+  AI model arguments, component subsets, translations and actual format support;
+  migrate the earlier video-only candidate without retaining its registration.
+
 - Integrate the preserved Find Loop work into Cut Video on top of published
   multilingual 1.22.0: natural search, forward/backward loops, native timings,
   silent previews and queued candidate exports.

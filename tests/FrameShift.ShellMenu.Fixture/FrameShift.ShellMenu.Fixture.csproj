@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeFrameworkVersion>8.0.33</RuntimeFrameworkVersion>
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <IsAotCompatible>true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>$(DefineConstants);SHELL_MENU_PROBE</DefineConstants>
+    <ShellMenuFixture>true</ShellMenuFixture>
+    <Version>1.23.0</Version>
+    <OptimizationPreference>Size</OptimizationPreference>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/FrameShift.ShellMenu/*.cs" />
+    <Compile Include="../FrameShift.ShellMenu.Probe/FixtureExports.cs" />
+  </ItemGroup>
+  <Import Project="../../src/FrameShift.ShellMenu/NativeExports.targets" />
+</Project>

@@ -7,6 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'tools/build/ShellMenu.ps1')
 
 $script:BundledFfmpegHashes = @{
     'Tools\ffmpeg\ffmpeg.exe' = '557E97AF30A1C9B6DFBD08A1D2A04894279DD15A77D23B1723E560CC7F4FC90E'
@@ -17,6 +18,8 @@ $script:BundledFfmpegArchiveHash = 'AD1A117ECE468DC5888FD735C6421AA5B80E954353C8
 $script:DistributionNoticeFiles = @(
     @{ Source = 'LICENSE'; Published = 'licenses\LICENSE' },
     @{ Source = 'THIRD_PARTY_NOTICES.md'; Published = 'licenses\THIRD_PARTY_NOTICES.md' },
+    @{ Source = 'licenses\shell-native\LICENSE.txt'; Published = 'licenses\shell-native\LICENSE.txt' },
+    @{ Source = 'licenses\shell-native\THIRD-PARTY-NOTICES.txt'; Published = 'licenses\shell-native\THIRD-PARTY-NOTICES.txt' },
     @{ Source = 'src\FrameShift.SubtitlesWorker\native-dml\THIRD_PARTY_NOTICES.txt'; Published = 'licenses\subtitles-worker-native\THIRD_PARTY_NOTICES.txt' },
     @{ Source = 'licenses\subtitles-worker-native\APACHE-2.0.txt'; Published = 'licenses\subtitles-worker-native\APACHE-2.0.txt' },
     @{ Source = 'licenses\subtitles-worker-native\DirectML-LICENSE.txt'; Published = 'licenses\subtitles-worker-native\DirectML-LICENSE.txt' },
@@ -417,6 +420,7 @@ try {
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'
+    Restore-ShellMenuProjects -RepositoryRoot $repoRoot
 
     Write-Host 'Running mandatory Release tests...' -ForegroundColor Cyan
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('test', $testProject, '-c', 'Release', '--no-restore', '--verbosity', 'minimal') -Step 'Release tests'
@@ -435,7 +439,11 @@ try {
         '-o', $publishDir
     ) -Step 'FrameShift publish'
 
+    Publish-ShellMenuPayload -RepositoryRoot $repoRoot -PublishDirectory $publishDir -Version $appVersion
     Assert-PublishPayload -PublishDirectory $publishDir
+    Assert-ShellMenuPayload -PublishDirectory $publishDir -Version $appVersion
+    $shellManifestFile = Get-ShellMenuManifest -PublishDirectory $publishDir
+    $shellBuildId = (Get-Content -LiteralPath $shellManifestFile.FullName -Raw | ConvertFrom-Json).BuildId
     Write-Host 'Publish payload verified.' -ForegroundColor Green
 
     $compilerPath = Get-IsccPath -RequestedPath $IsccPath
@@ -444,6 +452,7 @@ try {
     Invoke-ExternalTool -FilePath $compilerPath -Arguments @(
         "/DMyAppVersion=$appVersion",
         "/DPublishOutputDir=$publishDir",
+        "/DShellMenuBuildId=$shellBuildId",
         $issFile
     ) -Step 'Inno Setup compilation'
 

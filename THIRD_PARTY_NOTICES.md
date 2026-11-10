@@ -42,6 +42,13 @@ The self-contained `win-x64` publish includes the .NET 8 Windows Desktop runtime
 - Release notes: [.NET 8.0.33](https://github.com/dotnet/core/blob/main/release-notes/8.0/8.0.33/8.0.33.md).
 - PKCS package copyright: Microsoft Corporation. The self-contained runtime's licence and third-party notices are included in its payload.
 
+The classic x64 Explorer video-menu component is compiled from C# with Native
+AOT **8.0.33** (SDK 8.0.427). It incorporates .NET runtime code under its upstream
+licenses. The exact compiler-package `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT`
+are distributed as `licenses/shell-native/LICENSE.txt` and
+`licenses/shell-native/THIRD-PARTY-NOTICES.txt`. Its content-addressed native DLL
+and build/probe provenance are identified by `Shell/<SHA-256>/component.json`.
+
 ---
 
 ## NAudio

@@ -16,6 +16,16 @@ does not indicate final acceptance or authorization to publish.
 - Translate all Find Loop display text into English, simplified Chinese, Spanish,
   Brazilian Portuguese and Russian, preserving the published 1.22 translations,
   language behavior and servicing fixes.
+- Restore the complete classic Explorer video menu on native x64 Windows, with
+  specific-frame extractions at the same level. Use the same C# Native AOT
+  handler for classic and AI menus on video, audio and images, plus PDF OCR,
+  inserting FrameShift then FrameShift AI together. Empty groups are omitted.
+  Preserve selected installer components and all five languages; Find Loop
+  remains inside Cut Video. The owner confirmed the video-only candidate's
+  complete menu on MP4; the unified candidate's Explorer/upgrade/uninstall
+  acceptance is pending.
+  Replacing a previously loaded Shell build may require restarting its host or
+  Windows. Arm64 systems retain the previous static menu implementation.
 
 This candidate uses the existing .NET 8 self-contained win-x64 and Inno Setup
 workflow. Public READMEs and the website continue to describe published 1.22.0.

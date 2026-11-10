@@ -6033,4 +6033,7 @@ Los archivos WAV se crean junto al origen, con nombres únicos.</value>
   <data name="Loop_CutPreview" xml:space="preserve">
     <value>Vista previa de Cortar vídeo</value>
   </data>
+  <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>Extraer el primer fotograma</value></data>
+  <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Extraer el último fotograma</value></data>
+  <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Extraer fotogramas clave</value></data>
 </root>

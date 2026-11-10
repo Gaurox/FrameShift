@@ -6033,4 +6033,7 @@ Output WAV files are created next to the source with unique naming.</value>
   <data name="Loop_CutPreview" xml:space="preserve">
     <value>Cut Video Preview</value>
   </data>
+  <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>Extract first frame</value></data>
+  <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Extract last frame</value></data>
+  <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Extract keyframes</value></data>
 </root>

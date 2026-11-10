@@ -6033,4 +6033,7 @@ Os arquivos WAV de saída são criados ao lado da origem com nomes únicos.</val
   <data name="Loop_CutPreview" xml:space="preserve">
     <value>Prévia de Cortar vídeo</value>
   </data>
+  <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>Extrair o primeiro quadro</value></data>
+  <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Extrair o último quadro</value></data>
+  <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Extrair quadros-chave</value></data>
 </root>

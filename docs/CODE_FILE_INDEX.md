@@ -27,6 +27,11 @@ Règles de lecture :
 
 ## Entrypoints et packaging
 
+- `src/FrameShift.ShellMenu/` — composant COM C#/.NET 8 Native AOT des menus classiques/AI x64 : groupes adjacents vidéo/audio/image et OCR PDF, sélection, métadonnées, icônes et lancement des actions.
+- `tests/FrameShift.ShellMenu.Fixture/` et `tests/FrameShift.ShellMenu.Probe/` — DLL native de test et hôte COM isolé, jamais distribués.
+- `tools/build/ShellMenu.ps1` — étape native et vérification du payload, appelée uniquement par la chaîne canonique pour une release.
+- [Contrat du composant Shell](../src/FrameShift.ShellMenu/README.md).
+
 - `src/FrameShift/Program.cs`
 - `src/FrameShift/ProgramCli.cs`
 - `src/FrameShift/ProgramBatch.cs`

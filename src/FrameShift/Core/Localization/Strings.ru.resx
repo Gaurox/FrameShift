@@ -6033,4 +6033,7 @@
   <data name="Loop_CutPreview" xml:space="preserve">
     <value>Предпросмотр обрезки видео</value>
   </data>
+  <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>Извлечь первый кадр</value></data>
+  <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Извлечь последний кадр</value></data>
+  <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Извлечь ключевые кадры</value></data>
 </root>

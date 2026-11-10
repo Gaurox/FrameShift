@@ -67,6 +67,26 @@ is offline. The ZIP and development provenance files must not enter the installe
 
 `build_all.ps1`, `build_publish.ps1`, and `build_publish.bat` are compatibility wrappers to the same workflow. They do not offer optional test, publish-only, or installer-skipping modes.
 
+The 1.23 menu integration also restores the native Shell library, native fixture
+and unregistered COM probe with lockfiles. After the full Release suite, the
+canonical workflow publishes the AOT 8.0.33 component, runs its native probe,
+checks the x64 PE/hash/servicing manifest and adds only the production DLL under
+`Shell/<SHA-256>/`. Its license texts are verified against the compiler package.
+Fixture exports, test binaries, PDBs and prototypes must not enter that folder.
+The DLL uses the already installed Visual Studio C++ linker/Windows SDK only at
+build time; no C++ source or client-side SDK/runtime installation is introduced.
+
+Before accepting this change, qualify the real classic menus on native
+x64 Windows: selected components, all five languages, adjacent FrameShift / AI
+roots for video/audio/image (PDF: AI OCR only), the 18-command flat video list,
+Cut Video/Find Loop, and fresh/upgrade/repeated-1.23/uninstall workflows with a
+loaded DLL. Include an upgrade from the video-only private candidate: the old
+CLSID/handler and static AI roots must not duplicate the new pair. The unified
+handler uses metadata schema 2 and its own CLSID. Content-addressed DLLs can remain loaded by existing Shell hosts;
+activation of a new build may require the host or Windows to restart. Do not
+force-close Explorer from a build/helper. Arm64 retains static menus. Automated
+COM/menu tests are not a substitute for this installed acceptance.
+
 Manual steps after the script completes:
 
 - Confirm the expected installer is produced in `installer/`

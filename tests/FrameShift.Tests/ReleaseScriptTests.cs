@@ -69,7 +69,7 @@ public sealed class ReleaseScriptTests
         var restoreLines = result.LogLines
             .Where(line => line.StartsWith("dotnet restore ", StringComparison.OrdinalIgnoreCase))
             .ToArray();
-        Assert.Equal(3, restoreLines.Length);
+        Assert.Equal(6, restoreLines.Length);
         Assert.All(restoreLines, line => Assert.Contains("--locked-mode", line, StringComparison.OrdinalIgnoreCase));
 
         var testIndex = Array.FindIndex(result.LogLines, line => line.StartsWith("dotnet test ", StringComparison.OrdinalIgnoreCase));
@@ -90,6 +90,16 @@ public sealed class ReleaseScriptTests
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.DoesNotContain(result.LogLines, line => line.StartsWith("dotnet publish ", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void CanonicalRelease_NativeProbeFailureStopsBeforeInno()
+    {
+        using var fixture = new ReleaseFixture { FailingStep = "shell-test" };
+        var result = fixture.Run();
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Native menu fixture failure", result.StandardError);
         Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -262,6 +272,28 @@ public sealed class ReleaseScriptTests
         private void CreateRepositoryFixture()
         {
             File.Copy(FindRepositoryFile("build_installer.ps1"), Path.Combine(Root, "build_installer.ps1"));
+            // Stub the native build boundary here; ShellMenuPayloadTests and the native COM
+            // probe independently exercise its real verifier and implementation.
+            WriteFile("tools/build/ShellMenu.ps1", """
+                function Restore-ShellMenuProjects {
+                    param([string]$RepositoryRoot)
+                    foreach ($project in @('shell-production','shell-fixture','shell-probe')) {
+                        Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $project, '--locked-mode') -Step 'Native restore fixture'
+                    }
+                }
+                function Publish-ShellMenuPayload {
+                    param([string]$RepositoryRoot, [string]$PublishDirectory, [string]$Version)
+                    if ($env:FRAMESHIFT_RELEASE_TEST_FAIL_STEP -eq 'shell-test') { throw 'Native menu fixture failure' }
+                    $directory = Join-Path $PublishDirectory ('Shell/' + ('0' * 64))
+                    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+                    @{ BuildId = ('0' * 64) } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $directory 'component.json')
+                }
+                function Assert-ShellMenuPayload { param([string]$PublishDirectory, [string]$Version) }
+                function Get-ShellMenuManifest {
+                    param([string]$PublishDirectory)
+                    Get-Item -LiteralPath (Join-Path $PublishDirectory ('Shell/' + ('0' * 64) + '/component.json'))
+                }
+                """);
             WriteFile("src\\FrameShift\\FrameShift.csproj", "<Project><PropertyGroup><Version>1.2.3</Version></PropertyGroup></Project>");
             CopyRepositoryFile("src\\FrameShift\\Tools\\ffmpeg\\ffmpeg.exe");
             CopyRepositoryFile("src\\FrameShift\\Tools\\ffmpeg\\ffprobe.exe");
@@ -272,6 +304,8 @@ public sealed class ReleaseScriptTests
             WriteFile("installer\\FrameShift.iss", "; fixture");
             CopyRepositoryFile("LICENSE");
             CopyRepositoryFile("THIRD_PARTY_NOTICES.md");
+            CopyRepositoryFile("licenses/shell-native/LICENSE.txt");
+            CopyRepositoryFile("licenses/shell-native/THIRD-PARTY-NOTICES.txt");
             CopyRepositoryFile("src\\FrameShift.SubtitlesWorker\\native-dml\\THIRD_PARTY_NOTICES.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\APACHE-2.0.txt");
             CopyRepositoryFile("licenses\\subtitles-worker-native\\DirectML-LICENSE.txt");
@@ -351,6 +385,7 @@ public sealed class ReleaseScriptTests
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\LICENSE\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\LICENSE\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\THIRD_PARTY_NOTICES.md\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\THIRD_PARTY_NOTICES.md\" >nul",
                 "xcopy /E /I /Q /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\ocr\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\ocr\" >nul",
+                "xcopy /E /I /Q /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\shell-native\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\shell-native\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\src\\FrameShift.SubtitlesWorker\\native-dml\\THIRD_PARTY_NOTICES.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\THIRD_PARTY_NOTICES.txt\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\APACHE-2.0.txt\" >nul",
                 "copy /Y \"%FRAMESHIFT_RELEASE_TEST_ROOT%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" \"%FRAMESHIFT_RELEASE_TEST_PUBLISH_DIR%\\licenses\\subtitles-worker-native\\DirectML-LICENSE.txt\" >nul",

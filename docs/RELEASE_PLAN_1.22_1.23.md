@@ -85,6 +85,42 @@ checks. The dated installer, SHA-256, source identity and remaining acceptance a
 recorded in [private qualification](RELEASE_QUALIFICATION_1.23.0.md). This is a working
 snapshot; the branch remains open for further development, without publication.
 
+## Integrated Explorer menu correction — 10 November 2026
+
+The owner requested an integration study for the complete video context menu in
+the future 1.23.0 alongside Find Loop. The [integration study](EXPLORER_MENU_1.23_INTEGRATION_PLAN.md)
+led to an authorized implementation of a small C#/.NET 8 Native AOT Shell
+component, retaining Find Loop through the existing Cut Video action. The new
+component and packaging are implemented in the working tree. Canonical
+qualification succeeds: **1,437 tests passed, 0 failures, 18 conditional skips**,
+followed by 15 native checks and Inno Setup compilation. The native checks cover
+five languages, synthetic COM selection, captured action dispatch,
+component subsets and bounded resources. The new private candidate is retained
+under `builds/release-1.23-private/20261110T174906Z-menus/`; its dirty-source
+snapshot, exact hashes and limits are recorded in the
+[private qualification](RELEASE_QUALIFICATION_1.23.0.md).
+Registered Explorer rendering and
+Native AOT upgrade/uninstall acceptance remain pending; no installation or
+desktop control is performed. The retained 9 November private snapshot remains
+unchanged and does not contain this correction.
+
+### Follow-up: adjacent classic and AI roots
+
+After trying the video-only candidate, the owner confirms that all video actions
+are visible on MP4 and reports the classic and AI roots at different positions.
+The follow-up implementation uses one handler for both roots across video,
+audio, images and PDF OCR. It inserts FrameShift then FrameShift AI together,
+omits empty roots, and preserves fixed AI models and actual supported formats.
+The previous video CLSID is cleaned up; a new unified CLSID and metadata schema
+2 prevent a still-loaded video-only handler from rendering a duplicate root.
+The complete canonical build succeeds: **1,443 tests passed, 0 failures,
+18 conditional skips**, plus **23 native checks** and Inno compilation.
+The new candidate is retained under
+`builds/release-1.23-private/20261110T182134Z-unified-menus/`; see the
+[qualification record](RELEASE_QUALIFICATION_1.23.0.md) for hashes and source
+identity. Installed acceptance for this follow-up remains open. The agent
+neither runs the installer nor controls the desktop.
+
 ## Historical split preparation
 
 Prepared on 1 November 2026 at the owner's request. No remote branch, tag, GitHub

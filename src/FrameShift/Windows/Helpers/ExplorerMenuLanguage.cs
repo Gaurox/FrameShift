@@ -10,7 +10,7 @@ namespace FrameShift.Windows.Helpers;
 
 internal enum ExplorerMenuSyncResult { Updated, Cancelled, Failed }
 
-internal sealed record ExplorerMenuCaptionChange(string KeyPath, string Caption);
+internal sealed record ExplorerMenuCaptionChange(string KeyPath, string Caption, string ValueName = "MUIVerb");
 
 // The installer owns menu registration. Settings only replaces existing captions,
 // never commands, icons, component selections or file associations.
@@ -18,6 +18,13 @@ internal static class ExplorerMenuLanguage
 {
     internal const string UpdateCommand = "--update-explorer-menu-language";
     private const string AssociationsPath = @"Software\Classes\SystemFileAssociations";
+    internal const string NativeMenusPath = @"Software\FrameShift\ShellMenus";
+    internal static readonly IReadOnlyDictionary<string, string> FlatResources = new Dictionary<string, string>
+    {
+        ["first_frame"] = "ExplorerMenu_extract_first_frame",
+        ["last_frame"] = "ExplorerMenu_extract_last_frame",
+        ["keyframes"] = "ExplorerMenu_extract_keyframes"
+    };
     internal static readonly string[] Extensions =
         ".mp4,.mkv,.avi,.mov,.webm,.m4v,.mp3,.wav,.wave,.flac,.m4a,.ogg,.aac,.wma,.png,.jpg,.jpeg,.webp,.bmp,.pdf".Split(',');
 
@@ -160,9 +167,14 @@ internal static class ExplorerMenuLanguage
     {
         using var root = RegistryKey.OpenBaseKey(hive, RegistryView.Registry64);
         using var associations = root.OpenSubKey(AssociationsPath);
-        if (associations is null) return;
-        var changes = FindCaptionChanges(associations, ExecutablePath, language);
-        ApplyCaptionChanges(associations, changes);
+        using var nativeMenus = root.OpenSubKey(NativeMenusPath);
+        var legacyChanges = associations is null ? [] : FindCaptionChanges(associations, ExecutablePath, language);
+        var nativeChanges = nativeMenus is null ? [] : FindCaptionChanges(nativeMenus, ExecutablePath, language);
+        // Preflight both stores before the first write, so elevation cannot leave half an update.
+        using var legacyAccess = associations is null ? null : OpenWritableMenus(associations, legacyChanges);
+        using var nativeAccess = nativeMenus is null ? null : OpenWritableMenus(nativeMenus, nativeChanges);
+        legacyAccess?.Apply(legacyChanges);
+        nativeAccess?.Apply(nativeChanges);
     }
 
     internal static List<ExplorerMenuCaptionChange> FindCaptionChanges(
@@ -179,6 +191,12 @@ internal static class ExplorerMenuLanguage
                 !BelongsToExecutable(menu, executablePath)) continue;
             var translated = L.Get(resourceKey, culture);
             if (caption != translated) changes.Add(new(keyPath, translated));
+            var leaf = menuPath[(menuPath.LastIndexOf('\\') + 1)..];
+            if (FlatResources.TryGetValue(leaf, out var flatResource) && menu.GetValue("FlatMUIVerb") is string flatCaption)
+            {
+                var flatTranslated = L.Get(flatResource, culture);
+                if (flatCaption != flatTranslated) changes.Add(new(keyPath, flatTranslated, "FlatMUIVerb"));
+            }
         }
         return changes;
     }
@@ -203,21 +221,38 @@ internal static class ExplorerMenuLanguage
 
     internal static void ApplyCaptionChanges(RegistryKey associations, IReadOnlyList<ExplorerMenuCaptionChange> changes)
     {
-        var writableMenus = new List<RegistryKey>();
+        using var access = OpenWritableMenus(associations, changes);
+        access.Apply(changes);
+    }
+
+    private static WritableMenus OpenWritableMenus(RegistryKey associations, IReadOnlyList<ExplorerMenuCaptionChange> changes)
+    {
+        var access = new WritableMenus();
         try
         {
             // Open every existing key before the first write. Access denied then
             // requests elevation without first applying part of the translation.
             foreach (var change in changes)
-                writableMenus.Add(associations.OpenSubKey(change.KeyPath, writable: true)
+                access.Keys.Add(associations.OpenSubKey(change.KeyPath, writable: true)
                     ?? throw new IOException("An Explorer menu was removed during its language update."));
-            for (var index = 0; index < changes.Count; index++)
-                writableMenus[index].SetValue("MUIVerb", changes[index].Caption, RegistryValueKind.String);
+            return access;
         }
-        finally
+        catch
         {
-            foreach (var menu in writableMenus) menu.Dispose();
+            access.Dispose();
+            throw;
         }
+    }
+
+    private sealed class WritableMenus : IDisposable
+    {
+        internal List<RegistryKey> Keys { get; } = [];
+        internal void Apply(IReadOnlyList<ExplorerMenuCaptionChange> changes)
+        {
+            for (var index = 0; index < changes.Count; index++)
+                Keys[index].SetValue(changes[index].ValueName, changes[index].Caption, RegistryValueKind.String);
+        }
+        public void Dispose() { foreach (var key in Keys) key.Dispose(); }
     }
 
     private static void NotifyExplorer() => SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero);

@@ -44,6 +44,9 @@
     <Content Include="..\..\licenses\ocr\**\*" Link="licenses\ocr\%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <Content Include="..\..\licenses\shell-native\*" Link="licenses\shell-native\%(Filename)%(Extension)">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
       <_Parameter1>FrameShift.Tests</_Parameter1>
     </AssemblyAttribute>

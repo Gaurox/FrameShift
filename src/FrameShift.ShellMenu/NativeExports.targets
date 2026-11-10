@@ -1,0 +1,10 @@
+<Project>
+  <!-- COM entry points must not appear in an import library. Keep exports private. -->
+  <Target Name="PrivateComExports" AfterTargets="IlcCompile" BeforeTargets="LinkNative" Condition="Exists('$(ExportsFile)')">
+    <ItemGroup>
+      <_ShellExports Include="EXPORTS;DotNetRuntimeDebugHeader DATA;DllGetClassObject PRIVATE;DllCanUnloadNow PRIVATE" />
+      <_ShellExports Condition="'$(ShellMenuFixture)' == 'true'" Include="FrameShiftProbeConfigure PRIVATE;FrameShiftProbeReadLaunch PRIVATE" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(ExportsFile)" Lines="@(_ShellExports)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+</Project>
