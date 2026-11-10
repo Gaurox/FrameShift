@@ -361,3 +361,36 @@ acceptance of the delivered UI correction; it does not claim that every OS DPI,
 monitor or installer/Explorer lifecycle scenario above was exercised. The
 candidate remains a private build from the retained dirty-source snapshot;
 committing the sources does not rebuild, install or publish that artifact.
+
+## Clean committed rebuild — 10 November 2026, export hint removed
+
+The owner requested an installer refresh after commit `5b60911` removed the
+redundant clipped export hint at the bottom of Cut / Find Loop. This candidate
+includes all previously committed menu and loop UI work plus that removal.
+
+- **Source:** clean tree at `5b60911264802966900489dcbdde28b307e17836` on
+  `codex/integrate-find-loop-1.23`. The exact published application reports
+  `1.23.0+5b60911264802966900489dcbdde28b307e17836`; file version is `1.23.0.0`.
+  Qualification/checksum updates follow the clean build and do not alter its
+  application sources or informational version.
+- **Canonical workflow:** `build_installer.ps1`, without `-AllowDirty` or
+  `-RunInstaller`, exits **0**. **1,458 passed, 0 failed, 18 conditional skips,
+  1,476 total**, in **9 minutes 54 seconds**; **23 native checks pass**.
+  Publish/runtime/tool/notice checks pass and Inno compiles in **82.000 seconds**.
+- **Installer:** **179,950,669 bytes**, SHA-256
+  `1571BBAD6A5BFBDF7FD5A2568A729382E952F23861832C69751544B20F63045C`.
+  The normal installer/checksum now identify this build. The preceding dated
+  content-fit installer keeps its original `054F8A9F…76B7C9` checksum.
+- **Archive:** `builds/release-1.23-private/20261110T200728Z-export-hint-removed/`.
+  Contains installer/checksum, `candidate.json`, `source-state.json`, relevant
+  source hashes, `canonical-build.log`, payload manifest, native report/component
+  manifest and packaged translation report. Source state was checked clean
+  before the build and again before archiving.
+- **Payload:** **812 files, 629,862,770 bytes**. Shell DLL **2,622,464 bytes**,
+  SHA-256 `ae4d1d39cc4c3327e9d4e328a8a1fb24b3f04767b3bb53c1500c025cff0156f4`.
+  Five languages retain **2,009 entries each**; the unused hint resources are
+  retained, while the UI no longer creates the hint label.
+
+The agent has **not installed or published this candidate or controlled the
+desktop**. Previous Windows DPI/monitor, perceived flicker and installer/Explorer
+lifecycle acceptance limits remain recorded above.
