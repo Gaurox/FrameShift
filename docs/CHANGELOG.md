@@ -2,7 +2,12 @@
 
 ## 1.23.0
 
-Unreleased. Private development candidate; work continues on the integration branch.
+Release authorized on 10 November 2026 with the owner-approved English
+[release notes](RELEASE_NOTES_1.23.0.md), qualified installer and SHA-256.
+Publication tag: `v1.23.0`. The installer is built from clean application source
+`5b60911`; release-documentation commits do not change its binaries. The owner
+accepts the tested scope; unexecuted scenarios remain recorded in the
+[qualification](RELEASE_QUALIFICATION_1.23.0.md).
 
 - Enlarge Cut Video and fit the standard/advanced Find Loop view to its contents
   on context changes, first results and advanced toggles, bounded by the current
@@ -27,7 +32,7 @@ Unreleased. Private development candidate; work continues on the integration bra
 - Preserve 1.22 translations and servicing fixes; translate all new Find Loop
   display text into the five supported languages, including controls, candidates,
   progress, accessibility, color/HDR messages and errors. Windows/installer
-  acceptance remains pending. No 1.23 package is released.
+  acceptance limits remain recorded in the qualification report.
 
 ## 1.22.0
 

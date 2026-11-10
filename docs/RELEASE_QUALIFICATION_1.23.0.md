@@ -1,6 +1,29 @@
-# FrameShift 1.23.0 — Private development candidate
+# FrameShift 1.23.0 — Release qualification
 
-## Status
+## Owner acceptance and publication authorization — 10 November 2026
+
+After validating the Cut / Find Loop work, requesting the final hint removal,
+and receiving the refreshed installer, the owner approves the release text and
+explicitly authorizes pushing the work and publishing 1.23.0 with that description
+translated into English. This supersedes the earlier non-publication status.
+
+Publish the unchanged qualified installer with SHA-256
+`1571BBAD6A5BFBDF7FD5A2568A729382E952F23861832C69751544B20F63045C`, built from
+clean application source `5b60911264802966900489dcbdde28b307e17836`. Later release
+documentation does not change the payload. The owner accepts the tested scope;
+this authorization does not mark the remaining OS DPI/monitor, installer/Explorer
+lifecycle, broader HDR or conditional-model scenarios as executed.
+
+The sections below retain the historical private-candidate preparation and exact
+build evidence. Their non-publication/uncommitted statements describe those
+earlier stages. The agent does not install the application or control the desktop.
+
+Immediately before publication, fresh-cache NuGet advisory checks for the
+application, subtitle worker and tests report **zero vulnerable packages**,
+including transitive dependencies, with no report warnings. Local evidence:
+`scratch/release-1.23-publication/{app,worker,tests}-vulnerabilities.json`.
+
+## Historical private-candidate status
 
 First prepared on 9 November 2026; the 10 November candidates add complete video
 menus, then adjacent classic/AI menus for all supported file families.
