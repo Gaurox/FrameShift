@@ -117,8 +117,7 @@ public sealed partial class CutVideoForm
         _loopOptions = FrameShiftUiFactory.CreateVerticalStack(
             progressHost, _loopStatus, _loopResults,
             FrameShiftUiFactory.CreateChoiceRow(_previewLoop, _stopPreview, _loopBackToSelection),
-            _loopSpeedRow, _advancedLoop, _loopAdvancedHost,
-            FrameShiftUiFactory.CreateWrappingLabel(L.Get("Loop_ExportHint")));
+            _loopSpeedRow, _advancedLoop, _loopAdvancedHost);
         _loopOptions.Visible = false;
         BufferCutControls(_loopOptions);
         BufferCutControls(_loopAdvanced);
