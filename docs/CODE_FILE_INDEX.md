@@ -3,6 +3,7 @@
 Find Loop (unreleased 1.23 integration):
 - `src/FrameShift/Core/Actions/VideoLoop*.cs` — search, native timestamps, color policy, bounded previews and exports.
 - `src/FrameShift/Windows/Forms/CutVideoForm.Loop*.cs` and `CutVideoForm.Timing.cs` — Cut Video contexts, candidates, previews and native navigation.
+- `src/FrameShift/Windows/Forms/CutVideoForm.Layout.cs` — explicit content-height fitting, reserved normal message geometry and buffered Cut/Loop layout.
 - `src/FrameShift/Windows/Controls/LoopVideoPlayer.cs` — paced, cancelable silent playback.
 - `src/FrameShift/Core/Progress/QueueItemProgressReporter.cs` — distinguish candidate occurrences sharing a source path.
 - `tests/FrameShift.Tests/VideoLoop*.cs` — media, lifecycle, timing, UI and multilingual command regressions.

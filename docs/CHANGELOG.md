@@ -4,6 +4,13 @@
 
 Unreleased. Private development candidate; work continues on the integration branch.
 
+- Enlarge Cut Video and fit the standard/advanced Find Loop view to its contents
+  on context changes, first results and advanced toggles, bounded by the current
+  working area. Preserve a usable preview and pinned
+  footer, with scrolling on short screens. Stabilize candidate selection through
+  reserved normal message geometry, buffered controls, idempotent reselection,
+  stable stop/progress slots and atomic preview-image replacement.
+
 - Add a C#/.NET 8 Native AOT handler for the classic x64 Explorer video menu,
   exposing the complete selected command set and flattening the specific-frame
   extractions. Preserve component selection, five languages and Cut Video's Find

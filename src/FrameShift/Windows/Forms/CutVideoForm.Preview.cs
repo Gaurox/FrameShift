@@ -56,10 +56,11 @@ public sealed partial class CutVideoForm
                 CommitNativeBoundary(boundary, position, nativeTime is null);
                 RefreshSelectionUi(false);
             }
-            DisposePreviewBitmap();
+            var previousBitmap = _currentPreviewBitmap;
             _currentPreviewBitmap = bitmap;
             _previewBox.Image = bitmap;
             bitmap = null; // The form now owns the image.
+            previousBitmap?.Dispose();
             _labelPreviewState.Text = position is null
                 ? L.Format("CutVideoForm_Preview_Previewing_0_frame_1_2_439822df",Capitalize(boundary),frame,CutVideoMath.FormatPreciseTime(seconds))
                 : L.Format("Loop_NativePreview", Capitalize(boundary), CutVideoMath.FormatPreciseTime(seconds)) +

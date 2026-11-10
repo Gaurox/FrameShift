@@ -84,6 +84,18 @@ public sealed partial class CutVideoForm
             : _loopColorPolicy.Message);
         _loopStatus.Name = "loopStatus";
         _loopProgress = new ProgressBar { Name = "loopProgress", Dock = DockStyle.Top, Minimum = 0, Maximum = 100, Visible = false };
+        var progressHost = new Panel { Dock = DockStyle.Top, Margin = Padding.Empty };
+        _loopProgress.Dock = DockStyle.Fill;
+        progressHost.Controls.Add(_loopProgress);
+        void ProgressMetrics()
+        {
+            var height = FrameShiftUiMetrics.ToPixels(progressHost, 18);
+            progressHost.MinimumSize = new Size(0, height);
+            progressHost.Height = height;
+        }
+        progressHost.HandleCreated += (_, _) => ProgressMetrics();
+        progressHost.DpiChangedAfterParent += (_, _) => ProgressMetrics();
+        ProgressMetrics();
         _findLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_Find"), false);
         _previewLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_PreviewJunction"), false);
         _fullPreviewLoop = FrameShiftUiFactory.CreateMeasuredActionButton(L.Get("Loop_FullPreview"), false);
@@ -103,11 +115,13 @@ public sealed partial class CutVideoForm
             FrameShiftUiFactory.CreateWrappingLabel(L.Get("Loop_FullPreviewHint")));
         _loopAdvancedHost = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty };
         _loopOptions = FrameShiftUiFactory.CreateVerticalStack(
-            _loopProgress, _loopStatus, _loopResults,
+            progressHost, _loopStatus, _loopResults,
             FrameShiftUiFactory.CreateChoiceRow(_previewLoop, _stopPreview, _loopBackToSelection),
             _loopSpeedRow, _advancedLoop, _loopAdvancedHost,
             FrameShiftUiFactory.CreateWrappingLabel(L.Get("Loop_ExportHint")));
         _loopOptions.Visible = false;
+        BufferCutControls(_loopOptions);
+        BufferCutControls(_loopAdvanced);
         // Detached options cost no space or layout work in ordinary Cut Video.
         _loopOptionsHost = new Panel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty };
         _findLoop.Name = "findLoop"; _previewLoop.Name = "previewLoop";
@@ -131,9 +145,20 @@ public sealed partial class CutVideoForm
     private void ToggleLoopAdvancedOptions()
     {
         var expand = _loopAdvanced.Parent is null;
-        if (expand) _loopAdvancedHost.Controls.Add(_loopAdvanced);
-        else _loopAdvancedHost.Controls.Remove(_loopAdvanced);
-        _advancedLoop.Text = expand ? L.Get("Loop_HideAdvanced") : L.Get("Loop_Advanced");
+        _cutRoot.SuspendLayout();
+        _loopAdvancedHost.SuspendLayout();
+        try
+        {
+            if (expand) _loopAdvancedHost.Controls.Add(_loopAdvanced);
+            else _loopAdvancedHost.Controls.Remove(_loopAdvanced);
+            _advancedLoop.Text = expand ? L.Get("Loop_HideAdvanced") : L.Get("Loop_Advanced");
+        }
+        finally
+        {
+            _loopAdvancedHost.ResumeLayout(true);
+            _cutRoot.ResumeLayout(true);
+        }
+        FitCutWindowToContent();
     }
 
     internal Task SetLoopContextAsync(LoopContext context) =>
@@ -169,13 +194,15 @@ public sealed partial class CutVideoForm
             RefreshSelectionUi(false);
         }
         UpdateLoopCommands();
+        if (changed) FitCutWindowToContent();
     }
 
     private void ShowLoopOptions()
     {
-        if (_loopOptions.Parent is null) _loopOptionsHost.Controls.Add(_loopOptions);
+        var attached = _loopOptions.Parent is null;
+        if (attached) _loopOptionsHost.Controls.Add(_loopOptions);
         _loopOptions.Visible = true;
-        RevealLoopControl(_previewLoop);
+        if (attached) RevealLoopControl(_previewLoop);
     }
 
     private void RevealLoopControl(Control target)
@@ -281,10 +308,11 @@ public sealed partial class CutVideoForm
         _findLoop.Enabled = _pingPongLoop.Enabled = !_sourceInvalid && _loopColorPolicy.CanRender && _loopBusy != LoopBusy.Switching;
         _loopBackToSelection.Enabled = !_sourceInvalid && _loopBusy != LoopBusy.Switching;
         _previewLoop.Enabled = _fullPreviewLoop.Enabled = !busy && !_sourceInvalid && loop && _loopColorPolicy.CanRender;
-        _stopSearch.Visible = _loopBusy == LoopBusy.Searching;
+        // Stable command rows: idle stop buttons stay visible and disabled.
+        _stopSearch.Visible = true;
         _stopSearch.Enabled = _loopBusy == LoopBusy.Searching;
-        _stopPreview.Visible = _loopBusy == LoopBusy.Rendering || _loopPlaybackCancellation is not null || _nativeBusy;
-        _stopPreview.Enabled = _stopPreview.Visible;
+        _stopPreview.Visible = true;
+        _stopPreview.Enabled = _loopBusy == LoopBusy.Rendering || _loopPlaybackCancellation is not null || _nativeBusy;
         _cutSelectionControls.Enabled = !busy && !_sourceInvalid;
         foreach (var control in new Control[] { _textStart, _textEnd, _textStartTime, _textEndTime,
             _buttonStartPrev, _buttonStartNext, _buttonEndPrev, _buttonEndNext,

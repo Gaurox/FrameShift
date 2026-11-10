@@ -105,27 +105,46 @@ public sealed partial class CutVideoForm
         if (analysis.Limits.HasFlag(VideoLoopSearchLimits.TemporalCoverage))
             _loopStatus.Text += L.Format("Loop_TemporalCoverage", analysis.Diagnostics.CoveredSeconds);
         UpdateLoopCommands();
-        if (!hadRows) RevealLoopControl(_previewLoop);
+        if (!hadRows && _loopResults.Rows.Count > 0)
+        {
+            if (_loopContext != LoopContext.Cut) FitCutWindowToContent();
+            RevealLoopControl(_previewLoop);
+        }
     }
 
     private void SelectLoopCandidate()
     {
         var row = _loopResults.SelectedRows.Cast<DataGridViewRow>().FirstOrDefault() ?? _loopResults.CurrentRow;
         if (_updatingLoopResults || _closing || row?.Tag is not VideoLoopCandidate c) return;
+        // A mouse click raises both SelectionChanged and CellClick. Reselecting the
+        // same immutable bounds must not cancel/restart preview or native indexing.
+        if (_loopContext == LoopContext.Natural && !_loopCustomSelection && _loopCandidate is { } current
+            && current.StartSeconds == c.StartSeconds && current.EndSeconds == c.EndSeconds
+            && _candidateFrames == (_selection.StartFrame, _selection.EndFrame)) return;
         _updatingLoopResults = true;
         try { row.Selected = true; }
         finally { _updatingLoopResults = false; }
-        InvalidateLoopPreview();
-        // Rows are immutable snapshots. Editing the timeline never writes back into them.
-        _loopContext = LoopContext.Natural;
-        _selection.StartFrame = Math.Clamp((int)Math.Round(c.StartSeconds * _fps) + 1, 1, _totalFrames);
-        _selection.EndFrame = Math.Clamp((int)Math.Round(c.EndSeconds * _fps), _selection.StartFrame, _totalFrames);
-        _candidateFrames = (_selection.StartFrame, _selection.EndFrame);
-        _loopCandidate = c;
-        SetNativeCandidate(c);
-        _loopCustomSelection = false;
-        RefreshSelectionUi(true);
-        UpdateLoopCommands();
+        _cutRoot.SuspendLayout();
+        _labelSelection.Parent!.SuspendLayout();
+        try
+        {
+            InvalidateLoopPreview();
+            // Rows are immutable snapshots. Editing the timeline never writes back into them.
+            _loopContext = LoopContext.Natural;
+            _selection.StartFrame = Math.Clamp((int)Math.Round(c.StartSeconds * _fps) + 1, 1, _totalFrames);
+            _selection.EndFrame = Math.Clamp((int)Math.Round(c.EndSeconds * _fps), _selection.StartFrame, _totalFrames);
+            _candidateFrames = (_selection.StartFrame, _selection.EndFrame);
+            _loopCandidate = c;
+            SetNativeCandidate(c);
+            _loopCustomSelection = false;
+            RefreshSelectionUi(true);
+            UpdateLoopCommands();
+        }
+        finally
+        {
+            _labelSelection.Parent.ResumeLayout(true);
+            _cutRoot.ResumeLayout(true);
+        }
     }
 
     private void MarkCustomLoopSelection()
@@ -140,6 +159,7 @@ public sealed partial class CutVideoForm
 
     private sealed class LoopCandidateGrid : DataGridView
     {
+        internal LoopCandidateGrid() { DoubleBuffered = true; }
         public Action? ActivateCandidate { get; set; }
         protected override bool ProcessDialogKey(Keys keyData)
         {

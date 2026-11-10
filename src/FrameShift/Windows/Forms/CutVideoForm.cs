@@ -63,14 +63,20 @@ public sealed partial class CutVideoForm : Form
         _uiState = new UiState();
 
         SuspendLayout();
-        FrameShiftWindowPolicy.Initialize(this, new Size(1120, 760), new Size(480, 340));
+        FrameShiftWindowPolicy.Initialize(this, new Size(1120, CutClientHeight), new Size(480, 340));
         FrameShiftWindowChrome.Apply(this, L.Get("CutVideoForm_FrameShift_Cut_video_654b1c4b"));
         ControlHelper.SetDoubleBuffered(this);
         _previewPanel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(32, 32, 32), Margin = Padding.Empty };
         _previewBox = new PictureBox { Dock = DockStyle.Fill, SizeMode = PictureBoxSizeMode.Zoom, TabStop = false };
         _previewPanel.Controls.Add(_previewBox);
-        _labelPreviewState = FrameShiftUiFactory.CreateWrappingLabel(L.Get("CutVideoForm_Preview_waiting_for_first_frame_b7c6d15a"));
-        _labelSelection = FrameShiftUiFactory.CreateWrappingLabel("");
+        var longestTime = CutVideoMath.FormatPreciseTime(probe.Duration?.TotalSeconds ?? _totalFrames / _fps);
+        _labelPreviewState = new CutMessageLabel(
+            L.Format("CutVideoForm_Preview_Previewing_0_frame_1_2_439822df", Capitalize("start"), _totalFrames, longestTime)
+            + L.Format("Loop_NativePreview", Capitalize("end"), longestTime) + L.Get("Loop_LastIncluded"))
+        { Text = L.Get("CutVideoForm_Preview_waiting_for_first_frame_b7c6d15a") };
+        _labelSelection = new CutMessageLabel(
+            L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4", _totalFrames, _totalFrames, longestTime, longestTime, _totalFrames)
+            + L.Get("Loop_ApproximateNumbers") + L.Get("Loop_IndexHint"));
         _textStart = new TextBox { Name = "startFrame" };
         _textEnd = new TextBox { Name = "endFrame" };
         _textStartTime = new TextBox { Name = "startTime" };
@@ -125,7 +131,13 @@ public sealed partial class CutVideoForm : Form
             L.Format("CutVideoForm_Source_0_FPS_1_0_Frames_2_5338f9af",Path.GetFileName(_inputPath),_fps,_totalFrames),
             IconPaths.ContextMenuIco("cut-video-audio-icon.ico"), IconPaths.AppIcon, "✂");
         _cutActions = FrameShiftDialogLayout.CreateActions(buttonCancel, _exportAllLoops, buttonOk);
-        Controls.Add(FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options, _cutActions));
+        _cutRoot = FrameShiftEditorShellUi.CreateTimeline(header, _previewPanel, options, _cutActions);
+        _cutWorkspace = (FrameShift.Windows.Controls.FrameShiftTimelineWorkspace)_cutRoot.GetControlFromPosition(0, 1)!;
+        _cutWorkspace.MinimumPreviewHeight = 180;
+        BufferCutControls(_cutRoot);
+        Controls.Add(_cutRoot);
+        Load += (_, _) => FitCutWindowToContent();
+        DpiChanged += (_, _) => BeginInvoke((Action)(() => FitCutWindowToContent()));
         AcceptButton = buttonOk;
         CancelButton = buttonCancel;
         UpdateLoopCommands();
@@ -238,12 +250,13 @@ public sealed partial class CutVideoForm : Form
         var startTimeSeconds = _nativeStartTime ?? _loopCandidate?.StartSeconds ?? (_selection.StartFrame - 1) / _fps;
         var endTimeSeconds = _nativeEndTime ?? _loopCandidate?.EndSeconds ?? _selection.EndFrame / _fps;
         var selectedFrames = _selection.EndFrame - _selection.StartFrame + 1;
-        _labelSelection.Text = L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4",_selection.StartFrame,_selection.EndFrame,CutVideoMath.FormatPreciseTime(startTimeSeconds),CutVideoMath.FormatPreciseTime(endTimeSeconds),selectedFrames);
-        if (_loopCandidate is not null) _labelSelection.Text += NativeTimingEnabled && _nativeStartNumberKnown && _nativeEndNumberKnown
+        var selectionText = L.Format("CutVideoForm_Selection_frame_0_to_1_2_3_4_frames_64942ba4",_selection.StartFrame,_selection.EndFrame,CutVideoMath.FormatPreciseTime(startTimeSeconds),CutVideoMath.FormatPreciseTime(endTimeSeconds),selectedFrames);
+        if (_loopCandidate is not null) selectionText += NativeTimingEnabled && _nativeStartNumberKnown && _nativeEndNumberKnown
             ? L.Get("Loop_NativeNumbers") : L.Get("Loop_ApproximateNumbers");
-        else if (_loopContext != LoopContext.Cut) _labelSelection.Text += L.Get("Loop_CustomSelection");
+        else if (_loopContext != LoopContext.Cut) selectionText += L.Get("Loop_CustomSelection");
         if (NativeTimingEnabled && (!_nativeStartNumberKnown || !_nativeEndNumberKnown))
-            _labelSelection.Text += L.Get("Loop_IndexHint");
+            selectionText += L.Get("Loop_IndexHint");
+        _labelSelection.Text = selectionText;
         _selectionPanel.Invalidate();
 
         if (refreshPreview)
@@ -271,6 +284,11 @@ public sealed partial class CutVideoForm : Form
             }
 
             frameValue = Math.Clamp(frameValue, 1, _totalFrames);
+            if (frameValue == (target == "start" ? _selection.StartFrame : _selection.EndFrame))
+            {
+                _uiState.ActiveBoundary = target;
+                return true;
+            }
 
             if (string.Equals(target, "start", StringComparison.Ordinal))
             {

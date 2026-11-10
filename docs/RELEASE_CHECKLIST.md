@@ -87,6 +87,18 @@ activation of a new build may require the host or Windows to restart. Do not
 force-close Explorer from a build/helper. Arm64 retains static menus. Automated
 COM/menu tests are not a substitute for this installed acceptance.
 
+For the Cut/Loop layout follow-up, verify the taller initial window, advanced
+expand/collapse and context changes at real OS DPI/text scaling. Confirm that
+candidate clicks, repeated selection, keyboard navigation, preview decoding,
+stop/progress transitions and mouse-wheel scrolling keep controls stable.
+On short screens the options must scroll while the footer stays reachable;
+the window must stay inside the current monitor working area. Hidden-control
+geometry tests and font stress do not certify real desktop rendering/flicker.
+Confirm standard Find Loop grows without opening advanced options. On a large
+working area the fixed-height candidate grid and its commands should fit; on
+small screens the form must use the available height and retain scrolling.
+Changing two candidates to 42 must not enlarge the grid or resize the form.
+
 Manual steps after the script completes:
 
 - Confirm the expected installer is produced in `installer/`

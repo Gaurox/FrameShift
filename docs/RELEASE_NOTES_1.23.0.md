@@ -8,6 +8,12 @@ does not indicate final acceptance or authorization to publish.
   preview them before export. Search coverage and resource limits are reported;
   results remain estimates requiring visual review.
 - Create silent forward/backward loops, with playback speed and repetition options.
+- Keep the taller Cut window, and size the standard Find Loop view to its
+  contents before advanced options are opened. Refit when the first candidates
+  appear and when advanced options open or close. Keep the preview and footer usable within the available
+  screen area, scrolling options when necessary. Reduce movement/flicker when
+  selecting candidates or updating previews; selecting the same candidate again
+  preserves its current preview instead of restarting it.
 - Use native frame timestamps, silent junction/full previews, bounded temporary
   storage and individual queued candidate exports. Outputs remain adjacent to
   sources with unique names.

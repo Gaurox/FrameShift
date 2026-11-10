@@ -121,6 +121,50 @@ The new candidate is retained under
 identity. Installed acceptance for this follow-up remains open. The agent
 neither runs the installer nor controls the desktop.
 
+### Cut / Find Loop window follow-up
+
+After the menu checkpoint `33c0df4`, the owner requested a taller Cut/Loop
+window, automatic height adjustment when advanced options expand/collapse, and
+stable candidate selection. The first UI candidate used a 900-logical-pixel base
+plus advanced-panel height. After trying it, the owner confirms the ordinary Cut
+size and requests content fitting in standard Find Loop as well. The working
+tree now fits the complete active loop view at load, context change, first
+nonempty result list, advanced toggle and DPI change. Cut keeps its existing
+base size. If content cannot fit the monitor working area, the window uses that
+height and options scroll. Advanced open/close can consequently keep the same
+window height when both states already need the screen maximum.
+Ordinary selection, incremental result updates, preview text and resize do not trigger this fit. The window
+is bounded by the monitor working area; a preview floor and scrollable options
+keep the footer reachable on smaller screens. Other timeline editors retain
+their previous split by default.
+
+Reserved normal selection/preview messages, buffered controls, grouped selection
+updates, idempotent re-selection, stable stop/progress slots and atomic bitmap
+replacement address movement/flicker without changing the search/export engine.
+The shared viewport avoids snapping a partly visible candidate grid on focus,
+while explicit reveal and normal keyboard scrolling remain available. The new
+hidden-control regressions cover geometry, five languages, narrow windows and
+font stress. Real OS DPI, monitor transitions and perceived flicker still need
+installed acceptance; hidden bitmap rendering omits some native children and
+must not be treated as proof of final desktop appearance.
+
+The canonical private candidate succeeds with **1,457 tests passed, 0 failures,
+18 conditional skips**, **23 native checks** and Inno compilation. The dated
+installer is retained under
+`builds/release-1.23-private/20261110T190523Z-cut-loop-layout/`; exact source,
+hashes and remaining acceptance are recorded in the
+[qualification](RELEASE_QUALIFICATION_1.23.0.md). The agent does not install it,
+control the desktop or commit this new UI lot.
+
+The owner's subsequent height feedback supersedes the advanced-only sizing
+policy of that first UI candidate. The standard-loop content-fit candidate
+succeeds through the canonical workflow with **1,458 passed, 0 failed,
+18 conditional skips**, **23 native checks**, and Inno compilation. It is retained
+under `builds/release-1.23-private/20261110T194553Z-loop-content-fit/`; its 15
+targeted geometry regressions include full standard-loop fit on a large screen
+and both advanced states capped on 1080p. It remains private and uninstalled by
+the agent; see the appended qualification record for its exact identity.
+
 ## Historical split preparation
 
 Prepared on 1 November 2026 at the owner's request. No remote branch, tag, GitHub
