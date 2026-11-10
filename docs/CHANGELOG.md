@@ -2,9 +2,9 @@
 
 ## 1.23.0
 
-Release authorized on 10 November 2026 with the owner-approved English
+Released on 10 November 2026 with the owner-approved English
 [release notes](RELEASE_NOTES_1.23.0.md), qualified installer and SHA-256.
-Publication tag: `v1.23.0`. The installer is built from clean application source
+Publication: [v1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0). The installer is built from clean application source
 `5b60911`; release-documentation commits do not change its binaries. The owner
 accepts the tested scope; unexecuted scenarios remain recorded in the
 [qualification](RELEASE_QUALIFICATION_1.23.0.md).

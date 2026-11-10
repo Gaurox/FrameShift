@@ -18,9 +18,9 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 **[下载当前公开发行版](https://github.com/Gaurox/FrameShift/releases/latest)**。
 
-当前公开版本为 **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)**，支持英文、简体中文、西班牙文、巴西葡萄牙文和俄文。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
+当前公开版本为 **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**，支持英文、简体中文、西班牙文、巴西葡萄牙文和俄文。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
 
-1.22.0 包含通用可靠性修复与五种语言支持，**不包含 Find Loop**；循环视频功能保留到未来的 1.23。当前变更与验证范围见 [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)。
+1.23.0 在 Cut Video 中加入 **Find Loop**，支持查找自然循环、预览接缝和创建往返循环，并修复经典视频右键菜单中部分已安装操作被隐藏的问题。当前变更与验证范围见 [1.23.0 版本说明](docs/RELEASE_NOTES_1.23.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.23.0.md)。
 
 ## 快速使用
 
@@ -33,7 +33,7 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 ## 语言选择与界面
 
-1.22.0 安装程序提供 **English**、**简体中文**、**Español**、**Português Brasileiro** 和 **Русский** 五种语言。安装页面、组件说明、模型说明及所选资源管理器右键菜单使用安装时选择的语言；同一安装包包含五种应用程序语言。
+1.23.0 安装程序提供 **English**、**简体中文**、**Español**、**Português Brasileiro** 和 **Русский** 五种语言。安装页面、组件说明、模型说明及所选资源管理器右键菜单使用安装时选择的语言；同一安装包包含五种应用程序语言。
 
 应用程序优先使用用户在“设置”中保存的语言，否则使用安装时选择的默认语言。可以在“设置”的“应用程序语言”中切换，**下次启动时生效**。切换语言还会自动更新已安装的资源管理器菜单。更新所有用户共用的菜单时，Windows 会请求管理员授权；这些菜单的语言更改会影响所有账户。若取消授权或更新失败，“设置”会显示提示，已保存的应用程序语言不受影响。
 
@@ -105,7 +105,7 @@ $env:SixLaborsLicenseFile = 'C:\受保护目录\sixlabors.lic'
 ## 项目文档
 
 - [英文项目说明](README.md)：完整功能介绍、截图和历史版本信息。
-- [1.22.0 版本说明](docs/RELEASE_NOTES_1.22.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.22.0.md)：多语言版本及验证范围。
+- [1.23.0 版本说明](docs/RELEASE_NOTES_1.23.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.23.0.md)：循环视频、右键菜单修复及验证范围。
 - [本地化维护说明](docs/LOCALIZATION.md)：翻译来源、语言选择与资源维护。
 - [1.22 与 1.23 分支安排](docs/RELEASE_PLAN_1.22_1.23.md)：通用修复与循环视频功能的分离。
 - [zhazhayu01 原 fork 的本地化台账](https://github.com/zhazhayu01/FrameShift/blob/f078b0c3490ae43abba807bba24692df8ef446da/docs/LOCALIZATION_ZH_CN.md)：该贡献在 1.21.1 基线上的修改范围、术语及历史验证记录，不代表本分支 1.22.0 的验证结果。

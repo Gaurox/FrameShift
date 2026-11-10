@@ -1,6 +1,15 @@
 # Separating 1.22 and 1.23
 
-## Current integration — 8 November 2026
+## Published — 10 November 2026
+
+[FrameShift 1.23.0 is public](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0),
+with the owner-approved English description, qualified installer and checksum.
+Tag `v1.23.0` points to `b1a7f98`; the unchanged installer uses clean application
+source `5b60911`. Main and the integration branch contain the completed work.
+See [release qualification](RELEASE_QUALIFICATION_1.23.0.md) for asset identity
+and the accepted validation scope. The sections below preserve integration history.
+
+## Historical integration — 8 November 2026
 
 Multilingual **1.22.0 is published**, tagged `v1.22.0`, at `6d230c6`
 (`origin/main`). The local integration branch **`codex/integrate-find-loop-1.23`**

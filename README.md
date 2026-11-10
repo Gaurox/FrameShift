@@ -2,10 +2,11 @@
 
 🌐 **English** | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md)
 
-**1.22.0** adds English, simplified Chinese, Spanish, Brazilian Portuguese, Russian
-and general reliability fixes; Find Loop is reserved for 1.23.
-See the [release notes](docs/RELEASE_NOTES_1.22.0.md) and
-[branch separation](docs/RELEASE_PLAN_1.22_1.23.md).
+**1.23.0** adds **Find Loop** inside Cut Video and fixes hidden actions in the
+classic Explorer video menu. English, simplified Chinese, Spanish, Brazilian
+Portuguese and Russian are supported. See the
+[release notes](docs/RELEASE_NOTES_1.23.0.md) and
+[qualification](docs/RELEASE_QUALIFICATION_1.23.0.md).
 
 In 1.22, changing **Settings → Application language** also updates installed Explorer
 menus. Windows may request administrator authorization; machine-wide menu changes
@@ -52,7 +53,7 @@ into the multilingual application, installer and documentation.
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current version: **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Current version: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)** · Windows 10 / 11 · self-contained · no extra install required.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -227,6 +228,8 @@ tests/
 ## Documentation
 
 - [Extract Text — OCR, PDF Options and Model Downloads](docs/EXTRACT_TEXT.md)
+- [Release Notes 1.23.0](docs/RELEASE_NOTES_1.23.0.md)
+- [Release Qualification 1.23.0](docs/RELEASE_QUALIFICATION_1.23.0.md)
 - [Release Notes 1.22.0](docs/RELEASE_NOTES_1.22.0.md)
 - [Release Qualification 1.22.0](docs/RELEASE_QUALIFICATION_1.22.0.md)
 - [Release Notes 1.21.1](docs/RELEASE_NOTES_1.21.1.md)

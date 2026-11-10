@@ -4,7 +4,7 @@
 
 **Herramienta gratuita y de código abierto para procesar video, audio, imágenes y PDF en Windows, con integración en el Explorador e IA local.**
 
-La versión **1.22.0** está disponible en inglés, chino simplificado, español, portugués brasileño y ruso. La función Find Loop se reserva para la futura 1.23. Consulte las [notas de la 1.22.0](docs/RELEASE_NOTES_1.22.0.md) y el [informe de validación](docs/RELEASE_QUALIFICATION_1.22.0.md).
+La versión **1.23.0** incorpora **Find Loop** en Cut Video y corrige las acciones ocultas del menú clásico de video del Explorador. Está disponible en los cinco idiomas existentes. Consulte las [notas de la 1.23.0](docs/RELEASE_NOTES_1.23.0.md) y el [informe de validación](docs/RELEASE_QUALIFICATION_1.23.0.md).
 
 Gracias a [zhazhayu01](https://github.com/zhazhayu01) por la traducción al chino simplificado, el README chino y la corrección de la disposición en ventanas estrechas. Su [contribución original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada en la 1.22.0. La traducción al español parte de los recursos originales y utiliza el mismo catálogo de idiomas.
 
@@ -29,7 +29,7 @@ Gracias a [zhazhayu01](https://github.com/zhazhayu01) por la traducción al chin
 
 **[Descargar la última versión pública](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Versión actual: **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)**. El instalador incluye los cinco idiomas.
+Versión actual: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. El instalador incluye los cinco idiomas.
 
 FrameShift está pensado para **Windows 10 y Windows 11 de 64 bits**. El instalador es autónomo: incluye el entorno .NET, FFmpeg y FFprobe. El usuario final no necesita instalarlos por separado. Los modelos de IA se obtienen aparte, según la función utilizada.
 
@@ -59,7 +59,7 @@ Después de configurar la integración con el Explorador mediante el instalador,
 
 ## Idioma y apariencia
 
-El instalador de la 1.22.0 ofrece **English**, **简体中文**, **Español**, **Português Brasileiro** y **Русский**. El idioma elegido se utiliza en sus páginas, las descripciones de componentes y los menús opcionales del Explorador, y establece el idioma predeterminado de la aplicación.
+El instalador de la 1.23.0 ofrece **English**, **简体中文**, **Español**, **Português Brasileiro** y **Русский**. El idioma elegido se utiliza en sus páginas, las descripciones de componentes y los menús opcionales del Explorador, y establece el idioma predeterminado de la aplicación.
 
 En **Configuración → Idioma de la aplicación** puede guardar una preferencia personal. El cambio se aplica **al volver a iniciar FrameShift** y tiene prioridad sobre el idioma predeterminado del instalador. También actualiza automáticamente los menús instalados del Explorador. Windows solicita autorización de administrador para modificar los menús compartidos por todas las cuentas. Si cancela la autorización o falla la actualización, Configuración lo indica y conserva el idioma guardado para la aplicación.
 
@@ -173,7 +173,7 @@ Este proceso comprueba las entradas y la versión, restaura dependencias bloquea
 
 ## Documentación
 
-- [Notas de la 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e [informe de validación](docs/RELEASE_QUALIFICATION_1.22.0.md).
+- [Notas de la 1.23.0](docs/RELEASE_NOTES_1.23.0.md) e [informe de validación](docs/RELEASE_QUALIFICATION_1.23.0.md).
 - [Mantenimiento y adición de traducciones](docs/LOCALIZATION.md).
 - [Separación de las versiones 1.22 y 1.23](docs/RELEASE_PLAN_1.22_1.23.md).
 - [Guía de extracción de texto](docs/EXTRACT_TEXT.md).
@@ -196,4 +196,4 @@ La documentación histórica y las licencias conservan su idioma original. Este 
 
 **¿Puede sobrescribir mis originales?** Las salidas se crean junto al origen con nombres únicos; se conservan los originales y los resultados existentes.
 
-**¿Incluye Find Loop?** No en esta 1.22. El trabajo de esa función está reservado para la futura 1.23.
+**¿Incluye Find Loop?** Sí, desde la 1.23.0, en Cut Video: búsqueda de bucles naturales, previsualización y bucles de ida y vuelta.

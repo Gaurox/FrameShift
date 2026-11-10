@@ -4,7 +4,7 @@
 
 **Ferramenta gratuita e de código aberto para processar vídeos, áudios, imagens e PDFs no Windows, com integração ao Explorador e IA local.**
 
-A versão **1.22.0** está disponível em inglês, chinês simplificado, espanhol, português brasileiro e russo. O recurso Find Loop fica reservado para a futura 1.23. Consulte as [notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
+A versão **1.23.0** adiciona **Find Loop** ao Cut Video e corrige ações ocultas no menu clássico de vídeo do Explorador. Está disponível nos cinco idiomas existentes. Consulte as [notas da 1.23.0](docs/RELEASE_NOTES_1.23.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.23.0.md).
 
 Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para chinês simplificado, pelo README chinês e pela correção da disposição em janelas estreitas. Sua [contribuição original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada na 1.22.0. A tradução para português brasileiro parte dos recursos originais e usa o mesmo catálogo de idiomas.
 
@@ -29,7 +29,7 @@ Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para c
 
 **[Baixar a versão pública mais recente](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Versão atual: **[1.22.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.22.0)**. O instalador inclui os cinco idiomas.
+Versão atual: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. O instalador inclui os cinco idiomas.
 
 O FrameShift foi desenvolvido para **Windows 10 e Windows 11 de 64 bits**. O instalador é autocontido: inclui o ambiente .NET, FFmpeg e FFprobe. O usuário final não precisa instalá-los separadamente. Os modelos de IA são obtidos à parte, conforme o recurso utilizado.
 
@@ -59,7 +59,7 @@ Depois de configurar a integração ao Explorador pelo instalador, você também
 
 ## Idioma e aparência
 
-O instalador da 1.22.0 oferece **English**, **简体中文**, **Español**, **Português Brasileiro** e **Русский**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
+O instalador da 1.23.0 oferece **English**, **简体中文**, **Español**, **Português Brasileiro** e **Русский**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
 
 Em **Configurações → Idioma do aplicativo**, você pode salvar uma preferência pessoal. Escolha **Português (Brasil)** para usar esta tradução (`pt-BR`). A mudança é aplicada **na próxima inicialização do FrameShift** e tem prioridade sobre o idioma padrão do instalador. Ela também atualiza automaticamente os menus instalados do Explorador. O Windows solicita autorização de administrador para alterar os menus compartilhados por todas as contas. Se a autorização for cancelada ou a atualização falhar, Configurações informa o problema e mantém o idioma salvo para o aplicativo.
 
@@ -173,7 +173,7 @@ Esse processo verifica as entradas e a versão, restaura as dependências bloque
 
 ## Documentação
 
-- [Notas da 1.22.0](docs/RELEASE_NOTES_1.22.0.md) e [relatório de validação](docs/RELEASE_QUALIFICATION_1.22.0.md).
+- [Notas da 1.23.0](docs/RELEASE_NOTES_1.23.0.md) e [relatório de validação](docs/RELEASE_QUALIFICATION_1.23.0.md).
 - [Manutenção e inclusão de traduções](docs/LOCALIZATION.md).
 - [Separação das versões 1.22 e 1.23](docs/RELEASE_PLAN_1.22_1.23.md).
 - [Guia de extração de texto](docs/EXTRACT_TEXT.md).
@@ -196,4 +196,4 @@ A documentação histórica e as licenças mantêm seu idioma original. Este REA
 
 **O programa pode sobrescrever meus originais?** As saídas são criadas ao lado da origem com nomes únicos; os originais e os resultados existentes são preservados.
 
-**Inclui Find Loop?** Não nesta 1.22. O trabalho desse recurso fica reservado para a futura 1.23.
+**Inclui Find Loop?** Sim, desde a 1.23.0, no Cut Video: busca de loops naturais, prévia e loops de ida e volta.

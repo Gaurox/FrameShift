@@ -23,6 +23,25 @@ application, subtitle worker and tests report **zero vulnerable packages**,
 including transitive dependencies, with no report warnings. Local evidence:
 `scratch/release-1.23-publication/{app,worker,tests}-vulnerabilities.json`.
 
+## Publication verified — 10 November 2026
+
+[Release v1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)
+was published at **2026-11-10 20:22:48 UTC**, as the latest stable release
+(GitHub release ID `440866718`). The approved English body was verified before
+publication. Annotated tag `v1.23.0` points to release-documentation commit
+`b1a7f988a58b8e9e714a580a9ad807dcd77a6cc2`; application source remains
+`5b60911264802966900489dcbdde28b307e17836`.
+
+Published assets were checked against the qualified archive and GitHub's
+SHA-256 digests:
+
+- `FrameShift_1.23.0_Setup.exe`: **179,950,669 bytes**, SHA-256
+  `1571BBAD6A5BFBDF7FD5A2568A729382E952F23861832C69751544B20F63045C`.
+- `FrameShift_1.23.0_Setup.exe.sha256`: **95 bytes**, file SHA-256
+  `FB10117FC346F23490E805517572D4EF2F8086A0BB5F4376354CC64832290A3F`.
+
+No installer execution or desktop control was performed for publication.
+
 ## Historical private-candidate status
 
 First prepared on 9 November 2026; the 10 November candidates add complete video
