@@ -5,12 +5,13 @@ these languages is enabled in FrameShift or included in the installer yet.
 The initial `001` supply folders remain empty historical references. The French
 pilot has returned a complete CSV and populated its draft. Five action descriptions
 have since been corrected in the English source and supplied in Japanese and
-Indonesian drafts; the remaining translations in those two languages are pending.
+Indonesian drafts. The Japanese contribution has since been completed; Indonesian
+remains limited to those five descriptions.
 
-## Current contribution folders — revision 002
+## Current contribution folders
 
-Use **revision 002** for future contributions. It has the corrected English source
-and current translation hashes. The five changed descriptions have been compared
+Use **French/Indonesian 002 and Japanese 003** for future contributions. They have
+the corrected English source and current translation hashes. The five changed descriptions have been compared
 with all eight language catalogs; existing Spanish, Portuguese, Russian, Chinese
 and French wording was already correct and was preserved. Resource keys stay
 unchanged so existing references remain valid.
@@ -18,10 +19,14 @@ unchanged so existing references remain valid.
 | Language | Current contributor folder | Filled records | Remaining |
 | --- | --- | ---: | ---: |
 | Français | [French — 002](contributions/fr/002/) | 2,167 | 0 |
-| 日本語 | [Japanese — 002](contributions/ja/002/) | 5 | 2,162 |
+| 日本語 | [Japanese — 003](contributions/ja/003/) | 2,167 | 0 |
 | Bahasa Indonesia | [Indonesian — 002](contributions/id/002/) | 5 | 2,162 |
 
-Each folder includes `review.json` identifying the five English source changes.
+French/Indonesian `002` include `review.json` identifying five English source
+changes. Japanese `003` reports the 2,162 completed translations since its initial
+five descriptions, with no source/context changes. The supplied `002` and returned
+CSV remain available in [Japanese contribution history](contributions/ja/002-returned/),
+with its [process report](../docs/TRANSLATION_JAPANESE_PILOT.md).
 No language has been enabled and no installer inputs have changed. The standard
 upstream Inno messages remain separate future work. Japanese and Indonesian
 native proofreading, and all visual acceptance, are still pending.
@@ -67,27 +72,33 @@ maintainer draft. Start with `START_HERE.txt`. Each folder contains:
 
 Keep the original `001` folder as the supply reference. Contributors work on a
 copy and return a new CSV with their feedback. The French trial is recorded
-separately in `001-returned`; Japanese and Indonesian now have only the five
-action descriptions translated. The French trial used text/CSV tools only, without a real spreadsheet
-session or PC control.
+separately in `001-returned`; Japanese is now complete in `002-returned` / `003`,
+while Indonesian still has five texts. Both trials used text/CSV tools only,
+without a real spreadsheet session or PC control.
 
 ## Maintainer files and checks
 
 Each draft was created with `draft.json`, an empty `Strings.<code>.resx`, and a
 `FrameShift.<code>.iss` containing only its technical language marker. These files
 stay under `translations/drafts`; they are not runtime resources or installer
-inputs. The French draft now contains its imported contribution; Japanese and
-Indonesian drafts each contain only the five action descriptions. Do not move
+inputs. The French and Japanese drafts now contain complete contributions;
+Indonesian contains only the five action descriptions. Do not move
 draft files into `src` or `installer` until a separate activation step.
 
 The initial `001` exports have zero technical errors and 2,167 blank warnings each.
 Strict completeness checks deliberately fail for these empty drafts. Import
 previews against the initial empty drafts produced zero changes. Japanese and
-Indonesian now have 2,162 blanks each. The French pilot's final strict check had
+Indonesian had 2,162 blanks each before the Japanese trial. Japanese now has zero
+blanks; Indonesian still has 2,162. The French pilot's final strict check had
 zero blanks, errors or warnings, and reimport is a no-op. The initial French
 snapshot now reports 2,167 translation changes and five subsequent source changes
 against its populated draft. No independent proofreading, real spreadsheet
 round-trip or UI acceptance has occurred.
+
+Translation CSVs are marked `-text` in `.gitattributes` so Git preserves embedded
+cell line endings and the hashes computed from them on Windows. Do not run line
+ending or whitespace cleanup over supplied CSVs. A filtered-checkout trial found
+eight stale-source errors before this rule; the same trial passes with it.
 
 Build the tool as described in [its README](../tools/FrameShift.LocalizationTool/README.md).
 From the repository root, a returned French contribution can be checked and

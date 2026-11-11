@@ -160,6 +160,38 @@ source changes are restricted to five English resource values; all installer
 inputs and the retained Setup remain unchanged. No PC control or installer build
 was used. Human acceptance statuses below remain open.
 
+### Japanese contribution and Git newline correction — 11 November 2026
+
+Previous work was committed as `4ec9deb`. Current French/Japanese supplies passed
+their technical checks before the Japanese translation. A Git-filtered Windows
+checkout (`core.autocrlf=true`) then reproduced eight false stale-source errors
+in French `002`: Git changed embedded CSV cell line endings. The correction is
+limited to `/translations/**/*.csv -text` in `.gitattributes`. The same checkout
+passes strict validation afterwards. All cells in eight historical CSVs were
+compared between committed blobs and working files without value differences;
+filtered/raw Git hashes of the completed Japanese return match exactly.
+
+The [Japanese pilot](TRANSLATION_JAPANESE_PILOT.md) completed 2,162 remaining texts,
+retaining five supplied translations. Nine checkpoints passed without errors at
+245, 579, 828, 1,057, 1,298, 1,550, 1,801, 1,962 and 2,167 filled records. Eight
+reference columns, record counts, whitespace edges, line-break counts, mnemonic
+marker counts, product/model identifiers and six file-filter patterns were checked.
+Nine source-identical technical values were reviewed. An IME-style substitution
+of ASCII variable braces/digits with full-width characters was correctly rejected
+in a disposable copy.
+
+Strict final validation and Japanese bundle `003` report zero blanks, warnings
+or errors. Import with verified backups changes only the two Japanese draft
+files. All 2,167 values match on reexport, all 51 Explorer caption links agree,
+and reimport is a no-op. Snapshot review reports only 2,162 translation changes.
+Old supply files and French/Indonesian/runtime/installer inputs remain unchanged.
+**85 standalone Release tests passed**, with zero failures/skips. No installer
+was rebuilt, no new language was activated and no PC control was used.
+
+Native Japanese review, a real spreadsheet session, fonts/glyphs, visual DPI and
+mnemonic acceptance remain pending. This is an agent-assisted CSV contribution,
+not evidence that an external non-developer completed the workflow unaided.
+
 ### Human acceptance status
 
 | Scenario | Status |

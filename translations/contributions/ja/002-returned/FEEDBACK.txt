@@ -1,0 +1,58 @@
+Language: ja — Japanese / 日本語
+Returned file: translation.ja.csv
+translation.csv is the supplied revision 002 with five initial descriptions;
+it is preserved as a reference, not the completed return.
+
+Method: agent-assisted translation of CSV text using the supplied English source,
+context, references and glossary. Only Translation was edited. No PC control,
+spreadsheet application, runtime language activation or installer build was used.
+This does not certify a real non-developer spreadsheet session or native review.
+
+Editor/serialization: text/CSV tools, PowerShell 7.6.9. UTF-8 with BOM, semicolon
+separator, all nine columns treated as text. Reopened and compared with supply:
+2,167 records retained, eight reference columns unchanged, five initial Japanese
+descriptions retained exactly. Snapshot and original supply files are unchanged.
+
+Incremental filled-record counts: 245, 579, 828, 1,057, 1,298, 1,550, 1,801,
+1,962, 2,167. Technical errors: zero at every checkpoint. Strict final check:
+zero blanks/errors/warnings. Nine source-identical values were reviewed and are
+expected technical labels/formats (OK, ch, time formats, TV / USB, Web / YouTube).
+
+Formatting checked: leading/trailing whitespace, line-break counts, variables,
+numeric format strings, mnemonic marker counts, six file-dialog filter patterns,
+and product/model identifiers. IME conversion of {0} to full-width ｛０｝ was
+deliberately introduced in a disposable copy and rejected by the checker.
+
+Japanese terminology: see GLOSSARY.ja.md. Audio/video temporal cuts use カット;
+spatial image/video crops use トリミング. Light is ライト for the theme and 弱 for
+audio intensity; balance-volume intensities are 弱 / 中 / 強. Product names,
+model IDs, file extensions and CLI values remain unchanged. Mnemonics use the
+Japanese Windows convention, e.g. ファイル(&F); collisions still need visual review.
+
+Questions/limits for a native and visual reviewer:
+- 2,018 application entries have only automatic area labels, without screenshots
+  or explanations of variables. Confirm the generic labels in their real windows.
+- BRIA instructions and some model/download errors are split across fragments.
+  Japanese word order was adjusted across matching fragments; actual composition
+  and wrapping must be checked in the application/installer later.
+- Loop_PreciseChecked and Loop_PreciseChecking translate search tracks as 比較系列,
+  distinct from audio/subtitle tracks. Confirm this specialist term in context.
+- Dense CJK text, Japanese glyph fallback, row heights, DPI, accessible names and
+  mnemonic usability have not been verified in the actual windows.
+
+Maintainer receipt: strict check and preview passed; 2,162 changes were applied
+to the two Japanese draft files with verified backups. Exact reexport matched all
+2,167 returned values. All 51 Explorer caption links agree. Second import preview
+is a no-op. Snapshot comparison reports only 2,162 translation changes.
+Recovery: scratch/ja-translation/backup-ja-002/manifest.json
+
+Workflow issue discovered: Git core.autocrlf changed embedded CSV newlines on
+Windows, producing eight false stale-source errors on the French bundle. The
+repository attribute now preserves translation CSV bytes. The same filtered
+checkout passes; committed/working values of all eight historical CSVs were
+compared. Git filtered/raw hashes of this completed Japanese CSV match exactly.
+
+Status: technically complete Japanese draft, not enabled. Current handoff is
+revision 003. Independent native proofreading, Excel/LibreOffice open/edit/save
+acceptance and visual UI/installer acceptance remain not run. French, Indonesian,
+runtime resources, original supplies and installer files were preserved.

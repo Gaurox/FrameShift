@@ -23,6 +23,11 @@ Use `--repo <path>` when running outside the repository. Output directories must
 exist. CSV exports and JSON reports must use **new filenames**; existing files,
 including contributor work, are never overwritten.
 
+When tracking contribution CSVs under `translations`, retain the repository's
+`-text` Git attribute. Embedded cell line endings are part of source/translation
+hashes and must not be converted by Windows `core.autocrlf`. Do not normalize
+whitespace or line endings in supplied CSVs to fix a Git formatting warning.
+
 Without `--draft`, supported languages remain the five registered codes: `en`,
 `zh-CN`, `es`, `pt-BR`, `ru`. Unregistered languages require an explicitly prepared
 draft directory; merely creating resource files does not enable a language.

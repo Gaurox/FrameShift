@@ -36,11 +36,14 @@ catalogs started empty; their supplied snapshots are not reviewed baselines.
 The [French pilot](TRANSLATION_FRENCH_PILOT.md) has since populated the French
 draft and records the contribution checks, observed difficulties and remaining
 human acceptance. French activation remains separate work.
-The current contributor revision is `002`: five previously French source
-descriptions are now English, all existing target translations were checked, and
-only those five descriptions have been filled in the Japanese/Indonesian drafts.
+Revision `002` replaced five French source descriptions with English and checked
+all existing target translations. At that point only those five descriptions
+had been filled in the Japanese/Indonesian drafts.
 Older supplies remain historical records and are rejected as stale sources;
 request the current bundle rather than rewriting their reference columns.
+Japanese has since been completed through the [Japanese pilot](TRANSLATION_JAPANESE_PILOT.md);
+its current review folder is `003`, while French and Indonesian remain on `002`.
+Japanese is still inactive, with native proofreading and visual acceptance open.
 
 ## Prepare and receive a contribution
 
@@ -62,6 +65,11 @@ project corrections; incompatible concurrent edits block the import, including
 linked Explorer counterparts. Missing destination entries are created on import.
 Older eight-column CSVs require a fresh export; transfer only intentional edits
 with human review, never synthesize current hashes onto an old file.
+
+The repository marks translation CSVs as `-text` in `.gitattributes`. Their
+embedded cell line endings must survive Git unchanged, including Windows
+`core.autocrlf`, because source and original-translation hashes use exact text.
+Do not normalize supplied CSV whitespace/line endings to silence Git warnings.
 
 When the folder returns: run `check`, review the wording and feedback, preview the
 import, then apply with a new backup directory. Review the Git diff, especially

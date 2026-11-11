@@ -6,7 +6,7 @@ Mise à jour après le pilote : les cinq descriptions françaises du catalogue s
 ont été corrigées en anglais. Les autres versions existantes, dont le français,
 étaient correctes. Les cinq descriptions ont été ajoutées aux brouillons japonais
 et indonésien. Utiliser désormais le [CSV français 002](../translations/contributions/fr/002/translation.csv)
-et les [dossiers actuels](../translations/README.md#current-contribution-folders--revision-002).
+et les [dossiers actuels](../translations/README.md#current-contribution-folders).
 Les fichiers et rapports `001` / `001-returned` ci-dessous restent des preuves
 historiques ; ils ne doivent pas être réimportés avec leurs anciennes sources.
 
