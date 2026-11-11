@@ -7,6 +7,14 @@ Only display culture is selected; numeric
 parsing, CLI options, model IDs, persisted values, FFmpeg parameters and output
 naming retain their existing contracts.
 
+## Contributor workflow
+
+For a non-developer, start with the [translation guide](TRANSLATING.md) and
+[glossary](TRANSLATION_GLOSSARY.md). Maintainers use the
+[contribution and maintenance procedure](TRANSLATION_MAINTENANCE.md) to prepare
+bundles, retain reviewed baselines, inspect changes and validate packaged resources.
+These tools do not enable languages or certify human acceptance automatically.
+
 ## Contribution and integration
 
 The simplified Chinese wording and narrow ActionsPanel layout correction originate
@@ -64,6 +72,14 @@ upstream credits; see [installer language sources](../installer/Languages/README
 
 ## Maintaining translations
 
+The independent [translation export/check tool](../tools/FrameShift.LocalizationTool/README.md)
+provides a semicolon-separated UTF-8 CSV for each existing language and validates
+returned files without modifying project resources or the installer. Lot 2 adds
+a preview-first import command with backups, rollback and linked Explorer captions;
+only an explicit apply writes existing translations. It does not enable new languages.
+See its guide for spreadsheet
+text import, variables, incomplete work and stale-source diagnostics.
+
 `Core/Localization/Strings.resx` is the English source. `Strings.zh-CN.resx`,
 `Strings.es.resx`, `Strings.pt-BR.resx` and `Strings.ru.resx` contain the simplified
 Chinese, Spanish, Brazilian Portuguese and Russian translations. `L.Get` retrieves text;
@@ -93,7 +109,10 @@ The worker links `Core/Localization/*.cs` and `Strings*.resx` automatically, wit
 stable resource names. Neither project gains a package dependency. Chinese, Spanish,
 Brazilian Portuguese and Russian Inno Setup language files are checked into
 `installer/Languages` with their provenance,
-instead of relying on a modified compiler installation.
+instead of relying on a modified compiler installation. FrameShift custom messages
+are maintained in `installer/Languages/FrameShift.<code>.iss` and included explicitly
+inside the main script's `[CustomMessages]` section. Standard upstream `.isl` files
+and technical `AppLanguage` markers are not edited through translation CSVs.
 
 Tests check exact resource coverage and format arguments for **every registered
 translation**, catalog/installer agreement, aliases and regional fallbacks, unchanged

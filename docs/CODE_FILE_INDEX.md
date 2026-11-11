@@ -64,6 +64,9 @@ Règles de lecture :
 
 ## Localisation
 
+- `tools/FrameShift.LocalizationTool/` — offline .NET 8 CSV export/check and preview-first import, with backups, rollback, Explorer correspondence, snapshots, review reports, contributor bundles and packaged-language checks; no runtime app dependency.
+- `tests/FrameShift.LocalizationTool.Tests/` — standalone exchange, variable, stale-source and file-preservation tests.
+
 - `src/FrameShift/Core/Localization/AppLanguages.cs` — catalogue des langues disponibles, noms natifs, alias et repli régional.
 - `src/FrameShift/Core/Localization/L.cs` — ressources et culture d'affichage, sans modifier la culture numérique.
 - `src/FrameShift/Core/Localization/Strings*.resx` — textes anglais et traductions, partagés automatiquement avec le worker.

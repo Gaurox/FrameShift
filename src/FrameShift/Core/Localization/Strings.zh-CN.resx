@@ -6043,7 +6043,7 @@
   <data name="BalanceVolume_LightDescription" xml:space="preserve"><value>温和均衡，保留更多动态。</value></data>
   <data name="BalanceVolume_Moderate" xml:space="preserve"><value>中度</value></data>
   <data name="BalanceVolume_ModerateDescription" xml:space="preserve"><value>推荐用于日常聆听。</value></data>
-  <data name="BalanceVolume_Strong" xml:space="preserve"><value>强度 / 夜间模式</value></data>
+  <data name="BalanceVolume_Strong" xml:space="preserve"><value>强效 / 夜间模式</value></data>
   <data name="BalanceVolume_StrongDescription" xml:space="preserve"><value>更强的均衡，适合低音量聆听。</value></data>
   <data name="BalanceVolume_Start" xml:space="preserve"><value>均衡音量</value></data>
   <data name="BalanceVolume_Output" xml:space="preserve"><value>在原文件旁创建新文件。视频直接复制，不重新编码。</value></data>

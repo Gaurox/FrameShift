@@ -16,6 +16,10 @@ Les plans Main, Remove Object et Extract Frames conservent leur conception d'ori
 
 ## Quick Links
 
+- [Translator start guide](TRANSLATING.md)
+- [Translation glossary](TRANSLATION_GLOSSARY.md)
+- [Translation contribution and maintenance](TRANSLATION_MAINTENANCE.md)
+
 - [1.24.0 candidate release notes](RELEASE_NOTES_1.24.0.md)
 - [1.24.0 candidate qualification](RELEASE_QUALIFICATION_1.24.0.md)
 - [Balance volume — intensities, processing and CLI](BALANCE_VOLUME.md)

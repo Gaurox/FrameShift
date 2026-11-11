@@ -51,7 +51,7 @@ internal static unsafe partial class Program
 
     private static void RunUnifiedMenus()
     {
-        foreach (var language in new[] { "en", "zh-CN", "es", "pt-BR", "ru" })
+        foreach (var language in FrameShift.Core.Localization.AppLanguages.Supported.Select(language => language.Code))
             Run("Adjacent classic/AI roots, all media families and flat translations: " + language, () =>
             {
                 var captions = PopulateUnified(language);

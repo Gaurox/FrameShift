@@ -283,7 +283,9 @@ function Clear-ExpectedPublishDirectory {
 function Assert-PublishPayload {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$PublishDirectory
+        [string]$PublishDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot
     )
 
     $requiredPayloadFiles = @(
@@ -303,6 +305,10 @@ function Assert-PublishPayload {
             throw "Publish payload is incomplete. Required file not found: $payloadFile"
         }
     }
+
+    $languageTool = Join-Path $RepositoryRoot 'tools\FrameShift.LocalizationTool\bin\Release\net8.0\FrameShift.LocalizationTool.dll'
+    Assert-RequiredFile -Path $languageTool -Label 'Translation maintenance tool'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @($languageTool, 'verify-package', '--repo', $RepositoryRoot, '--package-dir', $PublishDirectory) -Step 'Packaged language verification'
 
     Assert-BundledFfmpegPayload -PayloadRoot $PublishDirectory -Label 'Published FFmpeg payload'
     Assert-DistributionNoticePayload -PublishDirectory $PublishDirectory
@@ -420,10 +426,14 @@ try {
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $projectFile, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'FrameShift restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $workerProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Create Subtitles worker restore'
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $testProject, '-p:Configuration=Release', '--locked-mode', '--verbosity', 'minimal') -Step 'Test restore'
+    $languageTests = Join-Path $repoRoot 'tests\FrameShift.LocalizationTool.Tests\FrameShift.LocalizationTool.Tests.csproj'
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('restore', $languageTests, '--locked-mode', '--verbosity', 'minimal') -Step 'Translation maintenance restore'
     Restore-ShellMenuProjects -RepositoryRoot $repoRoot
 
     Write-Host 'Running mandatory Release tests...' -ForegroundColor Cyan
     Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('test', $testProject, '-c', 'Release', '--no-restore', '--verbosity', 'minimal') -Step 'Release tests'
+
+    Invoke-ExternalTool -FilePath 'dotnet' -Arguments @('test', $languageTests, '-c', 'Release', '--no-restore', '--verbosity', 'minimal') -Step 'Translation maintenance tests'
 
     Clear-ExpectedPublishDirectory -RepositoryRoot $repoRoot -PublishDirectory $publishDir
 
@@ -440,7 +450,7 @@ try {
     ) -Step 'FrameShift publish'
 
     Publish-ShellMenuPayload -RepositoryRoot $repoRoot -PublishDirectory $publishDir -Version $appVersion
-    Assert-PublishPayload -PublishDirectory $publishDir
+    Assert-PublishPayload -PublishDirectory $publishDir -RepositoryRoot $repoRoot
     Assert-ShellMenuPayload -PublishDirectory $publishDir -Version $appVersion
     $shellManifestFile = Get-ShellMenuManifest -PublishDirectory $publishDir
     $shellBuildId = (Get-Content -LiteralPath $shellManifestFile.FullName -Raw | ConvertFrom-Json).BuildId

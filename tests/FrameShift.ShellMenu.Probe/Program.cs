@@ -94,7 +94,7 @@ internal static unsafe partial class Program
             fixed (nint* output = &_handler)
                 Check(((delegate* unmanaged[Stdcall]<nint, nint, Guid*, nint*, int>)(*(nint**)_factory)[3])(_factory, 0, &contextId, output));
 
-            foreach (var language in new[] { "en", "zh-CN", "es", "pt-BR", "ru" })
+            foreach (var language in FrameShift.Core.Localization.AppLanguages.Supported.Select(language => language.Code))
                 Run("18 flat localized commands and canonical verbs: " + language, () =>
                 {
                     var captions = Populate(language);

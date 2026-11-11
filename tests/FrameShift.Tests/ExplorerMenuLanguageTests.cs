@@ -79,7 +79,7 @@ public sealed class ExplorerMenuLanguageTests
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss")))
             directory = directory.Parent;
         Assert.NotNull(directory);
-        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
         var installerName = language switch
         {
             "en" => "english", "zh-CN" => "chinesesimp", _ => AppLanguages.Resolve(language).Aliases.Single()
@@ -94,6 +94,13 @@ public sealed class ExplorerMenuLanguageTests
         foreach (Match match in Regex.Matches(script, @"ConfigureSpecificExtractFrameMenuForHive\(Hive, SpecificKeyPath, '([^']+)', CustomMessage\('([^']+)'\)"))
             expected[@"FrameShift\shell\extract_specific_frames\shell\" + match.Groups[1].Value] = match.Groups[2].Value;
         Assert.Equal(expected.Keys.Order(), ExplorerMenuLanguage.MenuResources.Keys.Order());
+        var importLinks = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
+            File.ReadAllText(Path.Combine(directory.FullName, "tools", "FrameShift.LocalizationTool", "ExplorerMessageLinks.json")))!;
+        var expectedLinks = expected.ToDictionary(pair => ExplorerMenuLanguage.MenuResources[pair.Key], pair => pair.Value);
+        expectedLinks.Add("ExplorerMenu_extract_first_frame", "ShellExtractFirst");
+        expectedLinks.Add("ExplorerMenu_extract_last_frame", "ShellExtractLast");
+        expectedLinks.Add("ExplorerMenu_extract_keyframes", "ShellExtractKeys");
+        Assert.Equal(expectedLinks.OrderBy(p => p.Key), importLinks.OrderBy(p => p.Key));
         foreach (var (path, messageKey) in expected)
         {
             var value = Regex.Match(script, @"(?m)^" + installerName + @"\." + messageKey + @"=(.*)\r?$").Groups[1].Value.TrimEnd('\r');
@@ -344,7 +351,7 @@ public sealed class ExplorerMenuLanguageTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss"))) directory = directory.Parent;
         Assert.NotNull(directory);
-        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
         var installerLanguage = language switch { "en" => "english", "zh-CN" => "chinesesimp", _ => AppLanguages.Resolve(language).Aliases.Single() };
         foreach (var (resource, message) in new[] { ("extract_first_frame", "ShellExtractFirst"), ("extract_last_frame", "ShellExtractLast"), ("extract_keyframes", "ShellExtractKeys") })
         {

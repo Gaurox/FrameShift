@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>FrameShift</AssemblyName>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../../../src/FrameShift/Core/Localization/Strings*.resx" Link="Localization/%(Filename)%(Extension)" LogicalName="FrameShift.Core.Localization.%(Filename).resources" />
+  </ItemGroup>
+</Project>

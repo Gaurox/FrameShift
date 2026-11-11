@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FrameShift\FrameShift.csproj" />
+    <Compile Include="../../tools/FrameShift.LocalizationTool/InstallerMessages.cs" Link="Localization/InstallerMessages.cs" />
     <!-- Exercise the worker's managed reader without loading its separate native ONNX runtime into the test host. -->
     <Compile Include="..\..\src\FrameShift.SubtitlesWorker\WaveWindowReader.cs" Link="Worker\WaveWindowReader.cs" />
     <Compile Include="..\..\src\FrameShift.ShellMenu\MenuCommands.cs" Link="ShellMenu\MenuCommands.cs" />

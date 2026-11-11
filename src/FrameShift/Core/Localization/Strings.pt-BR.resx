@@ -6037,7 +6037,7 @@ Os arquivos WAV de saída são criados ao lado da origem com nomes únicos.</val
   <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Extrair o último quadro</value></data>
   <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Extrair quadros-chave</value></data>
   <data name="BalanceVolume_Name" xml:space="preserve"><value>Equilibrar volume</value></data>
-  <data name="BalanceVolume_Description" xml:space="preserve"><value>Reduz as diferenças entre diálogos baixos e cenas altas.</value></data>
+  <data name="BalanceVolume_Description" xml:space="preserve"><value>Reduz as diferenças entre diálogos baixos e cenas com volume alto.</value></data>
   <data name="BalanceVolume_Intensity" xml:space="preserve"><value>Intensidade</value></data>
   <data name="BalanceVolume_Light" xml:space="preserve"><value>Leve</value></data>
   <data name="BalanceVolume_LightDescription" xml:space="preserve"><value>Equilíbrio suave; preserva mais dinâmica.</value></data>

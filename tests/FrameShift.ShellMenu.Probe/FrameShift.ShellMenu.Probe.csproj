@@ -11,6 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="FixtureExports.cs" />
+    <Compile Include="../../src/FrameShift/Core/Localization/AppLanguages.cs" Link="AppLanguages.cs" />
     <Compile Include="../../src/FrameShift.ShellMenu/ComAbi.cs" Link="ComAbi.cs" />
     <Compile Include="../../src/FrameShift.ShellMenu/NativeMenu.cs" Link="NativeMenu.cs" />
   </ItemGroup>

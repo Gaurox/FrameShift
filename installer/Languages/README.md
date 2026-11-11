@@ -29,7 +29,19 @@ also applies.
 SHA-256 of the vendored file: `81981FE6CFEF7F3B2F744BEAC1494F4D2B29CEA69C96A08D1C0A6B79DC0ED8F2`.
 
 FrameShift's own component, Explorer and Pascal-script messages live in the
+`FrameShift.en.iss`, `FrameShift.zh-CN.iss`, `FrameShift.es.iss`,
+`FrameShift.pt-BR.iss` and `FrameShift.ru.iss`, included explicitly in the
 `[CustomMessages]` section of `../FrameShift.iss`, with `english`, `chinesesimp`,
 `spanish`, `brazilianportuguese` and `russian` entries. All five languages use the same payload, application ID,
 component IDs and command lines. The installer stores its application language
 default in `{app}/language.txt`; uninstall removes that owned file.
+
+These custom-message files contain FrameShift text only, not Pascal logic. Keep
+keys, language prefixes, macros and configuration markers unchanged. The separate
+[translation tool](../../tools/FrameShift.LocalizationTool/README.md) can export,
+check and import their text together with application resources.
+
+For an Inno syntax check without producing a Setup, use `/O-` **and an explicit
+fresh scratch output directory** (`/O<path>`). The compiler can remove an existing
+Setup at its resolved output path even with output disabled. Release installers
+still use the canonical build workflow.

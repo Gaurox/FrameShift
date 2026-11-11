@@ -100,7 +100,7 @@ public sealed class LocalizationTests
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss")))
             directory = directory.Parent;
         Assert.NotNull(directory);
-        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
         var section = Regex.Match(script, @"(?ms)^\[Languages\]\r?\n(.*?)(?=^\[)").Groups[1].Value;
         var codes = new List<string>();
         foreach (Match match in Regex.Matches(section, @"Name:\s*""([^""]+)"""))
@@ -123,7 +123,7 @@ public sealed class LocalizationTests
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss")))
             directory = directory.Parent;
         Assert.NotNull(directory);
-        var script = File.ReadAllText(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
+        var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
         var section = Regex.Match(script, @"(?ms)^\[CustomMessages\]\r?\n(.*?)(?=^\[)").Groups[1].Value;
         var entries = Regex.Matches(section, @"(?m)^(\w+)\.(\w+)=(.*)\r?$")
             .GroupBy(match => match.Groups[1].Value)
