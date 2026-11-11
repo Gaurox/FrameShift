@@ -1,10 +1,10 @@
 # FrameShift
 
-🌐 [English](README.md) | [简体中文](README.zh-CN.md) | [Español](README.es.md) | **Português (Brasil)** | [Русский](README.ru.md)
+🌐 [English](README.md) | [简体中文](README.zh-CN.md) | [Español](README.es.md) | **Português (Brasil)** | [Русский](README.ru.md) | [Français](README.fr.md) | [日本語](README.ja.md) | [Bahasa Indonesia](README.id.md)
 
 **Ferramenta gratuita e de código aberto para processar vídeos, áudios, imagens e PDFs no Windows, com integração ao Explorador e IA local.**
 
-A versão **1.23.0** adiciona **Find Loop** ao Cut Video e corrige ações ocultas no menu clássico de vídeo do Explorador. Está disponível nos cinco idiomas existentes. Consulte as [notas da 1.23.0](docs/RELEASE_NOTES_1.23.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.23.0.md).
+A versão **1.24.0** adiciona **Equilibrar volume**, pensado principalmente para assistir a vídeos sem ajustar o volume entre diálogos baixos e cenas altas. Inclui francês, japonês e indonésio, totalizando **oito idiomas**, simplifica a contribuição de traduções por CSV e aplica às janelas o idioma escolhido na atualização. O instalador local foi validado pelo responsável e aguarda publicação. Consulte as [notas da 1.24.0](docs/RELEASE_NOTES_1.24.0.md) e o [relatório de validação](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
 Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para chinês simplificado, pelo README chinês e pela correção da disposição em janelas estreitas. Sua [contribuição original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada na 1.22.0. A tradução para português brasileiro parte dos recursos originais e usa o mesmo catálogo de idiomas.
 
@@ -29,7 +29,7 @@ Agradecemos a [zhazhayu01](https://github.com/zhazhayu01) pela tradução para c
 
 **[Baixar a versão pública mais recente](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Versão atual: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. O instalador inclui os cinco idiomas.
+Versão pública: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. O instalador local **1.24.0**, com os novos recursos e os oito idiomas descritos aqui, foi validado e aguarda publicação.
 
 O FrameShift foi desenvolvido para **Windows 10 e Windows 11 de 64 bits**. O instalador é autocontido: inclui o ambiente .NET, FFmpeg e FFprobe. O usuário final não precisa instalá-los separadamente. Os modelos de IA são obtidos à parte, conforme o recurso utilizado.
 
@@ -59,9 +59,11 @@ Depois de configurar a integração ao Explorador pelo instalador, você também
 
 ## Idioma e aparência
 
-O instalador da 1.23.0 oferece **English**, **简体中文**, **Español**, **Português Brasileiro** e **Русский**. O idioma escolhido é usado nas páginas do instalador, nas descrições dos componentes e nos menus opcionais do Explorador, além de definir o idioma padrão do aplicativo.
+A versão **1.24.0** oferece **English**, **简体中文**, **Español**, **Português (Brasil)**, **Русский**, **Français**, **日本語** e **Bahasa Indonesia** no aplicativo, instalador e menus do Explorador. Francês, japonês e indonésio são novidades desta versão.
 
-Em **Configurações → Idioma do aplicativo**, você pode salvar uma preferência pessoal. Escolha **Português (Brasil)** para usar esta tradução (`pt-BR`). A mudança é aplicada **na próxima inicialização do FrameShift** e tem prioridade sobre o idioma padrão do instalador. Ela também atualiza automaticamente os menus instalados do Explorador. O Windows solicita autorização de administrador para alterar os menus compartilhados por todas as contas. Se a autorização for cancelada ou a atualização falhar, Configurações informa o problema e mantém o idioma salvo para o aplicativo.
+O idioma escolhido na instalação, atualização ou reinstalação é aplicado às janelas **na próxima inicialização**, uma vez por usuário do Windows, mesmo com uma preferência anterior salva. Os demais ajustes são preservados. Depois, você pode escolher outro idioma em **Configurações → Idioma do aplicativo**, incluindo **Português (Brasil)** (`pt-BR`); a mudança vale após reiniciar o FrameShift e atualiza os menus instalados do Explorador. O Windows pode solicitar autorização de administrador para os menus compartilhados por todas as contas. Se a autorização for cancelada ou a atualização do menu falhar, Configurações informa o problema e mantém o idioma salvo para o aplicativo.
+
+O novo sistema permite contribuir sem programar: o responsável fornece um CSV UTF-8 com o texto em inglês, contexto e tradução. Edite apenas **Translation**, preserve variáveis e colunas de referência e devolva o arquivo. As ferramentas locais permitem exportar, verificar, revisar e importar com cópias de segurança. Consulte o [guia de tradução](docs/TRANSLATING.md) e o [processo de manutenção](docs/TRANSLATION_MAINTENANCE.md), em inglês.
 
 A mesma janela permite alterar o tema e escolher, abrir ou restaurar a pasta de modelos de IA. Escolha uma pasta comum e exclusiva para os modelos; raízes de unidades, pastas do sistema e a pasta de instalação não são permitidas.
 
@@ -73,13 +75,14 @@ A mesma janela permite alterar o tema e escolher, abrir ou restaurar a pasta de 
 | --- | --- |
 | Converter vídeo | Alterar o contêiner e o perfil de codec com opções práticas. |
 | Comprimir vídeo | Reduzir o tamanho com perfis de qualidade ou um tamanho de destino compatível. |
+| Equilibrar volume | Reduzir as diferenças entre diálogos baixos e cenas altas, sem recodificar o vídeo. |
 | Remover áudio | Criar uma cópia do vídeo sem áudio. |
 | Extrair áudio | Salvar a primeira faixa de áudio em um arquivo separado. |
 | Extrair quadros | Exportar todos os quadros, o primeiro, o último ou os quadros-chave. |
 | Criar GIF | Converter um trecho do vídeo em GIF com prévia. |
 | Unir vídeos | Organizar clipes na linha do tempo e uni-los em uma única faixa. |
 | Adicionar legendas | Adicionar uma faixa selecionável ou gravar legendas na imagem com o editor visual. |
-| Cortar vídeo | Selecionar um intervalo com limites de quadros e tempos. |
+| Cortar vídeo / Find Loop | Selecionar um intervalo, buscar loops naturais, visualizar a junção ou criar loops de ida e volta. |
 | Recortar vídeo | Ajustar o enquadramento com controles visuais, detecção de bordas e zoom. |
 | Girar / espelhar vídeo | Alterar a orientação ou espelhar o vídeo. |
 | Redimensionar vídeo | Ajustar as dimensões do vídeo. |
@@ -93,7 +96,9 @@ As legendas podem ser exportadas como SRT, ASS ou projeto do FrameShift com temp
 
 ### Áudio
 
-Conversão de formatos, corte preciso, reprodução invertida, compressão, alteração de tom e velocidade, remoção de ruído e separação de faixas com IA local.
+Conversão de formatos, corte preciso, reprodução invertida, compressão, equilíbrio de volume, alteração de tom e velocidade, remoção de ruído e separação de faixas com IA local.
+
+**Equilibrar volume** foi pensado principalmente para assistir a filmes e outros vídeos: reduz os saltos entre diálogos baixos e ação ou música alta. Também funciona com arquivos de áudio e processa toda a mixagem e todas as faixas de áudio. Oferece **Leve**, **Moderada** (padrão) e **Forte / Modo noturno**. Usa uma única passagem local do FFmpeg; só o áudio é recodificado e o vídeo é copiado sem recodificação. Preserva canais, legendas, capítulos e metadados, salvando uma cópia com nome único ao lado do original. Consulte o [guia do recurso](docs/BALANCE_VOLUME.md).
 
 ### Imagens e PDF
 
@@ -154,7 +159,7 @@ Sem uma preferência salva nem um arquivo de idioma de instalação, o programa 
 
 As compilações Release usam ImageSharp 4 e exigem uma licença privada válida `sixlabors.lic`, indicada por `SixLaborsLicenseFile`. Os responsáveis devem verificar sua validade; a chave não deve ser publicada nem incluída no instalador, e a validação não deve ser ignorada. Os usuários finais não precisam dessa licença de compilação.
 
-A preparação atual usa **Inno Setup 6.7.1**. Os arquivos de idioma chinês, espanhol, português brasileiro e russo do instalador são mantidos em [`installer/Languages`](installer/Languages/README.md), com fontes, créditos e licença. Não é necessário modificar a instalação do compilador para adicioná-los.
+A preparação atual usa **Inno Setup 6.7.1**. Os arquivos de tradução do instalador são mantidos em [`installer/Languages`](installer/Languages/README.md), incluindo francês, japonês e indonésio, com fontes, créditos e licença. Não é necessário modificar a instalação do compilador para adicioná-los.
 
 O único comando oficial para compilar o instalador é:
 
@@ -173,6 +178,8 @@ Esse processo verifica as entradas e a versão, restaura as dependências bloque
 
 ## Documentação
 
+- [Notas da 1.24.0](docs/RELEASE_NOTES_1.24.0.md) e [relatório de validação](docs/RELEASE_QUALIFICATION_1.24.0.md).
+- [Equilibrar volume](docs/BALANCE_VOLUME.md) e [guia de contribuição de traduções](docs/TRANSLATING.md).
 - [Notas da 1.23.0](docs/RELEASE_NOTES_1.23.0.md) e [relatório de validação](docs/RELEASE_QUALIFICATION_1.23.0.md).
 - [Manutenção e inclusão de traduções](docs/LOCALIZATION.md).
 - [Separação das versões 1.22 e 1.23](docs/RELEASE_PLAN_1.22_1.23.md).

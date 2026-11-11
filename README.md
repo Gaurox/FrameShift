@@ -1,21 +1,19 @@
 # FrameShift
 
-🌐 **English** | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md)
+🌐 **English** | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [Português (Brasil)](README.pt-BR.md) | [Русский](README.ru.md) | [Français](README.fr.md) | [日本語](README.ja.md) | [Bahasa Indonesia](README.id.md)
 
-**1.23.0** adds **Find Loop** inside Cut Video and fixes hidden actions in the
-classic Explorer video menu. English, simplified Chinese, Spanish, Brazilian
-Portuguese and Russian are supported. See the
-[release notes](docs/RELEASE_NOTES_1.23.0.md) and
-[qualification](docs/RELEASE_QUALIFICATION_1.23.0.md).
+**1.24.0** adds [Balance volume](#balance-volume), primarily designed for watching
+videos without constantly adjusting the volume between quiet dialogue and loud
+scenes. It also adds **French, Japanese and Indonesian**, bringing the app,
+installer and Explorer menus to **eight languages**, and simplifies translation
+contributions through CSV files. The language chosen during an upgrade now applies
+to application windows even when an older preference was saved.
+See the [release notes](docs/RELEASE_NOTES_1.24.0.md) and
+[qualification](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
-The local **1.24.0 candidate** adds [Balance volume](docs/BALANCE_VOLUME.md),
-with Light, Moderate (default), and Strong / Night mode intensities. Audio is
-balanced in one pass and video is copied without re-encoding. This candidate
-has not been published; the latest public download remains 1.23.0.
-
-In 1.22, changing **Settings → Application language** also updates installed Explorer
-menus. Windows may request administrator authorization; machine-wide menu changes
-apply to all accounts. The application language takes effect after restarting FrameShift.
+The local **1.24.0 installer is owner-accepted and awaiting publication**.
+The published download linked below is **1.23.0**, which introduced **Find Loop**
+inside Cut Video and fixes for hidden actions in the classic Explorer video menu.
 
 **Special thanks to [zhazhayu01](https://github.com/zhazhayu01)** for the simplified
 Chinese translation, Chinese README, and narrow-window layout fix for the search
@@ -47,6 +45,8 @@ into the multilingual application, installer and documentation.
 - [Overview](#overview)
 - [Why FrameShift](#why-frameshift)
 - [Quick Workflow](#quick-workflow)
+- [Balance volume](#balance-volume)
+- [Languages and Translations](#languages-and-translations)
 - [Actions](#actions)
 - [Technology](#technology)
 - [ImageSharp Licence — Maintainers and AI Agents](#imagesharp-licence--maintainers-and-ai-agents)
@@ -58,7 +58,10 @@ into the multilingual application, installer and documentation.
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Current version: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Published version: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)** · Windows 10 / 11 · self-contained · no extra install required.
+
+The accepted local **1.24.0** installer includes the features and eight languages
+described below. Its public release is being prepared.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -127,6 +130,52 @@ Crop images and videos with a dedicated visual editor that now supports automati
 3. Adjust only the settings you need.
 4. Start processing and get a clean output beside the original file.
 
+## Balance volume
+
+**Balance volume** is primarily designed for watching films and other videos:
+it reduces differences between quiet dialogue and loud action or music, helping
+you avoid constantly reaching for the volume control. It also works on standalone
+audio files and processes the whole mix, including every audio track.
+
+- **Light**: gentle balancing that preserves more dynamics.
+- **Moderate** (default): balanced everyday listening.
+- **Strong / Night mode**: stronger balancing for listening at low volume.
+
+Select the action in the main window or the audio/video Explorer menu. Processing
+runs locally in **one FFmpeg pass**; only audio is re-encoded and **video is copied
+without re-encoding**. Channel layouts, subtitles, chapters and metadata are
+retained. The result is saved next to the original with a unique name.
+See the [feature guide](docs/BALANCE_VOLUME.md) for formats and CLI options.
+
+## Languages and Translations
+
+The **1.24.0** application, subtitle worker, installer and Explorer captions support:
+
+| Language | Code | README |
+| --- | --- | --- |
+| English | `en` | [English](README.md) |
+| 简体中文 | `zh-CN` | [简体中文](README.zh-CN.md) |
+| Español | `es` | [Español](README.es.md) |
+| Português (Brasil) | `pt-BR` | [Português (Brasil)](README.pt-BR.md) |
+| Русский | `ru` | [Русский](README.ru.md) |
+| Français | `fr` | [Français](README.fr.md) |
+| 日本語 | `ja` | [日本語](README.ja.md) |
+| Bahasa Indonesia | `id` | [Bahasa Indonesia](README.id.md) |
+
+The language selected during installation, upgrade or reinstall is applied to
+application windows **on the next launch**, once per Windows user. This also
+replaces an older saved language while preserving other preferences. Afterwards,
+**Settings → Application language** lets you choose another language for the next
+launch and updates installed Explorer menus. Windows may request administrator
+authorization; machine-wide menu changes apply to all accounts.
+
+Translation contributors can work in a spreadsheet without C#, Git or .NET: a
+maintainer supplies a UTF-8 CSV containing the English source, context and target
+text. Edit **Translation only**, keep variables and reference columns intact, and
+return the file. Maintainers have offline export, validation, preview/import with
+backups and change-review tools. Start with the [contributor guide](docs/TRANSLATING.md)
+or the [maintenance workflow](docs/TRANSLATION_MAINTENANCE.md).
+
 ## Actions
 
 ### Video Actions
@@ -135,16 +184,17 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | --- | --- | --- |
 | Convert Video | Convert video files to common formats with a fast, focused workflow. | <img src="screenshots/Video_actions/convert_video.png" alt="Convert Video" width="320" /> |
 | Remove Audio | Create a silent video version without changing the basic workflow. | <img src="screenshots/Video_actions/convert_video.png" alt="Remove Audio" width="320" /> |
-| Extract All Frames | Export every video frame as an image sequence. Explorer also offers First frame, Last frame, and Keyframes through an `Extract specific frames` submenu. | <img src="screenshots/Video_actions/Create_gif.png" alt="Extract All Frames" width="320" /> |
+| Extract All Frames | Export every video frame as an image sequence. Explorer also offers commands for the first frame, last frame and keyframes. | <img src="screenshots/Video_actions/Create_gif.png" alt="Extract All Frames" width="320" /> |
 | Create GIF | Turn a video segment into a GIF with preview-oriented controls. | <img src="screenshots/Video_actions/Create_gif.png" alt="Create GIF" width="320" /> |
 | Join Videos | Arrange multiple clips on a visual timeline and join them into one track — direct concat when stream signatures match, automatic SDR H.264/AAC normalization otherwise. | <img src="screenshots/Video_actions/Join_videos.png" alt="Join Videos" width="320" /> |
 | Add Subtitles to Video | Add a selectable subtitle track or burn subtitles into the video with a visual editor. | <img src="screenshots/Video_actions/Burn_subtitles.png" alt="Add Subtitles to Video" width="320" /> |
 | Extract Audio | Pull the audio track from a video into a standalone file. | <img src="screenshots/Video_actions/Extract_audio.png" alt="Extract Audio" width="320" /> |
-| Cut Video | Trim a video to the exact segment you want. | <img src="screenshots/Video_actions/Cut_video.png" alt="Cut Video" width="320" /> |
+| Cut Video / Find Loop | Trim a video, find natural loops, preview the junction or create forward/backward loops. | <img src="screenshots/Video_actions/Cut_video.png" alt="Cut Video" width="320" /> |
 | Crop Video | Remove unwanted borders or focus on a specific video area with visual controls, frame-based auto crop, zoom, and drag navigation. | <img src="screenshots/Video_actions/Crop_video.png" alt="Crop Video" width="320" /> |
 | Rotate / Flip Video | Fix orientation issues or mirror video content quickly. | <img src="screenshots/Video_actions/rotate_video.png" alt="Rotate or Flip Video" width="320" /> |
 | Resize Video | Change video dimensions for sharing, compatibility, or lighter exports. | <img src="screenshots/Video_actions/Resize_video.png" alt="Resize Video" width="320" /> |
 | Compress Video | Reduce file size with practical quality-oriented presets. | <img src="screenshots/Video_actions/compress_video.png" alt="Compress Video" width="320" /> |
+| Balance volume | Reduce quiet/loud differences while watching videos, with three intensities and no video re-encoding. | |
 | Change Video Speed | Speed up or slow down a video with a simple adjustment flow. | <img src="screenshots/Video_actions/Change_video_speed.png" alt="Change Video Speed" width="320" /> |
 | Interpolate Video | Generate smoother motion and higher frame-rate playback. | <img src="screenshots/Video_actions/Interpolate_video.png" alt="Interpolate Video" width="320" /> |
 | Remove Noise (Video) | Remove background noise from a video's audio track without re-encoding the video. | <img src="screenshots/AI_actions/Remove_noise-video.png" alt="Remove Noise Video" width="320" /> |
@@ -158,6 +208,7 @@ Crop images and videos with a dedicated visual editor that now supports automati
 | Cut Audio | Trim audio precisely without leaving the right-click workflow. | <img src="screenshots/Audio_actions/Cut_audio.png" alt="Cut Audio" width="320" /> |
 | Reverse Audio | Reverse an audio file for sound design or quick experiments. | |
 | Compress Audio | Reduce audio size for easier sharing and storage. | <img src="screenshots/Audio_actions/Compress_audio.png" alt="Compress Audio" width="320" /> |
+| Balance volume | Apply the same whole-mix balancing to standalone audio files. | |
 | Change Pitch | Shift audio pitch with a straightforward adjustment interface. | <img src="screenshots/Audio_actions/Change_pitch.png" alt="Change Pitch" width="320" /> |
 | Change Audio Speed | Speed up or slow down audio while keeping the workflow simple. | <img src="screenshots/Audio_actions/Change_audio_speed.png" alt="Change Audio Speed" width="320" /> |
 | Remove Noise (Audio) | Reduce background noise in audio with the local DeepFilterNet3 workflow. | <img src="screenshots/AI_actions/Remove_noise-audio.png" alt="Remove Noise Audio" width="320" /> |
@@ -232,6 +283,11 @@ tests/
 
 ## Documentation
 
+- [Balance volume — Intensities, Formats and CLI](docs/BALANCE_VOLUME.md)
+- [Release Notes 1.24.0](docs/RELEASE_NOTES_1.24.0.md)
+- [Release Qualification 1.24.0](docs/RELEASE_QUALIFICATION_1.24.0.md)
+- [Translation Contributor Guide](docs/TRANSLATING.md)
+- [Translation Maintenance](docs/TRANSLATION_MAINTENANCE.md)
 - [Extract Text — OCR, PDF Options and Model Downloads](docs/EXTRACT_TEXT.md)
 - [Release Notes 1.23.0](docs/RELEASE_NOTES_1.23.0.md)
 - [Release Qualification 1.23.0](docs/RELEASE_QUALIFICATION_1.23.0.md)
