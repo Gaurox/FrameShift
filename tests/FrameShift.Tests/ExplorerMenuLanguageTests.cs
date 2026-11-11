@@ -80,10 +80,8 @@ public sealed class ExplorerMenuLanguageTests
             directory = directory.Parent;
         Assert.NotNull(directory);
         var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
-        var installerName = language switch
-        {
-            "en" => "english", "zh-CN" => "chinesesimp", _ => AppLanguages.Resolve(language).Aliases.Single()
-        };
+        var installerName = FrameShift.LocalizationTool.InstallerMessages.Read(Path.Combine(directory.FullName, "installer", "FrameShift.iss"))
+            .Single(pair => pair.Key.Key == "AppLanguage" && pair.Value == language).Key.Language;
         var expected = new Dictionary<string, string>();
         foreach (Match match in Regex.Matches(script,
             @"Apply(Action|AIAction)MenuList\(\s*(?:'[^']*'|[^,'])+,\s*'([^']+)',\s*CustomMessage\('([^']+)'\)"))
@@ -352,7 +350,8 @@ public sealed class ExplorerMenuLanguageTests
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "installer", "FrameShift.iss"))) directory = directory.Parent;
         Assert.NotNull(directory);
         var script = FrameShift.LocalizationTool.InstallerMessages.ReadSource(Path.Combine(directory.FullName, "installer", "FrameShift.iss"));
-        var installerLanguage = language switch { "en" => "english", "zh-CN" => "chinesesimp", _ => AppLanguages.Resolve(language).Aliases.Single() };
+        var installerLanguage = FrameShift.LocalizationTool.InstallerMessages.Read(Path.Combine(directory.FullName, "installer", "FrameShift.iss"))
+            .Single(pair => pair.Key.Key == "AppLanguage" && pair.Value == language).Key.Language;
         foreach (var (resource, message) in new[] { ("extract_first_frame", "ShellExtractFirst"), ("extract_last_frame", "ShellExtractLast"), ("extract_keyframes", "ShellExtractKeys") })
         {
             var expected = Regex.Match(script, @"(?m)^" + installerLanguage + @"\." + message + @"=(.*)\r?$").Groups[1].Value.TrimEnd('\r');

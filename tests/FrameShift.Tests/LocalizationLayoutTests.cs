@@ -17,6 +17,12 @@ public sealed class LocalizationLayoutTests
     [InlineData(360, "Extrair texto e aumentar resolução da imagem - ")]
     [InlineData(580, "Извлечь текст и повысить разрешение изображения - ")]
     [InlineData(360, "Извлечь текст и повысить разрешение изображения - ")]
+    [InlineData(580, "Extraire le texte et redimensionner l’image - ")]
+    [InlineData(360, "Extraire le texte et redimensionner l’image - ")]
+    [InlineData(580, "文字を抽出して画像のサイズを変更 - ")]
+    [InlineData(360, "文字を抽出して画像のサイズを変更 - ")]
+    [InlineData(580, "Ekstrak teks dan ubah ukuran gambar - ")]
+    [InlineData(360, "Ekstrak teks dan ubah ukuran gambar - ")]
     public void LongLocalizedActionCaptions_KeepSearchAndButtonsInsideTheViewport(int width, string prefix)
     {
         StaTest.Run(() =>

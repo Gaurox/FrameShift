@@ -1,0 +1,34 @@
+Language: id — Bahasa Indonesia
+Returned file: translation.id.csv
+The supplied translation.csv and snapshot.json remain unchanged as history.
+
+Method: agent-assisted text/CSV translation using supplied instructions, English
+source, context and glossary. No PC control or spreadsheet application was used.
+Only Translation changed; all eight reference columns and the five supplied
+descriptions were retained exactly. Serialization: PowerShell 7.6.9, UTF-8 BOM,
+semicolon-separated CSV with all columns treated as text. Reopened and compared.
+
+Filled-record checkpoints: 245, 579, 828, 1057, 1298, 1550, 1801, 2167.
+No technical errors at successful checkpoints. Final strict check has zero
+blanks/errors/warnings. The 46 English-identical rows were reviewed: shared words
+(audio, video, format, model, normal, universal), IDs, OK, units and zoom labels.
+Whitespace edges, line-break counts, variables, mnemonic counts, six file filters
+and product/model names were checked. A deliberately damaged full-width variable
+in a disposable CSV was correctly rejected.
+
+Receipt: preview of 2162 changes in two draft files; verified original-byte
+backups; exact reexport of all 2167 values; 51 matching Explorer caption pairs;
+no-op second import; snapshot review reports only 2162 translation changes.
+Recovery: scratch/id-translation/backup-id-002/manifest.json.
+Git filtered and raw hashes match. Unrelated files and old installer were unchanged
+during the draft translation. Draft bundle 003 preserves the completed supply.
+
+Terminology decisions: see GLOSSARY.id.md. Temporal cuts use Potong, spatial
+crops Pangkas, theme light Terang, balancing light Ringan. Technical IDs unchanged.
+BRIA and model checksum messages are split fragments; composition needs UI review.
+2018 app contexts remain automatic area labels rather than detailed screenshots.
+
+Status at receipt: technically complete. The owner then requested integration of
+all three languages into a local 1.24.0 installer. Independent native proofreading,
+real Excel/LibreOffice use, glyphs, wrapping, DPI, keyboard/Explorer and installer
+lifecycle acceptance remain not run. Automated checks do not certify these.

@@ -59,7 +59,7 @@ public sealed class MaintenanceTests : IDisposable
     }
 
     [Theory]
-    [InlineData("fr")]
+    [InlineData("qaa")]
     [InlineData("en")]
     public void Bundle_RejectsUnavailableOrSourceLanguage(string language)
     {

@@ -197,6 +197,12 @@ public sealed partial class VideoLoopUiTests
     [InlineData("ru", 1120)]
     [InlineData("en", 480)]
     [InlineData("ru", 480)]
+    [InlineData("fr", 1120)]
+    [InlineData("ja", 1120)]
+    [InlineData("id", 1120)]
+    [InlineData("fr", 480)]
+    [InlineData("ja", 480)]
+    [InlineData("id", 480)]
     public void CandidateSelectionAndPreview_KeepControlsAndWindowStationary(string language, int width)
     {
         StaTest.Run(() =>

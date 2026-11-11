@@ -24,7 +24,7 @@ public sealed class PackageTests : IDisposable
     public void BothComponents_ContainExactTextsForEveryRegisteredLanguage()
     {
         var report = PackageVerifier.Verify(_repo, _root);
-        Assert.Empty(report.Issues); Assert.Equal(10, report.LanguagesChecked);
+        Assert.Empty(report.Issues); Assert.Equal(2 * TranslationCatalog.Languages.Length, report.LanguagesChecked);
     }
 
     [Theory]

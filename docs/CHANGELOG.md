@@ -2,7 +2,7 @@
 
 ## 1.24.0
 
-Local installer candidate prepared on 11 November 2026. Not yet published.
+Local installer accepted by the owner on 11 November 2026. Not yet published.
 See the [release notes](RELEASE_NOTES_1.24.0.md) and
 [qualification](RELEASE_QUALIFICATION_1.24.0.md).
 
@@ -14,6 +14,14 @@ See the [release notes](RELEASE_NOTES_1.24.0.md) and
 - Expose the action in the main window, CLI and selectable Explorer components,
   translated into all five existing application and installer languages.
 - Preserve adjacent unique outputs and cleanup on failure or cancellation.
+- Add French, Japanese and Indonesian throughout the application, subtitle worker,
+  Explorer captions and installer, for eight selectable languages. Include the
+  offline CSV contribution, validation, import and maintenance workflow.
+- Apply the installer language to application windows on the next launch after
+  an upgrade or reinstall, even when an older personal language was saved. Apply
+  it once per user; subsequent language changes in Settings remain effective.
+- Add a dedicated transparent, multi-resolution Balance volume icon for the
+  audio/video Explorer menus and the action dialog.
 
 ## 1.23.0
 

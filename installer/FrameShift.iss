@@ -48,6 +48,9 @@ Name: "chinesesimp"; MessagesFile: "Languages\ChineseSimplified.isl"
 Name: "spanish"; MessagesFile: "Languages\Spanish.isl"
 Name: "brazilianportuguese"; MessagesFile: "Languages\BrazilianPortuguese.isl"
 Name: "russian"; MessagesFile: "Languages\Russian.isl"
+Name: "fr"; MessagesFile: "Languages\French.isl"
+Name: "ja"; MessagesFile: "Languages\Japanese.isl"
+Name: "id"; MessagesFile: "Languages\Indonesian.isl"
 
 [Types]
 Name: "complete"; Description: "{cm:Text_1fe0d37d15}"
@@ -120,6 +123,7 @@ Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilena
 
 [UninstallDelete]
 Type: files; Name: "{app}\language.txt"
+Type: files; Name: "{app}\language-installation.txt"
 
 [CustomMessages]
 #include "Languages\FrameShift.en.iss"
@@ -127,6 +131,9 @@ Type: files; Name: "{app}\language.txt"
 #include "Languages\FrameShift.es.iss"
 #include "Languages\FrameShift.pt-BR.iss"
 #include "Languages\FrameShift.ru.iss"
+#include "Languages\FrameShift.fr.iss"
+#include "Languages\FrameShift.ja.iss"
+#include "Languages\FrameShift.id.iss"
 
 [Code]
 procedure SHChangeNotify(wEventId: LongInt; uFlags: Cardinal; dwItem1: Integer; dwItem2: Integer); external 'SHChangeNotify@shell32.dll stdcall';
@@ -150,6 +157,10 @@ const
   InvalidFileAttributes = $FFFFFFFF;
 
 type
+  { Opaque 128-bit identifier; the four words preserve every byte of a GUID. }
+  TLanguageInstallationId = record
+    A, B, C, D: Cardinal;
+  end;
   TModelDirectoryHandles = array of THandle;
   TModelAttributeTag = record
     Attributes: Cardinal;
@@ -166,6 +177,9 @@ var
   AiModelsPage: TWizardPage;
   AiModelsDirEdit: TEdit;
   AiModelsDirBrowseButton: TButton;
+
+function CoCreateGuid(var Value: TLanguageInstallationId): Integer;
+  external 'CoCreateGuid@ole32.dll stdcall';
 
 function GetListItem(var List: string): string;
 var
@@ -492,6 +506,10 @@ begin
   if MenuKey = 'reverse_audio' then
   begin
     Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\reverse-audio-audio-icon.ico');
+  end;
+  if MenuKey = 'balance_volume' then
+  begin
+    Result := ExpandConstant('{app}\Assets\Icons\menus\context\ico\balance-volume-icon.ico');
   end;
   if MenuKey = 'change_pitch' then
   begin
@@ -1712,12 +1730,28 @@ begin
 
 end;
 
+procedure WriteInstallationLanguage();
+var
+  Identifier: TLanguageInstallationId;
+  Marker: string;
+begin
+  if CoCreateGuid(Identifier) <> 0 then
+    RaiseException(CustomMessage('LanguageWriteError'));
+  { Runtime ID, not the app version: every reinstall must carry a fresh choice. }
+  Marker := Lowercase(Format('%.8x%.8x%.8x%.8x', [Identifier.A,
+    Identifier.B, Identifier.C, Identifier.D])) + #13#10 +
+    CustomMessage('AppLanguage');
+  if not SaveStringToFile(ExpandConstant('{app}\language.txt'), CustomMessage('AppLanguage'), False) then
+    RaiseException(CustomMessage('LanguageWriteError'));
+  if not SaveStringToFile(ExpandConstant('{app}\language-installation.txt'), Marker, False) then
+    RaiseException(CustomMessage('LanguageWriteError'));
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    if not SaveStringToFile(ExpandConstant('{app}\language.txt'), CustomMessage('AppLanguage'), False) then
-      RaiseException(CustomMessage('LanguageWriteError'));
+    WriteInstallationLanguage();
     InstallSelectedMenus;
     InstallNativeMenus;
     SHChangeNotify($08000000, $0000, 0, 0);

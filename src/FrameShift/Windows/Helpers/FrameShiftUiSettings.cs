@@ -25,6 +25,9 @@ public sealed class FrameShiftUiSettings
     public string? Language { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? AppliedLanguageInstallationId { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? JoinVideosSortOrder { get; set; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -90,6 +93,7 @@ public sealed class FrameShiftUiSettings
             {
                 Theme = GetThemePreference().ToString(),
                 Language = string.IsNullOrWhiteSpace(Language) ? null : L.NormalizeLanguage(Language),
+                AppliedLanguageInstallationId = AppliedLanguageInstallationId,
                 JoinVideosSortOrder = JoinVideosSortOrder,
                 OcrModel = OcrModel,
                 OcrFormat = OcrFormat,

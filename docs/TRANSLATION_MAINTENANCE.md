@@ -1,6 +1,6 @@
 # Translation contribution and maintenance
 
-The maintenance workflow is offline. By default it uses the existing five
+The maintenance workflow is offline. By default it uses the eight registered
 languages; an explicit draft mode prepares unregistered languages separately. It
 does not register new languages, install the app, or build an installer by itself.
 Build the tool as documented in [its README](../tools/FrameShift.LocalizationTool/README.md).
@@ -35,15 +35,22 @@ listed in [new language preparation](../translations/README.md). All three targe
 catalogs started empty; their supplied snapshots are not reviewed baselines.
 The [French pilot](TRANSLATION_FRENCH_PILOT.md) has since populated the French
 draft and records the contribution checks, observed difficulties and remaining
-human acceptance. French activation remains separate work.
+human acceptance. This paragraph records the historical pilot state.
 Revision `002` replaced five French source descriptions with English and checked
 all existing target translations. At that point only those five descriptions
 had been filled in the Japanese/Indonesian drafts.
 Older supplies remain historical records and are rejected as stale sources;
 request the current bundle rather than rewriting their reference columns.
 Japanese has since been completed through the [Japanese pilot](TRANSLATION_JAPANESE_PILOT.md);
-its current review folder is `003`, while French and Indonesian remain on `002`.
-Japanese is still inactive, with native proofreading and visual acceptance open.
+its draft review folder is `003`. Indonesian has since been completed in
+[its pilot](TRANSLATION_INDONESIAN_PILOT.md), with draft supply `003` as well.
+All three languages are now activated for the owner's local 1.24.0 test candidate.
+Use normal commands without `--draft` for `fr`, `ja` and `id`; their runtime
+resources and custom installer files are authoritative. Historical drafts and
+READY markers describe supply-time status and are no longer import destinations.
+Registered languages are deliberately refused by draft mode. Generate a fresh
+numbered active bundle for further work. Native proofreading, actual spreadsheet
+use and visual acceptance remain open.
 
 ## Prepare and receive a contribution
 

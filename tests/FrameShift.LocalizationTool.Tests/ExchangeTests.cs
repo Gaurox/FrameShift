@@ -129,7 +129,7 @@ public sealed class ExchangeTests : IDisposable
     [Fact]
     public void UnsupportedLanguage_IsNotCreatedOrEnabled()
     {
-        Assert.Throws<ArgumentException>(() => TranslationExchange.Export(_root, "fr", Csv));
+        Assert.Throws<ArgumentException>(() => TranslationExchange.Export(_root, "qaa", Csv));
         Assert.False(File.Exists(Csv));
     }
 

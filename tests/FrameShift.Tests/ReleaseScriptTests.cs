@@ -69,7 +69,7 @@ public sealed class ReleaseScriptTests
         var restoreLines = result.LogLines
             .Where(line => line.StartsWith("dotnet restore ", StringComparison.OrdinalIgnoreCase))
             .ToArray();
-        Assert.Equal(6, restoreLines.Length);
+        Assert.Equal(7, restoreLines.Length);
         Assert.All(restoreLines, line => Assert.Contains("--locked-mode", line, StringComparison.OrdinalIgnoreCase));
 
         var testIndex = Array.FindIndex(result.LogLines, line => line.StartsWith("dotnet test ", StringComparison.OrdinalIgnoreCase));
@@ -79,6 +79,8 @@ public sealed class ReleaseScriptTests
         Assert.True(publishIndex > testIndex, "Publish must run only after Release tests pass.");
         Assert.Contains("--no-restore", result.LogLines[testIndex], StringComparison.OrdinalIgnoreCase);
         Assert.Contains("--no-restore", result.LogLines[publishIndex], StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, result.LogLines.Count(line => line.StartsWith("dotnet test ", StringComparison.OrdinalIgnoreCase)));
+        Assert.Contains(result.LogLines, line => line.Contains("verify-package", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -100,6 +102,16 @@ public sealed class ReleaseScriptTests
         var result = fixture.Run();
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("Native menu fixture failure", result.StandardError);
+        Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void CanonicalRelease_LanguageVerificationFailureStopsBeforeInno()
+    {
+        using var fixture = new ReleaseFixture { FailingStep = "languages" };
+        var result = fixture.Run();
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(result.LogLines, line => line.Contains("verify-package", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(result.LogLines, line => line.StartsWith("iscc ", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -300,6 +312,8 @@ public sealed class ReleaseScriptTests
             CopyRepositoryFile("src\\FrameShift\\Tools\\ffmpeg\\ffmpeg-tools.zip");
             WriteFile("src\\FrameShift.SubtitlesWorker\\FrameShift.SubtitlesWorker.csproj", "<Project />");
             WriteFile("tests\\FrameShift.Tests\\FrameShift.Tests.csproj", "<Project />");
+            WriteFile("tests/FrameShift.LocalizationTool.Tests/FrameShift.LocalizationTool.Tests.csproj", "<Project />");
+            WriteFile("tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll", "language verifier fixture");
             WriteFile("docs\\CHANGELOG.md", "## 1.2.3");
             WriteFile("installer\\FrameShift.iss", "; fixture");
             CopyRepositoryFile("LICENSE");
@@ -370,7 +384,11 @@ public sealed class ReleaseScriptTests
                 "if /I \"%1\"==\"restore\" exit /b 0",
                 "if /I \"%1\"==\"test\" goto test",
                 "if /I \"%1\"==\"publish\" goto publish",
+                "if /I \"%2\"==\"verify-package\" goto verifylanguages",
                 "exit /b 2",
+                ":verifylanguages",
+                "if /I \"%FRAMESHIFT_RELEASE_TEST_FAIL_STEP%\"==\"languages\" exit /b 33",
+                "exit /b 0",
                 ":test",
                 "if /I \"%FRAMESHIFT_RELEASE_TEST_FAIL_STEP%\"==\"test\" exit /b 31",
                 "exit /b 0",

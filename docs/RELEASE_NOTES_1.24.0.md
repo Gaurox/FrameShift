@@ -1,6 +1,6 @@
 # FrameShift 1.24.0 — Balance volume
 
-Local installer candidate prepared on 11 November 2026. Not yet published.
+Local installer accepted by the owner on 11 November 2026. Not yet published.
 
 ## More comfortable listening
 
@@ -22,8 +22,16 @@ The action is available in the main window and through the selected Explorer
 context-menu components. Outputs are saved next to the original with unique
 names. The original file is preserved.
 
-All new controls and installer entries are available in the five existing
-languages: English, Simplified Chinese, Spanish, Brazilian Portuguese and Russian.
+The application, subtitle worker, Explorer captions and installer offer eight
+languages: English, Simplified Chinese, Spanish, Brazilian Portuguese, Russian,
+French, Japanese and Indonesian. All three new catalogs are technically complete;
+native proofreading and visual acceptance remain part of testing this candidate.
+
+The language selected during installation or an update now applies to the
+application windows on the next launch, including when an older language was
+saved in Settings. Each installation choice is applied once per Windows user;
+later changes in Settings remain available. Other UI preferences are preserved.
+Balance volume also has its own transparent Windows icon at multiple sizes.
 
 This feature balances loudness; it does not separate voices from background music.
 Processing time depends on the audio tracks and disk speed, since the video still

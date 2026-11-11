@@ -71,6 +71,13 @@ public sealed class LocalizationTests
     [InlineData("ru-RU", "ru")]
     [InlineData("ru-BY", "ru")]
     [InlineData(" ru_KZ ", "ru")]
+    [InlineData("french", "fr")]
+    [InlineData("fr-FR", "fr")]
+    [InlineData("fr-CA", "fr")]
+    [InlineData("japanese", "ja")]
+    [InlineData("ja-JP", "ja")]
+    [InlineData("indonesian", "id")]
+    [InlineData("id-ID", "id")]
     [InlineData(null, "en")]
     [InlineData(" ", "en")]
     [InlineData("invalid/culture", "en")]
@@ -176,6 +183,9 @@ public sealed class LocalizationTests
     [InlineData("es", "video", "Convertir")]
     [InlineData("pt-BR", "vídeo", "Converter")]
     [InlineData("ru", "видео", "Преобразовать")]
+    [InlineData("fr", "vidéo", "Convertir")]
+    [InlineData("ja", "動画", "変換")]
+    [InlineData("id", "video", "Konversi")]
     public void LocalizedMessages_PreserveUnicodePaths_AndInternalActionValues(string language, string mediaName, string actionName)
     {
         var previous = CultureInfo.CurrentUICulture;
@@ -198,6 +208,9 @@ public sealed class LocalizationTests
     [InlineData("es", "FrameShift - Configuración", "Sistema")]
     [InlineData("pt-BR", "FrameShift - Configurações", "Sistema")]
     [InlineData("ru", "FrameShift - Настройки", "Системная")]
+    [InlineData("fr", "FrameShift - Paramètres", "Système")]
+    [InlineData("ja", "FrameShift - 設定", "システム設定に従う")]
+    [InlineData("id", "FrameShift - Pengaturan", "Sistem")]
     public void Settings_RenderInSupportedLanguages_WithStablePreferenceValues(string language, string title, string systemTheme)
     {
         StaTest.Run(() =>

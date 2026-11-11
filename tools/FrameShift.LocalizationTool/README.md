@@ -28,8 +28,8 @@ When tracking contribution CSVs under `translations`, retain the repository's
 hashes and must not be converted by Windows `core.autocrlf`. Do not normalize
 whitespace or line endings in supplied CSVs to fix a Git formatting warning.
 
-Without `--draft`, supported languages remain the five registered codes: `en`,
-`zh-CN`, `es`, `pt-BR`, `ru`. Unregistered languages require an explicitly prepared
+Without `--draft`, supported languages are the eight registered codes: `en`,
+`zh-CN`, `es`, `pt-BR`, `ru`, `fr`, `ja`, `id`. Unregistered languages require an explicitly prepared
 draft directory; merely creating resource files does not enable a language.
 
 ## Prepare an unregistered language (maintainer)
@@ -73,6 +73,11 @@ standard upstream `.isl` files or release scripts. `verify-package` continues to
 check registered languages only and does not accept `--draft`. There is no
 automatic promotion/activation command: activation and installer integration
 remain a separate, reviewed step after completeness and human acceptance.
+
+French, Japanese and Indonesian are now activated for the local 1.24.0 test
+candidate at the owner's request. Their old draft directories are historical;
+use normal commands without `--draft` for their current runtime resources.
+Independent linguistic, spreadsheet and visual acceptance remains pending.
 
 Exports contain the English source and current translation for application/worker
 resources and the installer's FrameShift-specific custom messages. Export and check only read the installer. Its `AppLanguage` configuration and standard upstream `.isl` messages
@@ -186,7 +191,7 @@ or require the ImageSharp licence, FFmpeg, AI models or Inno Setup.
 Automated tests cover CSV round-trips (Unicode, quotes, delimiters, LF/CR/CRLF and
 empty cells), damaged contributions, stale source, partial work, format variables,
 Chinese aliases, imports with partial work, caption conflicts, concurrent edits,
-backup preservation and rollback after a failed second write. Real exports of all five
+backup preservation and rollback after a failed second write. Real exports of all registered
 languages are also checked. Actual open/edit/save acceptance in Excel and
 LibreOffice remains manual; byte-level tests do not certify spreadsheet behavior.
 Visual UI checks and native-language proofreading remain necessary before shipping.

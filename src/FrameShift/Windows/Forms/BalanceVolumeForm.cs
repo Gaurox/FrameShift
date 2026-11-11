@@ -15,7 +15,7 @@ public sealed class BalanceVolumeForm : Form
         FrameShiftWindowPolicy.Initialize(this, new Size(620, 350), new Size(380, 280));
         FrameShiftWindowChrome.Apply(this, L.Get("BalanceVolume_Name"));
         var header = FrameShiftUiFactory.CreateHeader(L.Get("BalanceVolume_Name"),
-            L.Get("BalanceVolume_Description"), IconPaths.CompressVideoIcon, IconPaths.AppIcon, "♪");
+            L.Get("BalanceVolume_Description"), IconPaths.BalanceVolumeIcon, IconPaths.AppIcon, "♪");
         var light = Choice("light", "Light");
         var moderate = Choice("moderate", "Moderate");
         var strong = Choice("strong", "Strong");

@@ -1,129 +1,60 @@
-# New language preparation
+# French, Japanese and Indonesian contributions
 
-These files prepare French, Japanese and Indonesian for contribution. None of
-these languages is enabled in FrameShift or included in the installer yet.
-The initial `001` supply folders remain empty historical references. The French
-pilot has returned a complete CSV and populated its draft. Five action descriptions
-have since been corrected in the English source and supplied in Japanese and
-Indonesian drafts. The Japanese contribution has since been completed; Indonesian
-remains limited to those five descriptions.
+All three catalogs contain 2,167 translated records (2,024 app/worker resources
+and 143 custom installer messages). They are now registered for the owner's
+local 1.24.0 installer test, alongside the original five languages.
 
-## Current contribution folders
+## Current maintenance
 
-Use **French/Indonesian 002 and Japanese 003** for future contributions. They have
-the corrected English source and current translation hashes. The five changed descriptions have been compared
-with all eight language catalogs; existing Spanish, Portuguese, Russian, Chinese
-and French wording was already correct and was preserved. Resource keys stay
-unchanged so existing references remain valid.
+Active resources live in `src/FrameShift/Core/Localization/Strings.<code>.resx`
+and `installer/Languages/FrameShift.<code>.iss`. Use normal tool commands without
+`--draft` for `fr`, `ja` and `id`. Historical `translations/drafts` and their READY
+markers describe supply-time status; registered languages are deliberately
+refused by draft mode. Do not import into those historical copies.
 
-| Language | Current contributor folder | Filled records | Remaining |
-| --- | --- | ---: | ---: |
-| Français | [French — 002](contributions/fr/002/) | 2,167 | 0 |
-| 日本語 | [Japanese — 003](contributions/ja/003/) | 2,167 | 0 |
-| Bahasa Indonesia | [Indonesian — 002](contributions/id/002/) | 5 | 2,162 |
+| Language | Last draft supply | Complete return |
+| --- | --- | --- |
+| Français | [002](contributions/fr/002/) | [French pilot](contributions/fr/001-returned/) |
+| 日本語 | [003](contributions/ja/003/) | [Japanese return](contributions/ja/002-returned/) |
+| Bahasa Indonesia | [003](contributions/id/003/) | [Indonesian return](contributions/id/002-returned/) |
 
-French/Indonesian `002` include `review.json` identifying five English source
-changes. Japanese `003` reports the 2,162 completed translations since its initial
-five descriptions, with no source/context changes. The supplied `002` and returned
-CSV remain available in [Japanese contribution history](contributions/ja/002-returned/),
-with its [process report](../docs/TRANSLATION_JAPANESE_PILOT.md).
-No language has been enabled and no installer inputs have changed. The standard
-upstream Inno messages remain separate future work. Japanese and Indonesian
-native proofreading, and all visual acceptance, are still pending.
+The complete returned filenames are `translation.fr.csv`, `translation.ja.csv`
+and `translation.id.csv`. Original `translation.csv` files and snapshots are
+retained as supplied references. French 002 contains the corrected English source;
+the original French pilot and 001 supplies have five stale English descriptions.
+Never rewrite old hashes/reference cells to bypass source or concurrent-edit checks.
 
-Keep `001` and `001-returned` as history. Their CSV sources/hashes deliberately
-retain the old supplied texts; the checker now refuses five stale English sources.
-Do not edit those references or replace hashes to force an old contribution in.
-
-French pilot history: [returned CSV](contributions/fr/001-returned/translation.fr.csv),
-[contributor feedback](contributions/fr/001-returned/FEEDBACK.txt),
-[technical check](contributions/fr/001-returned/technical-check.json), and
-[process assessment](../docs/TRANSLATION_FRENCH_PILOT.md). That report records the
-check at the time of the pilot; use the French 002 CSV for current work. All 2,167
-French target cells are filled, with no technical errors in revision 002. This is not approval for activation;
-real spreadsheet use, independent proofreading and visual acceptance remain open.
-
-## Initial contribution folders — historical references
-
-English source reference: commit `e57903b`, prepared on 11 November 2026.
-Each folder contains **2,167 translation records**: 2,024 application/worker
-resources and 143 FrameShift-specific installer messages. The three folders
-contain 6,501 records in total. This count excludes technical `AppLanguage` markers
-and the standard upstream Inno Setup `.isl` messages.
-
-| Language | Code | Contributor folder | Maintainer draft |
-| --- | --- | --- | --- |
-| Français | `fr` | [French — 001](contributions/fr/001/) | [French draft](drafts/fr/) |
-| 日本語 | `ja` | [Japanese — 001](contributions/ja/001/) | [Japanese draft](drafts/ja/) |
-| Bahasa Indonesia | `id` | [Indonesian — 001](contributions/id/001/) | [Indonesian draft](drafts/id/) |
-
-Give a contributor a **copy of their complete contributor folder**, not the
-maintainer draft. Start with `START_HERE.txt`. Each folder contains:
-
-- `translation.csv`: UTF-8 with BOM, semicolon-separated, nine columns. Edit only
-  `Translation`; import all columns as Text and preserve every record.
-- `START_HERE.txt` and `GLOSSARY.md`: the current shared instructions and English
-  terminology guide. Language-specific wording remains to be agreed during review.
-- `FEEDBACK.txt`: editor/version, spreadsheet round-trip results and questions.
-- `snapshot.json`: the supplied English source, context and empty target values.
-  This is a supply record, not an accepted translation baseline.
-- `READY.txt`: confirms that the folder is ready to give to a contributor. It
-  explicitly identifies the language as a draft; it does not approve activation.
-
-Keep the original `001` folder as the supply reference. Contributors work on a
-copy and return a new CSV with their feedback. The French trial is recorded
-separately in `001-returned`; Japanese is now complete in `002-returned` / `003`,
-while Indonesian still has five texts. Both trials used text/CSV tools only,
-without a real spreadsheet session or PC control.
-
-## Maintainer files and checks
-
-Each draft was created with `draft.json`, an empty `Strings.<code>.resx`, and a
-`FrameShift.<code>.iss` containing only its technical language marker. These files
-stay under `translations/drafts`; they are not runtime resources or installer
-inputs. The French and Japanese drafts now contain complete contributions;
-Indonesian contains only the five action descriptions. Do not move
-draft files into `src` or `installer` until a separate activation step.
-
-The initial `001` exports have zero technical errors and 2,167 blank warnings each.
-Strict completeness checks deliberately fail for these empty drafts. Import
-previews against the initial empty drafts produced zero changes. Japanese and
-Indonesian had 2,162 blanks each before the Japanese trial. Japanese now has zero
-blanks; Indonesian still has 2,162. The French pilot's final strict check had
-zero blanks, errors or warnings, and reimport is a no-op. The initial French
-snapshot now reports 2,167 translation changes and five subsequent source changes
-against its populated draft. No independent proofreading, real spreadsheet
-round-trip or UI acceptance has occurred.
-
-Translation CSVs are marked `-text` in `.gitattributes` so Git preserves embedded
-cell line endings and the hashes computed from them on Windows. Do not run line
-ending or whitespace cleanup over supplied CSVs. A filtered-checkout trial found
-eight stale-source errors before this rule; the same trial passes with it.
-
-Build the tool as described in [its README](../tools/FrameShift.LocalizationTool/README.md).
-From the repository root, a returned French contribution can be checked and
-previewed with the following commands; substitute `ja` or `id` for other drafts:
+For the next contribution, generate a fresh active bundle into a new numbered
+directory, retaining history. For example, from the repository root:
 
 ```powershell
-dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll check --file <returned.csv> --draft translations/drafts/fr
-dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll import --file <returned.csv> --draft translations/drafts/fr
+dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll bundle --language id --baseline translations/contributions/id/003/snapshot.json --output translations/contributions/id/004
+
+dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll check --file <returned.csv> --require-complete
+
+dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll import --file <returned.csv>
 ```
 
-Applying an accepted contribution requires the existing explicit `--apply
---backup-dir <new-directory>` options. Review the preview, feedback and diff;
-import success does not approve the language. Linked Explorer captions are
-synchronized within the draft by the importer.
+Import previews by default. Applying requires `--apply --backup-dir <new-directory>`.
+Only Translation is edited by contributors; metadata and source columns remain
+unchanged. Technical success does not certify wording. See the
+[maintainer workflow](../docs/TRANSLATION_MAINTENANCE.md) and
+[translator guide](../docs/TRANSLATING.md).
 
-Keep the supplied snapshots and CSV reference columns unchanged. If the English
-source changes, compare it with the previous supply snapshot and generate a new
-numbered contributor folder instead of overwriting an existing supply. The next
-revision after the current `002` would be `003`:
+## Checks and limits
 
-```powershell
-dotnet tools/FrameShift.LocalizationTool/bin/Release/net8.0/FrameShift.LocalizationTool.dll bundle --language fr --draft translations/drafts/fr --baseline translations/contributions/fr/002/snapshot.json --output translations/contributions/fr/003
-```
+The [French](../docs/TRANSLATION_FRENCH_PILOT.md),
+[Japanese](../docs/TRANSLATION_JAPANESE_PILOT.md) and
+[Indonesian](../docs/TRANSLATION_INDONESIAN_PILOT.md) reports record their checks
+at receipt. Exact CSV round-trips, strict checks, backup checks, Explorer links
+and no-op reimports pass. These trials used text/CSV tools without PC control.
+Independent native proofreading, a real Excel/LibreOffice session and visual
+UI/installer acceptance remain pending for the local test candidate.
 
-The new folder will include a review report. Deliberate edits from an older CSV
-must be transferred with review; do not replace source hashes to bypass checks.
-See [translation maintenance](../docs/TRANSLATION_MAINTENANCE.md) for backups,
-concurrent-edit protection and the separate human acceptance requirements.
+Translation CSVs are marked `-text` in `.gitattributes`. Git must preserve embedded
+cell line endings because reference hashes use exact text. Do not normalize
+meaningful whitespace or historical CSV bytes to silence Git warnings.
+
+Standard upstream Inno `.isl` sources and provenance are recorded in
+[installer languages](../installer/Languages/README.md), separately from the
+FrameShift custom texts in the contribution CSV.

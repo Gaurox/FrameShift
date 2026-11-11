@@ -30,9 +30,11 @@ SHA-256 of the vendored file: `81981FE6CFEF7F3B2F744BEAC1494F4D2B29CEA69C96A08D1
 
 FrameShift's own component, Explorer and Pascal-script messages live in the
 `FrameShift.en.iss`, `FrameShift.zh-CN.iss`, `FrameShift.es.iss`,
-`FrameShift.pt-BR.iss` and `FrameShift.ru.iss`, included explicitly in the
+`FrameShift.pt-BR.iss`, `FrameShift.ru.iss`, `FrameShift.fr.iss`,
+`FrameShift.ja.iss` and `FrameShift.id.iss`, included explicitly in the
 `[CustomMessages]` section of `../FrameShift.iss`, with `english`, `chinesesimp`,
-`spanish`, `brazilianportuguese` and `russian` entries. All five languages use the same payload, application ID,
+`spanish`, `brazilianportuguese`, `russian`, `fr`, `ja` and `id` entries.
+All eight languages use the same payload, application ID,
 component IDs and command lines. The installer stores its application language
 default in `{app}/language.txt`; uninstall removes that owned file.
 
@@ -45,3 +47,22 @@ For an Inno syntax check without producing a Setup, use `/O-` **and an explicit
 fresh scratch output directory** (`/O<path>`). The compiler can remove an existing
 Setup at its resolved output path even with output disabled. Release installers
 still use the canonical build workflow.
+
+## French, Japanese and Indonesian sources
+
+`French.isl` and `Japanese.isl` are unmodified upstream files from
+[French at is-6_7_1](https://github.com/jrsoftware/issrc/blob/is-6_7_1/Files/Languages/French.isl)
+and [Japanese at is-6_7_1](https://github.com/jrsoftware/issrc/blob/is-6_7_1/Files/Languages/Japanese.isl).
+SHA-256 respectively:
+`145BF4EA34EAA79C52E4FCB77CE3EEE9720B0D424C69458CB99592BC52121FBA`,
+`D5450537BB128112347BF86A4BDC3A4BE0605414DF0BC4FC90F55AAEF1BA369B`.
+Japanese omits only the empty upstream `HelpTextNote`; it uses the compiler's
+empty default for that entry.
+
+`Indonesian.isl` is the unmodified upstream 6.5+ update by Edward Tie, retaining
+MozaikTM and other original credits, pinned to
+[commit 75f53f40f4968343ff93ab13791018b449cfe444](https://github.com/jrsoftware/issrc/blob/75f53f40f4968343ff93ab13791018b449cfe444/Files/Languages/Unofficial/Indonesian.isl).
+The older Indonesian file in tag is-6_7_1 predates the 6.5 message updates and is
+not used. SHA-256:
+`81C802D7DDF8C05EC51B027171E7E0ADF55AAC051E64ADA7B7E7C7EE57009510`.
+All original translator headers and the adjacent `INNO-LICENSE.txt` are retained.

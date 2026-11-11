@@ -16,6 +16,9 @@ public sealed partial class VideoLoopUiTests
     [InlineData("es", "Buscar bucle", "Requiere revisión")]
     [InlineData("pt-BR", "Encontrar loop", "Precisa de revisão")]
     [InlineData("ru", "Найти цикл", "Требует проверки")]
+    [InlineData("fr", "Trouver une boucle", "À vérifier")]
+    [InlineData("ja", "ループを検索", "確認が必要")]
+    [InlineData("id", "Cari loop", "Perlu ditinjau")]
     public void LocalizedCandidates_KeepExactBoundsAndInvariantBatchOptions(string language, string find, string review)
     {
         StaTest.Run(() =>
@@ -77,6 +80,9 @@ public sealed partial class VideoLoopUiTests
     [InlineData("es", "Exportar selección", "Exportar bucle")]
     [InlineData("pt-BR", "Exportar seleção", "Exportar loop")]
     [InlineData("ru", "Экспортировать выделение", "Экспортировать цикл")]
+    [InlineData("fr", "Exporter la sélection", "Exporter la boucle")]
+    [InlineData("ja", "選択範囲を書き出す", "ループを書き出す")]
+    [InlineData("id", "Ekspor pilihan", "Ekspor loop")]
     public void SwitchingLoopContexts_PreservesLocalizedCutCommands(string language, string selection, string loop)
     {
         StaTest.Run(() =>
