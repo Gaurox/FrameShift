@@ -19,6 +19,7 @@ internal static unsafe partial class Program
     [
         .. Commands.Select(command => new ExpectedCommand(command.Path, command.Resource, command.Action, Videos,
             Single: command.Single, Mode: command.Mode)),
+        new("balance_volume", "balance_volume", "balance-volume", [.. Videos, .. Audios]),
         new("media_info", "media_info", "media-info", [.. Audios, .. Images], Single: true),
         new("change_audio_speed", "change_audio_speed", "change-audio-speed", Audios, Single: true),
         new("change_pitch", "change_pitch", "change-pitch", Audios, Single: true),

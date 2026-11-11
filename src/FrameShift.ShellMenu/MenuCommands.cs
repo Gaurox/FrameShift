@@ -47,6 +47,7 @@ internal static class MenuCommands
         new("last_frame", "extract-frames", FrameMode: "last"),
         new("keyframes", "extract-frames", FrameMode: "keyframes"),
         new("interpolate_video", "interpolate-video", Maximum: 1), new("join_videos", "join-videos", Minimum: 2),
+        new("balance_volume", "balance-volume", Family: MediaFamily.Video | MediaFamily.Audio),
         new("media_info", "media-info", Maximum: 1, Family: MediaFamily.Media), new("remove_audio", "remove-audio"),
         new("resize_video", "resize-video", Maximum: 1), new("rotate_flip_video", "rotate-flip-video", Maximum: 1),
 

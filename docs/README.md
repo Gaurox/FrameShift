@@ -16,6 +16,9 @@ Les plans Main, Remove Object et Extract Frames conservent leur conception d'ori
 
 ## Quick Links
 
+- [1.24.0 candidate release notes](RELEASE_NOTES_1.24.0.md)
+- [1.24.0 candidate qualification](RELEASE_QUALIFICATION_1.24.0.md)
+- [Balance volume — intensities, processing and CLI](BALANCE_VOLUME.md)
 - [1.23.0 public release](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)
 - [1.23.0 release qualification](RELEASE_QUALIFICATION_1.23.0.md)
 - [1.23.0 release notes](RELEASE_NOTES_1.23.0.md)

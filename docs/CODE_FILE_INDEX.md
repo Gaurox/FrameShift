@@ -1,5 +1,12 @@
 # FrameShift Code File Index
 
+Balance volume:
+- `src/FrameShift/Core/Actions/BalanceVolumeAction.cs` — single-pass audio balancing with video stream copy and standard output/cancellation lifecycle.
+- `src/FrameShift/Core/Actions/BalanceVolumeSettings.cs` — light, moderate (default) and strong linked-channel presets.
+- `src/FrameShift/Windows/Forms/BalanceVolumeForm.cs` — compact three-intensity picker.
+- `tests/FrameShift.Tests/BalanceVolume*Tests.cs` — audio dynamics, unchanged video, container/track preservation, failures, cancellation and picker selection.
+- [Feature and CLI guide](BALANCE_VOLUME.md).
+
 Find Loop (unreleased 1.23 integration):
 - `src/FrameShift/Core/Actions/VideoLoop*.cs` — search, native timestamps, color policy, bounded previews and exports.
 - `src/FrameShift/Windows/Forms/CutVideoForm.Loop*.cs` and `CutVideoForm.Timing.cs` — Cut Video contexts, candidates, previews and native navigation.

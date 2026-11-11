@@ -6036,4 +6036,19 @@ Output WAV files are created next to the source with unique naming.</value>
   <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>Extract first frame</value></data>
   <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>Extract last frame</value></data>
   <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>Extract keyframes</value></data>
+  <data name="BalanceVolume_Name" xml:space="preserve"><value>Balance volume</value></data>
+  <data name="BalanceVolume_Description" xml:space="preserve"><value>Reduces differences between quiet dialogue and loud scenes.</value></data>
+  <data name="BalanceVolume_Intensity" xml:space="preserve"><value>Intensity</value></data>
+  <data name="BalanceVolume_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="BalanceVolume_LightDescription" xml:space="preserve"><value>Gentle balancing; preserves more dynamics.</value></data>
+  <data name="BalanceVolume_Moderate" xml:space="preserve"><value>Moderate</value></data>
+  <data name="BalanceVolume_ModerateDescription" xml:space="preserve"><value>Recommended balance for everyday listening.</value></data>
+  <data name="BalanceVolume_Strong" xml:space="preserve"><value>Strong / Night mode</value></data>
+  <data name="BalanceVolume_StrongDescription" xml:space="preserve"><value>Stronger balancing for listening at low volume.</value></data>
+  <data name="BalanceVolume_Start" xml:space="preserve"><value>Balance volume</value></data>
+  <data name="BalanceVolume_Output" xml:space="preserve"><value>Creates a new file next to the original. Video is copied without re-encoding.</value></data>
+  <data name="BalanceVolume_InvalidIntensity" xml:space="preserve"><value>Choose light, moderate or strong for volume intensity.</value></data>
+  <data name="BalanceVolume_UnsupportedFormat" xml:space="preserve"><value>This file format is not supported for volume balancing.</value></data>
+  <data name="BalanceVolume_Processing" xml:space="preserve"><value>Balancing audio volume…</value></data>
+  <data name="ExplorerMenu_balance_volume" xml:space="preserve"><value>Balance volume</value></data>
 </root>

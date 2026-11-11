@@ -84,6 +84,17 @@ internal static partial class Program
                 continue;
             }
 
+            if (string.Equals(token, "--volume-intensity", StringComparison.OrdinalIgnoreCase))
+            {
+                if (index + 1 >= args.Length || !BalanceVolumeSettings.TryParse(args[index + 1], out _))
+                {
+                    error = L.Get("BalanceVolume_InvalidIntensity");
+                    return false;
+                }
+                options[BalanceVolumeSettings.OptionKey] = args[++index];
+                continue;
+            }
+
             if (string.Equals(token, "--profile", StringComparison.OrdinalIgnoreCase) && index + 1 < args.Length)
             {
                 options[ActionOptionKeys.Profile] = args[++index];

@@ -172,6 +172,7 @@ public static class ActionCatalog
         Combine("image-to-pdf", L.Get("ActionCatalog_Image_to_PDF_c9e73f3d"), ActionCategory.Image, ImageExts, minimumInputCount: 1),
 
         // ---- General (cross-type) ----
+        Batch("balance-volume", L.Get("BalanceVolume_Name"), ActionCategory.General, VideoExts.Concat(AudioExtsFull).ToArray()),
         Batch("extract-text", L.Get("ActionCatalog_Extract_text_4fc6b30b"), ActionCategory.General, [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".pdf"]),
         Single("media-info", L.Get("ActionCatalog_Media_info_a740c022"), ActionCategory.General, MediaInfoExts),
     ];

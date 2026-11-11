@@ -319,6 +319,24 @@ internal static partial class Program
             }
         }
 
+        if (actionId.Equals("balance-volume", StringComparison.OrdinalIgnoreCase))
+        {
+            if (options.TryGetValue(BalanceVolumeSettings.OptionKey, out var intensity))
+            {
+                if (!BalanceVolumeSettings.TryParse(intensity, out _))
+                {
+                    ShowCliError(L.Get("BalanceVolume_InvalidIntensity"));
+                    return 1;
+                }
+            }
+            else
+            {
+                using var picker = new BalanceVolumeForm();
+                if (picker.ShowDialog() != DialogResult.OK) return 0;
+                options[BalanceVolumeSettings.OptionKey] = picker.SelectedIntensity;
+            }
+        }
+
         if (actionId.Equals("compress-video", StringComparison.OrdinalIgnoreCase) ||
             actionId.Equals("compress-audio", StringComparison.OrdinalIgnoreCase) ||
             actionId.Equals("compress-image", StringComparison.OrdinalIgnoreCase))

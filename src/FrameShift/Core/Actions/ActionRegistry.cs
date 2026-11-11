@@ -47,6 +47,7 @@ public sealed class ActionRegistry
         [
             new MediaInfoAction(),
             new ExtractTextAction(),
+            new BalanceVolumeAction(ffmpegRunner, ffprobeRunner, toolLocator),
             new RemoveAudioAction(
                 ffmpegRunner,
                 ffprobeRunner,

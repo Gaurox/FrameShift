@@ -11,7 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>1.23.0</Version>
+    <Version>1.24.0</Version>
     <OptimizationPreference>Size</OptimizationPreference>
   </PropertyGroup>
   <Import Project="NativeExports.targets" />

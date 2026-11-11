@@ -6036,4 +6036,19 @@
   <data name="ExplorerMenu_extract_first_frame" xml:space="preserve"><value>提取第一帧</value></data>
   <data name="ExplorerMenu_extract_last_frame" xml:space="preserve"><value>提取最后一帧</value></data>
   <data name="ExplorerMenu_extract_keyframes" xml:space="preserve"><value>提取关键帧</value></data>
+  <data name="BalanceVolume_Name" xml:space="preserve"><value>均衡音量</value></data>
+  <data name="BalanceVolume_Description" xml:space="preserve"><value>缩小轻声对白与高音量场景之间的音量差异。</value></data>
+  <data name="BalanceVolume_Intensity" xml:space="preserve"><value>强度</value></data>
+  <data name="BalanceVolume_Light" xml:space="preserve"><value>轻度</value></data>
+  <data name="BalanceVolume_LightDescription" xml:space="preserve"><value>温和均衡，保留更多动态。</value></data>
+  <data name="BalanceVolume_Moderate" xml:space="preserve"><value>中度</value></data>
+  <data name="BalanceVolume_ModerateDescription" xml:space="preserve"><value>推荐用于日常聆听。</value></data>
+  <data name="BalanceVolume_Strong" xml:space="preserve"><value>强度 / 夜间模式</value></data>
+  <data name="BalanceVolume_StrongDescription" xml:space="preserve"><value>更强的均衡，适合低音量聆听。</value></data>
+  <data name="BalanceVolume_Start" xml:space="preserve"><value>均衡音量</value></data>
+  <data name="BalanceVolume_Output" xml:space="preserve"><value>在原文件旁创建新文件。视频直接复制，不重新编码。</value></data>
+  <data name="BalanceVolume_InvalidIntensity" xml:space="preserve"><value>音量强度请选择 light、moderate 或 strong。</value></data>
+  <data name="BalanceVolume_UnsupportedFormat" xml:space="preserve"><value>此文件格式不支持音量均衡。</value></data>
+  <data name="BalanceVolume_Processing" xml:space="preserve"><value>正在均衡音量…</value></data>
+  <data name="ExplorerMenu_balance_volume" xml:space="preserve"><value>均衡音量</value></data>
 </root>

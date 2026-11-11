@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.24.0
+
+Local installer candidate prepared on 11 November 2026. Not yet published.
+See the [release notes](RELEASE_NOTES_1.24.0.md) and
+[qualification](RELEASE_QUALIFICATION_1.24.0.md).
+
+- Add **Balance volume** for video and audio files, with Light, Moderate (default)
+  and Strong / Night mode intensities. Reduce differences between quiet dialogue
+  and loud scenes across the entire mix, processing every audio track.
+- Process audio in a single FFmpeg pass and copy video without re-encoding.
+  Retain subtitles, chapters, attachments, metadata and stereo/surround layouts.
+- Expose the action in the main window, CLI and selectable Explorer components,
+  translated into all five existing application and installer languages.
+- Preserve adjacent unique outputs and cleanup on failure or cancellation.
+
 ## 1.23.0
 
 Released on 10 November 2026 with the owner-approved English

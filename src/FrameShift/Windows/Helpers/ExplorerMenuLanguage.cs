@@ -34,6 +34,7 @@ internal static class ExplorerMenuLanguage
             [@"FrameShift\shell\convert_video"] = "ExplorerMenu_convert_video",
             [@"FrameShift\shell\convert_audio"] = "ExplorerMenu_convert_audio",
             [@"FrameShift\shell\cut_audio"] = "ExplorerMenu_cut_audio",
+            [@"FrameShift\shell\balance_volume"] = "ExplorerMenu_balance_volume",
             [@"FrameShift\shell\remove_audio"] = "ExplorerMenu_remove_audio",
             [@"FrameShift\shell\reverse_audio"] = "ExplorerMenu_reverse_audio",
             [@"FrameShift\shell\compress_audio"] = "ExplorerMenu_compress_audio",

@@ -41,8 +41,8 @@ public sealed class ShellMenuCommandTests
     [Fact]
     public void ShellCommands_MatchPublishedActionArities_AndRetainCutVideoLoopEntry()
     {
-        Assert.Equal(46, MenuCommands.All.Length);
-        Assert.Equal(46, MenuCommands.All.Select(command => command.Verb).Distinct().Count());
+        Assert.Equal(47, MenuCommands.All.Length);
+        Assert.Equal(47, MenuCommands.All.Select(command => command.Verb).Distinct().Count());
         foreach (var command in MenuCommands.All)
         {
             var catalogKey = command.Model is null ? command.Action : command.Action + "-" + command.Model;

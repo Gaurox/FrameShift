@@ -8,6 +8,11 @@ Portuguese and Russian are supported. See the
 [release notes](docs/RELEASE_NOTES_1.23.0.md) and
 [qualification](docs/RELEASE_QUALIFICATION_1.23.0.md).
 
+The local **1.24.0 candidate** adds [Balance volume](docs/BALANCE_VOLUME.md),
+with Light, Moderate (default), and Strong / Night mode intensities. Audio is
+balanced in one pass and video is copied without re-encoding. This candidate
+has not been published; the latest public download remains 1.23.0.
+
 In 1.22, changing **Settings → Application language** also updates installed Explorer
 menus. Windows may request administrator authorization; machine-wide menu changes
 apply to all accounts. The application language takes effect after restarting FrameShift.

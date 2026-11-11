@@ -84,12 +84,14 @@ Name: "video\cut_video"; Description: "{cm:Text_dd001b9053}"; Types: complete cu
 Name: "video\crop_video"; Description: "{cm:Text_c11a926c82}"; Types: complete custom
 Name: "video\rotate_flip_video"; Description: "{cm:Text_ca6a2bc920}"; Types: complete custom
 Name: "video\resize_video"; Description: "{cm:Text_1fd793ab6c}"; Types: complete custom
+Name: "video\balance_volume"; Description: "{cm:BalanceVolume}"; Types: complete custom
 Name: "video\compress_video"; Description: "{cm:Text_5f2aa68583}"; Types: complete custom
 Name: "video\interpolate_video"; Description: "{cm:Text_0db17fe2ac}"; Types: complete custom
 Name: "audio"; Description: "{cm:Text_5edf60f0a6}"; Types: complete custom
 Name: "audio\cut_audio"; Description: "{cm:Text_5f5dd9b194}"; Types: complete custom
 Name: "audio\convert_audio"; Description: "{cm:Text_700c7653c2}"; Types: complete custom
 Name: "audio\reverse_audio"; Description: "{cm:Text_5671164ebd}"; Types: complete custom
+Name: "audio\balance_volume"; Description: "{cm:BalanceVolume}"; Types: complete custom
 Name: "audio\compress_audio"; Description: "{cm:Text_2aeb7305fb}"; Types: complete custom
 Name: "audio\change_pitch"; Description: "{cm:Text_40b1b7f1f2}"; Types: complete custom
 Name: "audio\change_audio_speed"; Description: "{cm:Text_fa5e8be522}"; Types: complete custom
@@ -120,6 +122,12 @@ Name: "{autoprograms}\FrameShift"; Filename: "{app}\{#MyAppExeName}"; IconFilena
 Type: files; Name: "{app}\language.txt"
 
 [CustomMessages]
+english.BalanceVolume=Balance volume
+chinesesimp.BalanceVolume=均衡音量
+spanish.BalanceVolume=Equilibrar volumen
+brazilianportuguese.BalanceVolume=Equilibrar volume
+russian.BalanceVolume=Выровнять громкость
+
 english.ShellIntegrityError=The FrameShift Shell component failed its integrity check. Installation cannot continue.
 chinesesimp.ShellIntegrityError=FrameShift 外壳组件未通过完整性检查，安装无法继续。
 spanish.ShellIntegrityError=El componente Shell de FrameShift no superó la verificación de integridad. La instalación no puede continuar.
@@ -1491,6 +1499,16 @@ begin
       CustomMessage('Text_addd98ba08'),
       'cut-audio',
       '');
+  end;
+
+  if WizardIsComponentSelected('video\balance_volume') then
+  begin
+    ApplyActionMenuList(VideoExtensions, 'balance_volume', CustomMessage('BalanceVolume'), 'balance-volume', '');
+  end;
+
+  if WizardIsComponentSelected('audio\balance_volume') then
+  begin
+    ApplyActionMenuList(AudioExtensions, 'balance_volume', CustomMessage('BalanceVolume'), 'balance-volume', '');
   end;
 
   if WizardIsComponentSelected('video\remove_audio') then
