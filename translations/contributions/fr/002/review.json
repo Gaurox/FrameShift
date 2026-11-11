@@ -1,0 +1,36 @@
+{
+  "Language": "fr",
+  "CurrentEntries": 2167,
+  "Items": [
+    {
+      "Reference": "app:RemoveBackgroundAction_Supprime_le_fond_d_une_image_via_un__339ed1c6",
+      "Status": "source-changed",
+      "PreviousSource": "Supprime le fond d\u0027une image via un mod\u00E8le IA local.",
+      "CurrentSource": "Removes the background from an image using a local AI model."
+    },
+    {
+      "Reference": "app:RemoveNoiseAction_Supprime_le_bruit_de_fond_d_un_fichi_01c42e21",
+      "Status": "source-changed",
+      "PreviousSource": "Supprime le bruit de fond d\u0027un fichier audio via un mod\u00E8le IA local (DeepFilterNet3).",
+      "CurrentSource": "Removes background noise from an audio file using a local AI model (DeepFilterNet3)."
+    },
+    {
+      "Reference": "app:RemoveObjectAction_Supprime_un_objet_d_une_image_via_in_cd8a7de2",
+      "Status": "source-changed",
+      "PreviousSource": "Supprime un objet d\u0027une image via inpainting IA local.",
+      "CurrentSource": "Removes an object from an image using local AI inpainting."
+    },
+    {
+      "Reference": "app:SeparateAudioAction_S_pare_les_pistes_audio_voix_batteri_90ab3574",
+      "Status": "source-changed",
+      "PreviousSource": "S\u00E9pare les pistes audio (voix, batterie, basse, autres) via un mod\u00E8le IA local.",
+      "CurrentSource": "Separates audio stems (vocals, drums, bass, other) using a local AI model."
+    },
+    {
+      "Reference": "app:UpscaleImageAction_Agrandit_une_image_x4_via_un_mod_le__8d6a095b",
+      "Status": "source-changed",
+      "PreviousSource": "Agrandit une image x4 via un mod\u00E8le IA local (Real-ESRGAN).",
+      "CurrentSource": "Upscales an image by a factor of 4 using a local AI model (Real-ESRGAN)."
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+Language: fr
+Draft (not enabled in FrameShift): True
+Entries: 2167
+Baseline compared: True
+Technical validation and human review are still required.

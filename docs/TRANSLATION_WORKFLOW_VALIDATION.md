@@ -84,6 +84,82 @@ No French, Japanese or Indonesian translation files were created or registered.
 This validates the preparation tooling, not the wording or visual readiness of
 any new language. Human acceptance below remains outstanding.
 
+### Initial French, Japanese and Indonesian contribution folders — 11 November 2026
+
+After commit `e57903b`, the committed tool prepared the three real drafts under
+`translations/drafts` and generated their `001` contributor folders under
+`translations/contributions`. No tool/runtime/installer implementation changed
+during this preparation. No translated text was added.
+
+For each of `fr`, `ja` and `id`:
+
+- The CSV contains **2,024 app/worker + 143 installer custom-message records**,
+  all 2,167 target cells empty, in the current nine-column format with UTF-8 BOM.
+- Partial checks pass with zero errors and 2,167 blank warnings. Strict
+  completeness checks fail as expected. Import preview reports zero changes.
+- Snapshot comparison reports only 2,167 blank items and no other changes.
+- The complete contributor folder contains CSV, shared guide, glossary, feedback
+  form, snapshot and a READY marker identifying the draft. Guide/glossary hashes
+  match the source documents. Maintainer resources have no translated entries.
+
+Hashes of the runtime localization sources, every installer file and the release
+script remained identical before/after preparation. No installer was regenerated,
+no language was registered, and the human acceptance statuses below remain open.
+The initial supply reference and the non-developer handoff are documented in
+`translations/README.md`. The next step is the French translation/pilot, not activation.
+
+### French contribution pilot — 11 November 2026
+
+The [French pilot report](TRANSLATION_FRENCH_PILOT.md) records the returned CSV,
+terminology, feedback and role separation. Only the Translation column was
+changed in the contribution; the initial supplied folder/snapshot stayed intact.
+The user excluded PC control, so this was a text/CSV-assisted simulation, not a
+real Excel/LibreOffice or external non-developer usability session.
+
+Six intermediate checks passed with 813, 1,053, 1,304, 1,567, 1,832 and finally
+2,167 filled records. The final strict check passes with zero errors, warnings or
+blanks. All reference fields, leading/trailing whitespace and line-break counts
+are preserved. The 60 source-identical values were reviewed. Two deliberate
+mistakes in disposable copies (missing variable, edited source) were refused.
+
+Import with verified recovery backups populated only the two French draft files.
+All 2,167 values survive exact reexport, all 51 Explorer caption links agree, and
+a second import preview is a no-op. Snapshot review reports 2,167 translation
+changes only. Runtime resources, all installer files, release script, original
+French supply folder and Japanese/Indonesian folders remain unchanged. The Setup
+SHA-256 still matches the recorded value. The new contribution has a small final
+technical report in its returned folder; detailed trial logs/backups remain in
+`scratch/fr-translation`.
+
+The report identifies 2,018 automatic-only contexts and five French descriptions
+in the English pivot, plus ambiguous labels/fragmented phrases needing context.
+Those source/context issues were recorded, not changed during translation.
+The human acceptance statuses below still require observation; no new language
+has been activated and no installer has been rebuilt.
+
+### Five action descriptions corrected across language catalogs — 11 November 2026
+
+The five descriptions introduced in French in the English source at `a4bfb65`
+are now English. Their keys and references are unchanged. The existing Spanish,
+Portuguese, Russian, Chinese and French translations were compared with the
+intended meanings and retained. Only those five descriptions were added to the
+Japanese and Indonesian drafts using fresh CSV export/check/preview/import with
+backups; neither new language was enabled.
+
+Contributor revision `002` was generated for French, Japanese and Indonesian,
+with new English sources/hashes and a report identifying five source changes.
+French remains complete (2,167 records, no blanks/errors). Japanese and Indonesian
+each have five filled records and 2,162 blanks, with no technical errors. Reimport
+previews of all three current bundles are no-ops. The initial `001` folders and
+French returned pilot files/reports were retained as historical evidence, not
+rewritten to synthesize hashes onto an old contribution.
+
+**85 standalone Release tests passed**, with no failures or skips, including
+fresh compilation/auditing of the app/worker resource-only test fixtures. Runtime
+source changes are restricted to five English resource values; all installer
+inputs and the retained Setup remain unchanged. No PC control or installer build
+was used. Human acceptance statuses below remain open.
+
 ### Human acceptance status
 
 | Scenario | Status |

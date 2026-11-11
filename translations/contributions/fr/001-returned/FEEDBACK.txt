@@ -1,0 +1,61 @@
+Langue : fr — français
+Fichier remis : translation.fr.csv
+translation.csv est la copie initiale vide, conservée comme référence.
+
+Mode d’essai : parcours de contribution simulé par un agent, sans lecture ni
+modification du code de l’application pour traduire. Seuls Source, Context,
+Scope/Key, Tokens et le glossaire du dossier ont servi à rédiger les textes.
+La colonne Translation est la seule colonne modifiée dans le CSV remis.
+
+Éditeur/version : édition assistée de texte et sérialisation CSV avec PowerShell
+7.6.9. Aucun tableur utilisé. Aucune prise de contrôle du PC à la demande de
+l’utilisateur. Ce retour ne certifie pas un essai réel par une personne non
+développeuse, ni un aller-retour dans Excel ou LibreOffice.
+
+Encodage/format : UTF-8 avec BOM, séparateur point-virgule, neuf colonnes traitées
+comme du texte. Les 2 167 lignes logiques et les huit colonnes de référence sont
+conservées. Accents, apostrophes, guillemets, variables, espaces en bord de cellule
+et nombres de retours à la ligne ont été contrôlés après réouverture du CSV.
+
+Progression contrôlée : 813, 1 053, 1 304, 1 567, 1 832 puis 2 167 lignes remplies.
+Aucune erreur technique aux contrôles de ces étapes. Contrôle strict final :
+2 167 / 2 167, zéro ligne vide, zéro erreur, zéro avertissement. Les 60 valeurs
+identiques à la source ont été relues : mots communs aux deux langues, unités,
+formats et descriptions sources déjà en français, notamment.
+
+Termes retenus : voir GLOSSARY.fr.md. « Light » devient « Clair » pour le thème et
+« Léger » pour le traitement audio. « Start » devient « Début » pour une limite
+temporelle et « Démarrer » pour le bouton de lancement RIFE. Les identifiants CLI
+light/moderate/strong, all/first/last/keyframes, small/tiny, les noms de produits,
+les modèles, extensions et formats de variables restent intacts.
+
+Difficultés et questions à reprendre avant validation visuelle :
+- 2 018 contextes d’application sur 2 024 sont automatiques, sans explication de
+  la fenêtre ni capture d’écran. Plusieurs références sont des noms techniques.
+- Les phrases BRIA sont coupées en fragments. Le raccord grammatical a été
+  relu avec les fragments présents dans le dossier ; son affichage reste à voir.
+- Les messages de recherche de boucle parlent de « tracks » au sens de suivis
+  de correspondances, traduit provisoirement par « trajectoires » ; confirmer le
+  terme dans l’interface, sans le confondre avec des pistes audio.
+- Les descriptions de modèles peuvent mêler nom de variante et qualificatif
+  traduit ; les identifiants techniques ont été conservés.
+- Cinq descriptions de la source dite anglaise sont déjà en français. Cela ne
+  bloque pas cette contribution, mais doit être clarifié pour les autres langues.
+- Les raccourcis & et les textes longs nécessitent un contrôle de l’affichage.
+
+Réception par le mainteneur : contrôle strict, aperçu, import avec sauvegarde et
+réexport effectués. Les 2 167 traductions réexportées correspondent exactement au
+CSV remis. Les 51 correspondances Explorer sont cohérentes. Un second aperçu
+d’import ne propose aucun changement. Deux copies volontairement endommagées
+(variable supprimée, source modifiée) ont été refusées par le contrôleur.
+
+Sauvegarde de l’import : scratch/fr-translation/backup-fr-001/manifest.json
+État final : français importé uniquement dans translations/drafts/fr, inactif.
+L’installeur, les ressources distribuées, le japonais, l’indonésien et le dossier
+de fourniture 001 n’ont pas été modifiés. Aucun binaire n’a été régénéré.
+
+Relecture indépendante : non effectuée.
+Ouverture/enregistrement dans un vrai tableur : non effectué.
+Vérification visuelle dans FrameShift : non effectuée.
+Ce dossier est une contribution techniquement complète, pas une approbation de
+publication de la langue.

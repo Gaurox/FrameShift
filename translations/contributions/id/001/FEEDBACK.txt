@@ -1,0 +1,7 @@
+Language: id
+Spreadsheet application/version:
+Opened as UTF-8, semicolon separator, all columns Text:
+Accents/characters and multiline cells preserved:
+Saved and reopened successfully:
+Uncertain references/terms:
+Notes for the maintainer:

@@ -30,6 +30,18 @@ reviewed; they are comparison points, not approvals. Generating a contributor
 bundle does not activate the language. App registration, upstream Inno messages,
 installer inclusion, UI testing and eventual packaging remain separate work.
 
+The initial French, Japanese and Indonesian drafts and contributor folders are
+listed in [new language preparation](../translations/README.md). All three target
+catalogs started empty; their supplied snapshots are not reviewed baselines.
+The [French pilot](TRANSLATION_FRENCH_PILOT.md) has since populated the French
+draft and records the contribution checks, observed difficulties and remaining
+human acceptance. French activation remains separate work.
+The current contributor revision is `002`: five previously French source
+descriptions are now English, all existing target translations were checked, and
+only those five descriptions have been filled in the Japanese/Indonesian drafts.
+Older supplies remain historical records and are rejected as stale sources;
+request the current bundle rather than rewriting their reference columns.
+
 ## Prepare and receive a contribution
 
 ```powershell

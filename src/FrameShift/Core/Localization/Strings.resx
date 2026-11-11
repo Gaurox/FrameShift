@@ -4004,7 +4004,7 @@ Continue?</value>
     <value>Remove Background</value>
   </data>
   <data name="RemoveBackgroundAction_Supprime_le_fond_d_une_image_via_un__339ed1c6" xml:space="preserve">
-    <value>Supprime le fond d'une image via un modèle IA local.</value>
+    <value>Removes the background from an image using a local AI model.</value>
   </data>
   <data name="RemoveNoiseAction_AI_model_not_found_Run_FrameShift_ex_761a0980" xml:space="preserve">
     <value>AI model not found. Run FrameShift.exe --action remove-noise from Explorer to download it first.</value>
@@ -4037,7 +4037,7 @@ Continue?</value>
     <value>Stereo merge failed.</value>
   </data>
   <data name="RemoveNoiseAction_Supprime_le_bruit_de_fond_d_un_fichi_01c42e21" xml:space="preserve">
-    <value>Supprime le bruit de fond d'un fichier audio via un modèle IA local (DeepFilterNet3).</value>
+    <value>Removes background noise from an audio file using a local AI model (DeepFilterNet3).</value>
   </data>
   <data name="RemoveNoiseAudioPickerForm_0_selected_files_dd068a4b" xml:space="preserve">
     <value>{0} selected files</value>
@@ -4259,7 +4259,7 @@ Continue?</value>
     <value>Remove Object requires the visual editor. Launch via: FrameShift.exe --action remove-object "&lt;image&gt;"</value>
   </data>
   <data name="RemoveObjectAction_Supprime_un_objet_d_une_image_via_in_cd8a7de2" xml:space="preserve">
-    <value>Supprime un objet d'une image via inpainting IA local.</value>
+    <value>Removes an object from an image using local AI inpainting.</value>
   </data>
   <data name="RemoveObjectEditorForm_Activity_e34230a6" xml:space="preserve">
     <value>Activity</value>
@@ -4766,7 +4766,7 @@ Continue?</value>
     <value>No stems selected. Select at least one stem to extract.</value>
   </data>
   <data name="SeparateAudioAction_S_pare_les_pistes_audio_voix_batteri_90ab3574" xml:space="preserve">
-    <value>Sépare les pistes audio (voix, batterie, basse, autres) via un modèle IA local.</value>
+    <value>Separates audio stems (vocals, drums, bass, other) using a local AI model.</value>
   </data>
   <data name="SeparateAudioPickerForm_0_selected_files_dd068a4b" xml:space="preserve">
     <value>{0} selected files</value>
@@ -4906,7 +4906,7 @@ Output WAV files are created next to the source with unique naming.</value>
     <value>Upscaling tile {0}/{1}...</value>
   </data>
   <data name="UpscaleImageAction_Agrandit_une_image_x4_via_un_mod_le__8d6a095b" xml:space="preserve">
-    <value>Agrandit une image x4 via un modèle IA local (Real-ESRGAN).</value>
+    <value>Upscales an image by a factor of 4 using a local AI model (Real-ESRGAN).</value>
   </data>
   <data name="UpscaleImageAction_AI_model_not_found_Run_FrameShift_ex_bddea053" xml:space="preserve">
     <value>AI model not found. Run FrameShift.exe --action upscale-image from Explorer to download it first.</value>
