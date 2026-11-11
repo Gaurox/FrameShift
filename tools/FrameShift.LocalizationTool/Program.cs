@@ -21,13 +21,14 @@ internal static class Program
                 if (args[i] == "--apply" && command == "import" && !apply) { apply = true; continue; }
                 var allowed = command switch
                 {
-                    "snapshot" => new[] { "--repo", "--language", "--output" },
-                    "review" => new[] { "--repo", "--baseline", "--report" },
-                    "bundle" => new[] { "--repo", "--language", "--output", "--baseline" },
+                    "prepare" => new[] { "--repo", "--language", "--output" },
+                    "snapshot" => new[] { "--repo", "--language", "--output", "--draft" },
+                    "review" => new[] { "--repo", "--baseline", "--report", "--draft" },
+                    "bundle" => new[] { "--repo", "--language", "--output", "--baseline", "--draft" },
                     "verify-package" => new[] { "--repo", "--package-dir", "--report" },
-                    "export" => new[] { "--repo", "--language", "--output" },
-                    "import" => new[] { "--repo", "--file", "--backup-dir" },
-                    "check" => new[] { "--repo", "--file", "--report" },
+                    "export" => new[] { "--repo", "--language", "--output", "--draft" },
+                    "import" => new[] { "--repo", "--file", "--backup-dir", "--draft" },
+                    "check" => new[] { "--repo", "--file", "--report", "--draft" },
                     _ => throw new ArgumentException("Unknown command: " + command)
                 };
                 if (!allowed.Contains(args[i]) || i + 1 >= args.Length || args[i + 1].StartsWith("--") || !options.TryAdd(args[i], args[i + 1]))
@@ -36,15 +37,23 @@ internal static class Program
             }
             string Required(string key) => options.GetValueOrDefault(key) ?? throw new ArgumentException("Missing " + key);
             var repo = options.TryGetValue("--repo", out var root) ? Path.GetFullPath(root) : FindRepository();
+            var draft = options.GetValueOrDefault("--draft");
+            if (command == "prepare")
+            {
+                DraftLanguage.Create(repo, Required("--language"), Required("--output"));
+                Console.WriteLine("Empty draft created: " + Path.GetFullPath(Required("--output")));
+                Console.WriteLine("Use --draft <directory> for translation commands. No language was enabled and no installer files were changed.");
+                return 0;
+            }
             if (command == "snapshot")
             {
-                TranslationMaintenance.Snapshot(repo, Required("--language"), Required("--output"));
+                TranslationMaintenance.Snapshot(repo, Required("--language"), Required("--output"), draft);
                 Console.WriteLine("Snapshot saved. This is a comparison point, not proof of human approval.");
                 return 0;
             }
             if (command == "review")
             {
-                var review = TranslationMaintenance.Review(repo, Required("--baseline"));
+                var review = TranslationMaintenance.Review(repo, Required("--baseline"), draft);
                 TranslationMaintenance.WriteJson(Required("--report"), review);
                 Console.WriteLine($"{review.Language}: {review.Items.Length} review items across {review.CurrentEntries} current entries.");
                 foreach (var group in review.Items.GroupBy(i => i.Status)) Console.WriteLine($"{group.Key}: {group.Count()}");
@@ -52,7 +61,7 @@ internal static class Program
             }
             if (command == "bundle")
             {
-                TranslationMaintenance.Bundle(repo, Required("--language"), Required("--output"), options.GetValueOrDefault("--baseline"));
+                TranslationMaintenance.Bundle(repo, Required("--language"), Required("--output"), options.GetValueOrDefault("--baseline"), draft);
                 Console.WriteLine("Contributor bundle ready: " + Path.GetFullPath(Required("--output")));
                 return 0;
             }
@@ -67,13 +76,13 @@ internal static class Program
             if (command == "export")
             {
                 var output = Path.GetFullPath(Required("--output"));
-                TranslationExchange.Export(repo, Required("--language"), output);
+                TranslationExchange.Export(repo, Required("--language"), output, draft);
                 Console.WriteLine("Export created: " + output);
                 return 0;
             }
             if (command == "import")
             {
-                var plan = TranslationImport.Prepare(repo, Required("--file"));
+                var plan = TranslationImport.Prepare(repo, Required("--file"), draft);
                 foreach (var issue in plan.Report.Issues)
                     Console.WriteLine($"{issue.Severity.ToUpperInvariant()} {issue.Reference}: {issue.Message}");
                 if (plan.Report.Errors > 0) return 1;
@@ -86,10 +95,11 @@ internal static class Program
                     Console.WriteLine("Import applied. Recovery backups: " + Path.GetFullPath(Required("--backup-dir")));
                 }
                 else Console.WriteLine("Preview only. No project files changed. Use --apply --backup-dir <new-directory> to apply.");
+                if (draft is not null) Console.WriteLine("Draft mode: only draft translation files are targeted. The language remains disabled in FrameShift.");
                 return 0;
             }
             if (command != "check") throw new ArgumentException("Unknown command: " + command);
-            var report = TranslationExchange.Check(repo, Required("--file"), complete);
+            var report = TranslationExchange.Check(repo, Required("--file"), complete, draft);
             Console.WriteLine($"{report.Language}: {report.Records}/{report.CatalogEntries} records; {report.Errors} errors; {report.Warnings} warnings; {report.SameAsEnglish} identical to English.");
             foreach (var issue in report.Issues)
                 Console.WriteLine($"{issue.Severity.ToUpperInvariant()} record {issue.Record?.ToString() ?? "-"} {issue.Reference}: {issue.Message}");
@@ -119,13 +129,15 @@ internal static class Program
     private static void Help()
     {
         Console.WriteLine("FrameShift translation export/check tool (.NET 8, offline, preview before import).");
-        Console.WriteLine("export --language <en|zh-CN|es|pt-BR|ru> --output <new.csv> [--repo <root>]");
+        Console.WriteLine("prepare --language <new-code> --output <new-draft-directory> [--repo <root>]");
+        Console.WriteLine("export --language <code> --output <new.csv> [--repo <root>]");
         Console.WriteLine("check --file <translation.csv> [--require-complete] [--report <new.json>] [--repo <root>]");
         Console.WriteLine("import --file <translation.csv> [--apply --backup-dir <new-directory>] [--repo <root>]");
         Console.WriteLine("snapshot --language <code> --output <new.json> [--repo <root>]");
         Console.WriteLine("review --baseline <snapshot.json> --report <new.json> [--repo <root>]");
         Console.WriteLine("bundle --language <code> --output <new-directory> [--baseline <snapshot.json>] [--repo <root>]");
         Console.WriteLine("verify-package --package-dir <publish-root> [--report <new.json>] [--repo <root>]");
+        Console.WriteLine("Add --draft <directory> to export/check/import/snapshot/review/bundle for an unregistered language. Drafts never enable a language or modify the installer.");
         Console.WriteLine("CSV: UTF-8 with BOM, semicolon separator. Edit Translation only. Output files must not already exist.");
         Console.WriteLine("Exit codes: 0 = technically valid (possibly incomplete); 1 = validation errors; 2 = command/file error.");
     }

@@ -4,6 +4,19 @@ namespace FrameShift.LocalizationTool;
 
 internal static class InstallerMessages
 {
+    internal static Dictionary<(string Language, string Key), string> ReadCustomMessages(string path)
+    {
+        var messages = new Dictionary<(string, string), string>();
+        foreach (var line in File.ReadLines(path))
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith(';')) continue;
+            var match = Regex.Match(line, @"^(\w+)\.(\w+)=(.*)$");
+            if (!match.Success) throw new FormatException("Unsupported draft message syntax: " + line);
+            messages.Add((match.Groups[1].Value, match.Groups[2].Value), match.Groups[3].Value);
+        }
+        return messages;
+    }
+
     internal static string ReadSource(string path)
     {
         var folder = Path.GetDirectoryName(Path.GetFullPath(path))!;

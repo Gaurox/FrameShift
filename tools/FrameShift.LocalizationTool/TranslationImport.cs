@@ -15,22 +15,31 @@ internal sealed class TranslationImport
     internal List<TranslationChange> Changes { get; } = [];
     internal List<ImportFile> Files { get; } = [];
     private readonly Dictionary<string, byte[]> _inputs = new(StringComparer.OrdinalIgnoreCase);
+    private Action? _verifyDraft;
 
-    internal static TranslationImport Prepare(string repo, string csv)
+    internal static TranslationImport Prepare(string repo, string csv, string? draftDirectory = null)
     {
         var rows = CsvFile.Read(csv);
         var plan = new TranslationImport();
         foreach (var path in Directory.GetFiles(Path.Combine(repo, "src/FrameShift/Core/Localization"), "Strings*.resx")
             .Concat(Directory.GetFiles(Path.Combine(repo, "installer/Languages"), "FrameShift.*.iss"))
             .Append(Path.Combine(repo, "installer/FrameShift.iss"))) plan._inputs.Add(path, File.ReadAllBytes(path));
-        plan.Report = TranslationExchange.CheckRows(repo, rows, false);
+        if (draftDirectory is not null)
+        {
+            draftDirectory = Path.GetFullPath(draftDirectory);
+            var draft = DraftLanguage.Open(repo, draftDirectory);
+            plan._verifyDraft = () => DraftLanguage.Open(repo, draftDirectory);
+            foreach (var path in new[] { Path.Combine(draftDirectory, "draft.json"), draft.ResourcePath(draftDirectory), draft.InstallerPath(draftDirectory) })
+                plan._inputs.Add(path, File.ReadAllBytes(path));
+        }
+        plan.Report = TranslationExchange.CheckRows(repo, rows, false, draftDirectory);
         if (plan.Report.Errors != 0) return plan;
         if (plan.Report.Language == "en")
         {
             plan.Error("", "Import cannot modify the English source catalog.");
             return plan;
         }
-        var entries = TranslationCatalog.Load(repo, plan.Report.Language).ToDictionary(e => e.Identity);
+        var entries = TranslationCatalog.Load(repo, plan.Report.Language, draftDirectory).ToDictionary(e => e.Identity);
         var originalHashes = rows.Skip(1).ToDictionary(row => row[1] + ":" + row[2], row => row[8], StringComparer.Ordinal);
         var edits = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var row in rows.Skip(1))
@@ -75,7 +84,8 @@ internal sealed class TranslationImport
             plan.Changes.Add(new(pair.Key, entries[pair.Key].Translation, pair.Value));
         if (edits.Count == 0) { plan.VerifyInputs(); return plan; }
 
-        var resource = Path.Combine(repo, $"src/FrameShift/Core/Localization/Strings.{plan.Report.Language}.resx");
+        var target = TranslationCatalog.Target(repo, plan.Report.Language, draftDirectory);
+        var resource = target.Resource;
         var resourceBytes = File.ReadAllBytes(resource);
         var xml = new XmlDocument { PreserveWhitespace = true, XmlResolver = null };
         using (var reader = XmlReader.Create(new MemoryStream(resourceBytes), new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })) xml.Load(reader);
@@ -98,11 +108,10 @@ internal sealed class TranslationImport
             using (var writer = XmlWriter.Create(output, new XmlWriterSettings { Encoding = new UTF8Encoding(resourceBytes.Take(3).SequenceEqual(new byte[] {239,187,191})), Indent = false, NewLineHandling = NewLineHandling.Entitize })) xml.Save(writer);
             plan.Files.Add(new(resource, resourceBytes, output.ToArray()));
         }
-        var installer = Path.Combine(repo, $"installer/Languages/FrameShift.{plan.Report.Language}.iss");
+        var installer = target.Installer;
         if (!File.Exists(installer)) throw new FormatException("Import requires separated installer custom-message files.");
         var installerBytes = File.ReadAllBytes(installer);
-        var installerLanguage = InstallerMessages.Read(Path.Combine(repo, "installer/FrameShift.iss"))
-            .Single(p => p.Key.Key == "AppLanguage" && p.Value == plan.Report.Language).Key.Language;
+        var installerLanguage = target.InstallerLanguage;
         var encoding = new UTF8Encoding(false, true);
         var text = encoding.GetString(installerBytes);
         var existingInstallerKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -148,6 +157,7 @@ internal sealed class TranslationImport
             for (var i = 0; i < Files.Count; i++)
             {
                 beforeReplace?.Invoke(i);
+                _verifyDraft?.Invoke();
                 VerifyOriginal(Files[i]);
                 Replace(Files[i].Path, Files[i].After);
                 applied.Add(Files[i]);
@@ -160,6 +170,7 @@ internal sealed class TranslationImport
             {
                 try
                 {
+                    _verifyDraft?.Invoke();
                     if (!File.ReadAllBytes(file.Path).SequenceEqual(file.After)) throw new IOException("Concurrent edit detected during rollback: " + file.Path);
                     Replace(file.Path, file.Before);
                 }
@@ -177,6 +188,7 @@ internal sealed class TranslationImport
 
     private void VerifyInputs()
     {
+        _verifyDraft?.Invoke();
         foreach (var pair in _inputs)
             if (!File.ReadAllBytes(pair.Key).SequenceEqual(pair.Value)) throw new IOException("Catalog changed since preview; export/check again: " + pair.Key);
     }

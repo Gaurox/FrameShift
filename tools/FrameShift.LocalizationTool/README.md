@@ -1,8 +1,9 @@
-# Translation export, checks and import — lots 1–3
+# Translation export, checks, import and draft languages
 
 Offline .NET 8 development tool, separate from the distributed application. No
 language registration or runtime package dependency. Import modifies only the
-selected existing translation resources and separated installer custom messages. The existing language catalog is linked at compile time.
+selected existing translation resources and separated installer custom messages,
+or explicitly selected draft files. The existing language catalog is linked at compile time.
 
 ## Maintainer workflow
 
@@ -22,8 +23,51 @@ Use `--repo <path>` when running outside the repository. Output directories must
 exist. CSV exports and JSON reports must use **new filenames**; existing files,
 including contributor work, are never overwritten.
 
-Supported languages are the five registered codes: `en`, `zh-CN`, `es`, `pt-BR`,
-`ru`. The tool deliberately refuses new languages, including `fr`, `ja` and `id`.
+Without `--draft`, supported languages remain the five registered codes: `en`,
+`zh-CN`, `es`, `pt-BR`, `ru`. Unregistered languages require an explicitly prepared
+draft directory; merely creating resource files does not enable a language.
+
+## Prepare an unregistered language (maintainer)
+
+Use `prepare --language <code> --output <new-directory>` to create an empty draft.
+The code must be a canonical .NET culture code for a language not already
+registered. The following example uses `qaa`, a local-use code for a trial, rather
+than introducing a real translation:
+
+```powershell
+dotnet tools/FrameShift.LocalizationTool/bin/Debug/net8.0/FrameShift.LocalizationTool.dll prepare --language qaa --output scratch/draft-qaa
+dotnet tools/FrameShift.LocalizationTool/bin/Debug/net8.0/FrameShift.LocalizationTool.dll bundle --language qaa --draft scratch/draft-qaa --output scratch/qaa-contributor-001
+dotnet tools/FrameShift.LocalizationTool/bin/Debug/net8.0/FrameShift.LocalizationTool.dll check --file scratch/qaa-contributor-001/translation.csv --draft scratch/draft-qaa
+dotnet tools/FrameShift.LocalizationTool/bin/Debug/net8.0/FrameShift.LocalizationTool.dll import --file scratch/qaa-contributor-001/translation.csv --draft scratch/draft-qaa
+dotnet tools/FrameShift.LocalizationTool/bin/Debug/net8.0/FrameShift.LocalizationTool.dll import --file scratch/qaa-contributor-001/translation.csv --draft scratch/draft-qaa --apply --backup-dir scratch/qaa-backup-001
+```
+
+Preparation creates exactly three files: `draft.json` (schema version and language
+code), `Strings.<code>.resx` (no translated entries), and `FrameShift.<code>.iss`
+(only the technical `AppLanguage` marker). Metadata is written last; a directory
+left incomplete by an I/O error must not be used. The installer identifier is the
+code with hyphens replaced by underscores. Keep these maintainer files together;
+contributors only edit their bundle's CSV.
+
+Use `--draft <directory>` on **every** export/check/import/snapshot/review/bundle
+command for that draft. The CSV/snapshot language must match the metadata. The
+English source still comes from the current repository. Missing translations
+export as blank cells, never as copied English. Partial imports, variable checks,
+linked Explorer captions, concurrent-edit protection, backups and rollback use
+the same implementation as existing languages. `--require-complete` rejects the
+unfinished cells. A bundle's READY marker explicitly identifies a draft.
+
+Choose a separate location such as `translations/drafts/<code>` or `scratch`.
+Draft directories inside `src`, `installer`, `references` or repository metadata
+are refused, as are symbolic links/junctions in draft paths. Imports only update
+the two draft translation files; `draft.json` is not rewritten. Existing files
+are never overwritten by `prepare`.
+
+This workflow does not edit `AppLanguages`, runtime resources, installer inputs,
+standard upstream `.isl` files or release scripts. `verify-package` continues to
+check registered languages only and does not accept `--draft`. There is no
+automatic promotion/activation command: activation and installer integration
+remain a separate, reviewed step after completeness and human acceptance.
 
 Exports contain the English source and current translation for application/worker
 resources and the installer's FrameShift-specific custom messages. Export and check only read the installer. Its `AppLanguage` configuration and standard upstream `.isl` messages

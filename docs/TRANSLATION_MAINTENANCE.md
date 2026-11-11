@@ -1,12 +1,34 @@
 # Translation contribution and maintenance
 
-The maintenance workflow is offline and uses the existing five languages. It does
-not register new languages, install the app, or build an installer by itself.
+The maintenance workflow is offline. By default it uses the existing five
+languages; an explicit draft mode prepares unregistered languages separately. It
+does not register new languages, install the app, or build an installer by itself.
 Build the tool as documented in [its README](../tools/FrameShift.LocalizationTool/README.md).
 The commands below run from the repository root, after creating a scratch folder.
 
 Executed automated checks and outstanding human acceptance are recorded in
 [the workflow validation](TRANSLATION_WORKFLOW_VALIDATION.md).
+
+## Prepare a new language without enabling it
+
+Run `prepare --language <code> --output <new-directory>` to create empty maintainer
+files outside `src` and `installer`, for example in `translations/drafts/<code>`.
+The directory must be new. No translated values or English fallback values are
+inserted. Keep the generated metadata, resource and custom-message files together.
+
+Then add `--draft <directory>` to export, check, import, snapshot, review and bundle.
+All these commands use the current English catalog and the same contribution
+format/protections as registered languages. A returned contribution is previewed
+and applied with backups to the draft files only. `check --require-complete` is
+the completeness gate; native proofreading and visual acceptance are still separate.
+Do not put unfinished resources in the application's resource directory: the SDK
+could distribute their satellite assemblies even before registration.
+
+See the [tool's draft workflow](../tools/FrameShift.LocalizationTool/README.md#prepare-an-unregistered-language-maintainer)
+for runnable examples. Draft snapshots require the same `--draft` selection when
+reviewed; they are comparison points, not approvals. Generating a contributor
+bundle does not activate the language. App registration, upstream Inno messages,
+installer inclusion, UI testing and eventual packaging remain separate work.
 
 ## Prepare and receive a contribution
 

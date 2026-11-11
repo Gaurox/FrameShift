@@ -17,9 +17,9 @@ internal static class TranslationExchange
 {
     internal static readonly string[] Header = ["Language", "Scope", "Key", "Source", "Translation", "Context", "Tokens", "SourceHash", "OriginalTranslationHash"];
 
-    internal static void Export(string repo, string language, string output)
+    internal static void Export(string repo, string language, string output, string? draftDirectory = null)
     {
-        var rows = TranslationCatalog.Load(repo, language).Select(e => new[]
+        var rows = TranslationCatalog.Load(repo, language, draftDirectory).Select(e => new[]
         {
             language, e.Scope, e.Key, e.Source, e.Translation, e.Context,
             string.Join(" | ", TranslationTokens.Read(e.Scope, e.Source)), e.SourceHash, e.TranslationHash
@@ -27,12 +27,12 @@ internal static class TranslationExchange
         CsvFile.Write(output, new[] { Header }.Concat(rows));
     }
 
-    internal static CheckReport Check(string repo, string file, bool requireComplete)
+    internal static CheckReport Check(string repo, string file, bool requireComplete, string? draftDirectory = null)
     {
-        return CheckRows(repo, CsvFile.Read(file), requireComplete);
+        return CheckRows(repo, CsvFile.Read(file), requireComplete, draftDirectory);
     }
 
-    internal static CheckReport CheckRows(string repo, string[][] rows, bool requireComplete)
+    internal static CheckReport CheckRows(string repo, string[][] rows, bool requireComplete, string? draftDirectory = null)
     {
         var report = new CheckReport();
         void Issue(string severity, int? record, string reference, string message) => report.Issues.Add(new(severity, record, reference, message));
@@ -51,13 +51,13 @@ internal static class TranslationExchange
             Issue("error", 2, "", "Wrong number of columns in the first data record.");
             return report;
         }
-        if (rows.Length == 1 || !TranslationCatalog.Languages.Contains(rows[1][0]))
+        if (rows.Length == 1 || !TranslationCatalog.Accepts(repo, rows[1][0], draftDirectory))
         {
-            Issue("error", 2, "", "Missing data or unsupported language. Export an existing language first.");
+            Issue("error", 2, "", "Missing data, unsupported language or draft language mismatch. Export the selected language first.");
             return report;
         }
         report.Language = rows[1][0];
-        var catalog = TranslationCatalog.Load(repo, report.Language).ToDictionary(e => e.Identity);
+        var catalog = TranslationCatalog.Load(repo, report.Language, draftDirectory).ToDictionary(e => e.Identity);
         report.CatalogEntries = catalog.Count;
         var seen = new HashSet<string>(StringComparer.Ordinal);
         for (var index = 1; index < rows.Length; index++)

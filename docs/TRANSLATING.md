@@ -1,7 +1,9 @@
 # Translating FrameShift — start here
 
 You do not need C#, Git, .NET, or the build tools. A maintainer gives you a folder
-for one existing language. Work on a copy and return that folder to the maintainer.
+for one language, either already available or being prepared. Work on a copy and
+return that folder to the maintainer. A draft language is not yet available in
+FrameShift; its READY.txt marker says so. Your spreadsheet workflow is the same.
 The maintainer checks and applies your contribution; opening the CSV does not
 change FrameShift on your computer.
 

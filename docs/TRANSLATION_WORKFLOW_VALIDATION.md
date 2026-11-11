@@ -55,6 +55,35 @@ legacy-format rejection. A second code/diff review found no further error in the
 corrected scope. No runtime translation, language registration or installer binary
 was changed by these corrective checks.
 
+### Draft language preparation — 11 November 2026
+
+The maintenance tool now prepares an unregistered language in a separate directory
+with empty resources, a custom-message draft and versioned metadata. All exchange
+and maintenance commands require an explicit `--draft` selection for that language.
+No French, Japanese or Indonesian translation files were created or registered.
+
+- **85 standalone Release tests passed**, no failures/skips (54 existing + 31 draft
+  cases). They cover empty exports, partial imports, draft-only writes, backups,
+  rollback, linked captions, concurrent edits, language mismatches, malformed
+  metadata/messages and rejection of protected source/installer locations.
+- **15 CLI scenarios passed** using the current repository's English catalog and
+  the local-use code `qaa` under ignored scratch directories. All **2,167 entries**
+  initially export blank; incomplete work passes partial checks and fails strict
+  completeness checks. A synthetic contribution was previewed, imported with
+  backup, snapshotted and compared without enabling a language. Missing draft
+  selection, mismatched languages, reuse of an existing draft directory and
+  draft selection for package verification were refused. A real Windows junction
+  was created in scratch, refused by the tool and removed.
+- Byte hashes of runtime localization sources and every installer file were
+  compared before/after the CLI trial and remained identical. The retained Setup
+  SHA-256 remains the value recorded above. No installer/compiler/release script
+  was run. The package verifier still covers only the five registered languages.
+- Final code/diff review and whitespace checks found no further error. The new
+  tests build small resource-only fixtures; this step did not rebuild the app.
+
+This validates the preparation tooling, not the wording or visual readiness of
+any new language. Human acceptance below remains outstanding.
+
 ### Human acceptance status
 
 | Scenario | Status |
