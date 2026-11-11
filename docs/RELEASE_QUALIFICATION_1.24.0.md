@@ -1,11 +1,31 @@
-# FrameShift 1.24.0 — Accepted local installer
+# FrameShift 1.24.0 — Published installer
 
-Prepared on 11 November 2026 at the owner's request. This preparation authorizes
-building a local installer, without installing it or publishing a release.
+Prepared and accepted on 11 November 2026 at the owner's request. The owner
+subsequently authorized publication with the accepted installer and release text,
+then specified that the published announcement must be in English.
 
 Owner acceptance recorded on 11 November 2026: **"tout est validé committe tout !"**
 after delivery of the language-upgrade fix and Balance volume icon. The current
-installer below is accepted for the tested scope. Publication has not been requested.
+installer below is accepted for the tested scope.
+
+## Publication — 11 November 2026
+
+- Release: [FrameShift 1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0),
+  published at **18:37:05 UTC**, marked latest, not a draft or prerelease.
+- Release ID: `442071118`. Tag `v1.24.0` points to
+  `04f4ed895ebd4568c8eb59ea817233ac4d4cd63c`; README update commit: `07e4dbd`.
+  The tag includes runtime integration commit `8906483`. Before publication,
+  **461 build input hashes** were checked against the accepted build manifest.
+- Assets: `FrameShift_1.24.0_Setup.exe` (**180,142,126 bytes**) and its `.sha256`
+  file (**95 bytes**). GitHub's uploaded-asset SHA-256 digests match both local
+  files exactly; the installer retains the accepted hash
+  `731AF09C5964317F37E71F2F73C4A17BADE20751C63D9DF7BCFFA629E545E04A`.
+- The [published English announcement](RELEASE_ANNOUNCEMENT_1.24.0.md) translates
+  the approved three-point French text. The draft was changed to English before
+  publication; its complete body was compared with the supplied text.
+- The accepted installer was reused without rebuilding. The archived source
+  manifest and patch identify its build inputs; later documentation commits do
+  not alter its binaries. All eight READMEs now link to the published 1.24.0.
 
 ## Latest language-upgrade fix and icon rebuild — 11 November 2026
 
@@ -68,7 +88,7 @@ following test protocol, then requested that all changes be committed.
    choice persists. Reinstalling 1.24.0 with another language should apply the
    installation choice again on the next launch.
 
-The installer was **not executed by the agent and has not been published**.
+The installer was **not executed by the agent**; its publication is recorded above.
 Automated tests use isolated settings and installation-marker files; Windows
 acceptance is reported by the owner. The owner's overall acceptance is recorded
 without adding unobserved per-scenario test results. Earlier qualification limits

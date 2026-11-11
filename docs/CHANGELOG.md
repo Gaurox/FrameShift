@@ -2,7 +2,8 @@
 
 ## 1.24.0
 
-Local installer accepted by the owner on 11 November 2026. Not yet published.
+Released on 11 November 2026 after owner acceptance.
+Publication: [v1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0).
 See the [release notes](RELEASE_NOTES_1.24.0.md) and
 [qualification](RELEASE_QUALIFICATION_1.24.0.md).
 

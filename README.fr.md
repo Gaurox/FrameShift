@@ -6,7 +6,7 @@
 
 La **1.24.0** ajoute **Équilibrer le volume**, principalement pensé pour le visionnage de vidéos, ainsi que le français, le japonais et l’indonésien : FrameShift propose désormais **huit langues**. Le système de traduction facilite les contributions par CSV, et la langue choisie pendant une mise à jour s’applique aussi aux fenêtres lorsqu’une ancienne préférence était enregistrée. Voir les [notes de version](docs/RELEASE_NOTES_1.24.0.md) et le [rapport de validation](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
-L’installeur local **1.24.0** est validé par le propriétaire du projet et sa publication est en préparation. Le téléchargement public ci-dessous correspond à la **1.23.0**, qui a introduit **Trouver une boucle / Find Loop** dans Couper une vidéo et corrigé les actions masquées du menu vidéo classique de l’Explorateur.
+La **[1.24.0 est disponible](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)** avec l’installeur validé par le propriétaire du projet. La **1.23.0** avait introduit **Trouver une boucle / Find Loop** dans Couper une vidéo et corrigé les actions masquées du menu vidéo classique de l’Explorateur.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="Utilisation de FrameShift depuis le menu contextuel de Windows" width="900" />
@@ -28,7 +28,7 @@ L’installeur local **1.24.0** est validé par le propriétaire du projet et sa
 
 **[Télécharger la dernière version publique](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Version publiée : **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. Les nouveautés et les huit langues décrites ici correspondent à la **1.24.0**, validée localement et en préparation de publication.
+Version publiée : **[1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)**. L’installeur comprend les nouveautés et les huit langues décrites ici.
 
 FrameShift fonctionne sous **Windows 10 et Windows 11, en 64 bits**. L’installeur autonome comprend .NET, FFmpeg et FFprobe : l’utilisateur n’a pas à les installer séparément. Les modèles d’IA sont obtenus à part, selon les fonctions utilisées.
 

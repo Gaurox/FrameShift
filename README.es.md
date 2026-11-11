@@ -4,7 +4,7 @@
 
 **Herramienta gratuita y de código abierto para procesar video, audio, imágenes y PDF en Windows, con integración en el Explorador e IA local.**
 
-La versión **1.24.0** incorpora **Equilibrar volumen**, pensada principalmente para ver videos sin ajustar constantemente el volumen entre diálogos bajos y escenas fuertes. Añade francés, japonés e indonesio, para un total de **ocho idiomas**, simplifica las contribuciones de traducción mediante CSV y aplica a las ventanas el idioma elegido al actualizar. El instalador local está validado por el propietario y pendiente de publicación. Consulte las [notas de la 1.24.0](docs/RELEASE_NOTES_1.24.0.md) y el [informe de validación](docs/RELEASE_QUALIFICATION_1.24.0.md).
+La versión **1.24.0** incorpora **Equilibrar volumen**, pensada principalmente para ver videos sin ajustar constantemente el volumen entre diálogos bajos y escenas fuertes. Añade francés, japonés e indonesio, para un total de **ocho idiomas**, simplifica las contribuciones de traducción mediante CSV y aplica a las ventanas el idioma elegido al actualizar. La versión 1.24.0 ya está publicada con el instalador validado por el propietario. Consulte las [notas de la 1.24.0](docs/RELEASE_NOTES_1.24.0.md) y el [informe de validación](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
 Gracias a [zhazhayu01](https://github.com/zhazhayu01) por la traducción al chino simplificado, el README chino y la corrección de la disposición en ventanas estrechas. Su [contribución original](https://github.com/zhazhayu01/FrameShift/commit/f078b0c3490ae43abba807bba24692df8ef446da) está integrada en la 1.22.0. La traducción al español parte de los recursos originales y utiliza el mismo catálogo de idiomas.
 
@@ -29,7 +29,7 @@ Gracias a [zhazhayu01](https://github.com/zhazhayu01) por la traducción al chin
 
 **[Descargar la última versión pública](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Versión pública: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. El instalador local **1.24.0**, con las novedades y los ocho idiomas descritos aquí, está validado y pendiente de publicación.
+Versión pública: **[1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)**. El instalador incluye las novedades y los ocho idiomas descritos aquí.
 
 FrameShift está pensado para **Windows 10 y Windows 11 de 64 bits**. El instalador es autónomo: incluye el entorno .NET, FFmpeg y FFprobe. El usuario final no necesita instalarlos por separado. Los modelos de IA se obtienen aparte, según la función utilizada.
 

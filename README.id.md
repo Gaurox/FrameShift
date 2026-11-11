@@ -6,7 +6,7 @@
 
 Versi **1.24.0** menambahkan **Seimbangkan volume**, terutama untuk menonton video, serta bahasa Prancis, Jepang, dan Indonesia sehingga tersedia **delapan bahasa**. Kontribusi terjemahan menjadi lebih mudah melalui CSV. Bahasa yang dipilih saat pembaruan kini juga diterapkan ke jendela aplikasi meskipun preferensi bahasa lama masih tersimpan. Lihat [catatan rilis](docs/RELEASE_NOTES_1.24.0.md) dan [laporan validasi](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
-Penginstal lokal **1.24.0** telah disetujui pemilik proyek dan sedang disiapkan untuk publikasi. Unduhan publik di bawah masih versi **1.23.0**, yang memperkenalkan **Cari loop / Find Loop** di Potong video dan memperbaiki tindakan yang tersembunyi pada menu video klasik Explorer.
+**[Versi 1.24.0 telah diterbitkan](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)** dengan penginstal yang disetujui pemilik proyek. Versi **1.23.0** sebelumnya memperkenalkan **Cari loop / Find Loop** di Potong video dan memperbaiki tindakan yang tersembunyi pada menu video klasik Explorer.
 
 <p align="center">
   <img src="screenshots/Gif_demos/demo_menus_gif.gif" alt="Contoh penggunaan FrameShift melalui menu klik kanan Explorer" width="900" />
@@ -28,7 +28,7 @@ Penginstal lokal **1.24.0** telah disetujui pemilik proyek dan sedang disiapkan 
 
 **[Unduh rilis publik terbaru](https://github.com/Gaurox/FrameShift/releases/latest)**
 
-Versi yang telah diterbitkan: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**. Fitur baru dan delapan bahasa pada halaman ini merupakan bagian dari **1.24.0**, yang telah divalidasi secara lokal dan sedang disiapkan untuk publikasi.
+Versi yang telah diterbitkan: **[1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)**. Penginstal menyertakan fitur baru dan delapan bahasa yang dijelaskan pada halaman ini.
 
 FrameShift ditujukan untuk **Windows 10 dan Windows 11 64-bit**. Penginstal mandiri menyertakan .NET, FFmpeg, dan FFprobe sehingga pengguna tidak perlu memasangnya secara terpisah. Model AI diperoleh terpisah sesuai fitur yang digunakan.
 

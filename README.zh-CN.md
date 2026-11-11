@@ -18,11 +18,11 @@ FrameShift 是面向 Windows 10 / 11（x64）的本地媒体工具，使用 C#�
 
 **[下载当前公开发行版](https://github.com/Gaurox/FrameShift/releases/latest)**。
 
-当前公开版本为 **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)**，支持英文、简体中文、西班牙文、巴西葡萄牙文和俄文。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
+当前公开版本为 **[1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)**，支持英文、简体中文、西班牙文、巴西葡萄牙文、俄文、法文、日文和印尼文。安装包为自包含的 `win-x64` 程序，最终用户无须单独安装 .NET。
 
-本地 **1.24.0** 安装包已由项目维护者验收，正在准备公开发布。本说明中的新功能和八种语言对应这一版本：新增主要用于观看视频的**均衡音量**，加入法语、日语和印尼语，提供更便于参与的 CSV 翻译流程，并修复更新安装时所选语言未应用到程序窗口的问题。详见 [1.24.0 版本说明](docs/RELEASE_NOTES_1.24.0.md)和[验收记录](docs/RELEASE_QUALIFICATION_1.24.0.md)。
+**1.24.0** 已公开发布，安装包已由项目维护者验收。本说明中的新功能和八种语言对应这一版本：新增主要用于观看视频的**均衡音量**，加入法语、日语和印尼语，提供更便于参与的 CSV 翻译流程，并修复更新安装时所选语言未应用到程序窗口的问题。详见 [1.24.0 版本说明](docs/RELEASE_NOTES_1.24.0.md)和[验收记录](docs/RELEASE_QUALIFICATION_1.24.0.md)。
 
-1.23.0 在 Cut Video 中加入 **Find Loop**，支持查找自然循环、预览接缝和创建往返循环，并修复经典视频右键菜单中部分已安装操作被隐藏的问题。当前变更与验证范围见 [1.23.0 版本说明](docs/RELEASE_NOTES_1.23.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.23.0.md)。
+1.23.0 在 Cut Video 中加入 **Find Loop**，支持查找自然循环、预览接缝和创建往返循环，并修复经典视频右键菜单中部分已安装操作被隐藏的问题。该版本的变更与验证范围见 [1.23.0 版本说明](docs/RELEASE_NOTES_1.23.0.md)和[验证记录](docs/RELEASE_QUALIFICATION_1.23.0.md)。
 
 ## 快速使用
 

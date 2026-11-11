@@ -1,6 +1,8 @@
 # FrameShift 1.24.0 — Balance volume
 
-Local installer accepted by the owner on 11 November 2026. Not yet published.
+Released on 11 November 2026 after owner acceptance.
+Publication: [v1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0).
+The [published English announcement](RELEASE_ANNOUNCEMENT_1.24.0.md) follows the owner's approved release text.
 
 ## More comfortable listening
 
@@ -25,7 +27,7 @@ names. The original file is preserved.
 The application, subtitle worker, Explorer captions and installer offer eight
 languages: English, Simplified Chinese, Spanish, Brazilian Portuguese, Russian,
 French, Japanese and Indonesian. All three new catalogs are technically complete;
-native proofreading and visual acceptance remain part of testing this candidate.
+the owner accepted the tested installer scope, as recorded in the qualification report.
 
 The language selected during installation or an update now applies to the
 application windows on the next launch, including when an older language was

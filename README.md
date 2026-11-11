@@ -11,9 +11,9 @@ to application windows even when an older preference was saved.
 See the [release notes](docs/RELEASE_NOTES_1.24.0.md) and
 [qualification](docs/RELEASE_QUALIFICATION_1.24.0.md).
 
-The local **1.24.0 installer is owner-accepted and awaiting publication**.
-The published download linked below is **1.23.0**, which introduced **Find Loop**
-inside Cut Video and fixes for hidden actions in the classic Explorer video menu.
+**[1.24.0 is available](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)**
+with the owner-accepted installer. **1.23.0** introduced **Find Loop** inside Cut
+Video and fixes for hidden actions in the classic Explorer video menu.
 
 **Special thanks to [zhazhayu01](https://github.com/zhazhayu01)** for the simplified
 Chinese translation, Chinese README, and narrow-window layout fix for the search
@@ -58,10 +58,9 @@ into the multilingual application, installer and documentation.
 
 **[→ Download latest release (.exe installer)](https://github.com/gaurox/FrameShift/releases/latest)**
 
-Published version: **[1.23.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.23.0)** · Windows 10 / 11 · self-contained · no extra install required.
+Published version: **[1.24.0](https://github.com/Gaurox/FrameShift/releases/tag/v1.24.0)** · Windows 10 / 11 · self-contained · no extra install required.
 
-The accepted local **1.24.0** installer includes the features and eight languages
-described below. Its public release is being prepared.
+The installer includes all eight languages and the features described below.
 
 Versioning uses `1.<feature release>.<patch>`: feature releases start at `.0`; small fixes increment
 the final number (`1.14.1`, `1.14.2`, etc.).
@@ -285,6 +284,7 @@ tests/
 
 - [Balance volume — Intensities, Formats and CLI](docs/BALANCE_VOLUME.md)
 - [Release Notes 1.24.0](docs/RELEASE_NOTES_1.24.0.md)
+- [Published 1.24.0 Announcement](docs/RELEASE_ANNOUNCEMENT_1.24.0.md)
 - [Release Qualification 1.24.0](docs/RELEASE_QUALIFICATION_1.24.0.md)
 - [Translation Contributor Guide](docs/TRANSLATING.md)
 - [Translation Maintenance](docs/TRANSLATION_MAINTENANCE.md)
