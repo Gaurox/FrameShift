@@ -31,11 +31,13 @@ internal sealed class TranslationImport
             return plan;
         }
         var entries = TranslationCatalog.Load(repo, plan.Report.Language).ToDictionary(e => e.Identity);
+        var originalHashes = rows.Skip(1).ToDictionary(row => row[1] + ":" + row[2], row => row[8], StringComparer.Ordinal);
         var edits = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var row in rows.Skip(1))
         {
             var identity = row[1] + ":" + row[2];
-            if (!string.IsNullOrWhiteSpace(row[4]) && row[4] != entries[identity].Translation) edits.Add(identity, row[4]);
+            if (!string.IsNullOrWhiteSpace(row[4]) && row[4] != entries[identity].Translation
+                && !TranslationEntry.Hash(row[4]).Equals(row[8], StringComparison.OrdinalIgnoreCase)) edits.Add(identity, row[4]);
         }
 
         // Explicit, versioned pairs keep the app and installer captions consistent.
@@ -55,10 +57,13 @@ internal sealed class TranslationImport
                 }
                 var changed = identities.Where(edits.ContainsKey).Select(id => edits[id]).Distinct(StringComparer.Ordinal).ToArray();
                 if (changed.Length > 1) { plan.Error(group.Key, "Conflicting app/installer translations for the same Explorer caption."); continue; }
-                var value = changed.SingleOrDefault() ?? entries["installer:" + group.Key].Translation;
+                if (changed.Length == 0) continue;
+                var value = changed[0];
                 if (value.IndexOfAny(['\r', '\n']) >= 0) { plan.Error(group.Key, "Explorer captions must be single-line text."); continue; }
                 foreach (var identity in identities)
                 {
+                    if (entries[identity].Translation != value && !entries[identity].TranslationHash.Equals(originalHashes[identity], StringComparison.OrdinalIgnoreCase))
+                        plan.Error(identity, "Linked Explorer translation changed since export; synchronization would overwrite a newer correction.");
                     if (!TranslationTokens.Read(entries[identity].Scope, entries[identity].Source).SequenceEqual(TranslationTokens.Read(entries[identity].Scope, value)))
                         plan.Error(identity, "A linked Explorer caption would lose required variables.");
                     if (value != entries[identity].Translation) edits[identity] = value;
@@ -75,8 +80,18 @@ internal sealed class TranslationImport
         var xml = new XmlDocument { PreserveWhitespace = true, XmlResolver = null };
         using (var reader = XmlReader.Create(new MemoryStream(resourceBytes), new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null })) xml.Load(reader);
         var appChanged = false;
-        foreach (XmlElement data in xml.SelectNodes("/root/data")!)
-            if (edits.TryGetValue("app:" + data.GetAttribute("name"), out var value)) { data["value"]!.InnerText = value; appChanged = true; }
+        var resourceNodes = xml.SelectNodes("/root/data")!.Cast<XmlElement>().ToDictionary(data => data.GetAttribute("name"), StringComparer.Ordinal);
+        foreach (var edit in edits.Where(pair => pair.Key.StartsWith("app:", StringComparison.Ordinal)))
+        {
+            var key = edit.Key[4..];
+            if (!resourceNodes.TryGetValue(key, out var data))
+            {
+                data = xml.CreateElement("data"); data.SetAttribute("name", key);
+                var space = xml.CreateAttribute("xml", "space", "http://www.w3.org/XML/1998/namespace"); space.Value = "preserve"; data.Attributes.Append(space);
+                data.AppendChild(xml.CreateElement("value")); xml.DocumentElement!.AppendChild(data);
+            }
+            data["value"]!.InnerText = edit.Value; appChanged = true;
+        }
         if (appChanged)
         {
             using var output = new MemoryStream();
@@ -90,12 +105,22 @@ internal sealed class TranslationImport
             .Single(p => p.Key.Key == "AppLanguage" && p.Value == plan.Report.Language).Key.Language;
         var encoding = new UTF8Encoding(false, true);
         var text = encoding.GetString(installerBytes);
+        var existingInstallerKeys = new HashSet<string>(StringComparer.Ordinal);
         var replaced = Regex.Replace(text, @"(?m)^(\w+)\.(\w+)=(.*?)(\r?)$", match =>
         {
             if (match.Groups[1].Value != installerLanguage) throw new FormatException("Unexpected language in " + installer);
+            existingInstallerKeys.Add(match.Groups[2].Value);
             return edits.TryGetValue("installer:" + match.Groups[2].Value, out var value)
                 ? match.Groups[1].Value + "." + match.Groups[2].Value + "=" + value + match.Groups[4].Value : match.Value;
         });
+        var newline = text.Contains("\r\n", StringComparison.Ordinal) ? "\r\n" : "\n";
+        foreach (var edit in edits.Where(pair => pair.Key.StartsWith("installer:", StringComparison.Ordinal)))
+        {
+            var key = edit.Key[10..];
+            if (existingInstallerKeys.Contains(key)) continue;
+            if (replaced.Length > 0 && !replaced.EndsWith('\n')) replaced += newline;
+            replaced += installerLanguage + "." + key + "=" + edit.Value + newline;
+        }
         if (text != replaced) plan.Files.Add(new(installer, installerBytes, encoding.GetBytes(replaced)));
         plan.VerifyInputs();
         return plan;

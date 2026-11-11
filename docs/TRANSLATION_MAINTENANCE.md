@@ -22,6 +22,13 @@ Output directories/files must be new. An I/O failure can leave an incomplete
 folder without READY; do not distribute it. Generated bundles belong in scratch
 or another chosen exchange location, not in runtime assets or the installer.
 
+Each CSV now carries the original translation hash as well as the English source
+hash. Keep these exported references unchanged. Unedited old cells preserve current
+project corrections; incompatible concurrent edits block the import, including
+linked Explorer counterparts. Missing destination entries are created on import.
+Older eight-column CSVs require a fresh export; transfer only intentional edits
+with human review, never synthesize current hashes onto an old file.
+
 When the folder returns: run `check`, review the wording and feedback, preview the
 import, then apply with a new backup directory. Review the Git diff, especially
 automatic Explorer caption synchronization. Retain the agreed native-language

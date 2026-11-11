@@ -38,6 +38,25 @@ The retained Setup SHA-256 remains:
 
 ## Not yet accepted by a human contributor
 
+### Import corrections and second review — 11 November 2026
+
+After commit `a9274d2`, review reproduced two import defects: an old unchanged CSV
+could revert a newer translation, and missing destination entries were silently
+ignored. The corrective CSV format adds `OriginalTranslationHash`; old eight-column
+files are rejected and require a fresh export. Concurrent incompatible edits block
+the import, unchanged cells preserve newer project values, and missing resource/
+installer entries are inserted. Linked Explorer counterparts are protected too.
+
+Validation after correction: **54 standalone Release tests and 108 application
+localization/menu tests passed**. Six CLI scenarios on isolated repository copies
+confirmed preservation of newer text, conflict rejection without writes, insertion
+of missing app and installer entries with backups, linked-caption protection, and
+legacy-format rejection. A second code/diff review found no further error in the
+corrected scope. No runtime translation, language registration or installer binary
+was changed by these corrective checks.
+
+### Human acceptance status
+
 | Scenario | Status |
 | --- | --- |
 | Non-developer completes the supplied guide without coding assistance | Not run |

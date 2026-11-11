@@ -128,6 +128,116 @@ public sealed class ImportTests : IDisposable
         Assert.True(TranslationImport.Prepare(_repo, en).Report.Errors > 0);
     }
 
+    [Fact]
+    public void UnchangedOldCsv_PreservesNewerMaintainerCorrection()
+    {
+        SetResource("Other", "Corrección reciente");
+        Change("app", "Greeting", "Nueva traducción {0}");
+        var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Equal(0, plan.Report.Errors);
+        Assert.Contains(plan.Report.Issues, i => i.Reference == "app:Other" && i.Severity == "warning");
+        Assert.DoesNotContain(plan.Changes, c => c.Reference == "app:Other");
+        plan.Apply(Backup);
+        Assert.Equal("Corrección reciente", Value("Other"));
+        Assert.Equal("Nueva traducción {0}", Value("Greeting"));
+    }
+
+    [Fact]
+    public void BothSidesEditedDifferently_BlocksEntireImport()
+    {
+        SetResource("Other", "Corrección reciente");
+        Change("app", "Other", "Traducción incompatible");
+        Change("installer", "Size", "Poids %1");
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.True(plan.Report.Errors > 0); Assert.Empty(plan.Files);
+        Assert.Throws<InvalidOperationException>(() => plan.Apply(Backup)); AssertSnapshot(before);
+    }
+
+    [Fact]
+    public void BothSidesReachSameTranslation_IsAnAcceptedNoOp()
+    {
+        SetResource("Other", "Mismo texto"); Change("app", "Other", "Mismo texto");
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Equal(0, plan.Report.Errors); Assert.Empty(plan.Changes); plan.Apply(Backup); AssertSnapshot(before);
+    }
+
+    [Fact]
+    public void ChangedLinkedCaption_CannotOverwriteNewerUneditedCounterpart()
+    {
+        SetResource("Caption", "Corrección reciente");
+        Change("installer", "Caption", "Otra propuesta");
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Contains(plan.Report.Issues, i => i.Reference == "app:Caption" && i.Message.Contains("Linked Explorer"));
+        Assert.Empty(plan.Files); Assert.Throws<InvalidOperationException>(() => plan.Apply(Backup)); AssertSnapshot(before);
+    }
+
+    [Fact]
+    public void UneditedOldLinkedRows_DoNotUndoMaintainerCorrection()
+    {
+        SetResource("Caption", "Corrección reciente");
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Equal(0, plan.Report.Errors); Assert.Empty(plan.Files); plan.Apply(Backup); AssertSnapshot(before);
+    }
+
+    [Theory]
+    [InlineData("app", "Greeting")]
+    [InlineData("installer", "Size")]
+    [InlineData("app", "Caption")]
+    [InlineData("installer", "Caption")]
+    public void MissingDestinationEntry_IsCreatedAndBackedUp(string scope, string key)
+    {
+        if (scope == "app")
+        {
+            var xml = XDocument.Load(Resource); xml.Root!.Elements("data").Single(e => (string?)e.Attribute("name") == key).Remove(); xml.Save(Resource);
+        }
+        else File.WriteAllText(Installer, string.Join('\n', File.ReadAllLines(Installer).Where(l => !l.StartsWith("spanish." + key + "=", StringComparison.Ordinal))) + "\n");
+        File.Delete(Csv); TranslationExchange.Export(_repo, "es", Csv);
+        var translated = key == "Greeting" ? "Nouveau <texte> {0}\nété" : key == "Size" ? "Poids %1" : "Titre partagé";
+        Change(scope, key, translated);
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Equal(0, plan.Report.Errors); Assert.NotEmpty(plan.Files);
+        plan.Apply(Backup);
+        if (scope == "app") Assert.Equal(translated, Value(key));
+        else Assert.Equal(translated, InstallerMessages.Read(Path.Combine(_repo, "installer/FrameShift.iss"))[("spanish", key)]);
+        if (key == "Caption") { Assert.Equal(translated, Value(key)); Assert.Contains("spanish.Caption=" + translated, File.ReadAllText(Installer)); }
+        Assert.True(File.Exists(Path.Combine(Backup, "manifest.json")));
+        Assert.Equal(0, TranslationExchange.Check(_repo, Csv, true).Errors);
+        var main = Path.GetFullPath(Path.Combine(_repo, "installer/FrameShift.iss"));
+        Assert.Equal(before[main], File.ReadAllBytes(main));
+    }
+
+    [Fact]
+    public void LegacyCsvWithoutTargetBaseline_IsRejectedWithoutWrites()
+    {
+        var old = CsvFile.Read(Csv).Select(row => row[..^1]).ToArray(); File.Delete(Csv); CsvFile.Write(Csv, old);
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Contains(plan.Report.Issues, i => i.Message.Contains("Older CSV"));
+        Assert.Throws<InvalidOperationException>(() => plan.Apply(Backup)); AssertSnapshot(before);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void InstallerCorrectionAfterExport_IsPreservedOrReportedAsConflict(bool translatorEdited)
+    {
+        File.WriteAllText(Installer, File.ReadAllText(Installer).Replace("spanish.Size=Tamaño %1", "spanish.Size=Peso actualizado %1"));
+        if (translatorEdited) Change("installer", "Size", "Otra propuesta %1");
+        var before = Snapshot(); var plan = TranslationImport.Prepare(_repo, Csv);
+        Assert.Empty(plan.Files);
+        if (translatorEdited)
+        {
+            Assert.True(plan.Report.Errors > 0);
+            Assert.Throws<InvalidOperationException>(() => plan.Apply(Backup));
+        }
+        else { Assert.Equal(0, plan.Report.Errors); Assert.True(plan.Report.Warnings > 0); plan.Apply(Backup); }
+        AssertSnapshot(before);
+    }
+
+    private void SetResource(string key, string value)
+    {
+        var xml = XDocument.Load(Resource); xml.Root!.Elements("data").Single(e => (string?)e.Attribute("name") == key).Element("value")!.Value = value; xml.Save(Resource);
+    }
+
     private void Change(string scope, string key, string value)
     {
         var rows = CsvFile.Read(Csv); rows.Single(r => r[1] == scope && r[2] == key)[4] = value;

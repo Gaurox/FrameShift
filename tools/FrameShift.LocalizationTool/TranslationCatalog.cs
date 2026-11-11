@@ -10,7 +10,9 @@ namespace FrameShift.LocalizationTool;
 internal sealed record TranslationEntry(string Scope, string Key, string Source, string Translation, string Context)
 {
     internal string Identity => Scope + ":" + Key;
-    internal string SourceHash => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(Source)));
+    internal string SourceHash => Hash(Source);
+    internal string TranslationHash => Hash(Translation);
+    internal static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 }
 
 internal static class TranslationCatalog

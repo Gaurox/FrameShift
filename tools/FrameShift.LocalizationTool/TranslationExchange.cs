@@ -15,14 +15,14 @@ internal sealed class CheckReport
 
 internal static class TranslationExchange
 {
-    internal static readonly string[] Header = ["Language", "Scope", "Key", "Source", "Translation", "Context", "Tokens", "SourceHash"];
+    internal static readonly string[] Header = ["Language", "Scope", "Key", "Source", "Translation", "Context", "Tokens", "SourceHash", "OriginalTranslationHash"];
 
     internal static void Export(string repo, string language, string output)
     {
         var rows = TranslationCatalog.Load(repo, language).Select(e => new[]
         {
             language, e.Scope, e.Key, e.Source, e.Translation, e.Context,
-            string.Join(" | ", TranslationTokens.Read(e.Scope, e.Source)), e.SourceHash
+            string.Join(" | ", TranslationTokens.Read(e.Scope, e.Source)), e.SourceHash, e.TranslationHash
         });
         CsvFile.Write(output, new[] { Header }.Concat(rows));
     }
@@ -36,6 +36,11 @@ internal static class TranslationExchange
     {
         var report = new CheckReport();
         void Issue(string severity, int? record, string reference, string message) => report.Issues.Add(new(severity, record, reference, message));
+        if (rows.Length > 0 && rows[0].SequenceEqual(Header[..^1]))
+        {
+            Issue("error", 1, "", "Older CSV lacks the original translation baseline. Request a fresh export; do not add hashes to an old contribution.");
+            return report;
+        }
         if (rows.Length == 0 || !rows[0].SequenceEqual(Header))
         {
             Issue("error", 1, "", "CSV header differs from the exported format. Use a semicolon separator and UTF-8.");
@@ -66,11 +71,22 @@ internal static class TranslationExchange
             if (!catalog.TryGetValue(reference, out var entry)) { Issue("error", record, reference, "Unknown or removed reference."); continue; }
             if (row[3] != entry.Source || row[7] != entry.SourceHash)
                 Issue("error", record, reference, "English source changed or was edited. Request a fresh export before reviewing this translation.");
+            if (!System.Text.RegularExpressions.Regex.IsMatch(row[8], @"\A[0-9A-Fa-f]{64}\z"))
+                Issue("error", record, reference, "Invalid original translation hash. Request a fresh export.");
             if (string.IsNullOrWhiteSpace(row[4]))
             {
                 report.BlankTranslations++;
                 Issue(requireComplete ? "error" : "warning", record, reference, "Translation is blank; work is incomplete.");
                 continue;
+            }
+            var submittedHash = TranslationEntry.Hash(row[4]);
+            var unchanged = submittedHash.Equals(row[8], StringComparison.OrdinalIgnoreCase);
+            if (!entry.TranslationHash.Equals(row[8], StringComparison.OrdinalIgnoreCase))
+            {
+                if (!unchanged && row[4] != entry.Translation)
+                    Issue("error", record, reference, "Translation changed in the project since export and conflicts with the submitted edit.");
+                else if (unchanged)
+                    Issue("warning", record, reference, "Unchanged CSV text is older than the project translation; the current project text will be preserved.");
             }
             if (entry.Scope == "installer" && row[4].IndexOfAny(['\r', '\n']) >= 0)
                 Issue("error", record, reference, "Installer messages must use %n for line breaks, not physical newlines.");

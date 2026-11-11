@@ -10,7 +10,7 @@ change FrameShift on your computer.
    **semicolon**, quote character `"`, with **all columns set to Text**. Use the
    text/CSV import dialog rather than double-clicking. Keep the original copy.
 3. Read `Source` (English) and `Context`, then edit **Translation only**. Leave
-   Language, Scope, Key, Source, Tokens and SourceHash unchanged. Sort whole rows
+   Language, Scope, Key, Source, Tokens, SourceHash and OriginalTranslationHash unchanged. Sort whole rows
    if useful, never a single column. Keep every row, including unfinished rows.
 4. Preserve variables such as `{0}`, `{1:0.0}`, `%1`, `%n`, `{app}`. You can move
    them within a sentence, but retain each occurrence and its format. Do not
@@ -41,3 +41,9 @@ Choose concise, natural wording. Distinguish destructive actions from creating a
 new file. Preserve meaningful whitespace and deliberate line breaks. Ask for a
 screenshot or explanation when Context only names an application area; those
 automatic labels are not a substitute for a real description of the window.
+
+If your file is rejected as an older CSV without OriginalTranslationHash, ask for
+an updated bundle. Do not add the missing column yourself. The maintainer will
+help transfer your deliberate edits while keeping any newer project corrections.
+If both you and the maintainer changed the same text differently, the import stops
+for a review instead of choosing one translation silently.

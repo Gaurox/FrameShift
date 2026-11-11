@@ -51,7 +51,7 @@ and installer caption keys by the application tests.
    return it to the maintainer. CSV does not protect cells from accidental editing.
 
 Columns: `Language`, `Scope`, `Key`, `Source`, `Translation`, `Context`, `Tokens`,
-`SourceHash`. `app` covers the app and shared worker resources; `installer` covers
+`SourceHash`, `OriginalTranslationHash`. `app` covers the app and shared worker resources; `installer` covers
 FrameShift's custom installation messages. If no English resource comment exists,
 Context only identifies the application area and explicitly says no note exists.
 Most current entries still need human-written context; this tool does not invent it.
@@ -69,6 +69,17 @@ catalog, not with edited CSV reference columns. It detects:
 Record numbers include the header; they are not physical text line numbers when
 cells contain line breaks. Do not rely on the editable Tokens column for checks:
 the checker derives expected variables from the repository's English source.
+
+The original-translation hash is a read-only baseline for concurrent edits.
+An unchanged old CSV cell preserves the current project translation. If the
+contributor and maintainer both changed the same text differently, the entire
+import is blocked. Matching changes already applied are accepted without a write.
+Linked Explorer captions receive the same protection, including automatic updates
+of a counterpart not edited by the contributor.
+
+Old eight-column CSVs are rejected because they lack this baseline. Request a fresh
+export and transfer only the contributor's deliberate edits after review. Never
+add current hashes to an old contribution: that would hide concurrent changes.
 
 Default mode permits blank translations but reports them as incomplete work.
 Add `--require-complete` to make blanks errors. Missing rows are always errors.
@@ -106,6 +117,8 @@ may require manual recovery from the manifest; this is not a filesystem-wide
 transaction. A concurrent edit detected during rollback is preserved and reported
 instead of being overwritten.
 
+Missing translation entries are inserted into the existing language resource or
+installer message file; blank submissions do not create empty entries.
 Only changed values are written. No-op imports preserve bytes exactly. An XML
 serializer escapes changed text safely and preserves comments/whitespace, but
 may normalize the XML declaration. Review the Git diff after applying an import.

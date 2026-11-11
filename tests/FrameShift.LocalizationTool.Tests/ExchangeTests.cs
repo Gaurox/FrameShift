@@ -79,6 +79,7 @@ public sealed class ExchangeTests : IDisposable
     [InlineData("braces", "Invalid .NET")]
     [InlineData("inno", "Variables or their formats")]
     [InlineData("columns", "Wrong number")]
+    [InlineData("translation-hash", "Invalid original translation hash")]
     public void Check_ReportsDamagedContributions_WithoutChangingFiles(string damage, string expected)
     {
         TranslationExchange.Export(_root, "es", Csv);
@@ -96,6 +97,7 @@ public sealed class ExchangeTests : IDisposable
                 case "braces": rows[1][4] = "Hola {"; break;
                 case "inno": rows[2][4] = "Tamaño: %2"; break;
                 case "columns": rows[1] = ["es"]; break;
+                case "translation-hash": rows[1][8] = "invalid"; break;
             }
         });
         var before = SourceBytes(); var csvBefore = File.ReadAllBytes(Csv);
