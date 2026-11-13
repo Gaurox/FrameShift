@@ -1,5 +1,7 @@
 # FrameShift — Contrat du socle UI
 
+**Décision du 13 novembre 2026 : conserver l'interface historique pour le développement courant.** La refonte visuelle expérimentale est gardée séparément pour de futurs tests ; voir [le statut et les points de conservation](UI_EXPERIMENT_STATUS.md). Ne pas la réappliquer sans demande utilisateur.
+
 État du 2 octobre 2026 : composition WinForms éprouvée en B puis appliquée aux 36 fenêtres C/D/E. Leur rendu est accepté à 100/150/200/300 % ; les preuves et la portée des contrôles complémentaires figurent dans la [feuille de route officielle](UI_AUDIT_AND_STANDARDIZATION_PLAN_2026-09-28.md). F1 réconcilie le contrat et retire les anciennes APIs inutilisées. F2/F3/F4 sont vérifiées automatiquement puis validées manuellement par l'utilisateur : F est terminée sur son périmètre retenu. G a produit la release 1.20.0, acceptée par l'utilisateur et publiée avec l'installateur testé ; sa portée et les limites de preuve sont consignées dans le rapport de release.
 
 ## Construction d'une nouvelle fenêtre
