@@ -14,18 +14,22 @@ public static class PreviewFrameHelper
     private const int AnimatedPreviewMaxDimension = 960;
 
     internal static async Task<Bitmap> CaptureNativeFrameAsync(string executable, FfmpegRunner runner, string source,
-        FrameShift.Core.FFprobe.MediaProbeResult probe, FrameShift.Core.Actions.VideoLoopTimestamp frame, CancellationToken token)
+        FrameShift.Core.FFprobe.MediaProbeResult probe, FrameShift.Core.Actions.VideoLoopTimestamp frame, CancellationToken token,
+        bool useLoopColorPolicy = true)
     {
         var file = Path.Combine(Path.GetTempPath(), $"frameshift_preview_{Guid.NewGuid():N}.png");
         try
         {
-            var color = FrameShift.Core.Actions.VideoLoopColorPolicy.Evaluate(probe);
-            await color.RequireAvailableAsync(runner, executable, token).ConfigureAwait(false);
+            var color = useLoopColorPolicy ? FrameShift.Core.Actions.VideoLoopColorPolicy.Evaluate(probe) : null;
+            if (color is not null)
+                await color.RequireAvailableAsync(runner, executable, token).ConfigureAwait(false);
+            // A missing timestamp must end the search as soon as decoding passes it.
+            var filter = FormattableString.Invariant($"trim=start_pts={frame.Pts}:end_pts={checked(frame.Pts + 1)}");
             var args = new List<string> { "-hide_banner", "-loglevel", "error", "-progress", "pipe:1", "-nostats", "-y",
                 "-threads", "2", "-filter_threads", "1",
                 "-ss", FrameShift.Core.Actions.VideoLoopFrameReader.Number(Math.Max(0, frame.Seconds - probe.FormatStartSeconds - 0.1)),
-                "-copyts", "-i", source, "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
-                $"select='eq(pts,{frame.Pts.ToString(System.Globalization.CultureInfo.InvariantCulture)})'" + (color.ConvertsToSdr ? "," + color.Filter : ""),
+                "-copyts", "-i", source, "-map", "0:V:0", "-an", "-sn", "-dn", "-vf",
+                filter + (color?.ConvertsToSdr == true ? "," + color.Filter : ""),
                 "-frames:v", "1", "-fps_mode", "passthrough", file };
             var result = await runner.RunAsync(executable, args, null, null, source, L.Get("Loop_NativeCapture"), "CPU", token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
@@ -45,7 +49,8 @@ public static class PreviewFrameHelper
         string inputPath,
         double seconds,
         string currentAction,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool useFirstVideoStream = false)
     {
         return await CaptureFrameAsync(
             ffmpegPath,
@@ -54,7 +59,7 @@ public static class PreviewFrameHelper
             seconds,
             currentAction,
             null,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken, useFirstVideoStream).ConfigureAwait(false);
     }
 
     public static async Task<Bitmap> CaptureFrameAsync(
@@ -64,7 +69,8 @@ public static class PreviewFrameHelper
         double seconds,
         string currentAction,
         string? videoFilter,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool useFirstVideoStream = false)
     {
         var tempPath = Path.Combine(Path.GetTempPath(), $"frameshift_preview_{Guid.NewGuid():N}.png");
 
@@ -78,6 +84,9 @@ public static class PreviewFrameHelper
                 "-ss", Math.Max(0.0, seconds).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
                 "-i", inputPath
             };
+
+            if (useFirstVideoStream)
+                arguments.AddRange(["-map", "0:V:0"]);
 
             if (!string.IsNullOrWhiteSpace(videoFilter))
             {

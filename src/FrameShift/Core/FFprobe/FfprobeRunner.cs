@@ -37,7 +37,8 @@ public sealed class FfprobeRunner
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
-            RedirectStandardError = true
+            RedirectStandardError = true,
+            StandardOutputEncoding = Encoding.UTF8
         };
 
         foreach (var argument in arguments)
@@ -51,12 +52,14 @@ public sealed class FfprobeRunner
     public async Task<MediaProbeAttemptResult> TryProbeMediaAsync(
         string executablePath,
         string inputPath,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool includeChapters = false)
     {
+        const string entries = "format=duration,start_time:stream=index,codec_type,codec_name,width,height,sample_aspect_ratio,avg_frame_rate,r_frame_rate,nb_frames,duration,start_time,sample_rate,channels,pix_fmt,color_space,color_transfer,color_primaries,color_range,profile,bits_per_raw_sample:stream_disposition=attached_pic:stream_tags=rotate:stream_side_data=rotation,side_data_type,max_luminance,max_content";
         var arguments = new[]
         {
             "-v", "error",
-            "-show_entries", "format=duration,start_time:stream=index,codec_type,codec_name,width,height,sample_aspect_ratio,avg_frame_rate,r_frame_rate,nb_frames,duration,start_time,sample_rate,channels,pix_fmt,color_space,color_transfer,color_primaries,color_range,profile,bits_per_raw_sample:stream_tags=rotate:stream_side_data=rotation,side_data_type,max_luminance,max_content",
+            "-show_entries", includeChapters ? entries + ":chapter=start_time,end_time:chapter_tags" : entries,
             "-of", "json",
             inputPath
         };
@@ -78,6 +81,7 @@ public sealed class FfprobeRunner
             var streams = new List<MediaStreamInfo>();
             var audioCodecs = new List<string>();
             var subtitleCodecs = new List<string>();
+            var hasVideo = false;
             var videoCodec = default(string);
             var videoWidth = 0;
             var videoHeight = 0;
@@ -110,19 +114,24 @@ public sealed class FfprobeRunner
                     ? codecElement.GetString()
                     : null;
 
-                streams.Add(new MediaStreamInfo(index, codecType, codecName));
+                var stream = new MediaStreamInfo(index, codecType, codecName);
+                if (codecType == "audio")
+                {
+                    var hasStart = double.TryParse(GetStringValue(streamElement, "start_time"), NumberStyles.Float,
+                        CultureInfo.InvariantCulture, out var audioStart) && double.IsFinite(audioStart);
+                    stream = stream with
+                    {
+                        StartSeconds = hasStart ? audioStart : null,
+                        SampleRate = GetPositiveInt(streamElement, "sample_rate")
+                    };
+                }
+                streams.Add(stream);
 
                 if (string.Equals(codecType, "audio", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(codecName))
                 {
                     audioCodecs.Add(codecName.ToLowerInvariant());
-
-                    if (primaryAudioSampleRate == 0 &&
-                        streamElement.TryGetProperty("sample_rate", out var srElement) &&
-                        int.TryParse(srElement.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedSampleRate) &&
-                        parsedSampleRate > 0)
-                    {
-                        primaryAudioSampleRate = parsedSampleRate;
-                    }
+                    if (primaryAudioSampleRate == 0)
+                        primaryAudioSampleRate = stream.SampleRate;
 
                     if (primaryAudioChannels == 0 &&
                         streamElement.TryGetProperty("channels", out var chElement) &&
@@ -136,8 +145,9 @@ public sealed class FfprobeRunner
                 {
                     subtitleCodecs.Add(codecName.ToLowerInvariant());
                 }
-                else if (string.Equals(codecType, "video", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(videoCodec))
+                else if (!hasVideo && string.Equals(codecType, "video", StringComparison.OrdinalIgnoreCase) && !IsAttachedPicture(streamElement))
                 {
+                    hasVideo = true;
                     videoCodec = codecName?.ToLowerInvariant();
                     videoSampleAspectRatio = ParseFrameRate(GetStringValue(streamElement, "sample_aspect_ratio")?.Replace(':', '/')) ?? 1;
                     if (double.TryParse(GetStringValue(streamElement, "start_time"), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedStart))
@@ -238,7 +248,7 @@ public sealed class FfprobeRunner
             return new MediaProbeAttemptResult(new MediaProbeResult(
                 duration,
                 audioCodecs.Count > 0,
-                streams.Any(stream => string.Equals(stream.CodecType, "video", StringComparison.OrdinalIgnoreCase)),
+                hasVideo,
                 videoWidth,
                 videoHeight,
                 videoCodec,
@@ -261,7 +271,8 @@ public sealed class FfprobeRunner
                 VideoBitDepth = videoBitDepth,
                 VideoStartSeconds = videoStartSeconds,
                 FormatStartSeconds = formatStartSeconds,
-                VideoSampleAspectRatio = videoSampleAspectRatio
+                VideoSampleAspectRatio = videoSampleAspectRatio,
+                Chapters = includeChapters ? ReadChapters(document.RootElement) : []
             }, null);
         }
         catch (OperationCanceledException) { throw; }
@@ -272,9 +283,31 @@ public sealed class FfprobeRunner
         }
     }
 
+    private static List<MediaChapter> ReadChapters(JsonElement root)
+    {
+        var chapters = new List<MediaChapter>();
+        if (!root.TryGetProperty("chapters", out var entries)) return chapters;
+        foreach (var entry in entries.EnumerateArray())
+        {
+            if (!double.TryParse(GetStringValue(entry, "start_time"), NumberStyles.Float, CultureInfo.InvariantCulture, out var start) ||
+                !double.TryParse(GetStringValue(entry, "end_time"), NumberStyles.Float, CultureInfo.InvariantCulture, out var end) ||
+                !double.IsFinite(start) || !double.IsFinite(end) || end <= start)
+                continue;
+
+            var tags = new Dictionary<string, string>();
+            if (entry.TryGetProperty("tags", out var metadata))
+            {
+                foreach (var tag in metadata.EnumerateObject())
+                    tags[tag.Name] = tag.Value.GetString() ?? string.Empty;
+            }
+            chapters.Add(new MediaChapter(start, end, tags));
+        }
+        return chapters;
+    }
+
     private async Task<double?> TryReadHdrPeakAsync(string executable, string source, CancellationToken token)
     {
-        var result = await RunProbeAsync(executable, ["-v", "error", "-threads", "2", "-select_streams", "v:0",
+        var result = await RunProbeAsync(executable, ["-v", "error", "-threads", "2", "-select_streams", "V:0",
             "-read_intervals", "%+#32", "-show_frames", "-show_entries", "frame_side_data=max_luminance,max_content", "-of", "json", source], token).ConfigureAwait(false);
         if (!result.Success) return null; // The color policy reports its nominal fallback.
         try
@@ -302,7 +335,7 @@ public sealed class FfprobeRunner
         {
             "-v", "error",
             "-show_data",
-            "-show_entries", "format=format_name,duration:stream=index,codec_type,codec_name,codec_tag_string,profile,level,width,height,pix_fmt,color_space,color_transfer,color_primaries,color_range,field_order,time_base,avg_frame_rate,r_frame_rate,sample_aspect_ratio,start_time,sample_fmt,sample_rate,channels,channel_layout,extradata:stream_tags=rotate:stream_side_data=rotation",
+            "-show_entries", "format=format_name,duration,start_time:stream=index,codec_type,codec_name,codec_tag_string,profile,level,width,height,pix_fmt,color_space,color_transfer,color_primaries,color_range,field_order,time_base,avg_frame_rate,r_frame_rate,sample_aspect_ratio,start_time,sample_fmt,sample_rate,channels,channel_layout,extradata:stream_disposition=attached_pic:stream_tags=rotate:stream_side_data=rotation",
             "-of", "json",
             inputPath
         };
@@ -331,7 +364,7 @@ public sealed class FfprobeRunner
             foreach (var stream in streamsElement.EnumerateArray())
             {
                 var type = GetStringValue(stream, "codec_type") ?? string.Empty;
-                if (string.Equals(type, "video", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(type, "video", StringComparison.OrdinalIgnoreCase) && !IsAttachedPicture(stream))
                 {
                     videoStreamCount++;
                     if (video is null)
@@ -386,9 +419,11 @@ public sealed class FfprobeRunner
 
             var formatName = default(string);
             TimeSpan? duration = null;
+            string? formatStart = null;
             if (root.TryGetProperty("format", out var formatElement))
             {
                 formatName = GetStringValue(formatElement, "format_name");
+                formatStart = GetStringValue(formatElement, "start_time");
                 var durationValue = GetStringValue(formatElement, "duration");
                 if (double.TryParse(durationValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) && seconds > 0d)
                 {
@@ -403,7 +438,7 @@ public sealed class FfprobeRunner
                 audioStreamCount,
                 otherStreamCount,
                 video,
-                audio), null);
+                audio) { FormatStartTime = formatStart }, null);
         }
         catch (Exception ex)
         {
@@ -627,6 +662,9 @@ public sealed class FfprobeRunner
                 ? value.GetRawText()
                 : null;
     }
+
+    private static bool IsAttachedPicture(JsonElement stream) =>
+        stream.TryGetProperty("disposition", out var disposition) && GetPositiveInt(disposition, "attached_pic") != 0;
 
     private static int GetPositiveInt(JsonElement element, string propertyName)
     {

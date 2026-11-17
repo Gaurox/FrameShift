@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace FrameShift.Core.FFprobe;
 
@@ -34,6 +35,27 @@ public sealed record JoinVideoProbeResult(
     public bool IsHdrLikely => Video?.IsHdrLikely ?? false;
 
     public double DurationSeconds => Duration?.TotalSeconds ?? 0d;
+
+    internal string? FormatStartTime { get; init; }
+
+    internal double VideoOffsetSeconds
+    {
+        get
+        {
+            var videoStart = ParseStartTime(Video?.StartTime);
+            if (videoStart is null) return 0;
+            var formatStart = ParseStartTime(FormatStartTime) ??
+                Math.Min(videoStart.Value, ParseStartTime(Audio?.StartTime) ?? videoStart.Value);
+            var offset = videoStart.Value - formatStart;
+            return offset > 0 && offset < DurationSeconds ? offset : 0;
+        }
+    }
+
+    internal double NormalizedDurationSeconds => DurationSeconds - VideoOffsetSeconds;
+
+    private static double? ParseStartTime(string? value) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) &&
+        double.IsFinite(seconds) ? seconds : null;
 
     private static int NormalizeRotation(int rotation)
     {

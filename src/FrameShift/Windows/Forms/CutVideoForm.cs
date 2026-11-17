@@ -47,7 +47,8 @@ public sealed partial class CutVideoForm : Form
     {
         _inputPath = inputPath;
         _hasInjectedCapture = previewLoader is not null;
-        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(ffmpegPath, ffmpegRunner, inputPath, seconds, L.Get("Loop_CutPreview"), token));
+        _capturePreview = previewLoader ?? ((seconds, token) => PreviewFrameHelper.CaptureFrameAsync(
+            ffmpegPath, ffmpegRunner, inputPath, seconds, L.Get("Loop_CutPreview"), token, useFirstVideoStream: true));
         _fps = probe.VideoFrameRate ?? throw new InvalidOperationException(MediaActionMessages.VideoFrameRateUnavailable());
         _totalFrames = probe.EstimatedVideoFrameCount is long count && count > 0
             ? (int)Math.Min(int.MaxValue, count)
@@ -340,6 +341,16 @@ public sealed partial class CutVideoForm : Form
                 throw new InvalidOperationException(string.Equals(target, "start", StringComparison.Ordinal)
                     ? MediaActionMessages.CutVideoStartTimeInvalid()
                     : MediaActionMessages.CutVideoEndTimeInvalid());
+            }
+
+            if (_loopContext == LoopContext.Cut && _timingIndex is not null)
+            {
+                var displayedTime = target == "start"
+                    ? _nativeStartTime ?? (_selection.StartFrame - 1) / _fps
+                    : _nativeEndTime ?? _selection.EndFrame / _fps;
+                if (rawValue != CutVideoMath.FormatPreciseTime(displayedTime))
+                    _ = ResolveCutTimeEditAsync(target, seconds);
+                return true;
             }
 
             var frameValue = string.Equals(target, "start", StringComparison.Ordinal)

@@ -15,6 +15,33 @@ namespace FrameShift.Tests;
 public sealed class JoinVideosActionIntegrationTests
 {
     [Fact]
+    public async Task NormalizedJoin_RebasesAudioWithTheDelayedVideo()
+    {
+        using var fixture = new VideoLoopExportFixture();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var source = Path.Combine(fixture.Root, "vidéo retardée.mp4");
+        await fixture.RunAsync([
+            "-itsoffset", "1.5", "-f", "lavfi", "-i", "color=c=black:s=64x64:r=25:d=4",
+            "-f", "lavfi", "-i", @"aevalsrc=0.5*sin(2*PI*1000*t)*between(t\,2.5\,2.6):s=48000:d=5.5",
+            "-vf", "drawbox=c=white:t=fill:enable='eq(n,25)'", "-fps_mode", "passthrough",
+            "-c:v", "libx264", "-c:a", "aac", source
+        ]);
+
+        var settings = new JoinVideosSettings { InputPaths = [source, source], Mode = JoinVideosMode.Normalize };
+        var action = new JoinVideosAction(fixture.Runner, fixture.Prober, fixture.Tools);
+        var options = new Dictionary<string, string> { [ActionOptionKeys.JoinVideosSettings] = settings.ToOptionPayload() };
+        var result = await action.ExecuteAsync(new(source, new AppLogger(), null, options), deadline.Token);
+        Assert.True(result.Success, result.Message);
+        var output = Assert.IsType<string>(result.OutputPath);
+        var frames = await new VideoLoopFrameReader(fixture.Runner, fixture.Tools.ResolveFfmpegPath(), output)
+            .ReadAsync(0, 4, null, 110, deadline.Token);
+        var flash = Assert.Single(frames, frame => frame.Pixels[0] > 210);
+        var onset = await CutVideoActionTimingTests.ReadToneOnsetAsync(fixture, output, deadline.Token);
+        Assert.InRange(onset - flash.Time, -0.025, 0.025);
+        Assert.InRange((await fixture.ReadProbeAsync(output)).Duration!.Value.TotalSeconds, 7.95, 8.05);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ClipsWithDifferentResolutionAndAudio_NormalizesAndJoins()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"frameshift_join_videos_normalize_{Guid.NewGuid():N}");

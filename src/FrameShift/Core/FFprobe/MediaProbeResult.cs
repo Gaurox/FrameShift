@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace FrameShift.Core.FFprobe;
 
+internal sealed record MediaChapter(double Start, double End, IReadOnlyDictionary<string, string> Tags);
+
 public sealed record MediaProbeResult(
     TimeSpan? Duration,
     bool HasAudio,
@@ -17,6 +19,8 @@ public sealed record MediaProbeResult(
     IReadOnlyList<MediaStreamInfo> Streams)
 {
     public bool HasSubtitles => SubtitleCodecs.Count > 0;
+
+    internal IReadOnlyList<MediaChapter> Chapters { get; init; } = [];
 
     public double FormatStartSeconds { get; init; }
     public double VideoStartSeconds { get; init; }

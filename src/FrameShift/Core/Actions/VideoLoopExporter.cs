@@ -123,7 +123,8 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
                 var repeats = Path.Combine(workspace, "repeats.txt");
                 await File.WriteAllLinesAsync(repeats, Enumerable.Range(0, settings.Repetitions)
                     .SelectMany(_ => forwards.SelectMany(f => new[] { $"file '{Path.GetFileName(f.File)}'", $"duration {Number(f.Duration)}" })), token).ConfigureAwait(false);
-                final.AddRange(["-f", "concat", "-safe", "1", "-i", repeats]);
+                // The concat demuxer treats '#' in an absolute manifest path as a URL fragment.
+                final.AddRange(["-f", "concat", "-safe", "1", "-i", Path.GetFileName(repeats)]);
             }
             else final.AddRange(["-stream_loop", (settings.Repetitions - 1).ToString(CultureInfo.InvariantCulture), "-i", cycle]);
             if (compactNatural) final.AddRange(["-map", "0:v:0", "-c:v", "copy", "-video_track_timescale", "1000000"]);
@@ -146,10 +147,11 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
             if (keepAudio) final.AddRange(["-map", "0:a:0", "-c:a", "aac", "-b:a", "256k"]);
             else final.Add("-an");
             color.AddOutputArguments(final);
-            final.AddRange(["-map_metadata", "-1", "-movflags", "+faststart", destination]);
+            final.AddRange(["-map_metadata", "-1", "-movflags", "+faststart", Path.GetFullPath(destination)]);
             using (new FileStream(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None)) { }
             ownsDestination = true;
-            await RunAsync(executable, final, outputSeconds, budget, progress, token).ConfigureAwait(false);
+            await RunAsync(executable, final, outputSeconds, budget, progress, token,
+                workingDirectory: settings.Mode == VideoLoopMode.Natural ? workspace : null).ConfigureAwait(false);
             if (VideoLoopSourceStamp.Read(source) != stamp) throw new VideoLoopSourceChangedException();
         }
         catch (VideoLoopProcessTerminationException) { mayClean = false; throw; }
@@ -170,7 +172,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         var args = Prefix();
         args[args.IndexOf("error")] = "info";
         args.AddRange(["-threads", "2", "-filter_threads", "1", "-ss", Number(Math.Max(0, start - probe.FormatStartSeconds - 0.1)),
-            "-copyts", "-i", source, "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
+            "-copyts", "-i", source, "-map", "0:V:0", "-an", "-sn", "-dn", "-vf",
             $"trim=start={Number(start)}:end={Number(probe.VideoStartSeconds + bounds.EndSeconds)},showinfo",
             "-frames:v", "1", "-fps_mode", "passthrough", "-f", "null", "-"]);
         var timing = new VideoLoopTimingCollector(1);
@@ -192,7 +194,7 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         // Seek just before the selection, but trim against original video timestamps.
         // This avoids losing a fractional-FPS boundary to microsecond seek rounding.
         args.AddRange(["-ss", Number(Math.Max(0, start - probe.FormatStartSeconds - 0.1)), "-copyts", "-i", source,
-            "-map", "0:v:0", "-vf", $"trim=start={Number(start)}:end={Number(end)}," + (compactNatural ? "" : "showinfo,") + "setpts=PTS-STARTPTS" +
+            "-map", "0:V:0", "-vf", $"trim=start={Number(start)}:end={Number(end)}," + (compactNatural ? "" : "showinfo,") + "setpts=PTS-STARTPTS" +
             (color.ConvertsToSdr ? "," + color.Filter : "") +
             (preview is null ? "" : $",scale={preview.Width}:{preview.Height}:flags=area,setsar=1") +
             (mode == VideoLoopMode.PingPong ? $",fps={Number(fps)}" : "")]);
@@ -291,8 +293,8 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
         await File.WriteAllLinesAsync(list, parts.Select(p => $"file '{Path.GetFileName(p)}'"), token).ConfigureAwait(false);
         var cycle = Path.Combine(workspace, "cycle.mkv");
         var concat = Prefix();
-        concat.AddRange(["-f", "concat", "-safe", "1", "-i", list, "-map", "0:v:0", "-c", "copy", cycle]);
-        await RunAsync(executable, concat, duration, budget, progress, token).ConfigureAwait(false);
+        concat.AddRange(["-f", "concat", "-safe", "1", "-i", Path.GetFileName(list), "-map", "0:v:0", "-c", "copy", cycle]);
+        await RunAsync(executable, concat, duration, budget, progress, token, workingDirectory: workspace).ConfigureAwait(false);
         return cycle;
     }
 
@@ -305,9 +307,9 @@ public sealed class VideoLoopExporter(FfmpegRunner runner, FfprobeRunner probeRu
     }
 
     private async Task RunAsync(string executable, List<string> args, double duration,
-        VideoLoopResourceBudget budget, IProgressReporter? progress, CancellationToken token)
+        VideoLoopResourceBudget budget, IProgressReporter? progress, CancellationToken token, string? workingDirectory = null)
     {
-        await budget.RunAsync(runner, executable, args, duration, progress, token).ConfigureAwait(false);
+        await budget.RunAsync(runner, executable, args, duration, progress, token, workingDirectory: workingDirectory).ConfigureAwait(false);
     }
 
     private static string LastPacketDuration(double seconds)

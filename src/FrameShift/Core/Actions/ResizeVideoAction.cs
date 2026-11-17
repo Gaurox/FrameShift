@@ -88,28 +88,28 @@ public sealed class ResizeVideoAction : IFrameShiftAction
 
         try
         {
-            var arguments = BuildArguments(request.InputPath, outputPath, plan, resize, probe.HasAudio);
-            var runResult = await _ffmpegRunner.RunAsync(
-                ffmpegPath,
-                arguments,
-                probe.Duration,
-                probe.EstimatedVideoFrameCount,
-                request.ProgressReporter,
-                request.InputPath,
-                Descriptor.DisplayName,
-                plan.ModeLabel,
-                cancellationToken).ConfigureAwait(false);
+            var runResult = await ConversionActionHelper.RunWithVideoCpuFallbackAsync(plan,
+                () => VideoConversionPlanner.BuildPlan(target, profile, probe, false),
+                attempt => _ffmpegRunner.RunAsync(
+                    ffmpegPath,
+                    BuildArguments(request.InputPath, outputPath, attempt, resize, probe.HasAudio),
+                    probe.Duration,
+                    probe.EstimatedVideoFrameCount,
+                    request.ProgressReporter,
+                    request.InputPath,
+                    Descriptor.DisplayName,
+                    attempt.ModeLabel,
+                    cancellationToken),
+                output, request).ConfigureAwait(false);
 
             if (runResult.Canceled)
             {
-                ConversionActionHelper.DeleteIfExists(outputPath);
                 request.ProgressReporter?.ReportState("canceled", L.Get("ResizeVideoAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, runResult.CancellationScope);
             }
 
-            if (runResult.ExitCode != 0)
+            if (runResult.ExitCode != 0 || !File.Exists(outputPath))
             {
-                ConversionActionHelper.DeleteIfExists(outputPath);
                 var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(runResult.StandardError, MediaActionMessages.FfmpegFailure("video"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);

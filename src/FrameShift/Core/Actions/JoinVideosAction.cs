@@ -269,7 +269,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 {
                     arguments.AddRange([
                         "-f", "lavfi",
-                        "-t", probe.DurationSeconds.ToString("0.###", CultureInfo.InvariantCulture),
+                        "-t", VideoLoopFrameReader.Number(probe.NormalizedDurationSeconds),
                         "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"
                     ]);
                 }
@@ -331,8 +331,9 @@ public sealed class JoinVideosAction : IFrameShiftAction
 
         for (var index = 0; index < probes.Count; index++)
         {
-            var duration = probes[index].DurationSeconds.ToString("0.###", CultureInfo.InvariantCulture);
-            builder.Append('[').Append(index).Append(":v:0]")
+            var probe = probes[index];
+            var duration = VideoLoopFrameReader.Number(probe.NormalizedDurationSeconds);
+            builder.Append('[').Append(index).Append(":V:0]")
                 .Append("settb=AVTB,setpts=PTS-STARTPTS,fps=").Append(plan.TargetFrameRate)
                 .Append(",scale=").Append(plan.TargetWidth).Append(':').Append(plan.TargetHeight)
                 .Append(":force_original_aspect_ratio=decrease,pad=").Append(plan.TargetWidth).Append(':').Append(plan.TargetHeight)
@@ -344,10 +345,14 @@ public sealed class JoinVideosAction : IFrameShiftAction
                 continue;
             }
 
-            if (probes[index].HasAudio)
+            if (probe.HasAudio)
             {
-                builder.Append('[').Append(index).Append(":a:0]")
-                    .Append("aresample=48000:async=1:first_pts=0,aformat=sample_rates=48000:sample_fmts=fltp:channel_layouts=stereo,apad,atrim=duration=")
+                builder.Append('[').Append(index).Append(":a:0]");
+                // The video is rebased to its first frame. Use that same origin for audio;
+                // resampling discards samples before it and retains any initial silence.
+                if (probe.VideoOffsetSeconds > 0)
+                    builder.Append("asetpts=PTS-").Append(VideoLoopFrameReader.Number(probe.VideoOffsetSeconds)).Append("/TB,");
+                builder.Append("aresample=48000:async=1:first_pts=0,aformat=sample_rates=48000:sample_fmts=fltp:channel_layouts=stereo,apad,atrim=duration=")
                     .Append(duration).Append(",asetpts=PTS-STARTPTS[a").Append(index).Append("];\n");
             }
             else
@@ -411,6 +416,7 @@ public sealed class JoinVideosAction : IFrameShiftAction
         CancellationToken cancellationToken)
     {
         var filterComplex = BuildNormalizationFilterScript(probes, plan);
+        totalDuration = TimeSpan.FromSeconds(probes.Sum(probe => probe.NormalizedDurationSeconds));
         var canUseNvenc = await _ffmpegRunner.IsEncoderAvailableAsync(ffmpegPath, "h264_nvenc", cancellationToken).ConfigureAwait(false);
 
         request.ProgressReporter?.ReportState("processing", canUseNvenc

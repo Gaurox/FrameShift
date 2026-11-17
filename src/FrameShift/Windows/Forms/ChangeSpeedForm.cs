@@ -38,6 +38,7 @@ public sealed class ChangeSpeedForm : Form
     private readonly double _sourceDurationSeconds;
     private readonly bool _hasAudio;
     private readonly int _sampleRate;
+    internal double VideoAudioDelaySeconds { get; init; }
 
     private readonly TrackBar _trackBar;
     private readonly TextBox _textPercent;
@@ -421,7 +422,7 @@ public sealed class ChangeSpeedForm : Form
 
         var tempPath = Path.Combine(Path.GetTempPath(), $"fs_speed_preview_{Guid.NewGuid():N}.mp4");
         _previewVideoPath = tempPath;
-        var args = BuildVideoPreviewArguments(_inputPath, tempPath, settings, _hasAudio, _sampleRate);
+        var args = BuildVideoPreviewArguments(_inputPath, tempPath, settings, _hasAudio, _sampleRate, VideoAudioDelaySeconds);
 
         var result = await _runPreview(args, TimeSpan.FromSeconds(60), token).ConfigureAwait(true);
 
@@ -507,7 +508,7 @@ public sealed class ChangeSpeedForm : Form
     }
 
     private static IReadOnlyList<string> BuildVideoPreviewArguments(
-        string inputPath, string outputPath, ChangeSpeedSettings settings, bool hasAudio, int sampleRate)
+        string inputPath, string outputPath, ChangeSpeedSettings settings, bool hasAudio, int sampleRate, double audioDelay)
     {
         var setPtsFactor = (1.0 / settings.SpeedFactor).ToString("0.######", CultureInfo.InvariantCulture);
         var videoFilter = $"setpts={setPtsFactor}*PTS";
@@ -517,31 +518,17 @@ public sealed class ChangeSpeedForm : Form
             "-hide_banner", "-loglevel", "error",
             "-y",
             "-t", "10",
-            "-i", inputPath
+            "-i", inputPath,
+            "-map", "0:V:0", "-vf", videoFilter
         };
 
         if (hasAudio)
         {
-            string audioFilter;
-            if (settings.KeepPitch)
-            {
-                audioFilter = ChangeAudioSpeedAction.BuildAtempoChain(settings.SpeedFactor);
-            }
-            else
-            {
-                var targetRate = Math.Max(1000, (int)Math.Round(sampleRate * settings.SpeedFactor));
-                audioFilter = $"asetrate={targetRate},aresample={sampleRate}";
-            }
-
-            args.Add("-filter_complex");
-            args.Add($"[0:v]{videoFilter}[v];[0:a]{audioFilter}[a]");
-            args.Add("-map"); args.Add("[v]");
-            args.Add("-map"); args.Add("[a]");
-            args.Add("-c:a"); args.Add("aac"); args.Add("-b:a"); args.Add("128k");
+            args.AddRange(["-map", "0:a:0", "-af", ChangeVideoSpeedAction.BuildAudioFilter(sampleRate, settings, audioDelay),
+                "-c:a", "aac", "-aac_coder", "fast", "-b:a", "128k"]);
         }
         else
         {
-            args.Add("-filter:v"); args.Add(videoFilter);
             args.Add("-an");
         }
 

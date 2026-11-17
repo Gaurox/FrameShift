@@ -31,7 +31,7 @@ internal sealed class VideoLoopFrameReader(FfmpegRunner runner, string executabl
             if (colorPolicy?.ConvertsToSdr == true) args.AddRange(["-threads", "2", "-filter_threads", "1"]);
             if (seek + videoOffset > 0) args.AddRange(["-ss", Number(Math.Max(0, seek + videoOffset - (sampleRate is null ? 0.001 : 0)))]);
             if (sampleRate is null) args.Add("-copyts");
-            args.AddRange(["-i", source, "-t", Number(duration), "-map", "0:v:0", "-an", "-sn", "-dn"]);
+            args.AddRange(["-i", source, "-t", Number(duration), "-map", "0:V:0", "-an", "-sn", "-dn"]);
             var filter = $"scale={width}:{height}:flags=area,setsar=1,format=rgb24";
             if (colorPolicy?.ConvertsToSdr == true) filter = colorPolicy.Filter + "," + filter;
             if (sampleRate is double fps) filter = $"fps={Number(fps)}:round=near," + filter;

@@ -4,11 +4,33 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using FrameShift.Core.FFmpeg;
+using FrameShift.Core.Helpers;
 
 namespace FrameShift.Core.Actions;
 
 public static class ConversionActionHelper
 {
+    internal static async Task<FfmpegRunResult> RunWithVideoCpuFallbackAsync(VideoConversionPlan plan,
+        Func<VideoConversionPlan> buildCpuPlan, Func<VideoConversionPlan, Task<FfmpegRunResult>> run,
+        OutputOperation output, ActionRequest request)
+    {
+        var result = await run(plan).ConfigureAwait(false);
+        if (result.ProcessTerminationConfirmed && !result.Canceled && result.ExitCode != 0 &&
+            plan.VideoCodec == "h264_nvenc")
+        {
+            request.Logger.Log($"NVENC video transform failed; retrying with CPU: {result.StandardError}");
+            request.ProgressReporter?.ReportState("processing", L.Get("JoinVideosAction_GPU_encoding_was_unavailable_retryin_8ac764d9"));
+            DeleteIfExists(output.WorkingPath);
+            result = await run(buildCpuPlan()).ConfigureAwait(false);
+        }
+
+        if (!result.ProcessTerminationConfirmed)
+            output.RetainForUnconfirmedProcess();
+        return result;
+    }
+
     internal static ActionExecutionResult CompleteOutput(
         Helpers.OutputOperation output, ActionRequest request, string actionName, CancellationToken cancellationToken)
     {

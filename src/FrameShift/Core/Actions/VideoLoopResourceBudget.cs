@@ -70,7 +70,8 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
     }
 
     internal async Task<FfmpegRunResult> RunAsync(FfmpegRunner runner, string executable, IReadOnlyCollection<string> args,
-        double duration, IProgressReporter? progress, CancellationToken token, Action<string>? observer = null)
+        double duration, IProgressReporter? progress, CancellationToken token, Action<string>? observer = null,
+        string? workingDirectory = null)
     {
         using var cancel = CancellationTokenSource.CreateLinkedTokenSource(token);
         using var stopWatch = new CancellationTokenSource();
@@ -80,7 +81,7 @@ internal sealed class VideoLoopResourceBudget(string workspace, string destinati
         try
         {
             result = await runner.RunAsync(executable, args, TimeSpan.FromSeconds(duration), progress,
-                inputPath, L.Get("Loop_VideoLoop"), "CPU", cancel.Token, observer).ConfigureAwait(false);
+                inputPath, L.Get("Loop_VideoLoop"), "CPU", cancel.Token, observer, workingDirectory).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (resourceFailure is not null) { throw resourceFailure; }
         finally { stopWatch.Cancel(); await watch.ConfigureAwait(false); }

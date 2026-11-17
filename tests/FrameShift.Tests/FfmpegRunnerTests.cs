@@ -5,6 +5,29 @@ namespace FrameShift.Tests;
 
 public sealed class FfmpegRunnerTests
 {
+    [Fact]
+    public async Task Concat_ResolvesLocalClipsInWorkingDirectoryWithHash()
+    {
+        using var fixture = new VideoLoopExportFixture();
+        await fixture.GenerateAsync(seconds: 1);
+        var directory = Path.Combine(fixture.Root, "assemblage # été");
+        Directory.CreateDirectory(directory);
+        File.Copy(fixture.Source, Path.Combine(directory, "forward_0.mkv"));
+        await File.WriteAllTextAsync(Path.Combine(directory, "repeats.txt"),
+            "file 'forward_0.mkv'\nfile 'forward_0.mkv'\n");
+        var output = Path.Combine(fixture.Root, "répétitions.mkv");
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+        var result = await fixture.Runner.RunAsync(fixture.Tools.ResolveFfmpegPath(),
+            ["-hide_banner", "-loglevel", "error", "-progress", "pipe:1", "-nostats",
+                "-f", "concat", "-safe", "1", "-i", "repeats.txt", "-c", "copy", output],
+            null, null, fixture.Source, "Concat fixture", "CPU", deadline.Token, workingDirectory: directory);
+
+        Assert.True(result.ExitCode == 0, result.StandardError);
+        var probe = await fixture.ReadProbeAsync(output);
+        Assert.InRange(probe.Duration!.Value.TotalSeconds, 1.99, 2.01);
+    }
+
     // TryParseFfmpegTime — valid inputs
 
     [Theory]

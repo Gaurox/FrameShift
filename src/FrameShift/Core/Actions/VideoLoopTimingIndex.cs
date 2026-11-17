@@ -100,6 +100,37 @@ internal sealed class VideoLoopTimingIndex : IDisposable
             return await PositionAsync(frame, t).ConfigureAwait(false);
         }, token);
 
+    internal Task<VideoLoopFramePosition> ResolveCutTimeAsync(double seconds, bool end, CancellationToken token,
+        Action<string>? status = null) =>
+        ExecuteAsync(async t =>
+        {
+            // A cut starts on the image visible at the requested time and ends before
+            // the first image at the exclusive end. Work in native presentation order.
+            var boundary = seconds + (end ? -Epsilon : Epsilon);
+            var tail = IndexedFrameCount == 0 ? 0 : Relative(Read(IndexedFrameCount));
+            while (!IsComplete && (IndexedFrameCount == 0 || tail <= boundary))
+            {
+                var limit = (int)(MaximumIndexBytes / RecordBytes) - 1;
+                var count = (int)Math.Clamp(Math.Ceiling((boundary - tail) * (_probe.VideoFrameRate ?? 1)), 1, WindowFrames);
+                var target = Math.Min(IndexedFrameCount + count, limit);
+                if (target <= IndexedFrameCount) throw new InvalidOperationException(L.Get("Loop_IndexBudget"));
+                await EnsureOrdinalAsync(target, t, status, lookahead: 1).ConfigureAwait(false);
+                if (IndexedFrameCount != 0) tail = Relative(Read(IndexedFrameCount));
+            }
+
+            if (IndexedFrameCount == 0) throw new InvalidOperationException(L.Get("Loop_NoDecodedFrames"));
+            var low = 1;
+            var high = IndexedFrameCount + 1;
+            while (low < high)
+            {
+                var middle = low + (high - low) / 2;
+                if (middle <= IndexedFrameCount && Relative(Read(middle)) <= boundary) low = middle + 1;
+                else high = middle;
+            }
+
+            return Position(Math.Max(1, low - 1));
+        }, token);
+
     internal Task<VideoLoopFramePosition?> NeighborAsync(VideoLoopFramePosition current, int delta, CancellationToken token) =>
         ExecuteAsync(async t =>
         {
@@ -134,10 +165,10 @@ internal sealed class VideoLoopTimingIndex : IDisposable
         throw new VideoLoopSourceChangedException();
     }
 
-    private async Task EnsureOrdinalAsync(int frame, CancellationToken token, Action<string>? status)
+    private async Task EnsureOrdinalAsync(int frame, CancellationToken token, Action<string>? status, int lookahead = 129)
     {
         if (frame < IndexedFrameCount || IsComplete) return;
-        var wanted = Math.Min((long)frame + 129, MaximumIndexBytes / RecordBytes);
+        var wanted = Math.Min((long)frame + lookahead, MaximumIndexBytes / RecordBytes);
         if (wanted <= frame) throw new InvalidOperationException(L.Get("Loop_IndexBudget"));
         status?.Invoke(L.Get("Loop_Indexing"));
         var last = IndexedFrameCount > 0 ? Read(IndexedFrameCount) : (VideoLoopTimestamp?)null;
@@ -180,7 +211,7 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     {
         var args = new List<string> { "-hide_banner", "-loglevel", "info", "-progress", "pipe:1", "-nostats" };
         if (seek > 0) args.AddRange(["-ss", VideoLoopFrameReader.Number(Math.Max(0, _probe.VideoStartSeconds - _probe.FormatStartSeconds + seek - 0.1))]);
-        args.AddRange(["-copyts", "-i", _source, "-map", "0:v:0", "-an", "-sn", "-dn"]);
+        args.AddRange(["-copyts", "-i", _source, "-map", "0:V:0", "-an", "-sn", "-dn"]);
         var filter = after is { } previous ? $"select='gt(pts,{previous.Pts})'," :
             end is not null ? $"trim=start={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + seek)}:end={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + end.Value)}," : "";
         if (after is not null && end is not null) filter += $"trim=end={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + end.Value)},";

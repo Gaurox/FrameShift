@@ -11,7 +11,7 @@ internal static class VideoLoopNaturalReference
     internal static async Task<long> RenderAsync(FfmpegRunner runner, string executable, string source, string output,
         MediaProbeResult probe, VideoLoopCandidate bounds, int repeats, bool audio, CancellationToken token)
     {
-        var workspace = Path.Combine(Path.GetDirectoryName(output)!, "reference-" + Guid.NewGuid().ToString("N"));
+        var workspace = Path.Combine(Path.GetDirectoryName(output)!, "reference # " + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(workspace);
         var safe = true;
         try
@@ -28,21 +28,21 @@ internal static class VideoLoopNaturalReference
             var bytes = new FileInfo(cycle).Length;
             var list = Path.Combine(workspace, "cycles.txt");
             await File.WriteAllLinesAsync(list, Enumerable.Range(0, repeats).SelectMany(_ => new[] { "file 'cycle.mkv'", $"duration {Number(bounds.DurationSeconds)}" }), token);
-            var final = new List<string> { "-f", "concat", "-safe", "1", "-i", list, "-map", "0:v:0", "-vf", "setpts=PTS-STARTPTS", "-fps_mode", "passthrough",
+            var final = new List<string> { "-f", "concat", "-safe", "1", "-i", Path.GetFileName(list), "-map", "0:v:0", "-vf", "setpts=PTS-STARTPTS", "-fps_mode", "passthrough",
                 "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-bf", "0", "-pix_fmt", probe.DisplayVideoWidth % 2 == 0 && probe.DisplayVideoHeight % 2 == 0 ? "yuv420p" : "yuv444p",
                 "-bsf:v", $"setts=duration='if(eq(NEXT_PTS,NOPTS),max(1,round({Number(bounds.DurationSeconds * repeats)}/TB-PTS)),DURATION)'" };
             if (audio) final.AddRange(["-map", "0:a:0", "-c:a", "aac", "-b:a", "256k"]);
             else final.Add("-an");
-            final.AddRange(["-map_metadata", "-1", "-movflags", "+faststart", output]);
-            await Run(final);
+            final.AddRange(["-map_metadata", "-1", "-movflags", "+faststart", Path.GetFullPath(output)]);
+            await Run(final, Path.GetFullPath(workspace));
             return bytes;
         }
         finally { if (safe) Directory.Delete(workspace, true); }
 
-        async Task Run(List<string> args)
+        async Task Run(List<string> args, string? workingDirectory = null)
         {
             var result = await runner.RunAsync(executable, new[] { "-hide_banner", "-loglevel", "error", "-progress", "pipe:1", "-nostats", "-n" }.Concat(args).ToArray(),
-                null, null, source, "Loop FFV1 reference", "CPU", token);
+                null, null, source, "Loop FFV1 reference", "CPU", token, workingDirectory: workingDirectory);
             safe = result.ProcessTerminationConfirmed;
             if (!safe) throw new IOException("Reference process did not stop; test workspace retained.");
             token.ThrowIfCancellationRequested();

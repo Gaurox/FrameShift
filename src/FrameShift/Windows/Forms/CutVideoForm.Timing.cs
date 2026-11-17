@@ -251,6 +251,20 @@ public sealed partial class CutVideoForm
         _nativeFrameSnapshot = (_selection.StartFrame, _selection.EndFrame);
     }
 
+    private Task ResolveCutTimeEditAsync(string boundary, double seconds) => QueueNativeWork(async token =>
+    {
+        var ending = boundary == "end";
+        var position = await _timingIndex!.ResolveCutTimeAsync(seconds, ending, token, IndexingStatus(token));
+        var frame = Math.Clamp(position.Number!.Value, ending ? _selection.StartFrame : 1,
+            ending ? _totalFrames : _selection.EndFrame);
+        if (frame != position.Number)
+            position = await _timingIndex.ResolveFrameAsync(frame, token, IndexingStatus(token));
+        token.ThrowIfCancellationRequested();
+        CommitNativeBoundary(boundary, position, fromFrameNumber: true);
+        _uiState.ActiveBoundary = boundary;
+        RefreshSelectionUi(true);
+    });
+
     internal Task ConfirmNativeLoopAsync()
     {
         if (_nativeBusy || _loopBusy != LoopBusy.Idle || _closing || !CheckSourceStillValid()) return Task.CompletedTask;

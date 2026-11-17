@@ -38,8 +38,6 @@ public sealed class RemoveAudioAction : IFrameShiftAction
             return new ActionExecutionResult(false, MediaActionMessages.InputFileNotFound(request.InputPath));
         }
 
-        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_noaudio"));
-        var outputPath = output.WorkingPath;
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
         var ffprobePath = _toolLocator.ResolveFfprobePath();
         var probeAttempt = await _ffprobeRunner.TryProbeMediaAsync(ffprobePath, request.InputPath, cancellationToken);
@@ -52,6 +50,11 @@ public sealed class RemoveAudioAction : IFrameShiftAction
         }
 
         var probe = probeAttempt.Probe;
+        if (!probe.HasVideo)
+        {
+            request.ProgressReporter?.ReportState("failed", MediaActionMessages.MissingVideoTrack());
+            return new ActionExecutionResult(false, MediaActionMessages.MissingVideoTrack());
+        }
         if (!probe.HasAudio)
         {
             request.ProgressReporter?.ReportState("failed", MediaActionMessages.MissingAudioTrack());
@@ -60,6 +63,8 @@ public sealed class RemoveAudioAction : IFrameShiftAction
 
         request.Logger.Log($"Running '{Descriptor.Id}'...");
         request.ProgressReporter?.ReportState("processing", L.Get("RemoveAudioAction_Preparing_audio_removal_on_CPU_66ef7e55"));
+        using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, "_noaudio"));
+        var outputPath = output.WorkingPath;
 
         try
         {
@@ -71,8 +76,9 @@ public sealed class RemoveAudioAction : IFrameShiftAction
                 "-progress", "pipe:1",
                 "-nostats",
                 "-i", request.InputPath,
-                "-c:v", "copy",
-                "-an",
+                "-map", "0",
+                "-map", "-0:a",
+                "-c", "copy",
                 outputPath
             };
 

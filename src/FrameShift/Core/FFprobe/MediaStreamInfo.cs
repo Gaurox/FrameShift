@@ -3,4 +3,8 @@ namespace FrameShift.Core.FFprobe;
 public sealed record MediaStreamInfo(
     int Index,
     string CodecType,
-    string? CodecName);
+    string? CodecName)
+{
+    internal double? StartSeconds { get; init; }
+    internal int SampleRate { get; init; }
+}

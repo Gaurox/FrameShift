@@ -292,7 +292,7 @@ public sealed class FfmpegRunner
         string? currentFile,
         string? currentAction,
         string? executionMode,
-        CancellationToken cancellationToken, Action<string>? errorLineObserver = null)
+        CancellationToken cancellationToken, Action<string>? errorLineObserver = null, string? workingDirectory = null)
     {
         return await RunAsync(
             executablePath,
@@ -304,7 +304,7 @@ public sealed class FfmpegRunner
             currentAction,
             executionMode,
             null,
-            cancellationToken, errorLineObserver).ConfigureAwait(false);
+            cancellationToken, errorLineObserver, workingDirectory).ConfigureAwait(false);
     }
 
     public async Task<FfmpegRunResult> RunAsync(
@@ -341,11 +341,17 @@ public sealed class FfmpegRunner
         string? currentAction,
         string? executionMode,
         string? pipelineDescription,
-        CancellationToken cancellationToken, Action<string>? errorLineObserver = null)
+        CancellationToken cancellationToken, Action<string>? errorLineObserver = null, string? workingDirectory = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         using var process = new Process { StartInfo = CreateStartInfo(executablePath, arguments) };
+        if (workingDirectory is not null)
+        {
+            process.StartInfo.WorkingDirectory = workingDirectory;
+            _logger.Log($"FFmpeg working directory: {workingDirectory}");
+        }
+
         var stderrBuilder = new BoundedProcessText(BoundedProcessText.DiagnosticLimit);
         var cancellationSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var progressState = new FfmpegProgressState();

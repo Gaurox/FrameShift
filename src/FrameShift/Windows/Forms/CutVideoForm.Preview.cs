@@ -20,13 +20,16 @@ public sealed partial class CutVideoForm
         var cancellation = new CancellationTokenSource();
         _previewCancellation = cancellation;
         var boundary = _uiState.ActiveBoundary;
+        var cutPosition = _loopContext == LoopContext.Cut
+            ? boundary == "end" ? _nativeEndPosition : _nativeStartPosition
+            : null;
         _previewTask = LoadPreviewAsync(_previewTask, frame, boundary, NativeTimingEnabled,
-            boundary == "end" ? _nativeEndTime : _nativeStartTime, cancellation);
+            boundary == "end" ? _nativeEndTime : _nativeStartTime, cutPosition, cancellation);
         return _previewTask;
     }
 
     private async Task LoadPreviewAsync(Task previous, int frame, string boundary, bool native,
-        double? nativeTime, CancellationTokenSource cancellation)
+        double? nativeTime, VideoLoopFramePosition? cutPosition, CancellationTokenSource cancellation)
     {
         Bitmap? bitmap = null;
         try
@@ -39,19 +42,19 @@ public sealed partial class CutVideoForm
             _labelPreviewState.Text = L.Get("CutVideoForm_Preview_Loading_preview_7e19fdfb");
             VideoLoopFramePosition? position = null;
             var seconds = Math.Max(0d, (frame - 1) / _fps);
-            if (native)
+            if (native || cutPosition is not null)
             {
-                position = await ResolveNativeBoundaryAsync(boundary, frame, nativeTime, cancellation.Token);
+                position = cutPosition ?? await ResolveNativeBoundaryAsync(boundary, frame, nativeTime, cancellation.Token);
                 cancellation.Token.ThrowIfCancellationRequested();
                 seconds = position.Time;
                 bitmap = _hasInjectedCapture ? await _capturePreview(seconds, cancellation.Token)
                     : await FrameShift.Windows.Helpers.PreviewFrameHelper.CaptureNativeFrameAsync(_loopExecutable,
-                        _loopRunner, _inputPath, _loopProbe, position.Timestamp, cancellation.Token);
+                        _loopRunner, _inputPath, _loopProbe, position.Timestamp, cancellation.Token, useLoopColorPolicy: native);
             }
             else bitmap = await _capturePreview(seconds, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (_closing || IsDisposed || !CheckSourceStillValid()) return;
-            if (position is not null)
+            if (native && position is not null)
             {
                 CommitNativeBoundary(boundary, position, nativeTime is null);
                 RefreshSelectionUi(false);

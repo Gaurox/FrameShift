@@ -122,6 +122,33 @@ public sealed partial class VideoLoopUiTests
     }
 
     [Fact]
+    public void CutTimeEdits_PreviewAndExportTheNativeFrameOrdinals()
+    {
+        StaTest.Run(() =>
+        {
+            using var corpus = new VideoLoopTestCorpus();
+            var probe = IrregularSource(corpus); Pump(probe);
+            var captured = new List<double>();
+            using var form = new CutVideoForm(corpus.Source, corpus.Tools.ResolveFfmpegPath(), probe.Result, corpus.Runner,
+                (seconds, _) => { captured.Add(seconds); return Task.FromResult(new Bitmap(8, 8)); });
+            Handles(form);
+            Field<TextBox>(form, "_textStartTime").Text = "00:00:00.500";
+            Call(form, "ApplyBoundaryFromTimeText", "start");
+            Pump(Field<Task>(form, "_nativeTask"));
+            Assert.Equal("3", Field<TextBox>(form, "_textStart").Text);
+            Pump(form.RequestPreviewAsync(3));
+            Assert.Equal(0.333, captured[^1], 6);
+            Field<TextBox>(form, "_textEndTime").Text = "00:00:02.000";
+            Call(form, "ApplyBoundaryFromTimeText", "end");
+            Pump(Field<Task>(form, "_nativeTask"));
+            Assert.Equal("4", Field<TextBox>(form, "_textEnd").Text);
+            Call(form, "ConfirmSelection");
+            Assert.Equal(3, form.Selection!.StartFrame);
+            Assert.Equal(4, form.Selection.EndFrame);
+        });
+    }
+
+    [Fact]
     public void SourceChange_ClearsCandidatesAndIndex_AndBlocksStaleExport()
     {
         StaTest.Run(() =>

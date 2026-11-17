@@ -6,6 +6,8 @@ namespace FrameShift.Core.Actions;
 
 public sealed record CutVideoSettings(int StartFrame, int EndFrame, double Fps)
 {
+    internal (double Start, double End)? RequestedTimeRange { get; init; }
+
     public int StartFrameZeroBased => StartFrame - 1;
 
     public double StartTimeSeconds => StartFrameZeroBased / Fps;
@@ -152,14 +154,15 @@ public sealed record CutVideoSettings(int StartFrame, int EndFrame, double Fps)
             return false;
         }
 
-        if (endSeconds <= startSeconds)
+        if (!double.IsFinite(endSeconds) || endSeconds <= startSeconds)
         {
             errorMessage = MediaActionMessages.CutVideoEndInvalid();
             return false;
         }
 
-        var startFrameFromTime = CutVideoMath.ConvertStartTimeToFrame(startSeconds, fps);
-        var endFrameFromTime = CutVideoMath.ConvertEndTimeToFrame(endSeconds, fps);
+        var estimatedDuration = totalFrames / fps;
+        var startFrameFromTime = CutVideoMath.ConvertStartTimeToFrame(Math.Min(startSeconds, estimatedDuration), fps);
+        var endFrameFromTime = CutVideoMath.ConvertEndTimeToFrame(Math.Min(endSeconds, estimatedDuration), fps);
 
         startFrameFromTime = Math.Clamp(startFrameFromTime, 1, totalFrames);
         endFrameFromTime = Math.Clamp(endFrameFromTime, 1, totalFrames);
@@ -170,7 +173,10 @@ public sealed record CutVideoSettings(int StartFrame, int EndFrame, double Fps)
             return false;
         }
 
-        settings = new CutVideoSettings(startFrameFromTime, endFrameFromTime, fps);
+        settings = new CutVideoSettings(startFrameFromTime, endFrameFromTime, fps)
+        {
+            RequestedTimeRange = (startSeconds, endSeconds)
+        };
         return true;
     }
 
@@ -185,12 +191,12 @@ public sealed record CutVideoSettings(int StartFrame, int EndFrame, double Fps)
         var value = text.Trim();
         if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out seconds))
         {
-            return seconds >= 0;
+            return double.IsFinite(seconds) && seconds >= 0;
         }
 
         if (double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out seconds))
         {
-            return seconds >= 0;
+            return double.IsFinite(seconds) && seconds >= 0;
         }
 
         var parts = value.Split(':', StringSplitOptions.TrimEntries);
@@ -218,7 +224,7 @@ public sealed record CutVideoSettings(int StartFrame, int EndFrame, double Fps)
         }
 
         seconds = (hourPart * 3600d) + (minutePart * 60d) + secondPart;
-        return seconds >= 0;
+        return double.IsFinite(seconds) && seconds >= 0;
     }
 
     private static bool TryGetOption(

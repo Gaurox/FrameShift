@@ -201,7 +201,11 @@ internal static partial class Program
             var hasAudio = probe.HasAudio;
             var sampleRate = probe.PrimaryAudioSampleRate > 0 ? probe.PrimaryAudioSampleRate : fallbackSampleRate;
 
-            using var picker = new ChangeSpeedForm(inputPaths[0], ffmpegPath, ffmpegRunner, ChangeSpeedMediaKind.Video, sourceDurationSeconds, hasAudio, sampleRate);
+            using var picker = new ChangeSpeedForm(inputPaths[0], ffmpegPath, ffmpegRunner, ChangeSpeedMediaKind.Video, sourceDurationSeconds, hasAudio, sampleRate)
+            {
+                VideoAudioDelaySeconds = ChangeVideoSpeedAction.AudioDelay(
+                    probe.Streams.FirstOrDefault(stream => stream.CodecType == "audio"), probe.FormatStartSeconds)
+            };
             if (picker.ShowDialog() != DialogResult.OK || picker.Selection is null)
             {
                 return false;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FrameShift.Core.FFmpeg;
@@ -57,7 +58,7 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         var ffmpegPath = _toolLocator.ResolveFfmpegPath();
         var ffprobePath = _toolLocator.ResolveFfprobePath();
 
-        var probeAttempt = await _ffprobeRunner.TryProbeMediaAsync(ffprobePath, request.InputPath, cancellationToken).ConfigureAwait(false);
+        var probeAttempt = await _ffprobeRunner.TryProbeMediaAsync(ffprobePath, request.InputPath, cancellationToken, includeChapters: true).ConfigureAwait(false);
         if (probeAttempt.Probe is null)
         {
             var probeError = probeAttempt.ErrorMessage ?? MediaActionMessages.ProbeFailed();
@@ -79,39 +80,35 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         }
 
         var sourceDurationSeconds = probe.Duration.Value.TotalSeconds;
-        var hasAudio = probe.HasAudio;
-        var sampleRate = probe.PrimaryAudioSampleRate > 0 ? probe.PrimaryAudioSampleRate : FallbackSampleRate;
         var targetDurationSeconds = settings.EstimatedOutputDuration(sourceDurationSeconds);
         using var output = OutputOperation.ForFile(OutputPathHelper.GetOutputPath(request.InputPath, settings.OutputSuffix, sourceExtension));
         var outputPath = output.WorkingPath;
 
         request.Logger.Log($"Running '{Descriptor.Id}' on '{Path.GetFileName(request.InputPath)}'...");
-        request.Logger.Log($"SpeedFactor: {settings.SpeedFactor:0.######}, keepPitch={settings.KeepPitch}, hasAudio={hasAudio}, sampleRate={sampleRate}");
+        request.Logger.Log($"SpeedFactor: {settings.SpeedFactor:0.######}, keepPitch={settings.KeepPitch}");
         request.ProgressReporter?.ReportState("processing", L.Get("ChangeVideoSpeedAction_Changing_video_speed_e2917417"));
 
         try
         {
-            var arguments = BuildArguments(request.InputPath, outputPath, sourceExtension, settings, hasAudio, sampleRate);
-            var result = await _ffmpegRunner.RunAsync(
-                ffmpegPath,
-                arguments,
-                TimeSpan.FromSeconds(targetDurationSeconds),
-                request.ProgressReporter,
-                request.InputPath,
-                Descriptor.DisplayName,
-                "Video",
+            var chaptersPath = await VideoChapterMetadata.WriteAsync(output.WorkspacePath, probe.Chapters,
+                probe.FormatStartSeconds, probe.FormatStartSeconds + sourceDurationSeconds, settings.SpeedFactor,
                 cancellationToken).ConfigureAwait(false);
+            var audioStreams = probe.Streams.Where(stream => stream.CodecType == "audio" && stream.Index >= 0).ToArray();
+            var result = await _ffmpegRunner.RunAsync(ffmpegPath, BuildArguments(request.InputPath, outputPath,
+                sourceExtension, settings, probe.FormatStartSeconds, audioStreams, probe.HasSubtitles, chaptersPath),
+                TimeSpan.FromSeconds(targetDurationSeconds), request.ProgressReporter, request.InputPath,
+                Descriptor.DisplayName, "Video", cancellationToken).ConfigureAwait(false);
+            if (!result.ProcessTerminationConfirmed)
+                output.RetainForUnconfirmedProcess();
 
             if (result.Canceled)
             {
-                ConversionActionHelper.DeleteIfExists(outputPath);
                 request.ProgressReporter?.ReportState("canceled", L.Get("ChangeVideoSpeedAction_Canceled_437433cc"));
                 return new ActionExecutionResult(false, MediaActionMessages.OperationCanceled(Descriptor.DisplayName), null, true, result.CancellationScope);
             }
 
-            if (result.ExitCode != 0 || !File.Exists(outputPath))
+            if (!result.ProcessTerminationConfirmed || result.ExitCode != 0 || !File.Exists(outputPath))
             {
-                ConversionActionHelper.DeleteIfExists(outputPath);
                 var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("ChangeVideoSpeedAction_FFmpeg_failed_during_video_speed_cha_c82d4c7d"));
                 request.ProgressReporter?.ReportState("failed", failureMessage);
                 return new ActionExecutionResult(false, failureMessage, null, false);
@@ -139,52 +136,66 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         string outputPath,
         string extension,
         ChangeSpeedSettings settings,
-        bool hasAudio,
-        int sampleRate)
+        double formatStartSeconds,
+        IReadOnlyList<MediaStreamInfo> audioStreams,
+        bool hasSubtitles,
+        string? chaptersPath)
     {
-        var args = new List<string>
-        {
-            "-hide_banner",
-            "-loglevel", "error",
-            "-stats_period", "0.25",
-            "-progress", "pipe:1",
-            "-nostats",
-            "-y",
-            "-i", inputPath
-        };
+        List<string> args = [.. Prefix(), "-i", inputPath];
+        if (chaptersPath is not null)
+            args.AddRange(["-f", "ffmetadata", "-i", chaptersPath]);
+        args.AddRange(["-map_chapters", chaptersPath is null ? "-1" : "1"]);
 
-        var setPtsFactor = (1.0 / settings.SpeedFactor).ToString("0.######", CultureInfo.InvariantCulture);
-        var videoFilter = $"setpts={setPtsFactor}*PTS";
+        var setPtsFactor = (1.0 / settings.SpeedFactor).ToString("0.#########", CultureInfo.InvariantCulture);
+        var videoFilter = $"settb=AVTB,setpts={setPtsFactor}*PTS";
+        args.AddRange(["-map", "0:V", "-vf", videoFilter]);
 
-        if (hasAudio)
+        for (var index = 0; index < audioStreams.Count; index++)
         {
-            string audioFilter;
-            if (settings.KeepPitch)
-            {
-                audioFilter = ChangeAudioSpeedAction.BuildAtempoChain(settings.SpeedFactor);
-            }
-            else
-            {
-                var targetRate = Math.Max(1000, (int)Math.Round(sampleRate * settings.SpeedFactor));
-                audioFilter = $"asetrate={targetRate},aresample={sampleRate}";
-            }
-
-            args.Add("-filter_complex");
-            args.Add($"[0:v]{videoFilter}[v];[0:a]{audioFilter}[a]");
-            args.Add("-map"); args.Add("[v]");
-            args.Add("-map"); args.Add("[a]");
-        }
-        else
-        {
-            args.Add("-filter:v"); args.Add(videoFilter);
-            args.Add("-an");
+            var stream = audioStreams[index];
+            args.AddRange(["-map", FormattableString.Invariant($"0:{stream.Index}"),
+                FormattableString.Invariant($"-filter:a:{index}"),
+                BuildAudioFilter(stream.SampleRate, settings, AudioDelay(stream, formatStartSeconds))]);
         }
 
-        var codecArgs = GetVideoCodecArgs(extension, hasAudio);
+        if (hasSubtitles && extension != ".avi")
+        {
+            var subtitleFilter = $"setts=pts='round(PTS*{setPtsFactor})':dts='round(DTS*{setPtsFactor})':" +
+                $"duration='if(gt(DURATION,0),max(1,round(DURATION*{setPtsFactor})),DURATION)'";
+            args.AddRange(["-map", "0:s?", "-c:s", "copy", "-bsf:s", subtitleFilter]);
+        }
+        if (extension == ".mkv")
+            args.AddRange(["-map", "0:t?", "-c:t", "copy"]);
+
+        var codecArgs = GetVideoCodecArgs(extension, audioStreams.Count != 0);
         args.AddRange(codecArgs);
+        if (extension != ".avi")
+            args.AddRange(["-fps_mode", "passthrough", "-enc_time_base:v", "filter"]);
 
         args.Add(outputPath);
         return args;
+    }
+
+    private static string[] Prefix() => ["-hide_banner", "-loglevel", "error", "-stats_period", "0.25",
+        "-progress", "pipe:1", "-nostats", "-y"];
+
+    internal static double AudioDelay(MediaStreamInfo? stream, double formatStartSeconds) =>
+        Math.Max(0, (stream?.StartSeconds ?? formatStartSeconds) - formatStartSeconds);
+
+    internal static string BuildAudioFilter(int sampleRate, ChangeSpeedSettings settings, double sourceDelay)
+    {
+        // Fill timestamp gaps before changing the sample stream so those gaps scale with the video.
+        const string fillGaps = "asetpts=PTS-STARTPTS,aresample=async=1:min_comp=0.002:min_hard_comp=0.002:first_pts=0";
+        var scaledDelay = sourceDelay / settings.SpeedFactor;
+        if (settings.KeepPitch)
+            return fillGaps + "," + ChangeAudioSpeedAction.BuildAtempoChain(settings.SpeedFactor) +
+                FormattableString.Invariant($",asetpts=PTS-STARTPTS+{scaledDelay:0.#########}/TB");
+
+        if (sampleRate <= 0) sampleRate = FallbackSampleRate;
+        var targetRate = Math.Max(1000, (int)Math.Round(sampleRate * settings.SpeedFactor));
+        var delaySamples = (long)Math.Round(scaledDelay * sampleRate);
+        var delayFilter = delaySamples > 0 ? FormattableString.Invariant($",adelay={delaySamples}S:all=1") : string.Empty;
+        return FormattableString.Invariant($"{fillGaps},asetrate={targetRate},aresample={sampleRate}{delayFilter},asetpts=N/SR/TB");
     }
 
     private static IReadOnlyList<string> GetVideoCodecArgs(string extension, bool hasAudio)
@@ -194,19 +205,25 @@ public sealed class ChangeVideoSpeedAction : IFrameShiftAction
         {
             case ".webm":
                 args.AddRange(["-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0"]);
-                if (hasAudio) args.AddRange(["-c:a", "libopus", "-b:a", "160k"]);
                 break;
             case ".avi":
                 args.AddRange(["-c:v", "mpeg4", "-q:v", "3"]);
-                if (hasAudio) args.AddRange(["-c:a", "libmp3lame", "-b:a", "192k"]);
                 break;
             default:
                 args.AddRange(["-c:v", "libx264", "-preset", "medium", "-crf", "18", "-pix_fmt", "yuv420p"]);
-                if (hasAudio) args.AddRange(["-c:a", "aac", "-b:a", "192k"]);
                 break;
         }
+        if (hasAudio) args.AddRange(GetAudioCodecArgs(extension));
         return args;
     }
+
+    private static string[] GetAudioCodecArgs(string extension) => extension switch
+    {
+        ".webm" => ["-c:a", "libopus", "-b:a", "160k"],
+        ".avi" => ["-c:a", "libmp3lame", "-b:a", "192k"],
+        // The bundled AAC encoder's default coder can hang on some retimed 44.1 kHz tracks.
+        _ => ["-c:a", "aac", "-aac_coder", "fast", "-b:a", "192k"]
+    };
 
     private static string NormalizeExtension(string extension)
     {
