@@ -45,6 +45,7 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     private readonly string _index = Path.Combine(Path.GetTempPath(), $"frameshift_loop_timing_{Guid.NewGuid():N}.idx");
     private bool _disposed;
     private bool _changed;
+    private bool _useCuda;
     internal int IndexedFrameCount { get; private set; }
     internal bool IsComplete { get; private set; }
     internal int DecodePasses { get; private set; }
@@ -54,9 +55,10 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     internal string IndexPath => _index;
     private sealed record Window(double Start, double End, VideoLoopTimestamp[] Frames, bool Truncated);
 
-    internal VideoLoopTimingIndex(FfmpegRunner runner, string executable, string source, MediaProbeResult probe)
+    internal VideoLoopTimingIndex(FfmpegRunner runner, string executable, string source, MediaProbeResult probe, bool useCuda = false)
     {
         _runner = runner; _executable = executable; _source = source; _probe = probe;
+        _useCuda = useCuda;
         _stamp = VideoLoopSourceStamp.Read(source);
     }
 
@@ -181,7 +183,12 @@ internal sealed class VideoLoopTimingIndex : IDisposable
             using (var writer = new BinaryWriter(stream))
             {
                 await DecodeAsync(last is null ? 0 : Math.Max(0, Relative(last.Value) - 0.1), null, count, last,
-                    stamp => { Write(writer, stamp); received++; }, token).ConfigureAwait(false);
+                    stamp => { Write(writer, stamp); received++; }, () =>
+                    {
+                        writer.BaseStream.SetLength(0);
+                        writer.BaseStream.Position = 0;
+                        received = 0;
+                    }, token).ConfigureAwait(false);
             }
             token.ThrowIfCancellationRequested(); CheckSource();
             await using (var target = new FileStream(_index, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read | FileShare.Delete))
@@ -207,7 +214,7 @@ internal sealed class VideoLoopTimingIndex : IDisposable
     }
 
     private async Task DecodeAsync(double seek, double? end, int count, VideoLoopTimestamp? after,
-        Action<VideoLoopTimestamp> observe, CancellationToken token)
+        Action<VideoLoopTimestamp> observe, Action resetAttempt, CancellationToken token)
     {
         var args = new List<string> { "-hide_banner", "-loglevel", "info", "-progress", "pipe:1", "-nostats" };
         if (seek > 0) args.AddRange(["-ss", VideoLoopFrameReader.Number(Math.Max(0, _probe.VideoStartSeconds - _probe.FormatStartSeconds + seek - 0.1))]);
@@ -215,20 +222,35 @@ internal sealed class VideoLoopTimingIndex : IDisposable
         var filter = after is { } previous ? $"select='gt(pts,{previous.Pts})'," :
             end is not null ? $"trim=start={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + seek)}:end={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + end.Value)}," : "";
         if (after is not null && end is not null) filter += $"trim=end={VideoLoopFrameReader.Number(_probe.VideoStartSeconds + end.Value)},";
-        filter += "scale=2:2,showinfo,setpts=PTS-STARTPTS";
+        filter += "scale=2:2,showinfo=checksum=0,setpts=PTS-STARTPTS";
         args.AddRange(["-vf", filter, "-frames:v", count.ToString(CultureInfo.InvariantCulture), "-fps_mode", "passthrough", "-f", "null", "-"]);
-        VideoLoopTimestamp? last = after;
-        var timing = new VideoLoopTimingCollector(count, stamp =>
+
+        var result = await RunDecodeAsync().ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
+        if (_useCuda && !result.Canceled && result.ProcessTerminationConfirmed && result.ExitCode != 0)
         {
-            if (last is { } p && stamp.Seconds <= p.Seconds) throw new InvalidOperationException(L.Get("Loop_NonIncreasingTimes"));
-            last = stamp; observe(stamp); DecodedFrameCount++;
-        }, retainTimings: false);
-        DecodePasses++;
-        var result = await _runner.RunAsync(_executable, args, null, null, _source, L.Get("Loop_NativeTiming"), "CPU", token, timing.Observe).ConfigureAwait(false);
+            _useCuda = false;
+            resetAttempt();
+            result = await RunDecodeAsync().ConfigureAwait(false);
+        }
         token.ThrowIfCancellationRequested();
         if (result.Canceled) throw new OperationCanceledException(token);
         if (result.ExitCode != 0 || !result.ProcessTerminationConfirmed)
             throw new InvalidOperationException(ConversionActionHelper.GetFriendlyFfmpegError(result.StandardError, L.Get("Loop_ReadTimingFailed")));
+
+        Task<FfmpegRunResult> RunDecodeAsync()
+        {
+            var last = after;
+            var timing = new VideoLoopTimingCollector(count, stamp =>
+            {
+                if (last is { } p && stamp.Seconds <= p.Seconds) throw new InvalidOperationException(L.Get("Loop_NonIncreasingTimes"));
+                last = stamp; observe(stamp); DecodedFrameCount++;
+            }, retainTimings: false);
+            DecodePasses++;
+            IReadOnlyCollection<string> arguments = _useCuda ? ["-hwaccel", "cuda", ..args] : args;
+            return _runner.RunAsync(_executable, arguments, null, null, _source, L.Get("Loop_NativeTiming"),
+                _useCuda ? "CUDA" : "CPU", token, timing.Observe);
+        }
     }
 
     private async Task<VideoLoopTimestamp?> FindAsync(double time, bool before, CancellationToken token)
@@ -261,7 +283,7 @@ internal sealed class VideoLoopTimingIndex : IDisposable
             var start = Math.Max(0, time - radius);
             var end = Math.Min(maximum, time + radius);
             var decoded = new List<VideoLoopTimestamp>();
-            await DecodeAsync(start, end, WindowFrames, null, decoded.Add, token).ConfigureAwait(false);
+            await DecodeAsync(start, end, WindowFrames, null, decoded.Add, decoded.Clear, token).ConfigureAwait(false);
             var window = new Window(start, end, decoded.ToArray(), decoded.Count == WindowFrames);
             _windows.Add(window);
             if (_windows.Count > 8) _windows.RemoveAt(0);
@@ -271,7 +293,8 @@ internal sealed class VideoLoopTimingIndex : IDisposable
                 start = Relative(window.Frames[^1]);
                 var previous = window.Frames[^1];
                 var frames = new List<VideoLoopTimestamp> { previous };
-                await DecodeAsync(start, end, WindowFrames - 1, previous, frames.Add, token).ConfigureAwait(false);
+                await DecodeAsync(start, end, WindowFrames - 1, previous, frames.Add,
+                    () => frames.RemoveRange(1, frames.Count - 1), token).ConfigureAwait(false);
                 _windows.Remove(window);
                 window = new(start, end, frames.ToArray(), frames.Count == WindowFrames);
                 _windows.Add(window);

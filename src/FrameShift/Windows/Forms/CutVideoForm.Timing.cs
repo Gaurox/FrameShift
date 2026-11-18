@@ -30,7 +30,8 @@ public sealed partial class CutVideoForm
         _nativeFrameSnapshot = (_selection.StartFrame, _selection.EndFrame);
         if (!File.Exists(_inputPath)) return; // Existing injected-preview tests can use a virtual source.
         _sourceStamp = VideoLoopSourceStamp.Read(_inputPath);
-        _timingIndex = new(_loopRunner, _loopExecutable, _inputPath, _loopProbe);
+        _timingIndex = new(_loopRunner, _loopExecutable, _inputPath, _loopProbe,
+            useCuda: _loopContext == LoopContext.Cut && _loopProbe.VideoCodec == "av1");
         _sourceTimer = new() { Interval = 750 };
         _sourceTimer.Tick += (_, _) => CheckSourceStillValid();
         Shown += (_, _) => _sourceTimer.Start();

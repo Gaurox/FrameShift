@@ -87,26 +87,31 @@ public sealed class CutVideoAction : IFrameShiftAction
             return new ActionExecutionResult(false, settingsError ?? MediaActionMessages.CutVideoSettingsMissing());
         }
 
+        VideoLoopSourceStamp sourceStamp;
+        var useCuda = probe.VideoCodec == "av1";
+        CutBounds? bounds = null;
         try
         {
+            sourceStamp = VideoLoopSourceStamp.Read(request.InputPath);
             if (settings.RequestedTimeRange is { } times)
             {
-                using var timing = new VideoLoopTimingIndex(_ffmpegRunner, ffmpegPath, request.InputPath, probe);
+                using var timing = new VideoLoopTimingIndex(_ffmpegRunner, ffmpegPath, request.InputPath, probe, useCuda);
                 request.ProgressReporter?.ReportState("processing", L.Get("Loop_Indexing"));
-                var first = await timing.ResolveCutTimeAsync(times.Start, end: false, cancellationToken).ConfigureAwait(false);
                 var last = await timing.ResolveCutTimeAsync(times.End, end: true, cancellationToken).ConfigureAwait(false);
+                var first = await timing.ResolveCutTimeAsync(times.Start, end: false, cancellationToken).ConfigureAwait(false);
                 settings = new CutVideoSettings(first.Number!.Value, last.Number!.Value, fps.Value);
+                bounds = new CutBounds(first.Timestamp, last.Timestamp, last.End + probe.VideoStartSeconds);
             }
 
             if (VideoLoopSettings.FromOptions(request.Options) is { } loop)
             {
-                VideoLoopCandidate? bounds = null;
+                VideoLoopCandidate? loopBounds = null;
                 if (request.Options!.TryGetValue("loop-start", out var start) && request.Options.TryGetValue("loop-end", out var end))
-                    bounds = new VideoLoopCandidate(double.Parse(start, CultureInfo.InvariantCulture), double.Parse(end, CultureInfo.InvariantCulture), 0);
+                    loopBounds = new VideoLoopCandidate(double.Parse(start, CultureInfo.InvariantCulture), double.Parse(end, CultureInfo.InvariantCulture), 0);
                 request.Logger.Log($"Cut Video loop: {request.QueueItemDescription}; candidate {request.Options.GetValueOrDefault("loop-candidate")}; " +
-                    $"bounds {bounds?.StartSeconds:R} → {bounds?.EndSeconds:R}; {loop.Mode}, speed {loop.Speed}, repeats {loop.Repetitions}, audio {loop.KeepAudio}.");
+                    $"bounds {loopBounds?.StartSeconds:R} → {loopBounds?.EndSeconds:R}; {loop.Mode}, speed {loop.Speed}, repeats {loop.Repetitions}, audio {loop.KeepAudio}.");
                 return await new VideoLoopExporter(_ffmpegRunner, _ffprobeRunner) { ExpectedSource = request.ExpectedLoopSource }.ExportAsync(ffmpegPath, ffprobePath,
-                    request, probe, settings, loop, bounds, cancellationToken).ConfigureAwait(false);
+                    request, probe, settings, loop, loopBounds, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (VideoLoopCancellationException ex) { return new(false, L.Get("Loop_ExportCanceled"), null, true, ex.Scope); }
@@ -129,13 +134,10 @@ public sealed class CutVideoAction : IFrameShiftAction
 
         try
         {
-            var sourceStamp = VideoLoopSourceStamp.Read(request.InputPath);
             var trimSubtitles = sourceExtension != ".avi" && probe.HasSubtitles;
-            CutBounds? bounds = null;
-            if (probe.HasAudio || trimSubtitles || probe.Chapters.Count != 0)
+            if (bounds is null && (probe.HasAudio || trimSubtitles || probe.Chapters.Count != 0))
             {
-                request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Preparing_cut_on_0_f63f727c", "CPU"));
-                var (timingResult, selectionBounds) = await ReadCutBoundsAsync(ffmpegPath, request, settings, cancellationToken).ConfigureAwait(false);
+                var (timingResult, selectionBounds) = await ReadCutBoundsAsync(ffmpegPath, request, settings, useCuda, cancellationToken).ConfigureAwait(false);
                 if (timingResult.Canceled)
                 {
                     return ReportCanceled(request, timingResult.CancellationScope);
@@ -149,6 +151,9 @@ public sealed class CutVideoAction : IFrameShiftAction
                     1, cancellationToken).ConfigureAwait(false)
                 : null;
             var encodingPlan = await GetEncodingPlanAsync(sourceExtension, cancellationToken).ConfigureAwait(false);
+            // Keep subtitle packets available from the beginning, including cues already active at the cut.
+            double? seek = !trimSubtitles && bounds is { CanSeek: true } known && known.Start - probe.FormatStartSeconds > 5
+                ? known.Start - 2 : null;
             request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Preparing_cut_on_0_f63f727c", encodingPlan.Primary.ModeLabel));
             var primaryResult = await RunEncodingAttemptAsync(
                 ffmpegPath,
@@ -160,6 +165,8 @@ public sealed class CutVideoAction : IFrameShiftAction
                 probe.HasAudio,
                 trimSubtitles,
                 chaptersPath,
+                seek,
+                useCuda,
                 sourceStamp,
                 request.ProgressReporter,
                 cancellationToken).ConfigureAwait(false);
@@ -169,12 +176,12 @@ public sealed class CutVideoAction : IFrameShiftAction
                 return ReportCanceled(request, primaryResult.CancellationScope);
             }
 
-            if (primaryResult.ExitCode == 0 && File.Exists(outputPath))
+            if (primaryResult.ProcessTerminationConfirmed && primaryResult.ExitCode == 0 && File.Exists(outputPath))
             {
                 return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
             }
 
-            if (encodingPlan.Fallback is not null)
+            if (encodingPlan.Fallback is not null && primaryResult.ProcessTerminationConfirmed)
             {
                 ConversionActionHelper.DeleteIfExists(outputPath);
                 request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Retrying_cut_on_0_11e479fe",encodingPlan.Fallback.ModeLabel));
@@ -189,6 +196,8 @@ public sealed class CutVideoAction : IFrameShiftAction
                     probe.HasAudio,
                     trimSubtitles,
                     chaptersPath,
+                    seek,
+                    useCuda: false,
                     sourceStamp,
                     request.ProgressReporter,
                     cancellationToken).ConfigureAwait(false);
@@ -198,12 +207,13 @@ public sealed class CutVideoAction : IFrameShiftAction
                     return ReportCanceled(request, fallbackResult.CancellationScope);
                 }
 
-                if (fallbackResult.ExitCode == 0 && File.Exists(outputPath))
+                if (fallbackResult.ProcessTerminationConfirmed && fallbackResult.ExitCode == 0 && File.Exists(outputPath))
                 {
                     return ConversionActionHelper.CompleteOutput(output, request, Descriptor.DisplayName, cancellationToken);
                 }
 
-                ConversionActionHelper.DeleteIfExists(outputPath);
+                if (fallbackResult.ProcessTerminationConfirmed)
+                    ConversionActionHelper.DeleteIfExists(outputPath);
                 var failureMessage = ConversionActionHelper.GetFriendlyFfmpegError(
                     fallbackResult.StandardError,
                     L.Get("CutVideoAction_FFmpeg_failed_during_Cut_Video_proce_170c6576"));
@@ -211,7 +221,8 @@ public sealed class CutVideoAction : IFrameShiftAction
                 return new ActionExecutionResult(false, failureMessage, null, false);
             }
 
-            ConversionActionHelper.DeleteIfExists(outputPath);
+            if (primaryResult.ProcessTerminationConfirmed)
+                ConversionActionHelper.DeleteIfExists(outputPath);
             var primaryFailureMessage = ConversionActionHelper.GetFriendlyFfmpegError(
                 primaryResult.StandardError,
                 L.Get("CutVideoAction_FFmpeg_failed_during_Cut_Video_proce_170c6576"));
@@ -240,27 +251,35 @@ public sealed class CutVideoAction : IFrameShiftAction
     }
 
     private async Task<(FfmpegRunResult Result, CutBounds? Bounds)> ReadCutBoundsAsync(
-        string ffmpegPath, ActionRequest request, CutVideoSettings settings, CancellationToken cancellationToken)
+        string ffmpegPath, ActionRequest request, CutVideoSettings settings, bool useCuda, CancellationToken cancellationToken)
     {
         var startFrame = settings.StartFrameZeroBased;
         var frameCount = settings.EndFrame - startFrame;
         // Read through the next frame to get the selected last frame's full display interval.
         // At EOF there is no next timestamp, so use the last frame's duration.
-        var filter = FormattableString.Invariant($"trim=start_frame={startFrame}:end_frame={(long)settings.EndFrame + 1},showinfo=checksum=0,setpts=PTS-STARTPTS");
+        var scanStart = Math.Max(0, startFrame - 1);
+        var filter = FormattableString.Invariant($"trim=start_frame={scanStart}:end_frame={(long)settings.EndFrame + 1},showinfo=checksum=0,setpts=PTS-STARTPTS");
         string[] arguments =
         [
             "-hide_banner", "-loglevel", "info", "-progress", "pipe:1", "-nostats",
-            "-copyts", "-i", request.InputPath, "-map", "0:V:0", "-an", "-sn", "-dn", "-vf", filter,
+            .. CudaInputArgs(useCuda), "-copyts", "-i", request.InputPath, "-map", "0:V:0", "-an", "-sn", "-dn", "-vf", filter,
             "-fps_mode", "passthrough", "-f", "null", "-"
         ];
 
         VideoLoopTimestamp? first = null;
+        VideoLoopTimestamp? previous = null;
         VideoLoopTimestamp last = default;
         VideoLoopTimestamp? next = null;
-        var seen = 0;
-        var timing = new VideoLoopTimingCollector((int)Math.Min((long)frameCount + 1, int.MaxValue), stamp =>
+        var seen = scanStart - startFrame;
+        var timing = new VideoLoopTimingCollector((int)Math.Min((long)frameCount + 2, int.MaxValue), stamp =>
         {
-            if (seen++ == frameCount)
+            var frame = seen++;
+            if (frame < 0)
+            {
+                previous = stamp;
+                return;
+            }
+            if (frame == frameCount)
             {
                 next = stamp;
                 return;
@@ -271,12 +290,20 @@ public sealed class CutVideoAction : IFrameShiftAction
         }, retainTimings: false);
 
         var message = L.Get("Loop_ReadTimingFailed");
+        var mode = useCuda ? "CUDA" : "CPU";
+        request.ProgressReporter?.ReportState("processing", L.Format("CutVideoAction_Preparing_cut_on_0_f63f727c", mode));
         var result = await _ffmpegRunner.RunAsync(
             ffmpegPath, arguments, null, request.ProgressReporter, request.InputPath,
-            Descriptor.DisplayName, "CPU", cancellationToken, timing.Observe).ConfigureAwait(false);
+            Descriptor.DisplayName, mode, cancellationToken, timing.Observe).ConfigureAwait(false);
         if (result.Canceled)
         {
             return (result, null);
+        }
+
+        if (useCuda && result.ProcessTerminationConfirmed && result.ExitCode != 0)
+        {
+            request.Logger.Log("CUDA cut timing failed. Retrying with software decoding.");
+            return await ReadCutBoundsAsync(ffmpegPath, request, settings, false, cancellationToken).ConfigureAwait(false);
         }
 
         if (result.ExitCode != 0 || !result.ProcessTerminationConfirmed)
@@ -297,7 +324,9 @@ public sealed class CutVideoAction : IFrameShiftAction
         }
 
         request.Logger.Log(FormattableString.Invariant($"Cut video bounds: {first.Value.Seconds:R} to {end:R} seconds on the source timeline."));
-        return (result, new CutBounds(first.Value.Seconds, end));
+        var canSeek = seen >= frameCount && (previous is null || previous.Value.Seconds < first.Value.Seconds) &&
+            (next is null || next.Value.Seconds > last.Seconds);
+        return (result, new CutBounds(first.Value, last, end, canSeek));
     }
 
     private async Task<FfmpegRunResult> RunEncodingAttemptAsync(
@@ -310,36 +339,60 @@ public sealed class CutVideoAction : IFrameShiftAction
         bool hasAudio,
         bool trimSubtitles,
         string? chaptersPath,
+        double? seek,
+        bool useCuda,
         VideoLoopSourceStamp sourceStamp,
         IProgressReporter? progressReporter,
         CancellationToken cancellationToken)
     {
-        if (VideoLoopSourceStamp.Read(inputPath) != sourceStamp)
-        {
-            throw new VideoLoopSourceChangedException();
-        }
-
-        var arguments = BuildArguments(inputPath, output.WorkingPath, settings, plan, bounds, hasAudio, trimSubtitles, chaptersPath);
-        var result = await _ffmpegRunner.RunAsync(
-            ffmpegPath,
-            arguments,
-            TimeSpan.FromSeconds(bounds is { } measured ? measured.End - measured.Start : settings.DurationSeconds),
-            EstimateOutputFrameCount(settings),
-            progressReporter,
-            inputPath,
-            Descriptor.DisplayName,
-            plan.ModeLabel,
-            cancellationToken).ConfigureAwait(false);
-        if (!result.ProcessTerminationConfirmed)
-        {
-            output.RetainForUnconfirmedProcess();
-        }
-        else if (!result.Canceled && result.ExitCode == 0 && VideoLoopSourceStamp.Read(inputPath) != sourceStamp)
-        {
-            throw new VideoLoopSourceChangedException();
-        }
-
+        var result = await EncodeAsync(seek, useCuda).ConfigureAwait(false);
+        if (useCuda && CanRetry(result))
+            result = await EncodeAsync(seek, cuda: false).ConfigureAwait(false);
+        // If NVENC fails, let the software encoder try the same seek before scanning from the start.
+        if (seek is not null && CanRetry(result) && plan.VideoCodec != "h264_nvenc")
+            result = await EncodeAsync(seekAt: null, cuda: false).ConfigureAwait(false);
         return result;
+
+        async Task<FfmpegRunResult> EncodeAsync(double? seekAt, bool cuda)
+        {
+            if (VideoLoopSourceStamp.Read(inputPath) != sourceStamp)
+                throw new VideoLoopSourceChangedException();
+
+            var expectedFrames = settings.EndFrame - settings.StartFrame + 1;
+            var count = 0L;
+            VideoLoopTimestamp first = default, last = default;
+            var timing = seekAt is null ? null : new VideoLoopTimingCollector(int.MaxValue, stamp =>
+            {
+                if (count++ == 0) first = stamp;
+                last = stamp;
+            }, retainTimings: false);
+            var arguments = BuildArguments(inputPath, output.WorkingPath, settings, plan, bounds, hasAudio, trimSubtitles,
+                chaptersPath, seekAt, cuda);
+            var result = await _ffmpegRunner.RunAsync(
+                ffmpegPath, arguments,
+                TimeSpan.FromSeconds(bounds is { } measured ? measured.End - measured.Start : settings.DurationSeconds),
+                expectedFrames, progressReporter, inputPath, Descriptor.DisplayName, plan.ModeLabel, null,
+                cancellationToken, timing is null ? null : timing.Observe).ConfigureAwait(false);
+            if (!result.ProcessTerminationConfirmed)
+            {
+                output.RetainForUnconfirmedProcess();
+            }
+            else if (!result.Canceled && result.ExitCode == 0)
+            {
+                if (VideoLoopSourceStamp.Read(inputPath) != sourceStamp)
+                    throw new VideoLoopSourceChangedException();
+                if (seekAt is not null && bounds is { } expected &&
+                    (count != expectedFrames || !SameTimestamp(first, expected.First) || !SameTimestamp(last, expected.Last)))
+                    return result with { ExitCode = -1, StandardError = L.Get("Loop_ReadTimingFailed") };
+            }
+            return result;
+        }
+
+        static bool CanRetry(FfmpegRunResult result) =>
+            !result.Canceled && result.ProcessTerminationConfirmed && result.ExitCode != 0;
+
+        static bool SameTimestamp(VideoLoopTimestamp actual, VideoLoopTimestamp expected) =>
+            actual.Pts == expected.Pts && actual.Numerator == expected.Numerator && actual.Denominator == expected.Denominator;
     }
 
     private static IReadOnlyList<string> BuildArguments(
@@ -350,15 +403,19 @@ public sealed class CutVideoAction : IFrameShiftAction
         CutBounds? bounds,
         bool hasAudio,
         bool trimSubtitles,
-        string? chaptersPath)
+        string? chaptersPath,
+        double? seek,
+        bool useCuda)
     {
         // trim uses an exclusive zero-based end, matching the one-based inclusive EndFrame.
-        var videoFilter = $"trim=start_frame={settings.StartFrameZeroBased}:end_frame={settings.EndFrame},setpts=PTS-STARTPTS";
+        var videoFilter = seek is not null && bounds is { } known
+            ? $"trim=start_pts={known.First.Pts},trim=end_frame={settings.EndFrame - settings.StartFrameZeroBased},showinfo=checksum=0,setpts=PTS-STARTPTS"
+            : $"trim=start_frame={settings.StartFrameZeroBased}:end_frame={settings.EndFrame},setpts=PTS-STARTPTS";
 
         var args = new List<string>
         {
             "-hide_banner",
-            "-loglevel", "error",
+            "-loglevel", seek is null ? "error" : "info",
             "-stats_period", "0.25",
             "-progress", "pipe:1",
             "-nostats",
@@ -370,6 +427,9 @@ public sealed class CutVideoAction : IFrameShiftAction
             args.Add("-copyts");
         }
 
+        args.AddRange(CudaInputArgs(useCuda));
+        if (seek is { } timestamp)
+            args.AddRange(["-seek_timestamp", "1", "-ss", VideoLoopFrameReader.Number(timestamp)]);
         args.AddRange(["-i", inputPath]);
         if (chaptersPath is not null)
             args.AddRange(["-f", "ffmetadata", "-i", chaptersPath]);
@@ -461,11 +521,7 @@ public sealed class CutVideoAction : IFrameShiftAction
             : new EncodingPlanBundle(cpuPlan, null);
     }
 
-    private static long? EstimateOutputFrameCount(CutVideoSettings settings)
-    {
-        var frames = (long)Math.Max(1, settings.EndFrame - settings.StartFrame + 1);
-        return frames;
-    }
+    private static string[] CudaInputArgs(bool useCuda) => useCuda ? ["-hwaccel", "cuda"] : [];
 
     private sealed record EncodingPlan(
         string ModeLabel,
@@ -476,5 +532,8 @@ public sealed class CutVideoAction : IFrameShiftAction
 
     private sealed record EncodingPlanBundle(EncodingPlan Primary, EncodingPlan? Fallback);
 
-    private readonly record struct CutBounds(double Start, double End);
+    private readonly record struct CutBounds(VideoLoopTimestamp First, VideoLoopTimestamp Last, double End, bool CanSeek = true)
+    {
+        internal double Start => First.Seconds;
+    }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.24.1
+
+- Improved video trimming performance and reliability.
+- Fixed audio synchronization and track handling in common video workflows.
+- Improved compatibility with more video files and system configurations.
+
 ## 1.24.0
 
 Released on 11 November 2026 after owner acceptance.

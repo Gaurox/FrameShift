@@ -100,6 +100,44 @@ public sealed class CutVideoActionTimingTests
         Assert.InRange(onset - frames[60].Time, -0.015, 0.015);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LateCutWithNonzeroStart_KeepsBothAudioTracksAndTheLastFrame(bool byTime)
+    {
+        using var fixture = new VideoLoopExportFixture();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var source = Path.Combine(fixture.Root, "fin # cadence variable.mp4");
+        await fixture.RunAsync([
+            "-f", "lavfi", "-i", "color=c=black:s=160x96:r=25:d=12",
+            "-f", "lavfi", "-i", @"aevalsrc=0.5*sin(2*PI*440*t)*between(t\,11.16\,11.3):s=48000:d=16",
+            "-f", "lavfi", "-i", @"aevalsrc=0.5*sin(2*PI*880*t)*between(t\,11.6\,11.7):s=48000:d=16",
+            "-map", "0:v", "-map", "1:a", "-map", "2:a",
+            "-vf", "drawbox=c=white:t=fill:enable='eq(n,175)+eq(n,179)+eq(n,199)',setpts='if(lt(N,100),2*N,N+100)'",
+            "-fps_mode", "vfr", "-c:v", "libx264", "-g", "50", "-c:a", "aac", "-output_ts_offset", "2", source
+        ]);
+        var probe = await fixture.ReadProbeAsync(source);
+        Assert.Equal(2, probe.VideoStartSeconds, 3);
+        var options = byTime ? new Dictionary<string, string>
+        {
+            [ActionOptionKeys.StartTime] = "11", [ActionOptionKeys.EndTime] = "12"
+        } : new CutVideoSettings(176, 200, probe.VideoFrameRate!.Value).ToOptions();
+        var output = await CutAsync(fixture, source, options, deadline.Token);
+        Assert.EndsWith("__frame_176_to_200.mp4", output, StringComparison.Ordinal);
+        var frames = await new VideoLoopFrameReader(fixture.Runner, fixture.Tools.ResolveFfmpegPath(), output)
+            .ReadAsync(0, 1.1, null, 30, deadline.Token);
+        Assert.Equal(25, frames.Count);
+        Assert.True(frames[0].Pixels[0] > 210);
+        Assert.True(frames[4].Pixels[0] > 210);
+        Assert.True(frames[^1].Pixels[0] > 210);
+        Assert.Equal(0.96, frames[^1].Time, 3);
+        Assert.Equal(2, (await fixture.ReadProbeAsync(output)).AudioCodecs.Count);
+        var first = await ReadToneOnsetAsync(fixture, output, deadline.Token);
+        var second = await ReadToneOnsetAsync(fixture, output, deadline.Token, audioStream: 1);
+        Assert.InRange(first, 0.145, 0.175);
+        Assert.InRange(second, 0.585, 0.615);
+    }
+
     [Fact]
     public async Task DelayedAudio_KeepsItsOffsetFromTheFirstVideoFrame()
     {
